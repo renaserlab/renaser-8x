@@ -25,6 +25,7 @@ Alcance: código y SQL del repositorio. Ataques ejecutados por razonamiento y po
 ## Reclasificación de P2 de seguridad (fase 2)
 
 - **P2-17 token en URL → cerrado (fase de integración, 2026-08-23).** Verificación previa a Supabase: el enlace NO era de un solo uso (reutilizable hasta 200 veces, sin canje). Corregido: canje único por token de sesión; el enlace se inutiliza tras el canje; expiración, hash y revocación se mantienen. Residual: el primer GET de la página lleva el enlace en la URL (queda en el log de acceso una vez) — ya inservible tras ese primer uso.
+  Endurecido en navegador real (2026-08-23): el reemplazo de URL ahora usa `router.replace` (con `history.replaceState` el router de Next restauraba la URL con el enlace en el siguiente refresh — verificado); el canje comparte una sola petición en vuelo (StrictMode o doble toque ya no queman el enlace ni muestran "enlace usado" con la sesión ya guardada), y ante un canje fallido se relee el almacenamiento del dispositivo.
 - **P2-18 vistas con privilegios del dueño → aceptado con justificación.** `claims_cliente` y `participants_cliente` corren como su dueño (sin `security_invoker`) porque el cliente no tiene política sobre las tablas base; el filtro de pertenencia está dentro de la vista y `security_barrier` impide que un predicado del cliente se evalúe antes. El linter de Supabase emitirá advertencia; queda documentado.
 - **P2-06 API sin sesión → cerrado** (401 JSON).
 - **P2-04 archivos huérfanos → cerrado** (`archivos_de_empresa` + borrado en `DELETE /api/companies/[id]`).

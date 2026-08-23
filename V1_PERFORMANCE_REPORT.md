@@ -44,6 +44,17 @@ Lectura: con 30 empresas cargando todo a la vez, las personas que conversan nunc
 - Afirmaciones: API paginada (`limit/offset`); la UI carga 500 (P2 backlog: paginar UI).
 - Tope de costo: `superaTope` suma `token_usage` por empresa en cada job (O(n) filas de esa empresa; aceptable hasta ~10⁵ llamadas; V2: vista agregada).
 
+## Medido con Gemini real (2026-08-23, fase de integración)
+
+| Medición | Resultado |
+|---|---|
+| Entrevistador (pregunta siguiente), `gemini-3.5-flash-lite` | 1,7 s · 2.553 entrada + 54 salida |
+| Ciclo completo respuesta→extraer→contrastar→repregunta (worker + Supabase reales) | < 12 s de punta a punta |
+| Benchmark completo (15 llamadas, `gemini-3.5-flash-lite`) | 61 s · 38.471 tokens |
+| Costo real Gemini | plan gratuito (USD 0); el estimado de 6 USD/M del informe corresponde a Anthropic |
+
+Nota operativa: el plan gratuito de Gemini limita ~20 solicitudes/día por modelo; para operar 30 empresas hace falta facturación en Google AI Studio. `gemini-3.7-flash` mostró 503 intermitentes ("high demand"): el adaptador reintenta (hasta 5, backoff exponencial) y el worker aplica su propio backoff.
+
 ## No medido (BLOCKED_EXTERNAL)
 
 Latencia real del proveedor, tiempo de `take_job` bajo contención real en Postgres, Realtime bajo carga, tiempo de extracción de un PDF de 120 páginas (8 tramos en paralelo). Los tests de integración miden `take_job` concurrente y `recover_stale_jobs` cuando haya credenciales.

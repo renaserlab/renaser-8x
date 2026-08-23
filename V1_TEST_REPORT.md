@@ -42,6 +42,14 @@ npx vitest run                → Test Files 21 passed | 2 skipped (23)
 - **Probado (Supabase real, 2026-08-23):** RLS/grants/vistas/RPC/storage/transacción/cola/realtime contra el proyecto remoto: 24/24.
 - **No probado (BLOCKED_EXTERNAL):** comportamiento del modelo real (`npm run benchmark`), React Flow en navegador, voz en Chrome/Firefox, UX con personas, piloto RENASER.
 
+## Integración real (2026-08-23)
+
+- `npm run test:supabase`: **24/24** contra el proyecto remoto (se mantuvo 24/24 tras todos los cambios de esta fase).
+- Ciclo real en navegador con Supabase + Gemini: enlace de participante canjeado, pregunta generada por el modelo, respuesta guardada, claims extraídos (5, bien clasificados por pilar), contraste corrido y repregunta operativa ("¿Dónde pierdes más tiempo en tu ruta?").
+- Responsive auditado por DOM en 375/390/430/768/1024/1280/1440 px: sin overflow horizontal, controles ≥ 44 px (entrar, registro, participante).
+- PWA: `/manifest.webmanifest`, `/icon`, `/apple-icon` públicos y servidos (200); viewport con `viewport-fit=cover` y safe areas.
+- `schemas.test.ts`: el hallazgo sin `claim_ids` ahora valida en esquema y lo descarta el filtro de código (la regla "sin evidencia no entra" se conserva; antes un solo hallazgo sin ids invalidaba el pilar entero — visto con Gemini real).
+
 ## Tests modificados en esta fase
 
 - `evidencia.test.ts`: "evidencia caducada → medio" pasó a "→ bajo + requiere validación" (regla más estricta, deliberada).
