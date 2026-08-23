@@ -34,12 +34,13 @@ npx vitest run                → Test Files 21 passed | 2 skipped (23)
 | `benchmark.test.ts` | 4 | Set congelado aprueba lo correcto y rechaza lo inventado |
 | `demo-auditoria.test.ts` | 13 | Flujo completo + auditoría del resultado (cobertura 1.0, FP 0, preservación 1.0) |
 | `pendientes.test.ts` | 22 todo | Lo que requiere navegador o modelo real |
-| `supabase/integracion.test.ts` | 24 skipped + 1 todo | AUTH, RLS, RPC, VIEWS, STORAGE, TRANSACTION, QUEUE, REALTIME — corren con `SUPABASE_TEST_*` |
+| `supabase/integracion.test.ts` | **24 passed** (2026-08-23, proyecto remoto real vía `npm run test:supabase`; skipped en `npx vitest run` sin `SUPABASE_TEST_*`) + 1 todo | AUTH, RLS, RPC, VIEWS, STORAGE, TRANSACTION, QUEUE, REALTIME |
 
 ## Qué está probado y qué no
 
 - **Probado (local):** toda la lógica metodológica (reglas puras), los esquemas de salida, el texto exacto del SQL de seguridad, el algoritmo de persistencia del canvas, la planificación y recuperación de la cola (simulada), la frontera de columnas, los tokens, la autorización de sesiones, el flujo completo de la empresa demo con salidas de IA simuladas, y las prohibiciones visuales por análisis de código.
-- **No probado (BLOCKED_EXTERNAL):** efecto real de RLS/grants/vistas/transacción en Postgres (24 tests escritos), comportamiento del modelo real (`npm run benchmark`), React Flow en navegador, voz en Chrome/Firefox, UX con personas, piloto RENASER.
+- **Probado (Supabase real, 2026-08-23):** RLS/grants/vistas/RPC/storage/transacción/cola/realtime contra el proyecto remoto: 24/24.
+- **No probado (BLOCKED_EXTERNAL):** comportamiento del modelo real (`npm run benchmark`), React Flow en navegador, voz en Chrome/Firefox, UX con personas, piloto RENASER.
 
 ## Tests modificados en esta fase
 

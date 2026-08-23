@@ -4,7 +4,7 @@ Lo que V1 NO hace o hace con condiciones. Nada de esto está oculto en la interf
 
 ## Requiere infraestructura que no existe en este entorno (BLOCKED_EXTERNAL)
 
-1. **Supabase no conectado.** El esquema, las políticas y las funciones están escritas y verificadas estáticamente; su efecto real no se ha ejecutado. 24 tests de integración esperan credenciales (`npm run test:supabase`).
+1. ~~Supabase no conectado~~ **Cerrado 2026-08-23:** proyecto remoto conectado, schema aplicado, `npm run test:supabase` 24/24.
 2. **Modelo de IA no ejecutado.** Todos los prompts, esquemas y reglas están probados con salidas simuladas. La calidad real (cobertura, precisión, preguntas) se mide con `npm run benchmark` al tener `ANTHROPIC_API_KEY`; hasta entonces, los umbrales del benchmark son objetivos, no resultados.
 3. **Sin prueba en navegador ni móvil.** React Flow (canvas), Web Speech (voz) y MediaRecorder no corren en Node. Las garantías de UX verificadas por código (44 px, 17 px, foco, etiquetas, reduced-motion) no sustituyen la prueba con tres personas.
 4. **Piloto RENASER no realizado.** No hay datos reales en el repositorio.

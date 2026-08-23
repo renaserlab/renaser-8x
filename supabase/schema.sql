@@ -272,12 +272,12 @@ alter table process_nodes add column if not exists evidencia text;
 alter table process_nodes add column if not exists estandar text;
 alter table process_nodes add column if not exists know_how_id uuid references know_how(id) on delete set null;
 alter table know_how add column if not exists process_node_id uuid;
-do $ begin
+do $$ begin
   alter table know_how add constraint know_how_process_fk foreign key (process_id) references processes(id) on delete set null;
-exception when duplicate_object then null; end $;
-do $ begin
+exception when duplicate_object then null; end $$;
+do $$ begin
   alter table know_how add constraint know_how_node_fk foreign key (process_node_id) references process_nodes(id) on delete set null;
-exception when duplicate_object then null; end $;
+exception when duplicate_object then null; end $$;
 
 create table if not exists process_edges (
   id uuid primary key default gen_random_uuid(),
@@ -476,7 +476,7 @@ $$;
 -- Tope global (13.2): no se toma nada si ya hay max_global corriendo (suma de todos los workers).
 drop function if exists take_job(int);
 create or replace function take_job(lease_minutes int default 10, max_pesados_por_empresa int default 2, max_global int default 12)
-returns setof jobs language sql security definer as $
+returns setof jobs language sql security definer as $$
   update jobs
   set estado='corriendo', tomado_at=now(), intentos=intentos+1,
       lease_expira_at = now() + make_interval(mins => lease_minutes)
@@ -490,14 +490,14 @@ returns setof jobs language sql security definer as $
     limit 1
   )
   returning *;
-$;
+$$;
 
 -- Heartbeat (P1-13): el worker renueva el lease de sus trabajos vivos; un trabajo largo no se duplica.
 create or replace function heartbeat_jobs(ids uuid[], lease_minutes int default 10) returns int
-language sql security definer as $
+language sql security definer as $$
   with u as (update jobs set lease_expira_at = now() + make_interval(mins => lease_minutes) where id = any(ids) and estado='corriendo' returning 1)
   select count(*)::int from u;
-$;
+$$;
 
 create or replace function recover_stale_jobs() returns int
 language plpgsql security definer as $$
@@ -626,9 +626,9 @@ create policy fuentes_cliente on storage.objects for all
 
 -- Limpieza de archivos huérfanos (P2-04): la API la llama al borrar una empresa.
 create or replace function archivos_de_empresa(p_company_id uuid) returns setof text
-language sql security definer as $
+language sql security definer as $$
   select name from storage.objects where bucket_id = 'fuentes' and (storage.foldername(name))[1] = p_company_id::text;
-$;
+$$;
 revoke execute on function archivos_de_empresa(uuid) from public, anon, authenticated;
 grant execute on function archivos_de_empresa(uuid) to service_role;
 
@@ -677,7 +677,7 @@ grant select on participants_cliente to authenticated;
 -- Si una conexión apunta a un nodo inexistente → exception → rollback completo.
 
 create or replace function guardar_proceso(p_process_id uuid, p_nombre text, p_area text, p_nodos jsonb, p_edges jsonb)
-returns jsonb language plpgsql security definer set search_path = public as $
+returns jsonb language plpgsql security definer set search_path = public as $$
 declare
   n jsonb; e jsonb;
   mapa jsonb := '{}'::jsonb;
@@ -723,7 +723,7 @@ begin
   end loop;
 
   return mapa;
-end $;
+end $$;
 
 -- ============ PERMISOS DE FUNCIONES (P0-01) ============
 -- Las RPC de la cola y el guardado solo las llama el servidor con la service role. Nunca el navegador.

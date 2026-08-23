@@ -12,7 +12,7 @@ Fecha: 2026-08-23 · Commit: ver `git log` · Versión: 1.0.0-rc.1 (no se etique
 |---|---|---|
 | 1 | P0 = 0 y P1 bloqueantes = 0; typecheck, lint, build, vitest | **PASS** — P0 0 · P1 bloqueantes 0 · tsc 0 · eslint 0 · build 0 · 238 tests pass, 0 fail |
 | 2 | Seguridad crítica = 0 pendientes antes de Supabase | **PASS** — P2-17 (token en URL) y P2-18 (vistas) reclasificados y cerrados/justificados; ver V1_SECURITY_REPORT |
-| 3 | Tests Supabase críticos = 100 % | **BLOCKED_EXTERNAL** — 24 tests escritos en `tests/supabase/integracion.test.ts`; corren con `npm run test:supabase` al tener credenciales |
+| 3 | Tests Supabase críticos = 100 % | **PASS (2026-08-23)** — 24/24 contra el proyecto remoto (`npm run test:supabase`). Ver SUPABASE_READINESS.md para los fallos reales corregidos |
 | 4 | Sin pérdida de jobs, sin mezcla, sin errores silenciosos, sin deadlock, UI no bloqueada, P0 = 0 | **PASS (simulado)** — 2010 trabajos de 30 empresas: 0 perdidos, 0 fallidos, 0 mezclados; 7 escenarios de recuperación; ver V1_PERFORMANCE_REPORT |
 
 ## Fase por fase
@@ -22,8 +22,8 @@ Fecha: 2026-08-23 · Commit: ver `git log` · Versión: 1.0.0-rc.1 (no se etique
 | 1 P1 | 22 P1 clasificados; 20 cerrados en código; 2 no bloqueantes a backlog (ver tabla) | PASS |
 | 2 endurecimiento | P2-06 (401 en API), P2-10/P1-22 (borrado), P2-12 (seguimiento extrae), P2-17 (token fuera de URL: sessionStorage + cabecera), P2-18 (justificado), P2-04 (archivos huérfanos) | PASS |
 | 3 Supabase prep | `schema.sql` único, orden auditado (extensiones → tablas → índices → vista → funciones → trigger → helpers → RLS → vistas seguras → función atómica → grants → storage → realtime). FK de `know_how` a `processes` añadida tras crear `processes`. `drop function take_job(int)` antes del nuevo. | PASS |
-| 4 conectar | `.env.example` completo; nada hardcodeado; logs redactan tokens | BLOCKED_EXTERNAL (credenciales) |
-| 5 tests Supabase | 24 tests reales: AUTH, RLS A/B, dueño→empleado, columnas internas, tokens, RPC anon/auth/service, findings pendiente/aprobado, storage A→B, transacción, queue concurrente, idempotencia, vistas, trigger, realtime | BLOCKED_EXTERNAL |
+| 4 conectar | `.env.example` completo; nada hardcodeado; logs redactan tokens | PASS (2026-08-23, proyecto remoto; schema aplicado) |
+| 5 tests Supabase | 24 tests reales: AUTH, RLS A/B, dueño→empleado, columnas internas, tokens, RPC anon/auth/service, findings pendiente/aprobado, storage A→B, transacción, queue concurrente, idempotencia, vistas, trigger, realtime | PASS 24/24 (2026-08-23) |
 | 6 demo e2e | `tests/demo-auditoria.test.ts`: CREATE→…→DELIVERABLE con lógica real, IA simulada | PASS |
 | 7 auditoría demo | cobertura 1.0 · precisión 1.0 · falsos positivos 0 · causa raíz 1.0 · preservación 1.0 · contradicciones 1.0 · preguntas 1.0 | PASS (sobre salidas simuladas; no mide al modelo) |
 | 8 IA real | `npm run benchmark` (scripts/benchmark-ia.ts) compara modelo real vs esperado y registra costo/latencia | BLOCKED_EXTERNAL (ANTHROPIC_API_KEY) |
@@ -73,8 +73,8 @@ No bloqueantes que quedan en backlog: Realtime para clientes (sondeo funciona), 
 | P0 = 0 | PASS |
 | P1 bloqueantes = 0 | PASS |
 | tests locales críticos = 100 % | PASS (238/238) |
-| tests Supabase críticos = 100 % | BLOCKED_EXTERNAL (24 escritos, 0 ejecutados) |
-| aislamiento multiempresa | PASS estático (RLS + rutas) · integración BLOCKED |
+| tests Supabase críticos = 100 % | PASS (24/24, 2026-08-23) |
+| aislamiento multiempresa | PASS (estático + integración real 2026-08-23) |
 | participantes | PASS (token hash/expira/revoca/usos, sesión propia, 403/404) |
 | know-how | PASS |
 | sueño del dueño | PASS (banco + cobertura + patrón sueno_vs_empresa) |

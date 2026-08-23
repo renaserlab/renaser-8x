@@ -70,7 +70,11 @@ afterAll(async () => {
     await admin.storage.from("fuentes").remove([`${ids[`emp${k}`]}/prueba-${sufijo}.txt`]);
     await admin.from("companies").delete().eq("id", ids[`emp${k}`]);
   }
-  for (const u of ["consultor", "duenoA", "duenoB"]) await admin.auth.admin.deleteUser(ids[u]);
+  // public.users no tiene FK a auth.users (el trigger solo inserta): se borra explícitamente.
+  for (const u of ["consultor", "duenoA", "duenoB"]) {
+    await admin.from("users").delete().eq("id", ids[u]);
+    await admin.auth.admin.deleteUser(ids[u]);
+  }
 });
 
 d("AUTH / RLS · aislamiento entre empresas", () => {
@@ -247,7 +251,8 @@ d("REALTIME", () => {
     const { data: j } = await admin.from("jobs").insert({ company_id: ids.empA, tipo: "evaluar", idempotency_key: `rt-${sufijo}` }).select("id").single();
     const recibido = new Promise<boolean>((resolve) => {
       const ch = consultor.channel(`t-${sufijo}`).on("postgres_changes", { event: "UPDATE", schema: "public", table: "jobs", filter: `id=eq.${j!.id}` }, () => { consultor.removeChannel(ch); resolve(true); }).subscribe(async (st) => {
-        if (st === "SUBSCRIBED") await admin.from("jobs").update({ progreso: "ping" }).eq("id", j!.id);
+        // El servidor registra la suscripción unos cientos de ms después del SUBSCRIBED: un UPDATE inmediato se pierde (verificado).
+        if (st === "SUBSCRIBED") { await new Promise((r) => setTimeout(r, 1500)); await admin.from("jobs").update({ progreso: "ping" }).eq("id", j!.id); }
       });
       setTimeout(() => resolve(false), 10_000);
     });
