@@ -158,6 +158,8 @@ create table if not exists interview_responses (
   created_at timestamptz default now(),
   respondido_at timestamptz
 );
+alter table interview_sessions add column if not exists bloques_cubiertos jsonb default '[]'::jsonb;
+
 create index if not exists interview_responses_session_idx on interview_responses (session_id, orden);
 
 create table if not exists know_how (

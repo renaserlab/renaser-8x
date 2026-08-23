@@ -57,6 +57,7 @@ export async function estadoParticipante(token: string) {
     activa,
     abierta: estado?.abierta ?? null,
     respondidas: estado?.respondidas.length ?? 0,
+    cobertura: estado?.cobertura ?? null,
     progreso: estado?.job?.progreso ?? null,
     pendienteTranscripcion: estado?.pendienteTranscripcion ?? false,
     transcriptor: hayTranscriptor(),

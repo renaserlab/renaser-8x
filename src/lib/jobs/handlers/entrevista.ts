@@ -32,11 +32,17 @@ export async function handleEntrevistaSiguiente(job: Job) {
   const ajenas = (todas ?? []).filter((r) => (r.interview_sessions as unknown as { participant_id: string }).participant_id !== ses.participant_id);
 
   const claims = await claimsDeEmpresa(job.company_id);
+  const [{ data: khTodo }, { data: procesosTodo }, { data: fuentesTodo }] = await Promise.all([
+    sb.from("know_how").select("puesto,situacion,senal,regla_practica").eq("company_id", job.company_id).limit(30),
+    sb.from("processes").select("id,nombre,area, process_nodes(etiqueta,problema)").eq("company_id", job.company_id).eq("version", "as_is").limit(10),
+    sb.from("sources").select("nombre,tipo,estado").eq("company_id", job.company_id).order("created_at", { ascending: false }).limit(25),
+  ]);
   const porValidar = claims.filter((c) => c.estado === "contradicho" || (c.estado === "sin_verificar" && c.prioridad_validacion));
   const porPilar: Record<string, number> = {};
   for (const c of claims) if (c.estado === "confirmado" && c.pilar) porPilar[c.pilar] = (porPilar[c.pilar] ?? 0) + 1;
   const desconocidos = ["personas", "procesos", "producto", "marketing"].filter((p) => (porPilar[p] ?? 0) < 5);
-  const sinCubrir = bloquesSinCubrir(ses.tipo, deEstaSesion);
+  const yaCubiertos = ((ses as { bloques_cubiertos?: string[] | null }).bloques_cubiertos ?? []) as string[];
+  const sinCubrir = bloquesSinCubrir(ses.tipo, deEstaSesion, yaCubiertos);
 
   const p = ses.participants as { nombre: string; puesto: string | null; rol: string | null; antiguedad: string | null };
   const contexto = [
@@ -50,11 +56,23 @@ export async function handleEntrevistaSiguiente(job: Job) {
     `AFIRMACIONES POR VALIDAR O CONTRADICHAS (${porValidar.length}):`,
     claimsComoTexto(porValidar.slice(0, 40)) || "(ninguna)",
     `PILARES CON INFORMACIÓN INSUFICIENTE: ${desconocidos.join(", ") || "ninguno"}`,
+    `LO QUE LA EMPRESA YA MOSTRÓ (no vuelvas a preguntar nada de esto):`,
+    [
+      `- Caleta capturada (${khTodo?.length ?? 0}): ${(khTodo ?? []).map((k) => `${k.puesto}: ${k.situacion ?? k.regla_practica ?? k.senal ?? ""}`.slice(0, 90)).join(" · ") || "ninguna"}`,
+      `- Procesos dibujados (${procesosTodo?.length ?? 0}): ${(procesosTodo ?? []).map((p) => { const probs = ((p.process_nodes as { etiqueta: string; problema: string | null }[]) ?? []).filter((n) => n.problema).map((n) => n.etiqueta); return `${p.nombre}${probs.length ? ` (trabas: ${probs.slice(0, 3).join(", ")})` : ""}`; }).join(" · ") || "ninguno"}`,
+      `- Fuentes entregadas (${fuentesTodo?.length ?? 0}): ${(fuentesTodo ?? []).map((f) => `${f.nombre} [${f.estado}]`).join(" · ") || "ninguna"}`,
+    ].join("\n"),
     `TIPOS CRÍTICOS QUE DEBEN QUEDAR VERIFICADOS: ${TIPOS_CRITICOS.join(", ")}`,
   ].join("\n\n");
 
   const r = await correrEntrevistador(contexto);
   await registrarLlamada(job.company_id, job.id, "entrevistador", r);
+
+  // El entrevistador puede declarar areas ya comprendidas por lo dicho: se cierran sin preguntar de mas.
+  const clavesSesion = new Set((BLOQUES[ses.tipo] ?? []).map((b) => b.clave));
+  const nuevosCubiertos = (r.data.bloques_cubiertos ?? []).filter((c) => clavesSesion.has(c) && !yaCubiertos.includes(c));
+  const cubiertos = [...yaCubiertos, ...nuevosCubiertos];
+  if (nuevosCubiertos.length) await sb.from("interview_sessions").update({ bloques_cubiertos: cubiertos }).eq("id", sessionId);
 
   const { data: ult } = await sb.from("interview_responses").select("orden").eq("session_id", sessionId).order("orden", { ascending: false }).limit(1);
   let orden = (ult?.[0]?.orden ?? 0) + 1;
@@ -62,7 +80,8 @@ export async function handleEntrevistaSiguiente(job: Job) {
   const clavesValidas = new Set((BLOQUES[ses.tipo] ?? []).map((b) => b.clave));
   let preguntas = r.data.preguntas.slice(0, 3);
   // Cobertura en código: si el modelo devolvió vacío pero faltan bloques, se inserta la primera pregunta del banco.
-  if (preguntas.length === 0 && sinCubrir.length) preguntas = [{ texto: sinCubrir[0].preguntas[0], bloque: sinCubrir[0].clave, pilar: null, origen_claim_id: null }];
+  const faltanTras = bloquesSinCubrir(ses.tipo, deEstaSesion, cubiertos);
+  if (preguntas.length === 0 && faltanTras.length) preguntas = [{ texto: faltanTras[0].preguntas[0], bloque: faltanTras[0].clave, pilar: null, origen_claim_id: null }];
   for (const q of preguntas) {
     await sb.from("interview_responses").insert({
       session_id: sessionId,
@@ -73,7 +92,7 @@ export async function handleEntrevistaSiguiente(job: Job) {
       orden: orden++,
     });
   }
-  const cerrar = preguntas.length === 0 && puedeCerrarSesion(ses.tipo, deEstaSesion);
+  const cerrar = preguntas.length === 0 && puedeCerrarSesion(ses.tipo, deEstaSesion, cubiertos);
   if (cerrar) {
     await sb.from("interview_sessions").update({ estado: "completa" }).eq("id", sessionId);
     if (["personal", "lider", "know_how"].includes(ses.tipo)) {

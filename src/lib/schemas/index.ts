@@ -59,6 +59,8 @@ export const SalidaEntrevistador = z.object({
     )
     .max(3),
   sesion_completa: z.boolean().optional(),
+  // Claves de bloques sin cubrir que en realidad YA quedaron comprendidos con lo dicho hasta ahora.
+  bloques_cubiertos: z.array(z.string()).optional(),
 });
 export type SalidaEntrevistador = z.infer<typeof SalidaEntrevistador>;
 

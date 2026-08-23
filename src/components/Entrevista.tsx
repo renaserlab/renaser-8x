@@ -4,10 +4,13 @@ import { BotonGrabar } from "@/components/voz/BotonGrabar";
 import { BotonEscuchar } from "@/components/voz/BotonEscuchar";
 import { TIPO_SESION } from "@/lib/textos";
 
+export type CoberturaEntrevista = { porcentaje: number; areas: { clave: string; nombre: string; cubierta: boolean }[] };
+
 export type EstadoEntrevista = {
   activa: { id: string; tipo: string; estado: string } | null;
   abierta: { id: string; pregunta: string; bloque: string | null } | null;
   respondidas: number;
+  cobertura?: CoberturaEntrevista | null;
   progreso: string | null;
   pendienteTranscripcion?: boolean;
   terminado?: boolean;
@@ -73,15 +76,26 @@ export function Entrevista({ cargar, responder, titulo, transcriptor = false }: 
     return (
       <div className="panel p-6 aparece">
         <p className="t-seccion">Listo. Gracias por tu tiempo.</p>
-        <p className="t-cuerpo mt-2" style={{ color: "var(--grafito)" }}>Respondiste {estado.respondidas} preguntas. Con eso ya podemos trabajar.</p>
+        <p className="t-cuerpo mt-2" style={{ color: "var(--grafito)" }}>Con lo que nos contaste ya comprendimos lo que necesitábamos. Si aparece algo más, te avisamos por aquí.</p>
       </div>
     );
 
+  const cob = estado.cobertura ?? null;
+
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <span className="t-etiqueta">{titulo ?? TIPO_SESION[estado.activa.tipo] ?? "Conversación"}</span>
-        <span className="t-dato" style={{ color: "var(--grafito)" }}>{estado.respondidas} respondidas</span>
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between gap-4">
+          <span className="t-etiqueta">{titulo ?? TIPO_SESION[estado.activa.tipo] ?? "Conversación"}</span>
+          {cob && <span className="t-dato" style={{ color: "var(--grafito)" }}>{cob.porcentaje >= 100 ? "Comprendido" : cob.porcentaje >= 70 ? "Ya comprendimos casi todo" : `Comprendido ${cob.porcentaje}%`}</span>}
+        </div>
+        {cob && cob.areas.length > 0 && (
+          <div aria-hidden="true" style={{ display: "flex", gap: 3 }}>
+            {cob.areas.map((a) => (
+              <span key={a.clave} title={a.nombre} style={{ flex: 1, height: 3, borderRadius: 2, background: a.cubierta ? "var(--marca)" : "var(--linea)", transition: "background var(--dur)" }} />
+            ))}
+          </div>
+        )}
       </div>
 
       {estado.abierta ? (

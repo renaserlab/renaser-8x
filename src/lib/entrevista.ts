@@ -1,3 +1,4 @@
+import { coberturaSesion } from "@/lib/rules/cobertura";
 import { supabaseAdmin } from "./supabase/admin";
 import { encolar, PRIORIDAD, claveIdempotente } from "./jobs/queue";
 
@@ -41,6 +42,8 @@ export async function estadoSesion(session_id: string) {
     sb.from("jobs").select("id,estado,progreso,error").eq("tipo", "entrevista_siguiente").contains("payload", { session_id }).order("created_at", { ascending: false }).limit(1).maybeSingle(),
   ]);
   const abierta = (resp ?? []).find((r) => r.respuesta === null) ?? null;
+  const respondidasLista = (resp ?? []).filter((r) => r.respuesta !== null);
+  const cobertura = ses ? coberturaSesion(ses.tipo, respondidasLista, ((ses as { bloques_cubiertos?: string[] | null }).bloques_cubiertos ?? []) as string[]) : null;
   const pendienteTranscripcion = (resp ?? []).find((r) => r.respuesta === null && (r as { respuesta_audio_path?: string }).respuesta_audio_path);
-  return { sesion: ses, abierta, respondidas: (resp ?? []).filter((r) => r.respuesta !== null), job, pendienteTranscripcion: !!pendienteTranscripcion };
+  return { sesion: ses, abierta, respondidas: respondidasLista, cobertura, job, pendienteTranscripcion: !!pendienteTranscripcion };
 }

@@ -42,17 +42,33 @@ export const BLOQUES: Record<string, Bloque[]> = {
 
 export const MINIMO_POR_BLOQUE = 1;
 
-/** Bloques del tipo de sesión que todavía no tienen ninguna respuesta. */
-export function bloquesSinCubrir(tipo: string, respondidas: { bloque: string | null }[]): Bloque[] {
+/**
+ * Bloques del tipo de sesión que todavía no están cubiertos. Un bloque se cubre respondiendo una pregunta
+ * suya O cuando el entrevistador declara que lo ya dicho lo cubre (una respuesta rica puede cubrir varias
+ * áreas: el sistema trabaja por cobertura de realidad, no por cuestionario).
+ */
+export function bloquesSinCubrir(tipo: string, respondidas: { bloque: string | null }[], cubiertos: string[] = []): Bloque[] {
   const req = BLOQUES[tipo] ?? [];
   const conteo = new Map<string, number>();
   for (const r of respondidas) if (r.bloque) conteo.set(r.bloque, (conteo.get(r.bloque) ?? 0) + 1);
-  return req.filter((b) => b.preguntas.length > 0 && (conteo.get(b.clave) ?? 0) < MINIMO_POR_BLOQUE);
+  const extra = new Set(cubiertos);
+  return req.filter((b) => b.preguntas.length > 0 && (conteo.get(b.clave) ?? 0) < MINIMO_POR_BLOQUE && !extra.has(b.clave));
 }
 
 /** La sesión puede cerrarse solo si no queda ningún bloque sin cubrir (o si es de validación). */
-export function puedeCerrarSesion(tipo: string, respondidas: { bloque: string | null }[]): boolean {
-  return bloquesSinCubrir(tipo, respondidas).length === 0;
+export function puedeCerrarSesion(tipo: string, respondidas: { bloque: string | null }[], cubiertos: string[] = []): boolean {
+  return bloquesSinCubrir(tipo, respondidas, cubiertos).length === 0;
+}
+
+export type CoberturaSesion = { porcentaje: number; areas: { clave: string; nombre: string; cubierta: boolean }[] };
+
+/** Cobertura de comprensión de la sesión: qué áreas ya entendimos, en % — lo que ve la persona en vez de un contador. */
+export function coberturaSesion(tipo: string, respondidas: { bloque: string | null }[], cubiertos: string[] = []): CoberturaSesion {
+  const req = (BLOQUES[tipo] ?? []).filter((b) => b.preguntas.length > 0);
+  if (!req.length) return { porcentaje: 100, areas: [] };
+  const faltan = new Set(bloquesSinCubrir(tipo, respondidas, cubiertos).map((b) => b.clave));
+  const areas = req.map((b) => ({ clave: b.clave, nombre: b.nombre, cubierta: !faltan.has(b.clave) }));
+  return { porcentaje: Math.round((areas.filter((a) => a.cubierta).length / areas.length) * 100), areas };
 }
 
 /** Texto del banco para el prompt, con la clave exacta que debe devolver el modelo en `bloque`. */
