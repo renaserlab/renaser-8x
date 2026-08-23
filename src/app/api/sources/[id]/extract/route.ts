@@ -1,0 +1,30 @@
+import { protegido, ok, fallo, exigirAcceso } from "@/lib/api";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+import { encolar, PRIORIDAD } from "@/lib/jobs/queue";
+
+type Ctx = { params: Promise<{ id: string }> };
+
+/** Re-encola la extracción de una fuente (por ejemplo, tras un fallo). */
+export const POST = protegido<Ctx>({}, async (perfil, _req, ctx) => {
+  const { id } = await ctx.params;
+  const sb = supabaseAdmin();
+  const { data: s } = await sb.from("sources").select("id,company_id").eq("id", id).single();
+  if (!s) return fallo("Fuente no encontrada", 404);
+  await exigirAcceso(perfil, s.company_id);
+  await sb.from("claims").delete().eq("source_id", id);
+  await sb.from("source_fragments").delete().eq("source_id", id);
+  await sb.from("jobs").delete().eq("tipo", "extraer").contains("payload", { source_id: id });
+  const job = await encolar({ company_id: s.company_id, tipo: "extraer", payload: { source_id: id }, prioridad: PRIORIDAD.extraer });
+  return ok({ job_id: job.id });
+});
+
+export const DELETE = protegido<Ctx>({}, async (perfil, _req, ctx) => {
+  const { id } = await ctx.params;
+  const sb = supabaseAdmin();
+  const { data: s } = await sb.from("sources").select("id,company_id,storage_path").eq("id", id).single();
+  if (!s) return fallo("Fuente no encontrada", 404);
+  await exigirAcceso(perfil, s.company_id);
+  if (s.storage_path) await sb.storage.from("fuentes").remove([s.storage_path]);
+  await sb.from("sources").delete().eq("id", id);
+  return ok({ eliminada: true });
+});
