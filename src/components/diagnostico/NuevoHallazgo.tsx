@@ -52,12 +52,12 @@ export function NuevoHallazgo({ companyId }: { companyId: string }) {
           ))}
         </select>
       </div>
-      <input className="campo" placeholder="Título" value={f.titulo} onChange={(e) => setF({ ...f, titulo: e.target.value })} />
-      <textarea className="campo" rows={2} placeholder="Causa raíz" value={f.causa_raiz} onChange={(e) => setF({ ...f, causa_raiz: e.target.value })} />
-      <textarea className="campo" rows={2} placeholder="Recomendación" value={f.recomendacion} onChange={(e) => setF({ ...f, recomendacion: e.target.value })} />
+      <input className="campo" placeholder="Título" aria-label="Título" value={f.titulo} onChange={(e) => setF({ ...f, titulo: e.target.value })} />
+      <textarea className="campo" rows={2} placeholder="Causa raíz" aria-label="Causa raíz" value={f.causa_raiz} onChange={(e) => setF({ ...f, causa_raiz: e.target.value })} />
+      <textarea className="campo" rows={2} placeholder="Recomendación" aria-label="Recomendación" value={f.recomendacion} onChange={(e) => setF({ ...f, recomendacion: e.target.value })} />
       <div>
         <p className="t-etiqueta mb-2">Evidencia ({sel.length} elegidas)</p>
-        <input className="campo mb-2" placeholder="Buscar definición" value={busca} onChange={(e) => setBusca(e.target.value)} />
+        <input className="campo mb-2" placeholder="Buscar definición" aria-label="Buscar definición" value={busca} onChange={(e) => setBusca(e.target.value)} />
         <ul className="flex flex-col gap-1" style={{ maxHeight: 260, overflow: "auto" }}>
           {visibles.map((c) => (
             <li key={c.id}>

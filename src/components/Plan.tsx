@@ -100,9 +100,9 @@ export function Plan({ companyId, acciones, cortes, modo }: { companyId: string;
         )}
         {modo === "consultor" && (
           <div className="panel p-4 flex flex-col gap-3">
-            <input className="campo" placeholder="Qué se hizo" value={corte.que_se_hizo} onChange={(e) => setCorte({ ...corte, que_se_hizo: e.target.value })} />
-            <input className="campo" placeholder="Qué se trabó" value={corte.que_se_trabo} onChange={(e) => setCorte({ ...corte, que_se_trabo: e.target.value })} />
-            <input className="campo" placeholder="Qué indicador se movió (y cuánto)" value={corte.indicadores} onChange={(e) => setCorte({ ...corte, indicadores: e.target.value })} />
+            <input className="campo" placeholder="Qué se hizo" aria-label="Qué se hizo" value={corte.que_se_hizo} onChange={(e) => setCorte({ ...corte, que_se_hizo: e.target.value })} />
+            <input className="campo" placeholder="Qué se trabó" aria-label="Qué se trabó" value={corte.que_se_trabo} onChange={(e) => setCorte({ ...corte, que_se_trabo: e.target.value })} />
+            <input className="campo" placeholder="Qué indicador se movió (y cuánto)" aria-label="Qué indicador se movió (y cuánto)" value={corte.indicadores} onChange={(e) => setCorte({ ...corte, indicadores: e.target.value })} />
             <button className="boton boton--secundario" onClick={registrarCorte} disabled={!corte.que_se_hizo && !corte.que_se_trabo}>Registrar corte</button>
           </div>
         )}

@@ -21,6 +21,8 @@ export async function proxy(request: NextRequest) {
   const esPublica = PUBLICAS.some((p) => path === p || path.startsWith(p + "/"));
 
   if (!data.user && !esPublica) {
+    // P2-06: las API responden 401 JSON, no un redirect HTML.
+    if (path.startsWith("/api/")) return NextResponse.json({ error: "Tienes que entrar primero." }, { status: 401 });
     const url = request.nextUrl.clone();
     url.pathname = "/entrar";
     url.searchParams.set("volver", path);

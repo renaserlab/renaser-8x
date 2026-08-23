@@ -6,7 +6,7 @@ import { pedir } from "@/lib/cliente";
 type Est = { sesion: { id: string; tipo: string; estado: string } | null; abierta: { id: string; pregunta: string; bloque: string | null } | null; respondidas: { id: string; pregunta: string; respuesta: string }[]; job: { progreso: string | null } | null; pendienteTranscripcion: boolean };
 
 /** El consultor conduce una sesión (o la responde en nombre del cliente, p. ej. en una reunión). */
-export function EntrevistaConsultor({ companyId, sessionId }: { companyId: string; sessionId: string }) {
+export function EntrevistaConsultor({ companyId, sessionId, transcriptor = false }: { companyId: string; sessionId: string; transcriptor?: boolean }) {
   const cargar = useCallback(async (): Promise<EstadoEntrevista> => {
     const e = await pedir<Est>(`/api/companies/${companyId}/interview/next`, { json: { session_id: sessionId } });
     return { activa: e.sesion, abierta: e.abierta, respondidas: e.respondidas.length, progreso: e.job?.progreso ?? null, pendienteTranscripcion: e.pendienteTranscripcion, terminado: e.sesion?.estado === "completa" };
@@ -21,5 +21,5 @@ export function EntrevistaConsultor({ companyId, sessionId }: { companyId: strin
     if (!r.ok) throw new Error(((await r.json()) as { error?: string }).error ?? "No se pudo guardar.");
   };
 
-  return <Entrevista cargar={cargar} responder={responder} />;
+  return <Entrevista cargar={cargar} responder={responder} transcriptor={transcriptor} />;
 }

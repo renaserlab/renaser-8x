@@ -1,17 +1,12 @@
 import { protegido, ok, fallo, exigirAcceso } from "@/lib/api";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { encolar, PRIORIDAD, claveIdempotente } from "@/lib/jobs/queue";
+import { validarArchivo, rutaStorage } from "@/lib/archivos";
+import { hayTranscriptor } from "@/lib/ai";
 
-const MAX_MB = 30;
+const TIPOS_TEXTO = new Set(["documento", "observacion", "dato"]);
 
-function tipoDesdeMime(mime: string, nombre: string): "documento" | "foto" | "audio" | "dato" {
-  if (mime.startsWith("image/")) return "foto";
-  if (mime.startsWith("audio/") || /\.(ogg|opus|m4a|mp3|wav|webm)$/i.test(nombre)) return "audio";
-  if (mime.includes("csv") || mime.includes("spreadsheet") || mime.includes("excel") || /\.(csv|xlsx?)$/i.test(nombre)) return "dato";
-  return "documento";
-}
-
-/** multipart: company_id, archivo (File) | texto, nombre?, fecha_origen?, tipo? */
+/** multipart: company_id, archivo (File) | texto, nombre?, fecha_origen?, tipo?  ·  14.2: MIME, extensión, tamaño, nombre y ruta validados en código. */
 export const POST = protegido({}, async (perfil, req) => {
   const form = await req.formData();
   const companyId = String(form.get("company_id") ?? "");
@@ -20,30 +15,27 @@ export const POST = protegido({}, async (perfil, req) => {
   const sb = supabaseAdmin();
   const origen = perfil.rol === "consultor" ? "consultor" : "cliente";
   const fecha = String(form.get("fecha_origen") ?? "") || null;
+  if (fecha && !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return fallo("La fecha no es válida.");
   const archivo = form.get("archivo");
   const texto = String(form.get("texto") ?? "").trim();
-  let nombre = String(form.get("nombre") ?? "").trim();
+  let nombre = String(form.get("nombre") ?? "").trim().slice(0, 160);
 
   let row: { id: string } | null = null;
   if (archivo instanceof File) {
-    if (archivo.size > MAX_MB * 1024 * 1024) return fallo(`El archivo pesa más de ${MAX_MB} MB. Divídelo o súbelo como fotos.`);
-    const mime = archivo.type || "application/octet-stream";
-    const tipo = (String(form.get("tipo") ?? "") || tipoDesdeMime(mime, archivo.name)) as "documento" | "foto" | "audio" | "dato";
-    if (mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || mime === "application/msword") {
-      return fallo("No pudimos leer ese Word. Expórtalo a PDF y súbelo de nuevo.");
-    }
-    if (tipo === "dato" && !mime.includes("csv") && !mime.startsWith("text/")) {
-      return fallo("No pudimos leer ese Excel. Guárdalo como CSV (Archivo → Guardar como → CSV) y súbelo de nuevo.");
-    }
-    nombre = nombre || archivo.name;
-    const path = `${companyId}/${Date.now()}-${archivo.name.replace(/[^\w.\-]+/g, "_")}`;
-    const { error: e1 } = await sb.storage.from("fuentes").upload(path, archivo, { contentType: mime, upsert: false });
+    const v = validarArchivo({ nombre: archivo.name, mime: archivo.type, bytes: archivo.size });
+    if (!v.ok) return fallo(v.error);
+    if (v.tipo === "audio" && !hayTranscriptor()) return fallo("Por ahora no podemos escuchar audios. Escribe lo que dice la nota o usa el micrófono del navegador.");
+    nombre = nombre || v.nombre;
+    const path = rutaStorage(companyId, v.nombre);
+    const { error: e1 } = await sb.storage.from("fuentes").upload(path, archivo, { contentType: v.mime, upsert: false });
     if (e1) return fallo(`No pudimos guardar el archivo: ${e1.message}`, 500);
-    const { data, error } = await sb.from("sources").insert({ company_id: companyId, tipo, nombre, fecha_origen: fecha, storage_path: path, mime, origen }).select("id").single();
+    const { data, error } = await sb.from("sources").insert({ company_id: companyId, tipo: v.tipo, nombre, fecha_origen: fecha, storage_path: path, mime: v.mime, origen }).select("id").single();
     if (error) return fallo(error.message, 500);
     row = data;
   } else if (texto) {
-    const tipo = (String(form.get("tipo") ?? "") || "observacion") as string;
+    if (texto.length > 200_000) return fallo("El texto es demasiado largo. Súbelo como archivo.");
+    const tipoPedido = String(form.get("tipo") ?? "");
+    const tipo = TIPOS_TEXTO.has(tipoPedido) ? tipoPedido : "observacion";
     nombre = nombre || `Nota del ${new Date().toLocaleDateString("es-PE")}`;
     const { data, error } = await sb.from("sources").insert({ company_id: companyId, tipo, nombre, fecha_origen: fecha ?? new Date().toISOString().slice(0, 10), contenido: texto, mime: "text/plain", origen }).select("id").single();
     if (error) return fallo(error.message, 500);
@@ -53,8 +45,6 @@ export const POST = protegido({}, async (perfil, req) => {
   }
 
   const job = await encolar({ company_id: companyId, tipo: "extraer", payload: { source_id: row!.id }, prioridad: PRIORIDAD.extraer, idempotency_key: claveIdempotente(["extraer-raiz", row!.id]) });
-  if ((await sb.from("companies").select("etapa").eq("id", companyId).single()).data?.etapa === "admision") {
-    await sb.from("companies").update({ etapa: "levantamiento" }).eq("id", companyId);
-  }
+  await sb.from("companies").update({ etapa: "levantamiento" }).eq("id", companyId).eq("etapa", "admision");
   return ok({ source_id: row!.id, job_id: job.id }, 201);
 });

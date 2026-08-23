@@ -8,7 +8,7 @@ type Ses = { id: string; tipo: string; estado: string };
 type Est = { sesion: Ses | null; abierta: { id: string; pregunta: string; bloque: string | null } | null; respondidas: { id: string }[]; job: { progreso: string | null } | null; pendienteTranscripcion: boolean };
 
 /** La conversación del dueño: sus sesiones, una a la vez. */
-export function ConversacionCliente({ companyId, sesiones }: { companyId: string; sesiones: Ses[] }) {
+export function ConversacionCliente({ companyId, sesiones, transcriptor = false }: { companyId: string; sesiones: Ses[]; transcriptor?: boolean }) {
   const pendientes = sesiones.filter((s) => s.estado !== "completa");
   const [activa, setActiva] = useState<Ses | null>(pendientes[0] ?? null);
 
@@ -47,7 +47,7 @@ export function ConversacionCliente({ companyId, sesiones }: { companyId: string
           ))}
         </div>
       )}
-      <Entrevista key={activa.id} cargar={cargar} responder={responder} titulo={TIPO_SESION[activa.tipo]} />
+      <Entrevista key={activa.id} cargar={cargar} responder={responder} titulo={TIPO_SESION[activa.tipo]} transcriptor={transcriptor} />
     </div>
   );
 }

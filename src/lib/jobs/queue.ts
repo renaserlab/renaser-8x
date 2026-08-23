@@ -22,6 +22,7 @@ export type TipoJob =
   | "generar_tobe"
   | "generar_sop"
   | "diagnosticar"
+  | "consolidar"
   | "planificar"
   | "redactar_entregables"
   | "evaluar_admision"

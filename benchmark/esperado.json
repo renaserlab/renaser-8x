@@ -1,0 +1,29 @@
+{
+  "_nota": "Set congelado (fase 12). Input: tests/fixtures/empresa-demo.ts (Frutas del Valle SAC). No editar sin versionar: cada cambio de prompt se mide contra esto.",
+  "version": "1.0.0",
+  "hallazgos": [
+    { "clave": "dependencia_descuentos", "patron": "dependencia_fundador", "pilar": "personas", "palabras": ["descuento", "dueño"], "impacto": "alto", "causa_palabras": ["política"] },
+    { "clave": "fruta_pasada_know_how", "patron": "personas_disfrazado_de_proceso", "pilar": "producto", "palabras": ["fruta", "Rosa"], "impacto": "alto", "causa_palabras": ["criterio", "escrito"] },
+    { "clave": "canal_unico", "patron": "canal_unico", "pilar": "marketing", "palabras": ["92%", "referid"], "impacto": "alto", "causa_palabras": ["captación"] },
+    { "clave": "cliente_real_vs_plan", "patron": "vision_obsoleta", "pilar": "marketing", "palabras": ["cliente", "local"], "impacto": "medio" },
+    { "clave": "sueno_vs_empresa", "patron": "sueno_vs_empresa", "pilar": "personas", "palabras": ["30 horas"], "impacto": "medio" },
+    { "clave": "fortaleza_rosa", "pilar": "producto", "palabras": ["Rosa", "textura"], "preserva": true }
+  ],
+  "fortalezas": ["fortaleza_rosa"],
+  "contradicciones": [
+    { "a": "c-meta-2022", "b": "c-dueno-meta" },
+    { "a": "c-cliente-2022", "b": "c-csv-cliente" },
+    { "a": "c-diego-descuentos", "b": "c-org-jefe" }
+  ],
+  "preguntas_minimas": [
+    { "clave": "dos_metas", "palabras": ["5 millones", "3 millones"] },
+    { "clave": "cliente_real", "palabras": ["cliente", "local"] },
+    { "clave": "quien_decide", "palabras": ["descuento", "decide"] }
+  ],
+  "falsos_positivos_prohibidos": [
+    ["incompetente"],
+    ["subir", "precio", "40%"],
+    ["despedir"],
+    ["contratar", "gerente de marketing"]
+  ]
+}

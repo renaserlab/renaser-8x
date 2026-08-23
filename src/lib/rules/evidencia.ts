@@ -1,6 +1,7 @@
 /**
- * Reglas de evidencia para hallazgos. Capítulo 11. Sin IA.
- * Extraídas del handler de diagnóstico para poder probarlas.
+ * Reglas de evidencia para hallazgos. Capítulo 11 y 1.11. Sin IA.
+ * Fuerza de fuente: STRONG / MEDIUM / WEAK. Un hallazgo ALTO exige dos fuentes independientes o una STRONG.
+ * Si no alcanza → NEEDS_VALIDATION (columna findings.requiere_validacion).
  */
 
 export type ClaimEvidencia = {
@@ -9,14 +10,28 @@ export type ClaimEvidencia = {
   participant_id: string | null;
   estado: string;
   source_tipo?: string | null; // 'documento' | 'foto' | 'audio' | 'entrevista' | 'dato' | 'observacion'
+  source_origen?: string | null; // 'cliente' | 'consultor'
+  participant_rol?: string | null;
 };
 
 export type Impacto = "alto" | "medio" | "bajo";
+export type Fuerza = "strong" | "medium" | "weak";
 export type ResultadoFiltro = { resultado: "pasa" | "no_pasa"; nota: string };
 export type Filtros = { proposito: ResultadoFiltro; sabiduria: ResultadoFiltro; excelencia: ResultadoFiltro };
 
-/** Fuentes fuertes y objetivas: datos operativos u observación directa. Una nota de seguimiento NO lo es. */
-export const FUENTES_OBJETIVAS = new Set(["dato"]);
+/**
+ * Fuerza de una fuente:
+ *  strong — dato operativo/transaccional; observación directa del consultor (gemba).
+ *  medium — documento o foto de documento vigente; entrevista del dueño o de un líder.
+ *  weak   — nota/observación escrita por el cliente sobre sí mismo; entrevista de una sola persona de primera línea sin respaldo; fuente sin fecha.
+ */
+export function fuerzaFuente(c: Pick<ClaimEvidencia, "source_tipo" | "source_origen" | "participant_rol">): Fuerza {
+  if (c.source_tipo === "dato") return "strong";
+  if (c.source_tipo === "observacion") return c.source_origen === "consultor" ? "strong" : "weak";
+  if (c.source_tipo === "documento" || c.source_tipo === "foto") return "medium";
+  if (c.source_tipo === "entrevista" || c.source_tipo === "audio") return c.participant_rol === "empleado" || !c.participant_rol ? "weak" : "medium";
+  return "weak";
+}
 
 /** Identidad de fuente independiente: una persona distinta o un documento distinto. */
 export function fuentesIndependientes(claims: ClaimEvidencia[]): number {
@@ -24,24 +39,26 @@ export function fuentesIndependientes(claims: ClaimEvidencia[]): number {
 }
 
 export function tieneFuenteObjetiva(claims: ClaimEvidencia[]): boolean {
-  return claims.some((c) => FUENTES_OBJETIVAS.has(c.source_tipo ?? ""));
+  return claims.some((c) => fuerzaFuente(c) === "strong");
 }
 
+export type Calibracion = { impacto: Impacto; requiere_validacion: boolean; motivo: string | null; fuerza_maxima: Fuerza; fuentes: number };
+
 /**
- * Impacto permitido según la evidencia. Un hallazgo ALTO exige dos fuentes independientes o una objetiva.
- * Si no alcanza, baja a medio y se marca `requiere_validacion`.
- * Si el auditor no lo sustenta, baja a bajo y también requiere validación.
+ * Impacto permitido según la evidencia. ALTO exige ≥2 fuentes independientes o una STRONG; si no, baja a medio y NEEDS_VALIDATION.
+ * Si el AUDITOR no lo sustenta, baja a bajo y NEEDS_VALIDATION. Evidencia caducada no sostiene nada.
  */
-export function calibrarImpacto(impactoPropuesto: Impacto, evidencia: ClaimEvidencia[], auditorSustenta: boolean | null): { impacto: Impacto; requiere_validacion: boolean; motivo: string | null } {
-  if (auditorSustenta === false) return { impacto: "bajo", requiere_validacion: true, motivo: "El auditor no lo sustenta" };
+export function calibrarImpacto(impactoPropuesto: Impacto, evidencia: ClaimEvidencia[], auditorSustenta: boolean | null): Calibracion {
   const sustento = evidencia.filter((c) => c.estado !== "caducado");
+  const indep = fuentesIndependientes(sustento);
+  const fuerzas = sustento.map(fuerzaFuente);
+  const fuerza_maxima: Fuerza = fuerzas.includes("strong") ? "strong" : fuerzas.includes("medium") ? "medium" : "weak";
+  if (auditorSustenta === false) return { impacto: "bajo", requiere_validacion: true, motivo: "El auditor no lo sustenta", fuerza_maxima, fuentes: indep };
+  if (sustento.length === 0) return { impacto: "bajo", requiere_validacion: true, motivo: "Sin evidencia vigente", fuerza_maxima, fuentes: 0 };
   if (impactoPropuesto === "alto") {
-    const indep = fuentesIndependientes(sustento);
-    if (indep < 2 && !tieneFuenteObjetiva(sustento)) {
-      return { impacto: "medio", requiere_validacion: true, motivo: `Impacto alto con ${indep} fuente(s) y ninguna objetiva` };
-    }
+    if (indep < 2 && fuerza_maxima !== "strong") return { impacto: "medio", requiere_validacion: true, motivo: `Impacto alto con ${indep} fuente(s) y ninguna fuerte`, fuerza_maxima, fuentes: indep };
   }
-  return { impacto: impactoPropuesto, requiere_validacion: false, motivo: null };
+  return { impacto: impactoPropuesto, requiere_validacion: false, motivo: null, fuerza_maxima, fuentes: indep };
 }
 
 /** Un hallazgo sin evidencia que lo sustente no existe. */

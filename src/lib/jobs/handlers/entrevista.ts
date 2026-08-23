@@ -1,21 +1,21 @@
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { correrEntrevistador } from "@/lib/ai/agents/entrevistador";
 import { correrMinero } from "@/lib/ai/agents/minero";
-import { claimsDeEmpresa, claimsComoTexto, registrarTokens } from "@/lib/db/queries";
+import { claimsDeEmpresa, claimsComoTexto, registrarLlamada } from "@/lib/db/queries";
 import { TIPOS_CRITICOS } from "@/lib/rules/vigencia";
+import { bloquesSinCubrir, puedeCerrarSesion, BLOQUES } from "@/lib/rules/cobertura";
 import { encolar, PRIORIDAD, progreso, claveIdempotente } from "../queue";
 import { ai } from "@/lib/ai";
 
 type Job = { id: string; company_id: string; payload: Record<string, unknown> };
 
-/** payload: { session_id } → genera las siguientes 1–3 preguntas (prioridad 1). */
+/** payload: { session_id } → genera las siguientes 1–3 preguntas (prioridad 1). No cierra la sesión hasta cubrir sus bloques. */
 export async function handleEntrevistaSiguiente(job: Job) {
   const sb = supabaseAdmin();
   const sessionId = String(job.payload.session_id);
   const { data: ses } = await sb.from("interview_sessions").select("*, participants(nombre,puesto,rol,antiguedad)").eq("id", sessionId).single();
   if (!ses) throw new Error("Sesión no encontrada");
 
-  // ¿Ya hay una pregunta sin responder? No generar otra.
   const { data: abiertas } = await sb.from("interview_responses").select("id").eq("session_id", sessionId).is("respuesta", null).limit(1);
   if (abiertas && abiertas.length) return { generadas: 0, motivo: "ya hay pregunta abierta" };
 
@@ -28,6 +28,7 @@ export async function handleEntrevistaSiguiente(job: Job) {
     .not("respuesta", "is", null)
     .order("orden");
   const propias = (todas ?? []).filter((r) => (r.interview_sessions as unknown as { participant_id: string }).participant_id === ses.participant_id);
+  const deEstaSesion = (todas ?? []).filter((r) => (r.interview_sessions as unknown as { tipo: string; participant_id: string }).participant_id === ses.participant_id && (r.interview_sessions as unknown as { tipo: string }).tipo === ses.tipo);
   const ajenas = (todas ?? []).filter((r) => (r.interview_sessions as unknown as { participant_id: string }).participant_id !== ses.participant_id);
 
   const claims = await claimsDeEmpresa(job.company_id);
@@ -35,14 +36,16 @@ export async function handleEntrevistaSiguiente(job: Job) {
   const porPilar: Record<string, number> = {};
   for (const c of claims) if (c.estado === "confirmado" && c.pilar) porPilar[c.pilar] = (porPilar[c.pilar] ?? 0) + 1;
   const desconocidos = ["personas", "procesos", "producto", "marketing"].filter((p) => (porPilar[p] ?? 0) < 5);
+  const sinCubrir = bloquesSinCubrir(ses.tipo, deEstaSesion);
 
   const p = ses.participants as { nombre: string; puesto: string | null; rol: string | null; antiguedad: string | null };
   const contexto = [
     `TIPO DE SESIÓN: ${ses.tipo}`,
-    `PARTICIPANTE: ${p.nombre} · puesto: ${p.puesto ?? "—"} · rol: ${p.rol ?? "—"} · antigüedad: ${p.antiguedad ?? "—"}`,
-    `PREGUNTAS YA RESPONDIDAS EN ESTA SESIÓN (${propias.length}):`,
+    `PARTICIPANTE: puesto: ${p.puesto ?? "—"} · rol: ${p.rol ?? "—"} · antigüedad: ${p.antiguedad ?? "—"}`,
+    `BLOQUES SIN CUBRIR (${sinCubrir.length}): ${sinCubrir.map((b) => `[${b.clave}] ${b.nombre}`).join(", ") || "ninguno"}`,
+    `PREGUNTAS YA RESPONDIDAS POR ESTA PERSONA (${propias.length}):`,
     propias.map((r) => `- [${r.bloque}] ${r.pregunta}\n  → ${r.respuesta}`).join("\n") || "(ninguna)",
-    `RESPUESTAS DE OTRAS SESIONES (${ajenas.length}, resumen):`,
+    `RESPUESTAS DE OTRAS SESIONES (${ajenas.length}, resumen, sin nombres):`,
     ajenas.slice(-30).map((r) => `- (${(r.interview_sessions as unknown as { tipo: string }).tipo}) ${r.pregunta} → ${String(r.respuesta).slice(0, 240)}`).join("\n") || "(ninguna)",
     `AFIRMACIONES POR VALIDAR O CONTRADICHAS (${porValidar.length}):`,
     claimsComoTexto(porValidar.slice(0, 40)) || "(ninguna)",
@@ -51,50 +54,65 @@ export async function handleEntrevistaSiguiente(job: Job) {
   ].join("\n\n");
 
   const r = await correrEntrevistador(contexto);
-  await registrarTokens(job.company_id, job.id, "entrevistador", r.tokens_entrada, r.tokens_salida);
+  await registrarLlamada(job.company_id, job.id, "entrevistador", r);
 
   const { data: ult } = await sb.from("interview_responses").select("orden").eq("session_id", sessionId).order("orden", { ascending: false }).limit(1);
   let orden = (ult?.[0]?.orden ?? 0) + 1;
   const validIds = new Set(claims.map((c) => c.id));
-  for (const q of r.data.preguntas.slice(0, 3)) {
+  const clavesValidas = new Set((BLOQUES[ses.tipo] ?? []).map((b) => b.clave));
+  let preguntas = r.data.preguntas.slice(0, 3);
+  // Cobertura en código: si el modelo devolvió vacío pero faltan bloques, se inserta la primera pregunta del banco.
+  if (preguntas.length === 0 && sinCubrir.length) preguntas = [{ texto: sinCubrir[0].preguntas[0], bloque: sinCubrir[0].clave, pilar: null, origen_claim_id: null }];
+  for (const q of preguntas) {
     await sb.from("interview_responses").insert({
       session_id: sessionId,
-      bloque: q.bloque,
+      bloque: clavesValidas.has(q.bloque) ? q.bloque : sinCubrir[0]?.clave ?? q.bloque,
       pilar: q.pilar ?? null,
       pregunta: q.texto,
       origen_claim_id: q.origen_claim_id && validIds.has(q.origen_claim_id) ? q.origen_claim_id : null,
       orden: orden++,
     });
   }
-  if (r.data.preguntas.length === 0 || r.data.sesion_completa) {
+  const cerrar = preguntas.length === 0 && puedeCerrarSesion(ses.tipo, deEstaSesion);
+  if (cerrar) {
     await sb.from("interview_sessions").update({ estado: "completa" }).eq("id", sessionId);
-    // Al completar una sesión de personal/líder/know_how se mina el know-how
     if (["personal", "lider", "know_how"].includes(ses.tipo)) {
       await encolar({ company_id: job.company_id, tipo: "minar_know_how", payload: { session_id: sessionId }, prioridad: PRIORIDAD.extraer, idempotency_key: claveIdempotente(["minar", sessionId]) });
     }
   } else if (ses.estado === "pendiente") {
     await sb.from("interview_sessions").update({ estado: "en_curso" }).eq("id", sessionId);
   }
-  return { generadas: r.data.preguntas.length };
+  return { generadas: preguntas.length, bloques_sin_cubrir: sinCubrir.map((b) => b.clave), cerrada: cerrar };
 }
 
-/** payload: { response_id } → transcribe el audio guardado y dispara extracción. */
+/** payload: { response_id } → transcribe el audio guardado y dispara extracción. Si no hay transcriptor, libera la pregunta para texto (P1-11). */
 export async function handleTranscribirRespuesta(job: Job) {
   const sb = supabaseAdmin();
   const id = String(job.payload.response_id);
   const { data: r } = await sb.from("interview_responses").select("id,respuesta_audio_path,session_id").eq("id", id).single();
   if (!r?.respuesta_audio_path) throw new Error("Sin audio");
+  if (!ai().puedeTranscribir()) {
+    await sb.from("interview_responses").update({ respuesta_audio_path: null }).eq("id", id);
+    throw new Error("No hay transcriptor configurado. La pregunta volvió a abrirse para responder por texto.");
+  }
   await progreso(job.id, "Escuchando tu respuesta");
   const { data: blob } = await sb.storage.from("fuentes").download(r.respuesta_audio_path);
   if (!blob) throw new Error("No pudimos descargar el audio");
-  const texto = await ai().transcribe(blob, blob.type || "audio/webm");
-  await sb.from("interview_responses").update({ respuesta: texto, respondido_at: new Date().toISOString() }).eq("id", id);
+  try {
+    const t = await ai().transcribe(blob, blob.type || "audio/webm");
+    await sb.from("interview_responses").update({ respuesta: t.texto, respondido_at: new Date().toISOString() }).eq("id", id);
+  } catch (e) {
+    // Último intento fallido → liberar la pregunta para que la persona responda por texto.
+    const { data: j } = await sb.from("jobs").select("intentos,max_intentos").eq("id", job.id).single();
+    if (j && j.intentos >= j.max_intentos) await sb.from("interview_responses").update({ respuesta_audio_path: null }).eq("id", id);
+    throw e;
+  }
   await encolar({ company_id: job.company_id, tipo: "extraer", payload: { response_id: id }, prioridad: PRIORIDAD.contrastar, idempotency_key: claveIdempotente(["extraer", "resp", id]) });
   await encolar({ company_id: job.company_id, tipo: "entrevista_siguiente", payload: { session_id: r.session_id }, prioridad: PRIORIDAD.entrevista, idempotency_key: claveIdempotente(["siguiente", r.session_id, id]) });
-  return { texto };
+  return { ok: true };
 }
 
-/** payload: { session_id } → MINERO DE KNOW-HOW sobre la transcripción completa. */
+/** payload: { session_id } → MINERO DE KNOW-HOW sobre la transcripción completa. Relaciona con proceso y crea hallazgo de riesgo si corresponde. */
 export async function handleMinarKnowHow(job: Job) {
   const sb = supabaseAdmin();
   const sessionId = String(job.payload.session_id);
@@ -105,16 +123,33 @@ export async function handleMinarKnowHow(job: Job) {
   await progreso(job.id, "Buscando lo que esta persona sabe y ningún manual dice");
   const transcripcion = resp.map((r) => `P: ${r.pregunta}\nR: ${r.respuesta}`).join("\n\n");
   const r = await correrMinero(p.puesto ?? p.rol ?? "puesto", transcripcion);
-  await registrarTokens(job.company_id, job.id, "minero", r.tokens_entrada, r.tokens_salida);
+  await registrarLlamada(job.company_id, job.id, "minero", r);
+
+  const { data: procesos } = await sb.from("processes").select("id,nombre").eq("company_id", job.company_id).eq("version", "as_is");
+  const buscarProceso = (nombre: string | null | undefined) => {
+    if (!nombre) return null;
+    const n = nombre.toLowerCase();
+    return (procesos ?? []).find((x) => x.nombre.toLowerCase().includes(n) || n.includes(x.nombre.toLowerCase()))?.id ?? null;
+  };
   for (const u of r.data.unidades) {
     await sb.from("know_how").insert({
       company_id: job.company_id,
       participant_id: ses.participant_id,
       puesto: p.puesto ?? p.rol,
+      rol: p.rol,
+      process_id: buscarProceso(u.proceso),
       situacion: u.situacion, senal: u.senal, decision: u.decision, excepcion: u.excepcion, estandar: u.estandar,
-      error_frecuente: u.error_frecuente, regla_practica: u.regla_practica, escalamiento: u.escalamiento,
-      destino: u.destino,
+      error_frecuente: u.error_frecuente, regla_practica: u.regla_practica, escalamiento: u.escalamiento, criterio_experto: u.criterio_experto ?? null,
+      criticidad: u.criticidad, documentado: u.documentado, destino: u.destino,
     });
+  }
+  // Un puesto crítico con know-how vacío es un hallazgo de riesgo (7.5). Se crea pendiente de revisión, con la evidencia de la entrevista.
+  if (r.data.riesgo_know_how_vacio) {
+    const { data: claimsPersona } = await sb.from("claims").select("id").eq("company_id", job.company_id).eq("participant_id", ses.participant_id).limit(3);
+    if (claimsPersona?.length) {
+      const { data: f } = await sb.from("findings").insert({ company_id: job.company_id, pilar: "personas", patron: "know_how_en_una_persona", titulo: `Información insuficiente: el puesto "${p.puesto ?? p.rol}" no tiene su know-how capturado`, causa_raiz: "La entrevista no logró extraer criterios del oficio; no se puede rediseñar ni automatizar este puesto sin ellos", impacto: "medio", veredicto: null, recomendacion: "Profundizar con una sesión de know-how antes de tocar este puesto", filtros: { proposito: { resultado: "pasa", nota: "" }, sabiduria: { resultado: "pasa", nota: "" }, excelencia: { resultado: "pasa", nota: "" } }, origen: "ia", requiere_validacion: true, motivo_validacion: "Generado por regla: know-how vacío" }).select("id").single();
+      if (f) await sb.from("finding_evidence").insert(claimsPersona.map((c) => ({ finding_id: f.id, claim_id: c.id, relacion: "sustenta" })));
+    }
   }
   return { unidades: r.data.unidades.length, riesgo: r.data.riesgo_know_how_vacio ?? false };
 }

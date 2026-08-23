@@ -1,16 +1,18 @@
 import { supabaseAdmin } from "../supabase/admin";
-import { AIRateLimitError } from "../ai/provider";
-import { superaTope, refrescarStats } from "../db/queries";
+import { AIRateLimitError, AIProviderDownError, AIValidationError } from "../ai/provider";
+import { superaTope, refrescarStats, registrarErrorLlamada } from "../db/queries";
 import { handleExtraer } from "./handlers/extraer";
 import { handleContrastar } from "./handlers/contrastar";
 import { handleEntrevistaSiguiente, handleTranscribirRespuesta, handleMinarKnowHow } from "./handlers/entrevista";
 import { handleGenerarProceso, handleGenerarToBe, handleGenerarSop } from "./handlers/procesos";
-import { handleDiagnosticar } from "./handlers/diagnostico";
+import { handleDiagnosticar, handleConsolidar } from "./handlers/diagnostico";
 import { handlePlanificar, handleRedactarEntregables, handleEvaluarAdmision } from "./handlers/plan";
+import { esperaRateLimit, estadoTrasFallo } from "./reglas";
+import { redactarToken } from "../tokens";
 
 type Job = { id: string; company_id: string; tipo: string; payload: Record<string, unknown>; intentos: number; max_intentos: number; prioridad: number };
 
-const HANDLERS: Record<string, (job: Job) => Promise<unknown>> = {
+export const HANDLERS: Record<string, (job: Job) => Promise<unknown>> = {
   extraer: handleExtraer,
   contrastar: handleContrastar,
   entrevista_siguiente: handleEntrevistaSiguiente,
@@ -20,6 +22,7 @@ const HANDLERS: Record<string, (job: Job) => Promise<unknown>> = {
   generar_tobe: handleGenerarToBe,
   generar_sop: handleGenerarSop,
   diagnosticar: handleDiagnosticar,
+  consolidar: handleConsolidar,
   planificar: handlePlanificar,
   redactar_entregables: handleRedactarEntregables,
   evaluar_admision: handleEvaluarAdmision,
@@ -27,9 +30,17 @@ const HANDLERS: Record<string, (job: Job) => Promise<unknown>> = {
 
 const CONCURRENCIA = Number(process.env.WORKER_CONCURRENCIA ?? 6);
 const LEASE = Number(process.env.WORKER_LEASE_MINUTOS ?? 10);
-import { esperaRateLimit, estadoTrasFallo } from "./reglas";
+const MAX_PESADOS_POR_EMPRESA = Number(process.env.WORKER_MAX_PESADOS_POR_EMPRESA ?? 2);
+const MAX_GLOBAL = Number(process.env.WORKER_MAX_GLOBAL ?? 12);
+const HEARTBEAT_MS = 60_000;
 
 const dormir = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const activos = new Set<string>();
+
+/** Un registro de log jamás lleva tokens ni secretos. */
+function log(...a: unknown[]) {
+  console.log(...a.map((x) => (typeof x === "string" ? redactarToken(x) : x)));
+}
 
 async function ejecutar(job: Job) {
   const sb = supabaseAdmin();
@@ -38,11 +49,12 @@ async function ejecutar(job: Job) {
     await sb.from("jobs").update({ estado: "fallido", error: `Tipo de trabajo desconocido: ${job.tipo}`, terminado_at: new Date().toISOString() }).eq("id", job.id);
     return;
   }
-  // Tope de costo por empresa: los trabajos de lote se pausan (vuelven a pendiente con menor prioridad), nunca un cobro sorpresa.
-  if (job.company_id && job.prioridad >= 5 && (await superaTope(job.company_id))) {
+  // Tope de costo por empresa (P1-20): aplica a todo trabajo que llame a la IA. Nunca un cobro sorpresa.
+  if (job.company_id && job.tipo !== "consolidar" && (await superaTope(job.company_id))) {
     await sb.from("jobs").update({ estado: "fallido", error: "Tope de tokens de la empresa superado. Sube el tope en la ficha de la empresa y reintenta.", terminado_at: new Date().toISOString() }).eq("id", job.id);
     return;
   }
+  const t0 = Date.now();
   try {
     let resultado: unknown;
     for (let i = 0; ; i++) {
@@ -50,9 +62,9 @@ async function ejecutar(job: Job) {
         resultado = await h(job);
         break;
       } catch (e) {
-        const espera = e instanceof AIRateLimitError ? esperaRateLimit(i) : null;
+        const espera = e instanceof AIRateLimitError || e instanceof AIProviderDownError ? esperaRateLimit(i) : null;
         if (espera !== null) {
-          await sb.from("jobs").update({ progreso: `Límite del proveedor. Reintentando en ${espera / 1000}s` }).eq("id", job.id);
+          await sb.from("jobs").update({ progreso: `${e instanceof AIRateLimitError ? "Límite del proveedor" : "Proveedor no responde"}. Reintentando en ${espera / 1000}s` }).eq("id", job.id);
           await dormir(espera);
           continue;
         }
@@ -61,37 +73,43 @@ async function ejecutar(job: Job) {
     }
     await sb.from("jobs").update({ estado: "hecho", resultado: resultado ?? null, terminado_at: new Date().toISOString(), error: null }).eq("id", job.id);
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
+    const msg = redactarToken(e instanceof Error ? e.message : String(e));
     const agotado = estadoTrasFallo(job) === "fallido";
+    const tipoError = e instanceof AIValidationError ? "salida_invalida" : e instanceof AIRateLimitError ? "rate_limit" : e instanceof AIProviderDownError ? "proveedor_caido" : "error";
+    await registrarErrorLlamada(job.company_id, job.id, job.tipo, `${tipoError}: ${msg}`, Date.now() - t0).catch(() => {});
     await sb
       .from("jobs")
       .update({ estado: agotado ? "fallido" : "pendiente", error: msg, progreso: agotado ? `Falló: ${msg}` : `Reintento ${job.intentos}/${job.max_intentos}: ${msg}`, terminado_at: agotado ? new Date().toISOString() : null, lease_expira_at: null })
       .eq("id", job.id);
-    console.error(`[job ${job.tipo} ${job.id}] ${agotado ? "FALLIDO" : "reintento"}: ${msg}`);
+    console.error(redactarToken(`[job ${job.tipo} ${job.id}] ${agotado ? "FALLIDO" : "reintento"} (${tipoError}): ${msg}`));
   }
 }
 
 export async function correrWorker() {
   const sb = supabaseAdmin();
-  console.log(`8X worker · concurrencia ${CONCURRENCIA} · lease ${LEASE} min`);
-  let activos = 0;
-  let ultimoBarrido = 0, ultimoRefresh = 0;
+  log(`8X worker · concurrencia ${CONCURRENCIA} · lease ${LEASE} min · máx ${MAX_PESADOS_POR_EMPRESA} pesados/empresa · máx global ${MAX_GLOBAL}`);
+  let ultimoBarrido = 0, ultimoRefresh = 0, ultimoHeartbeat = 0;
   for (;;) {
     const ahora = Date.now();
     if (ahora - ultimoBarrido > 60_000) {
       ultimoBarrido = ahora;
       const { data: n } = await sb.rpc("recover_stale_jobs");
-      if (n) console.log(`recuperados ${n} trabajos con lease vencido`);
+      if (n) log(`recuperados ${n} trabajos con lease vencido`);
     }
     if (ahora - ultimoRefresh > 60_000) {
       ultimoRefresh = ahora;
-      refrescarStats().catch(() => {});
+      refrescarStats().catch((e) => console.error("refresh_company_stats:", e?.message ?? e));
     }
-    if (activos >= CONCURRENCIA) {
+    // Heartbeat (P1-13): los trabajos vivos renuevan su lease; un trabajo largo no se duplica.
+    if (activos.size && ahora - ultimoHeartbeat > HEARTBEAT_MS) {
+      ultimoHeartbeat = ahora;
+      sb.rpc("heartbeat_jobs", { ids: [...activos], lease_minutes: LEASE }).then(({ error }) => error && console.error("heartbeat:", error.message));
+    }
+    if (activos.size >= CONCURRENCIA) {
       await dormir(250);
       continue;
     }
-    const { data, error } = await sb.rpc("take_job", { lease_minutes: LEASE });
+    const { data, error } = await sb.rpc("take_job", { lease_minutes: LEASE, max_pesados_por_empresa: MAX_PESADOS_POR_EMPRESA, max_global: MAX_GLOBAL });
     if (error) {
       console.error("take_job:", error.message);
       await dormir(2000);
@@ -99,13 +117,11 @@ export async function correrWorker() {
     }
     const job = (Array.isArray(data) ? data[0] : data) as Job | undefined;
     if (!job) {
-      await dormir(activos ? 300 : 1000);
+      await dormir(activos.size ? 300 : 1000);
       continue;
     }
-    activos++;
-    console.log(`→ ${job.tipo} (p${job.prioridad}) ${job.id}`);
-    ejecutar(job).finally(() => {
-      activos--;
-    });
+    activos.add(job.id);
+    log(`→ ${job.tipo} (p${job.prioridad}) ${job.id}`);
+    ejecutar(job).finally(() => activos.delete(job.id));
   }
 }

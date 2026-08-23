@@ -1,6 +1,7 @@
 import { contextoPortal } from "@/lib/portal";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { Subir } from "@/components/Subir";
+import { hayTranscriptor } from "@/lib/ai";
 import { VACIO, fechaCorta } from "@/lib/textos";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ export default async function Documentos() {
     <>
       <p className="t-etiqueta">Subir lo que tengas</p>
       <h1 className="t-titulo mt-2 mb-6">Documentos, fotos y notas de voz</h1>
-      <Subir companyId={c.companyId} paraCliente />
+      <Subir companyId={c.companyId} paraCliente transcriptor={hayTranscriptor()} />
       <h2 className="t-seccion mt-10 mb-3">Lo que ya subiste</h2>
       {!fuentes?.length ? (
         <p className="t-cuerpo" style={{ color: "var(--grafito)" }}>{VACIO.fuentes}</p>

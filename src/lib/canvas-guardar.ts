@@ -5,9 +5,9 @@
  * Esta implementación en memoria se usa en los tests; en producción la ejecuta Postgres dentro de una transacción.
  */
 
-export type NodoEntrada = { id?: string; _tmp?: string; tipo: string; etiqueta: string; responsable?: string | null; ejecutor?: string | null; tiempo?: string | null; herramienta?: string | null; problema?: string | null; veredicto?: string | null; pos_x: number; pos_y: number };
+export type NodoEntrada = { id?: string; _tmp?: string; tipo: string; etiqueta: string; responsable?: string | null; ejecutor?: string | null; tiempo?: string | null; herramienta?: string | null; problema?: string | null; veredicto?: string | null; pos_x: number; pos_y: number; rol?: string | null; espera?: string | null; entrada?: string | null; salida?: string | null; evidencia?: string | null; estandar?: string | null; know_how_id?: string | null };
 export type EdgeEntrada = { origen: string; destino: string; etiqueta?: string | null };
-export type NodoDB = { id: string; process_id: string; tipo: string; etiqueta: string; responsable: string | null; ejecutor: string | null; tiempo: string | null; herramienta: string | null; problema: string | null; veredicto: string | null; pos_x: number; pos_y: number };
+export type NodoDB = { id: string; process_id: string; tipo: string; etiqueta: string; responsable: string | null; ejecutor: string | null; tiempo: string | null; herramienta: string | null; problema: string | null; veredicto: string | null; pos_x: number; pos_y: number; rol?: string | null; espera?: string | null; entrada?: string | null; salida?: string | null; evidencia?: string | null; estandar?: string | null; know_how_id?: string | null };
 export type EdgeDB = { id: string; process_id: string; origen: string; destino: string; etiqueta: string | null };
 
 export class ErrorIntegridad extends Error {
@@ -57,11 +57,11 @@ export class CanvasMemoria {
       const existe = n.id && nodos.find((x) => x.id === n.id && x.process_id === this.processId);
       let id: string;
       if (existe) {
-        Object.assign(existe, { tipo: n.tipo, etiqueta: n.etiqueta || "…", responsable: n.responsable ?? null, ejecutor: n.ejecutor ?? null, tiempo: n.tiempo ?? null, herramienta: n.herramienta ?? null, problema: n.problema ?? null, veredicto: n.veredicto || null, pos_x: n.pos_x ?? 0, pos_y: n.pos_y ?? 0 });
+        Object.assign(existe, { tipo: n.tipo, etiqueta: n.etiqueta || "…", responsable: n.responsable ?? null, ejecutor: n.ejecutor ?? null, tiempo: n.tiempo ?? null, herramienta: n.herramienta ?? null, problema: n.problema ?? null, veredicto: n.veredicto || null, pos_x: n.pos_x ?? 0, pos_y: n.pos_y ?? 0, rol: n.rol ?? null, espera: n.espera ?? null, entrada: n.entrada ?? null, salida: n.salida ?? null, evidencia: n.evidencia ?? null, estandar: n.estandar ?? null, know_how_id: n.know_how_id ?? null });
         id = existe.id;
       } else {
         id = this.uuid();
-        nodos.push({ id, process_id: this.processId, tipo: n.tipo, etiqueta: n.etiqueta || "…", responsable: n.responsable ?? null, ejecutor: n.ejecutor ?? null, tiempo: n.tiempo ?? null, herramienta: n.herramienta ?? null, problema: n.problema ?? null, veredicto: n.veredicto || null, pos_x: n.pos_x ?? 0, pos_y: n.pos_y ?? 0 });
+        nodos.push({ id, process_id: this.processId, tipo: n.tipo, etiqueta: n.etiqueta || "…", responsable: n.responsable ?? null, ejecutor: n.ejecutor ?? null, tiempo: n.tiempo ?? null, herramienta: n.herramienta ?? null, problema: n.problema ?? null, veredicto: n.veredicto || null, pos_x: n.pos_x ?? 0, pos_y: n.pos_y ?? 0, rol: n.rol ?? null, espera: n.espera ?? null, entrada: n.entrada ?? null, salida: n.salida ?? null, evidencia: n.evidencia ?? null, estandar: n.estandar ?? null, know_how_id: n.know_how_id ?? null });
       }
       conservados.add(id);
       mapa[n._tmp ?? n.id ?? id] = id;

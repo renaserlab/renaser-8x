@@ -103,6 +103,8 @@ create table if not exists claims (
   explicacion_contradiccion text,
   pregunta_sugerida text,
   prioridad_validacion boolean default false,
+  response_id uuid,                          -- trazabilidad: PREGUNTA→RESPUESTA→AFIRMACIÓN
+  idempotency_key text,                      -- hash(source, tramo, índice): un reintento no duplica
   validado_por uuid references users(id),
   validado_at timestamptz,
   created_at timestamptz default now()
@@ -111,6 +113,23 @@ create index if not exists claims_pilar_estado_idx on claims (company_id, pilar,
 create index if not exists claims_tipo_temp_idx on claims (company_id, tipo, temporalidad);
 create index if not exists claims_alerta_idx on claims (company_id, estado) where estado in ('caducado','contradicho');
 create index if not exists claims_source_idx on claims (source_id);
+alter table claims add column if not exists response_id uuid;
+alter table claims add column if not exists idempotency_key text;
+create unique index if not exists claims_idem_idx on claims (idempotency_key) where idempotency_key is not null;
+
+-- Relaciones entre afirmaciones (1.12): no solo contradicción.
+create table if not exists claim_relations (
+  id uuid primary key default gen_random_uuid(),
+  company_id uuid references companies(id) on delete cascade,
+  claim_id uuid references claims(id) on delete cascade,
+  related_id uuid references claims(id) on delete cascade,
+  tipo text check (tipo in ('supports','contradicts','updates','explains','depends_on')) not null,
+  explicacion text,
+  origen text check (origen in ('regla','ia','consultor')) default 'ia',
+  created_at timestamptz default now(),
+  unique (claim_id, related_id, tipo)
+);
+create index if not exists claim_relations_company_idx on claim_relations (company_id, tipo);
 
 -- ============ ENTREVISTA ============
 
@@ -147,9 +166,23 @@ create table if not exists know_how (
   situacion text, senal text, decision text, excepcion text, estandar text,
   error_frecuente text, regla_practica text, escalamiento text,
   destino text check (destino in ('sop','entrenamiento','checklist','criterio_calidad','agente','pendiente')) default 'pendiente',
+  rol text,
+  process_id uuid,                 -- FK añadida más abajo (processes se crea después)
+  process_node_id uuid,
+  criterio_experto text,
+  criticidad text check (criticidad in ('alta','media','baja')) default 'media',
+  documentado boolean default false,
+  sop_id uuid,
   created_at timestamptz default now()
 );
 create index if not exists know_how_company_idx on know_how (company_id);
+alter table know_how add column if not exists rol text;
+alter table know_how add column if not exists process_id uuid;
+alter table know_how add column if not exists process_node_id uuid;
+alter table know_how add column if not exists criterio_experto text;
+alter table know_how add column if not exists criticidad text default 'media';
+alter table know_how add column if not exists documentado boolean default false;
+alter table know_how add column if not exists sop_id uuid;
 
 -- ============ DIAGNÓSTICO ============
 
@@ -167,9 +200,13 @@ create table if not exists findings (
   auditoria jsonb,
   origen text check (origen in ('ia','consultor')) default 'ia',
   estado_revision text check (estado_revision in ('pendiente','aprobado','corregido','rechazado')) default 'pendiente',
+  requiere_validacion boolean default false,
+  motivo_validacion text,
   created_at timestamptz default now()
 );
 create index if not exists findings_revision_idx on findings (company_id, estado_revision, pilar);
+alter table findings add column if not exists requiere_validacion boolean default false;
+alter table findings add column if not exists motivo_validacion text;
 
 create table if not exists finding_evidence (
   finding_id uuid references findings(id) on delete cascade,
@@ -214,10 +251,31 @@ create table if not exists process_nodes (
   herramienta text,
   problema text,
   veredicto text check (veredicto in ('keep','improve','replace','remove','create')),
+  rol text,
+  espera text,
+  entrada text,
+  salida text,
+  evidencia text,
+  estandar text,
+  know_how_id uuid references know_how(id) on delete set null,
   pos_x float default 0,
   pos_y float default 0
 );
 create index if not exists process_nodes_idx on process_nodes (process_id);
+alter table process_nodes add column if not exists rol text;
+alter table process_nodes add column if not exists espera text;
+alter table process_nodes add column if not exists entrada text;
+alter table process_nodes add column if not exists salida text;
+alter table process_nodes add column if not exists evidencia text;
+alter table process_nodes add column if not exists estandar text;
+alter table process_nodes add column if not exists know_how_id uuid references know_how(id) on delete set null;
+alter table know_how add column if not exists process_node_id uuid;
+do $ begin
+  alter table know_how add constraint know_how_process_fk foreign key (process_id) references processes(id) on delete set null;
+exception when duplicate_object then null; end $;
+do $ begin
+  alter table know_how add constraint know_how_node_fk foreign key (process_node_id) references process_nodes(id) on delete set null;
+exception when duplicate_object then null; end $;
 
 create table if not exists process_edges (
   id uuid primary key default gen_random_uuid(),
@@ -311,9 +369,44 @@ create table if not exists token_usage (
   agente text,
   tokens_entrada int,
   tokens_salida int,
+  modelo text,
+  version_prompt text,
+  latencia_ms int,
+  error text,
   created_at timestamptz default now()
 );
 create index if not exists token_usage_company_idx on token_usage (company_id);
+alter table token_usage add column if not exists modelo text;
+alter table token_usage add column if not exists version_prompt text;
+alter table token_usage add column if not exists latencia_ms int;
+alter table token_usage add column if not exists error text;
+
+-- Invitaciones (P1-16): un cliente que se registra después queda enlazado al entrar.
+create table if not exists invitations (
+  id uuid primary key default gen_random_uuid(),
+  company_id uuid references companies(id) on delete cascade,
+  email text not null,
+  nivel text check (nivel in ('dueno','lider','participante')) default 'dueno',
+  aceptada_at timestamptz,
+  created_at timestamptz default now(),
+  unique (company_id, email)
+);
+
+-- Agent Designer (16): solo la ficha. Sin runtime. Un nodo ia/hibrido puede tener una especificación.
+create table if not exists agent_specs (
+  id uuid primary key default gen_random_uuid(),
+  company_id uuid references companies(id) on delete cascade,
+  process_node_id uuid references process_nodes(id) on delete cascade,
+  nombre text not null,
+  mision text,
+  trigger_desc text,
+  inputs jsonb, outputs jsonb, conocimiento jsonb, herramientas jsonb, reglas jsonb,
+  autoridad text, acciones_prohibidas jsonb, escalamiento text,
+  aprobacion_humana boolean default true,
+  version int default 1,
+  estado text check (estado in ('borrador','aprobado','retirado')) default 'borrador',
+  created_at timestamptz default now()
+);
 
 -- ============ APRENDIZAJE ============
 
@@ -376,20 +469,33 @@ $$;
 
 -- ============ FUNCIONES DE COLA ============
 
-create or replace function take_job(lease_minutes int default 10)
-returns setof jobs language sql security definer as $$
+-- Fairness (13.1): ninguna empresa monopoliza los workers. Un trabajo pesado (prioridad >= 5) solo se toma si su
+-- empresa tiene menos de max_pesados_por_empresa corriendo. Los interactivos (p < 5) nunca esperan por esta regla.
+-- Tope global (13.2): no se toma nada si ya hay max_global corriendo (suma de todos los workers).
+drop function if exists take_job(int);
+create or replace function take_job(lease_minutes int default 10, max_pesados_por_empresa int default 2, max_global int default 12)
+returns setof jobs language sql security definer as $
   update jobs
   set estado='corriendo', tomado_at=now(), intentos=intentos+1,
       lease_expira_at = now() + make_interval(mins => lease_minutes)
   where id = (
-    select id from jobs
-    where estado='pendiente'
-    order by prioridad, created_at
+    select j.id from jobs j
+    where j.estado='pendiente'
+      and (select count(*) from jobs r where r.estado='corriendo') < max_global
+      and (j.prioridad < 5 or (select count(*) from jobs r where r.estado='corriendo' and r.company_id = j.company_id and r.prioridad >= 5) < max_pesados_por_empresa)
+    order by j.prioridad, j.created_at
     for update skip locked
     limit 1
   )
   returning *;
-$$;
+$;
+
+-- Heartbeat (P1-13): el worker renueva el lease de sus trabajos vivos; un trabajo largo no se duplica.
+create or replace function heartbeat_jobs(ids uuid[], lease_minutes int default 10) returns int
+language sql security definer as $
+  with u as (update jobs set lease_expira_at = now() + make_interval(mins => lease_minutes) where id = any(ids) and estado='corriendo' returning 1)
+  select count(*)::int from u;
+$;
 
 create or replace function recover_stale_jobs() returns int
 language plpgsql security definer as $$
@@ -440,7 +546,8 @@ declare t text;
 begin
   foreach t in array array['companies','users','memberships','participants','sources','source_fragments','claims',
     'interview_sessions','interview_responses','know_how','findings','finding_evidence','diagnoses','processes',
-    'process_nodes','process_edges','sops','actions','checkpoints','deliverables','jobs','token_usage','corrections','cases','eval_runs']
+    'process_nodes','process_edges','sops','actions','checkpoints','deliverables','jobs','token_usage','corrections','cases','eval_runs',
+    'claim_relations','invitations','agent_specs']
   loop
     execute format('alter table %I enable row level security', t);
     execute format('drop policy if exists consultor_todo on %I', t);
@@ -515,6 +622,14 @@ create policy fuentes_cliente on storage.objects for all
   using (bucket_id='fuentes' and (storage.foldername(name))[1]::uuid in (select mis_empresas()))
   with check (bucket_id='fuentes' and (storage.foldername(name))[1]::uuid in (select mis_empresas()));
 
+-- Limpieza de archivos huérfanos (P2-04): la API la llama al borrar una empresa.
+create or replace function archivos_de_empresa(p_company_id uuid) returns setof text
+language sql security definer as $
+  select name from storage.objects where bucket_id = 'fuentes' and (storage.foldername(name))[1] = p_company_id::text;
+$;
+revoke execute on function archivos_de_empresa(uuid) from public, anon, authenticated;
+grant execute on function archivos_de_empresa(uuid) to service_role;
+
 -- ============ REALTIME ============
 
 do $$ begin alter publication supabase_realtime add table jobs; exception when duplicate_object then null; end $$;
@@ -577,13 +692,16 @@ begin
         tipo = n->>'tipo', etiqueta = coalesce(nullif(n->>'etiqueta',''),'…'),
         responsable = n->>'responsable', ejecutor = n->>'ejecutor', tiempo = n->>'tiempo',
         herramienta = n->>'herramienta', problema = n->>'problema', veredicto = nullif(n->>'veredicto',''),
+        rol = n->>'rol', espera = n->>'espera', entrada = n->>'entrada', salida = n->>'salida', evidencia = n->>'evidencia', estandar = n->>'estandar',
+        know_how_id = nullif(n->>'know_how_id','')::uuid,
         pos_x = coalesce((n->>'pos_x')::float,0), pos_y = coalesce((n->>'pos_y')::float,0)
       where id = (n->>'id')::uuid;
       nuevo_id := (n->>'id')::uuid;
     else
-      insert into process_nodes (process_id, tipo, etiqueta, responsable, ejecutor, tiempo, herramienta, problema, veredicto, pos_x, pos_y)
+      insert into process_nodes (process_id, tipo, etiqueta, responsable, ejecutor, tiempo, herramienta, problema, veredicto, rol, espera, entrada, salida, evidencia, estandar, know_how_id, pos_x, pos_y)
       values (p_process_id, n->>'tipo', coalesce(nullif(n->>'etiqueta',''),'…'), n->>'responsable', n->>'ejecutor', n->>'tiempo',
-              n->>'herramienta', n->>'problema', nullif(n->>'veredicto',''), coalesce((n->>'pos_x')::float,0), coalesce((n->>'pos_y')::float,0))
+              n->>'herramienta', n->>'problema', nullif(n->>'veredicto',''), n->>'rol', n->>'espera', n->>'entrada', n->>'salida', n->>'evidencia', n->>'estandar',
+              nullif(n->>'know_how_id','')::uuid, coalesce((n->>'pos_x')::float,0), coalesce((n->>'pos_y')::float,0))
       returning id into nuevo_id;
     end if;
     conservados := conservados || nuevo_id;
@@ -607,11 +725,13 @@ end $;
 
 -- ============ PERMISOS DE FUNCIONES (P0-01) ============
 -- Las RPC de la cola y el guardado solo las llama el servidor con la service role. Nunca el navegador.
-revoke execute on function take_job(int) from public, anon, authenticated;
+revoke execute on function take_job(int, int, int) from public, anon, authenticated;
+revoke execute on function heartbeat_jobs(uuid[], int) from public, anon, authenticated;
+grant execute on function heartbeat_jobs(uuid[], int) to service_role;
 revoke execute on function recover_stale_jobs() from public, anon, authenticated;
 revoke execute on function refresh_company_stats() from public, anon, authenticated;
 revoke execute on function guardar_proceso(uuid, text, text, jsonb, jsonb) from public, anon, authenticated;
-grant execute on function take_job(int) to service_role;
+grant execute on function take_job(int, int, int) to service_role;
 grant execute on function recover_stale_jobs() to service_role;
 grant execute on function refresh_company_stats() to service_role;
 grant execute on function guardar_proceso(uuid, text, text, jsonb, jsonb) to service_role;

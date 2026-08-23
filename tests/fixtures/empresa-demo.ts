@@ -162,6 +162,7 @@ export const DIAGNOSTICO_SIMULADO = {
   marketing: {
     hallazgos: [
       { titulo: "El 92% de los clientes nuevos depende de un solo referidor", patron: "canal_unico", causa_raiz: "No existe ningún proceso de captación propio; la adquisición es un favor personal", impacto: "alto" as const, veredicto: "create" as const, recomendacion: "Abrir un segundo canal de captación y medir clientes nuevos por canal cada mes", claim_ids: ["c-csv-canal"], claims_contrarios: [], filtros: { proposito: { resultado: "pasa" as const, nota: "" }, sabiduria: { resultado: "pasa" as const, nota: "" }, excelencia: { resultado: "pasa" as const, nota: "" } } },
+      { titulo: "El cliente real no es el del plan: 81% de la venta es a restaurantes de 1 local, el plan apunta a cadenas", patron: "vision_obsoleta", causa_raiz: "El plan 2022 nunca se revisó contra los datos de venta", impacto: "medio" as const, veredicto: "replace" as const, recomendacion: "Redefinir el cliente objetivo con los datos reales y ajustar la oferta", claim_ids: ["c-cliente-2022", "c-csv-cliente"], claims_contrarios: [], filtros: { proposito: { resultado: "pasa" as const, nota: "" }, sabiduria: { resultado: "pasa" as const, nota: "" }, excelencia: { resultado: "pasa" as const, nota: "" } } },
       { titulo: "Subir el precio de la palta 40% para compensar reclamos", patron: null, causa_raiz: "Margen bajo", impacto: "medio" as const, veredicto: "improve" as const, recomendacion: "Subir el precio 40%", claim_ids: ["c-precio"], claims_contrarios: [], filtros: { proposito: { resultado: "no_pasa" as const, nota: "Cobra más por un producto que llega pasado: vacía la promesa de calidad" }, sabiduria: { resultado: "no_pasa" as const, nota: "Victoria inmediata, problema futuro" }, excelencia: { resultado: "no_pasa" as const, nota: "No mejora el estándar" } } },
     ],
   },
@@ -174,6 +175,7 @@ export const AUDITORIA_SIMULADA: Record<string, { sustentado: boolean; es_sintom
   "Fruta pasada en el 38% de los pedidos cuando Rosa no compra": { sustentado: true, es_sintoma: false, observacion: "Dato operativo + dos personas de áreas distintas" },
   "El 92% de los clientes nuevos depende de un solo referidor": { sustentado: true, es_sintoma: false, observacion: "Dato operativo" },
   "Subir el precio de la palta 40% para compensar reclamos": { sustentado: true, es_sintoma: true, observacion: "Es un síntoma del problema de producto" },
+  "El cliente real no es el del plan: 81% de la venta es a restaurantes de 1 local, el plan apunta a cadenas": { sustentado: true, es_sintoma: false, observacion: "Documento + dato" },
 };
 
 export const AS_IS_VENTAS: Flujo = {

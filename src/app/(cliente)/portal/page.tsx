@@ -35,7 +35,7 @@ export default async function Portal() {
               return (
                 <li key={p.n}>
                   <Link href={p.href} className="panel p-4 flex items-start gap-4" style={{ borderColor: actual ? "var(--marca)" : "var(--linea)", opacity: hecho ? 0.7 : 1 }}>
-                    <span className="t-dato" style={{ width: 28, height: 28, borderRadius: "50%", display: "grid", placeItems: "center", background: hecho ? "var(--confirmado)" : actual ? "var(--tinta)" : "var(--suave)", color: hecho || actual ? "var(--papel)" : "var(--grafito)", flex: "none" }}>{hecho ? "✓" : PASOS.indexOf(p) + 1}</span>
+                    <span className="t-dato" style={{ width: 28, height: 28, borderRadius: "50%", display: "grid", placeItems: "center", background: hecho ? "var(--confirmado)" : actual ? "var(--tinta)" : "var(--suave)", color: hecho || actual ? "var(--papel)" : "var(--grafito)", flex: "none" }}>{hecho ? <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7.5 5.5 11 12 3.5" fill="none" stroke="currentColor" strokeWidth="2" /></svg> : PASOS.indexOf(p) + 1}</span>
                     <span>
                       <span className="t-seccion" style={{ fontSize: 18 }}>{p.titulo}</span>
                       <span className="block t-dato" style={{ color: "var(--grafito)" }}>{p.texto}</span>

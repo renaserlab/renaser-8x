@@ -23,13 +23,18 @@ export const POST = protegido({ consultor: true }, async (_p, req) => {
       { company_id: c.id, participant_id: dueno.id, tipo: "empresa_dueno" },
     ]);
   }
-  // Si el dueño ya tiene cuenta, se enlaza
+  // Si el dueño ya tiene cuenta, se enlaza; si no, queda invitado y se enlaza al registrarse (P1-16).
   if (b.dueno_email) {
-    const { data: u } = await sb.from("users").select("id").eq("email", b.dueno_email.toLowerCase()).maybeSingle();
+    const email = b.dueno_email.trim().toLowerCase();
+    const { data: u } = await sb.from("users").select("id").eq("email", email).maybeSingle();
     if (u) {
       await sb.from("memberships").upsert({ user_id: u.id, company_id: c.id, nivel: "dueno" });
       if (dueno) await sb.from("participants").update({ user_id: u.id }).eq("id", dueno.id);
+    } else {
+      await sb.from("invitations").upsert({ company_id: c.id, email, nivel: "dueno" }, { onConflict: "company_id,email" });
     }
   }
+  // La bandeja lee de company_stats: se refresca para que la empresa nueva aparezca sin esperar al worker (P1-12).
+  await sb.rpc("refresh_company_stats").then(() => {}, () => {});
   return ok(c, 201);
 });

@@ -31,8 +31,10 @@ describe("hallazgo crítico: dos fuentes independientes o una objetiva", () => {
   it("una 'observacion' escrita por el dueño NO es fuente objetiva", () => {
     expect(tieneFuenteObjetiva([ev("a", { source_tipo: "observacion" })])).toBe(false);
   });
-  it("evidencia caducada no cuenta como sustento", () => {
-    expect(calibrarImpacto("alto", [ev("a", { estado: "caducado" }), ev("b", { source_id: "doc2", estado: "caducado" })], true).impacto).toBe("medio");
+  it("evidencia caducada no cuenta como sustento: sin evidencia vigente → bajo + requiere validación", () => {
+    const r = calibrarImpacto("alto", [ev("a", { estado: "caducado" }), ev("b", { source_id: "doc2", estado: "caducado" })], true);
+    expect(r.impacto).toBe("bajo");
+    expect(r.requiere_validacion).toBe(true);
   });
   it("si el AUDITOR no lo sustenta → bajo + requiere validación, aunque tenga 3 fuentes", () => {
     const r = calibrarImpacto("alto", [ev("a"), ev("b", { source_id: "d2" }), ev("c", { source_id: "d3" })], false);

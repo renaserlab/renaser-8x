@@ -1,7 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { AIRateLimitError, AIValidationError, type AIProvider, type CompleteParams, type CompleteResult } from "./provider";
+import { AIProviderDownError, AIRateLimitError, AIValidationError, type AIProvider, type CompleteParams, type CompleteResult, type Transcripcion } from "./provider";
 
 const MODEL = process.env.AI_MODEL ?? "claude-sonnet-5";
+const TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS ?? 120_000);
 
 function extraerJSON(texto: string): string {
   // El modelo debe devolver solo JSON; si envuelve en ```json ... ``` lo limpiamos. Nada más.
@@ -13,7 +14,7 @@ export class AnthropicProvider implements AIProvider {
   private client: Anthropic;
   constructor() {
     if (!process.env.ANTHROPIC_API_KEY) throw new Error("Falta ANTHROPIC_API_KEY");
-    this.client = new Anthropic();
+    this.client = new Anthropic({ timeout: TIMEOUT_MS, maxRetries: 0 });
   }
 
   async complete<T>(p: CompleteParams<T>): Promise<CompleteResult<T>> {
@@ -24,6 +25,7 @@ export class AnthropicProvider implements AIProvider {
     }
     content.push({ type: "text", text: p.user });
 
+    const t0 = Date.now();
     let entrada = 0, salida = 0, ultimoRaw = "";
     for (let intento = 0; intento < 2; intento++) {
       let res: Anthropic.Message;
@@ -36,7 +38,9 @@ export class AnthropicProvider implements AIProvider {
         });
       } catch (e: unknown) {
         const status = (e as { status?: number }).status;
-        if (status === 429 || status === 529) throw new AIRateLimitError(String((e as Error).message));
+        const msg = String((e as Error).message ?? e);
+        if (status === 429 || status === 529) throw new AIRateLimitError(msg);
+        if (status === undefined || status >= 500 || /timeout|ECONNRESET|fetch failed/i.test(msg)) throw new AIProviderDownError(msg);
         throw e;
       }
       entrada += res.usage.input_tokens;
@@ -46,7 +50,7 @@ export class AnthropicProvider implements AIProvider {
       try {
         const parsed = JSON.parse(extraerJSON(raw));
         const r = p.schema.safeParse(parsed);
-        if (r.success) return { data: r.data, tokens_entrada: entrada, tokens_salida: salida };
+        if (r.success) return { data: r.data, tokens_entrada: entrada, tokens_salida: salida, modelo: MODEL, latencia_ms: Date.now() - t0, intentos: intento + 1 };
       } catch {
         /* JSON inválido: reintentar una vez */
       }
@@ -54,8 +58,12 @@ export class AnthropicProvider implements AIProvider {
     throw new AIValidationError("La salida del modelo no validó contra el esquema", ultimoRaw);
   }
 
-  async transcribe(audio: Blob, mime: string): Promise<string> {
-    // Anthropic no transcribe audio. Se usa OpenAI Whisper si hay llave; si no, se informa.
+  puedeTranscribir(): boolean {
+    return !!process.env.OPENAI_API_KEY;
+  }
+
+  async transcribe(audio: Blob, mime: string): Promise<Transcripcion> {
+    // Anthropic no transcribe audio. Se usa OpenAI Whisper (verbose_json → segmentos con tiempos) si hay llave.
     const key = process.env.OPENAI_API_KEY;
     if (!key) throw new Error("No hay servicio de transcripción configurado (OPENAI_API_KEY). Pide la respuesta escrita o usa el micrófono del navegador.");
     const form = new FormData();
@@ -63,25 +71,11 @@ export class AnthropicProvider implements AIProvider {
     form.append("file", audio, `audio.${ext}`);
     form.append("model", "whisper-1");
     form.append("language", "es");
-    const r = await fetch("https://api.openai.com/v1/audio/transcriptions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${key}` },
-      body: form,
-    });
-    if (!r.ok) throw new Error(`Transcripción falló: ${r.status} ${await r.text()}`);
-    const j = (await r.json()) as { text: string };
-    return j.text;
-  }
-
-  async speak(text: string): Promise<Blob> {
-    const key = process.env.OPENAI_API_KEY;
-    if (!key) throw new Error("No hay servicio de voz configurado (OPENAI_API_KEY). El navegador lee la pregunta en voz alta.");
-    const r = await fetch("https://api.openai.com/v1/audio/speech", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model: "tts-1", voice: "alloy", input: text, response_format: "mp3" }),
-    });
-    if (!r.ok) throw new Error(`Síntesis falló: ${r.status}`);
-    return await r.blob();
+    form.append("response_format", "verbose_json");
+    const r = await fetch("https://api.openai.com/v1/audio/transcriptions", { method: "POST", headers: { Authorization: `Bearer ${key}` }, body: form });
+    if (r.status === 429) throw new AIRateLimitError("Transcripción: límite del proveedor");
+    if (!r.ok) throw new Error(`Transcripción falló: ${r.status}`);
+    const j = (await r.json()) as { text: string; segments?: { start: number; end: number; text: string }[] };
+    return { texto: j.text, segmentos: (j.segments ?? []).map((s) => ({ desde: Math.floor(s.start), hasta: Math.ceil(s.end), texto: s.text.trim() })) };
   }
 }

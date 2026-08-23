@@ -17,7 +17,7 @@ export type EstadoEntrevista = {
  * Una pregunta por pantalla. Hablando o escribiendo. Nunca se guarda lo dicho sin que la persona lo vea.
  * Capítulo 19. Se usa en el portal, en el enlace de participante y en el panel del consultor.
  */
-export function Entrevista({ cargar, responder, titulo }: { cargar: () => Promise<EstadoEntrevista>; responder: (datos: { response_id: string; session_id: string; texto?: string; audio?: Blob }) => Promise<void>; titulo?: string }) {
+export function Entrevista({ cargar, responder, titulo, transcriptor = false }: { cargar: () => Promise<EstadoEntrevista>; responder: (datos: { response_id: string; session_id: string; texto?: string; audio?: Blob }) => Promise<void>; titulo?: string; transcriptor?: boolean }) {
   const [estado, setEstado] = useState<EstadoEntrevista | null>(null);
   const [texto, setTexto] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -90,7 +90,7 @@ export function Entrevista({ cargar, responder, titulo }: { cargar: () => Promis
           <div className="flex flex-wrap gap-3">
             <BotonEscuchar texto={estado.abierta.pregunta} />
           </div>
-          <BotonGrabar alTexto={(t) => setTexto((prev) => (prev ? prev + " " + t : t))} alAudio={(b) => enviar(undefined, b)} />
+          <BotonGrabar alTexto={(t) => setTexto((prev) => (prev ? prev + " " + t : t))} alAudio={transcriptor ? (b) => enviar(undefined, b) : undefined} />
           <label className="flex flex-col gap-2">
             <span className="t-etiqueta">O escribe tu respuesta</span>
             <textarea className="campo" value={texto} onChange={(e) => setTexto(e.target.value)} rows={4} placeholder="" aria-label="Tu respuesta" />

@@ -4,6 +4,7 @@ import { Encabezado, Vacio } from "@/components/base/Vacio";
 import { EntrevistaConsultor } from "@/components/consultor/EntrevistaConsultor";
 import { BotonJob } from "@/components/consultor/BotonJob";
 import { TIPO_SESION } from "@/lib/textos";
+import { hayTranscriptor } from "@/lib/ai";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +39,7 @@ export default async function EntrevistaPag({ params, searchParams }: { params: 
             })}
           </nav>
 
-          <section>{activa && <EntrevistaConsultor companyId={id} sessionId={activa} />}</section>
+          <section>{activa && <EntrevistaConsultor companyId={id} sessionId={activa} transcriptor={hayTranscriptor()} />}</section>
 
           <section>
             <div className="flex items-center justify-between mb-3">

@@ -20,7 +20,7 @@ export default async function VerResultado({ params }: { params: Promise<{ d: st
         <Link href="/portal/resultados" className="t-dato">← Tus resultados</Link>
         <Imprimir texto="Guardar como PDF" />
       </div>
-      <VistaEntregable d={data} paraCliente marca={c.empresa?.nombre} />
+      <VistaEntregable d={data} paraCliente marca={process.env.MARCA_CONSULTORIA || c.empresa?.nombre} />
     </>
   );
 }

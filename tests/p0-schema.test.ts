@@ -10,11 +10,11 @@ const sql = readFileSync(path.resolve(__dirname, "../supabase/schema.sql"), "utf
 const norm = sql.replace(/\s+/g, " ").toLowerCase();
 
 describe("P0-01 · RPC de la cola no ejecutables por el navegador", () => {
-  for (const fn of ["take_job(int)", "recover_stale_jobs()", "refresh_company_stats()", "guardar_proceso(uuid, text, text, jsonb, jsonb)"]) {
+  for (const fn of ["take_job(int, int, int)", "heartbeat_jobs(uuid[], int)", "recover_stale_jobs()", "refresh_company_stats()", "guardar_proceso(uuid, text, text, jsonb, jsonb)", "archivos_de_empresa(uuid)"]) {
     it(`revoke execute ${fn} from public, anon, authenticated + grant to service_role`, () => {
       expect(norm).toContain(`revoke execute on function ${fn} from public, anon, authenticated`);
       expect(norm).toContain(`grant execute on function ${fn} to service_role`);
-      expect(norm).not.toMatch(new RegExp(`grant execute on function ${fn.replace(/[()]/g, "\\$&")} to (anon|authenticated|public)`));
+      expect(norm).not.toMatch(new RegExp(`grant execute on function ${fn.replace(/[()\\[\\]]/g, "\\$&")} to (anon|authenticated|public)`));
     });
   }
   it("las funciones que usan las políticas RLS sí siguen ejecutables por authenticated", () => {
@@ -22,7 +22,7 @@ describe("P0-01 · RPC de la cola no ejecutables por el navegador", () => {
     expect(norm).toContain("grant execute on function mis_empresas() to authenticated");
   });
   it("las RPC sensibles son security definer (por eso el revoke es obligatorio)", () => {
-    expect(norm).toMatch(/function take_job\(lease_minutes int default 10\) returns setof jobs language sql security definer/);
+    expect(norm).toMatch(/function take_job\(lease_minutes int default 10, max_pesados_por_empresa int default 2, max_global int default 12\) returns setof jobs language sql security definer/);
   });
 });
 

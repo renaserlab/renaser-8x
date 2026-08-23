@@ -51,6 +51,14 @@ export const EJECUTOR: Record<string, string> = {
   hibrido: "IA prepara, persona aprueba",
 };
 
+/** Para el cliente: sin la palabra IA (capítulo 18). */
+export const EJECUTOR_CLIENTE: Record<string, string> = {
+  humano: "Persona",
+  software: "Sistema",
+  ia: "Automático",
+  hibrido: "Automático, revisa una persona",
+};
+
 export const TIPO_NODO: Record<string, string> = {
   inicio: "Inicio",
   actividad: "Actividad",

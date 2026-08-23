@@ -20,9 +20,14 @@ export const PATCH = protegido<Ctx>({ consultor: true }, async (_p, req, ctx) =>
   return ok(data);
 });
 
+/** P2-04: al borrar la empresa se borran también sus archivos del bucket (el cascade de SQL no toca Storage). */
 export const DELETE = protegido<Ctx>({ consultor: true }, async (_p, _req, ctx) => {
   const { id } = await ctx.params;
-  const { error } = await supabaseAdmin().from("companies").delete().eq("id", id);
+  const sb = supabaseAdmin();
+  const { data: archivos } = await sb.rpc("archivos_de_empresa", { p_company_id: id });
+  const rutas = (archivos as string[] | null) ?? [];
+  for (let i = 0; i < rutas.length; i += 100) await sb.storage.from("fuentes").remove(rutas.slice(i, i + 100));
+  const { error } = await sb.from("companies").delete().eq("id", id);
   if (error) return fallo(error.message, 500);
-  return ok({ eliminada: true });
+  return ok({ eliminada: true, archivos: rutas.length });
 });

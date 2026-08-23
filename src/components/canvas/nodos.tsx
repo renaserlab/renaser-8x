@@ -10,6 +10,13 @@ export type DatosNodo = {
   herramienta?: string | null;
   problema?: string | null;
   veredicto?: string | null;
+  rol?: string | null;
+  espera?: string | null;
+  entrada?: string | null;
+  salida?: string | null;
+  evidencia?: string | null;
+  estandar?: string | null;
+  know_how_id?: string | null;
   soloLectura?: boolean;
 };
 export type NodoRF = Node<DatosNodo, "inicio" | "actividad" | "decision" | "espera" | "fin">;
@@ -52,7 +59,7 @@ export function NodoActividad({ data, selected }: NodeProps<NodoRF>) {
           {data.responsable}{data.responsable && data.tiempo ? " · " : ""}{data.tiempo}
         </div>
       )}
-      {data.problema && <div style={{ fontSize: 12, color: "var(--contradicho)", marginTop: 4 }}>⚠ {data.problema}</div>}
+      {data.problema && <div style={{ fontSize: 12, color: "var(--contradicho)", marginTop: 4 }}>Problema: {data.problema}</div>}
     </div>
   );
 }
@@ -99,10 +106,11 @@ export function NodoFin({ data, selected }: NodeProps<NodoRF>) {
 
 export const TIPOS_NODO = { inicio: NodoInicio, actividad: NodoActividad, decision: NodoDecision, espera: NodoEspera, fin: NodoFin };
 
-export function LeyendaEjecutor() {
+export function LeyendaEjecutor({ paraCliente = false }: { paraCliente?: boolean }) {
+  const nombres = paraCliente ? { humano: "Persona", software: "Sistema", ia: "Automático", hibrido: "Automático, revisa una persona" } : { humano: "Persona", software: "Software", ia: "Agente de IA", hibrido: "IA prepara, persona aprueba" };
   return (
     <div className="flex flex-wrap gap-4">
-      {Object.entries({ humano: "Persona", software: "Software", ia: "Agente de IA", hibrido: "IA prepara, persona aprueba" }).map(([k, n]) => (
+      {Object.entries(nombres).map(([k, n]) => (
         <span key={k} className="t-dato flex items-center gap-2">
           <span style={{ width: 14, height: 14, background: COLOR_EJ[k], borderRadius: 2, display: "inline-block" }} aria-hidden="true" />
           {n}

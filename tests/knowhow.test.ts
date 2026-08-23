@@ -23,7 +23,8 @@ describe("know-how: modelo y preguntas del minero", () => {
     expect(PROMPT_MINERO).toMatch(/opiniones sobre personas/);
   });
   it("las preguntas del minero (7.5) están en el banco del entrevistador para sesiones know_how", () => {
-    for (const q of ["persona nueva no sabria", "senal ves antes", "procedimiento no aplica", "error tipico", "excelente sin mirar un indicador", "mejor persona de este puesto"]) expect(PROMPT_ENTREVISTADOR.toLowerCase()).toContain(q.toLowerCase());
+    const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    for (const q of ["alguien nuevo no sabria aunque leyera el manual", "senal detectas antes de que el problema aparezca", "procedimiento no aplica", "error comete un principiante", "excelente sin mirar un indicador", "mejor persona de este puesto", "cuando sabes que debes escalar"]) expect(norm(PROMPT_ENTREVISTADOR)).toContain(norm(q));
   });
 });
 

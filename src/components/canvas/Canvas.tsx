@@ -9,12 +9,13 @@ import { pedir } from "@/lib/cliente";
 import { BotonGrabar } from "@/components/voz/BotonGrabar";
 import { Progreso } from "@/components/base/Progreso";
 import { TIPO_NODO } from "@/lib/textos";
+import { validarFlujograma, tieneFinalMalo } from "@/lib/rules/grafo";
 
-export type NodoDB = { id: string; tipo: DatosNodo["tipo"]; etiqueta: string; responsable: string | null; ejecutor: string | null; tiempo: string | null; herramienta: string | null; problema: string | null; veredicto: string | null; pos_x: number; pos_y: number };
+export type NodoDB = { id: string; tipo: DatosNodo["tipo"]; etiqueta: string; responsable: string | null; ejecutor: string | null; tiempo: string | null; herramienta: string | null; problema: string | null; veredicto: string | null; pos_x: number; pos_y: number; rol?: string | null; espera?: string | null; entrada?: string | null; salida?: string | null; evidencia?: string | null; estandar?: string | null; know_how_id?: string | null };
 export type EdgeDB = { id: string; origen: string; destino: string; etiqueta: string | null };
 
 function aRF(nodos: NodoDB[], edges: EdgeDB[]) {
-  const ns: NodoRF[] = nodos.map((n) => ({ id: n.id, type: n.tipo, position: { x: n.pos_x, y: n.pos_y }, data: { etiqueta: n.etiqueta, tipo: n.tipo, responsable: n.responsable, ejecutor: n.ejecutor, tiempo: n.tiempo, herramienta: n.herramienta, problema: n.problema, veredicto: n.veredicto } }));
+  const ns: NodoRF[] = nodos.map((n) => ({ id: n.id, type: n.tipo, position: { x: n.pos_x, y: n.pos_y }, data: { etiqueta: n.etiqueta, tipo: n.tipo, responsable: n.responsable, ejecutor: n.ejecutor, tiempo: n.tiempo, herramienta: n.herramienta, problema: n.problema, veredicto: n.veredicto, rol: n.rol ?? null, espera: n.espera ?? null, entrada: n.entrada ?? null, salida: n.salida ?? null, evidencia: n.evidencia ?? null, estandar: n.estandar ?? null, know_how_id: n.know_how_id ?? null } }));
   const es: Edge[] = edges.map((e) => ({ id: e.id, source: e.origen, target: e.destino, label: e.etiqueta ?? undefined, markerEnd: { type: MarkerType.ArrowClosed, color: "#14171a" }, style: { stroke: "#14171a", strokeWidth: 1.5 }, labelStyle: { fontSize: 12, fill: "#6b7075" }, labelBgStyle: { fill: "#fcfcfb" } }));
   return { ns, es };
 }
@@ -110,6 +111,11 @@ function CanvasInterno({ processId, companyId, nombre, nodos, edges, soloLectura
   };
 
   const seleccionado = ns.find((n) => n.id === sel);
+  // Validación estructural en vivo (P1-07): avisa, no bloquea.
+  const flujo = useMemo(() => ({ nodos: ns.map((n) => ({ id: n.id, tipo: (n.type ?? "actividad") as DatosNodo["tipo"], etiqueta: n.data.etiqueta, veredicto: n.data.veredicto ?? null, ejecutor: n.data.ejecutor ?? null })), conexiones: es.map((e) => ({ de: e.source, a: e.target, etiqueta: typeof e.label === "string" ? e.label : null })) }), [ns, es]);
+  const validacion = useMemo(() => validarFlujograma(flujo), [flujo]);
+  const avisos = validacion.problemas;
+  const sinFinalMalo = ns.length > 2 && !tieneFinalMalo(flujo);
   const nodeTypes = useMemo(() => TIPOS_NODO, []);
 
   return (
@@ -154,16 +160,24 @@ function CanvasInterno({ processId, companyId, nombre, nodos, edges, soloLectura
             <Controls showInteractive={false} />
           </ReactFlow>
         </div>
-        {seleccionado && <PanelPropiedades datos={seleccionado.data} cambiar={cambiar} eliminar={eliminar} soloLectura={soloLectura} paraCliente={paraCliente} />}
+        {seleccionado && <PanelPropiedades datos={seleccionado.data} cambiar={cambiar} eliminar={eliminar} soloLectura={soloLectura} paraCliente={paraCliente} avisos={avisos.filter((a) => a.nodo === seleccionado.id).map((a) => a.mensaje)} />}
       </div>
 
-      <LeyendaEjecutor />
+      <LeyendaEjecutor paraCliente={paraCliente} />
+      {(avisos.length > 0 || sinFinalMalo) && (
+        <ul className="t-dato flex flex-col gap-1" style={{ color: "var(--caducado)" }} aria-live="polite">
+          {avisos.slice(0, 5).map((a, i) => (
+            <li key={i}>{a.mensaje}</li>
+          ))}
+          {sinFinalMalo && <li>{paraCliente ? "Falta dibujar dónde se pierde el cliente, el pedido o el dinero." : "Sin final malo: ¿dónde se pierde el cliente, el pedido o el dinero?"}</li>}
+        </ul>
+      )}
 
       {!soloLectura && (
         <section className="panel p-4 flex flex-col gap-3 no-imprimir">
           <p className="t-etiqueta">{paraCliente ? "Cuéntanos cómo funciona y lo dibujamos" : "La IA dibuja: describe el proceso"}</p>
           <BotonGrabar grande={false} alTexto={(t) => setDescripcion((p) => (p ? p + " " + t : t))} />
-          <textarea className="campo" rows={3} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} placeholder="El lead entra por WhatsApp, un asesor lo contacta, si responde se agenda, si no se pierde…" />
+          <textarea className="campo" rows={3} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} aria-label="Describe el proceso" placeholder="El lead entra por WhatsApp, un asesor lo contacta, si responde se agenda, si no se pierde…" />
           <div className="flex items-center gap-3">
             <button className="boton boton--secundario" onClick={generar} disabled={!descripcion.trim()}>Dibujar con lo descrito</button>
             <Progreso jobId={job} paraCliente={paraCliente} alTerminar={() => window.location.reload()} />

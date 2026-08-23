@@ -8,6 +8,7 @@ export async function usuarioActual(): Promise<Perfil | null> {
   const sb = await supabaseServer();
   const { data } = await sb.auth.getUser();
   if (!data.user) return null;
+  await aceptarInvitaciones(data.user.id, data.user.email ?? null);
   const { data: perfil } = await sb.from("users").select("id,email,nombre,rol").eq("id", data.user.id).maybeSingle();
   if (!perfil) return { id: data.user.id, email: data.user.email ?? null, nombre: null, rol: "cliente" };
   return perfil as Perfil;
@@ -42,4 +43,15 @@ export async function puedeAcceder(perfil: Perfil, companyId: string): Promise<b
   if (perfil.rol === "consultor") return true;
   const { data } = await supabaseAdmin().from("memberships").select("company_id").eq("user_id", perfil.id).eq("company_id", companyId).maybeSingle();
   return !!data;
+}
+
+/** P1-16: si hay invitaciones pendientes para este correo, se convierten en membresías al entrar. */
+export async function aceptarInvitaciones(userId: string, email: string | null) {
+  if (!email) return;
+  const sb = supabaseAdmin();
+  const { data: inv } = await sb.from("invitations").select("id,company_id,nivel").eq("email", email.toLowerCase()).is("aceptada_at", null);
+  for (const i of inv ?? []) {
+    await sb.from("memberships").upsert({ user_id: userId, company_id: i.company_id, nivel: i.nivel });
+    await sb.from("invitations").update({ aceptada_at: new Date().toISOString() }).eq("id", i.id);
+  }
 }

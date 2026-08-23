@@ -3,6 +3,7 @@ import { Encabezado, Vacio } from "@/components/base/Vacio";
 import { Subir } from "@/components/Subir";
 import { AccionesFuente, ReintentarJob } from "@/components/consultor/FuentesAcciones";
 import { VACIO, fechaCorta } from "@/lib/textos";
+import { hayTranscriptor } from "@/lib/ai";
 
 export const dynamic = "force-dynamic";
 
@@ -54,7 +55,7 @@ export default async function Fuentes({ params }: { params: Promise<{ id: string
       <section className="grid gap-10 lg:grid-cols-[1fr_1.4fr]">
         <div>
           <h2 className="t-seccion mb-4">Subir</h2>
-          <Subir companyId={id} />
+          <Subir companyId={id} transcriptor={hayTranscriptor()} />
         </div>
         <div>
           <h2 className="t-seccion mb-4">Cargadas</h2>

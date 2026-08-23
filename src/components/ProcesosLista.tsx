@@ -44,7 +44,7 @@ export function ProcesosLista({ companyId, procesos, base, paraCliente = false }
         </p>
         <input className="campo" placeholder="Nombre (opcional)" value={nombre} onChange={(e) => setNombre(e.target.value)} aria-label="Nombre del proceso" />
         <BotonGrabar alTexto={(t) => setDescripcion((p) => (p ? p + " " + t : t))} />
-        <textarea className="campo" rows={5} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} placeholder="El lead entra por WhatsApp, un asesor lo contacta…" />
+        <textarea className="campo" rows={5} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} aria-label="Describe el proceso" placeholder="El lead entra por WhatsApp, un asesor lo contacta…" />
         {error && <p className="t-dato" style={{ color: "var(--contradicho)" }}>{error}</p>}
         <div className="flex flex-wrap gap-3 items-center">
           <button className="boton" onClick={generar} disabled={!descripcion.trim()}>Dibujarlo</button>
@@ -73,7 +73,7 @@ export function ProcesosLista({ companyId, procesos, base, paraCliente = false }
                 <tr key={p.id}>
                   <td className="t-dato">
                     <Link href={`${base}/${p.id}`}>{p.nombre}</Link>
-                    <div className="t-etiqueta" style={{ textTransform: "none", letterSpacing: 0 }}>{p.origen === "generado_ia" ? "dibujado por IA" : "dibujado a mano"}</div>
+                    <div className="t-etiqueta" style={{ textTransform: "none", letterSpacing: 0 }}>{p.origen === "generado_ia" ? (paraCliente ? "lo dibujamos con lo que contaste" : "dibujado por IA") : "dibujado a mano"}</div>
                   </td>
                   <td>{p.area ?? "—"}</td>
                   <td className="t-dato">{p.nodos}</td>

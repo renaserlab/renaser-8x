@@ -9,6 +9,7 @@ export const Veredicto = z.enum(["keep", "improve", "replace", "remove", "create
 export const Ejecutor = z.enum(["humano", "software", "ia", "hibrido"]);
 export const TipoNodo = z.enum(["inicio", "actividad", "decision", "espera", "fin"]);
 export const Filtro = z.enum(["pasa", "no_pasa"]);
+export const TipoRelacion = z.enum(["supports", "contradicts", "updates", "explains", "depends_on"]);
 
 const fechaONull = z
   .string()
@@ -28,14 +29,17 @@ export const SalidaExtractor = z.object({
       fragmento: z.string().nullable().optional(),
       pagina: z.number().int().nullable().optional(),
       seccion: z.string().nullable().optional(),
+      celda: z.string().nullable().optional(), // "hoja!F17" o "fila 12, columna origen"
+      posible_instruccion: z.boolean().optional(), // 14.1: el texto intentaba dar órdenes al modelo
     })
   ),
 });
 export type SalidaExtractor = z.infer<typeof SalidaExtractor>;
 
-// 23.2 CONTRASTADOR
+// 23.2 CONTRASTADOR — ahora devuelve el tipo de relación (1.12)
 export const SalidaContrastador = z.object({
   se_contradicen: z.boolean(),
+  relacion: z.enum(["contradicts", "updates", "supports", "explains", "depends_on", "ninguna"]).catch("ninguna"),
   explicacion: z.string(),
   cual_parece_vigente: z.string().nullable(),
   pregunta_sugerida: z.string().nullable(),
@@ -58,7 +62,7 @@ export const SalidaEntrevistador = z.object({
 });
 export type SalidaEntrevistador = z.infer<typeof SalidaEntrevistador>;
 
-// 23.4 MINERO DE KNOW-HOW
+// 23.4 MINERO DE KNOW-HOW (1.5)
 export const SalidaMinero = z.object({
   unidades: z.array(
     z.object({
@@ -70,6 +74,10 @@ export const SalidaMinero = z.object({
       error_frecuente: z.string().nullable(),
       regla_practica: z.string().nullable(),
       escalamiento: z.string().nullable(),
+      criterio_experto: z.string().nullable().optional(),
+      proceso: z.string().nullable().optional(), // nombre del proceso al que pertenece, si se infiere
+      criticidad: z.enum(["alta", "media", "baja"]).catch("media"),
+      documentado: z.boolean().catch(false),
       destino: z.enum(["sop", "entrenamiento", "checklist", "criterio_calidad", "agente", "pendiente"]).catch("pendiente"),
       falta_profundizar: z.string().nullable().optional(),
     })
@@ -78,28 +86,34 @@ export const SalidaMinero = z.object({
 });
 export type SalidaMinero = z.infer<typeof SalidaMinero>;
 
-// 23.5 ARQUITECTO
+// 23.5 ARQUITECTO (1.13: más campos por nodo)
+export const NodoSalida = z.object({
+  id: z.string(),
+  tipo: TipoNodo,
+  etiqueta: z.string(),
+  responsable: z.string().nullable().optional(),
+  rol: z.string().nullable().optional(),
+  ejecutor: Ejecutor.nullable().optional(),
+  herramienta: z.string().nullable().optional(),
+  tiempo: z.string().nullable().optional(),
+  espera: z.string().nullable().optional(),
+  entrada: z.string().nullable().optional(),
+  salida: z.string().nullable().optional(),
+  evidencia: z.string().nullable().optional(),
+  estandar: z.string().nullable().optional(),
+  problema: z.string().nullable().optional(),
+  veredicto: Veredicto.nullable().optional(),
+});
 export const SalidaArquitecto = z.object({
   nombre: z.string(),
   area: z.string().nullable().optional(),
-  nodos: z.array(
-    z.object({
-      id: z.string(),
-      tipo: TipoNodo,
-      etiqueta: z.string(),
-      responsable: z.string().nullable().optional(),
-      ejecutor: Ejecutor.nullable().optional(),
-      herramienta: z.string().nullable().optional(),
-      tiempo: z.string().nullable().optional(),
-      problema: z.string().nullable().optional(),
-      veredicto: Veredicto.nullable().optional(),
-    })
-  ),
+  nodos: z.array(NodoSalida),
   conexiones: z.array(z.object({ de: z.string(), a: z.string(), etiqueta: z.string().nullable().optional() })),
 });
 export type SalidaArquitecto = z.infer<typeof SalidaArquitecto>;
 
-// 23.6 DIAGNOSTICADOR
+// 23.6 DIAGNOSTICADOR (1.8: sub-preguntas de cada filtro)
+const FiltroDetalle = z.object({ resultado: Filtro, nota: z.string(), respuestas: z.array(z.string()).optional() });
 export const SalidaDiagnosticador = z.object({
   hallazgos: z.array(
     z.object({
@@ -111,15 +125,14 @@ export const SalidaDiagnosticador = z.object({
       recomendacion: z.string().nullable(),
       claim_ids: z.array(z.string()).min(1),
       claims_contrarios: z.array(z.string()).default([]),
-      filtros: z.object({
-        proposito: z.object({ resultado: Filtro, nota: z.string() }),
-        sabiduria: z.object({ resultado: Filtro, nota: z.string() }),
-        excelencia: z.object({ resultado: Filtro, nota: z.string() }),
-      }),
+      filtros: z.object({ proposito: FiltroDetalle, sabiduria: FiltroDetalle, excelencia: FiltroDetalle }),
+      dimension: z.string().nullable().optional(),
       informacion_insuficiente: z.boolean().optional(),
+      preserva: z.boolean().optional(), // fortaleza que NO debe destruirse
     })
   ),
-  preguntas_pendientes: z.array(z.string()).default([]),
+  preguntas_pendientes: z.array(z.object({ texto: z.string(), dimension: z.string().nullable().optional(), para: z.enum(["dueno", "lider", "personal", "datos"]).catch("dueno") })).default([]),
+  dimensiones_sin_evidencia: z.array(z.string()).default([]),
   resumen_pilar: z.string().optional(),
 });
 export type SalidaDiagnosticador = z.infer<typeof SalidaDiagnosticador>;
@@ -132,6 +145,8 @@ export const SalidaAuditor = z.object({
       sustentado: z.boolean(),
       evidencia_contraria: z.array(z.string()).default([]),
       es_sintoma: z.boolean(),
+      culpa_persona_sin_auditar: z.boolean().optional(),
+      benchmark_como_hecho: z.boolean().optional(),
       duplicado_de: z.string().nullable().optional(),
       observacion: z.string(),
     })
@@ -173,6 +188,7 @@ export type SalidaRedactor = z.infer<typeof SalidaRedactor>;
 // TO-BE
 export const SalidaToBe = SalidaArquitecto.extend({
   justificacion: z.string().optional(),
+  cambios: z.array(z.object({ nodo: z.string(), veredicto: Veredicto, por_que: z.string() })).default([]),
 });
 
 // SOP

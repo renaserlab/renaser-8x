@@ -19,7 +19,7 @@ export function CerrarCaso({ companyId, etapa }: { companyId: string; etapa: str
   if (!abierto) return <button className="boton boton--secundario" onClick={() => setAbierto(true)}>Cerrar caso</button>;
   return (
     <div className="flex flex-col gap-2" style={{ minWidth: 320 }}>
-      <textarea className="campo" rows={3} placeholder="Resultado real a los 90 días: qué indicador se movió, cuánto, qué se sostuvo." value={resultado} onChange={(e) => setResultado(e.target.value)} />
+      <textarea className="campo" rows={3} placeholder="Resultado real a los 90 días: qué indicador se movió, cuánto, qué se sostuvo." aria-label="Resultado real a los 90 días" value={resultado} onChange={(e) => setResultado(e.target.value)} />
       <div className="flex gap-2">
         <button className="boton" disabled={!resultado.trim()} onClick={async () => { await pedir(`/api/companies/${companyId}/close`, { json: { cerrar: true, resultado_90d: { texto: resultado } } }); router.push("/casos"); }}>
           Guardar y cerrar

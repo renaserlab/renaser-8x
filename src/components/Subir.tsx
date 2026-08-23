@@ -6,7 +6,7 @@ import { BotonGrabar } from "@/components/voz/BotonGrabar";
 import { CARGA_PORTAL } from "@/lib/textos";
 
 /** Sube lo que tengas: documento, foto del cuaderno, nota de voz o un texto dictado. Capítulo 19.3. */
-export function Subir({ companyId, paraCliente = false }: { companyId: string; paraCliente?: boolean }) {
+export function Subir({ companyId, paraCliente = false, transcriptor = false }: { companyId: string; paraCliente?: boolean; transcriptor?: boolean }) {
   const router = useRouter();
   const [jobs, setJobs] = useState<{ id: string; nombre: string }[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -77,18 +77,18 @@ export function Subir({ companyId, paraCliente = false }: { companyId: string; p
       </div>
 
       <div className="flex flex-col gap-3">
-        <input ref={input} type="file" multiple accept=".pdf,.txt,.md,.csv,image/*,audio/*,.ogg,.opus,.m4a,.mp3" className="sr-only" id="archivo" onChange={(e) => archivos(e.target.files)} />
+        <input ref={input} type="file" multiple accept={transcriptor ? ".pdf,.txt,.md,.csv,image/*,audio/*,.ogg,.opus,.m4a,.mp3" : ".pdf,.txt,.md,.csv,image/*"} className="sr-only" id="archivo" onChange={(e) => archivos(e.target.files)} />
         <label htmlFor="archivo" className="boton boton--grande" style={{ cursor: "pointer" }}>
           {subiendo ? "Subiendo" : paraCliente ? "Subir archivo o foto" : "Subir documento, foto, audio o CSV"}
         </label>
-        <p className="t-dato" style={{ color: "var(--grafito)" }}>PDF, foto, nota de voz (también las de WhatsApp), texto o CSV. Hasta 30 MB. Un Word: expórtalo a PDF. Un Excel: guárdalo como CSV.</p>
+        <p className="t-dato" style={{ color: "var(--grafito)" }}>PDF, foto, {transcriptor ? "nota de voz (también las de WhatsApp), " : ""}texto o CSV. Hasta 30 MB. Un Word: expórtalo a PDF. Un Excel: guárdalo como CSV.</p>
       </div>
 
-      <BotonGrabar alTexto={(t) => setTexto((p) => (p ? p + " " + t : t))} alAudio={mandarAudio} />
+      <BotonGrabar alTexto={(t) => setTexto((p) => (p ? p + " " + t : t))} alAudio={transcriptor ? mandarAudio : undefined} />
 
       <label className="flex flex-col gap-2">
         <span className="t-etiqueta">{paraCliente ? "O cuéntanos por escrito" : "O pega un texto (transcripción, nota, respuesta dada en reunión)"}</span>
-        <textarea className="campo" rows={5} value={texto} onChange={(e) => setTexto(e.target.value)} />
+        <textarea className="campo" rows={5} value={texto} onChange={(e) => setTexto(e.target.value)} aria-label={paraCliente ? "Cuéntanos por escrito" : "Texto"} />
       </label>
       <button className="boton boton--secundario" disabled={!texto.trim() || subiendo} onClick={mandarTexto}>
         Guardar texto

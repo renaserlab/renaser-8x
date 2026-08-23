@@ -8,9 +8,10 @@ type Ctx = { params: Promise<{ id: string }> };
 export const POST = protegido<Ctx>({}, async (perfil, _req, ctx) => {
   const { id } = await ctx.params;
   const sb = supabaseAdmin();
-  const { data: s } = await sb.from("sources").select("id,company_id").eq("id", id).single();
+  const { data: s } = await sb.from("sources").select("id,company_id,tipo,origen").eq("id", id).single();
   if (!s) return fallo("Fuente no encontrada", 404);
   await exigirAcceso(perfil, s.company_id);
+  if (perfil.rol !== "consultor" && (s.tipo === "entrevista" || s.origen !== "cliente")) return fallo("Fuente no encontrada", 404);
   await sb.from("claims").delete().eq("source_id", id);
   await sb.from("source_fragments").delete().eq("source_id", id);
   await sb.from("jobs").delete().eq("tipo", "extraer").contains("payload", { source_id: id });
@@ -18,12 +19,14 @@ export const POST = protegido<Ctx>({}, async (perfil, _req, ctx) => {
   return ok({ job_id: job.id });
 });
 
+/** P1-22: el cliente solo borra fuentes propias (origen cliente) que no sean entrevistas. El consultor, cualquiera. */
 export const DELETE = protegido<Ctx>({}, async (perfil, _req, ctx) => {
   const { id } = await ctx.params;
   const sb = supabaseAdmin();
-  const { data: s } = await sb.from("sources").select("id,company_id,storage_path").eq("id", id).single();
+  const { data: s } = await sb.from("sources").select("id,company_id,storage_path,tipo,origen").eq("id", id).single();
   if (!s) return fallo("Fuente no encontrada", 404);
   await exigirAcceso(perfil, s.company_id);
+  if (perfil.rol !== "consultor" && (s.tipo === "entrevista" || s.origen !== "cliente")) return fallo("Fuente no encontrada", 404);
   if (s.storage_path) await sb.storage.from("fuentes").remove([s.storage_path]);
   await sb.from("sources").delete().eq("id", id);
   return ok({ eliminada: true });

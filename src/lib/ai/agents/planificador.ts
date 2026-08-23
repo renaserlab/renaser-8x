@@ -1,7 +1,10 @@
 import { ai } from "..";
 import { SalidaPlanificador, SalidaRedactor, SalidaAdmision } from "@/lib/schemas";
+import { GUARDIA, comoDato } from "@/lib/rules/patrones";
 
-export const PROMPT_PLANIFICADOR = `Recibes los hallazgos aprobados de las cuatro P y los procesos TO-BE.
+export const PROMPT_PLANIFICADOR = `${GUARDIA}
+
+Recibes los hallazgos aprobados de las cuatro P y los procesos TO-BE.
 
 Devuelve el plan de implementacion de 45 dias (7 semanas, la ultima corta) en JSON:
 { "frentes": [{ prioridad, semana_inicio, semana_cierre, accion,
@@ -15,16 +18,19 @@ REGLAS:
 - Todo frente tiene un KPI medible y un responsable con nombre de
   puesto. "El equipo" no es un responsable.
 - Todo frente se vincula a un hallazgo (finding_id de los recibidos). Ninguno huerfano.
+- Los hallazgos marcados como fortaleza (preserva) generan, si acaso, un frente de "documentar y proteger", nunca de cambio.
 - Ordena por lo que produce mayor multiplicacion, no por lo mas facil.
 - Redacta cada accion en lenguaje simple, como una instruccion que el
   dueno pueda repetirle a su equipo sin traducir.
 - evidencia: que prueba fisica o digital demuestra que el frente cerro.`;
 
 export async function correrPlanificador(contexto: string) {
-  return ai().complete({ system: PROMPT_PLANIFICADOR, user: contexto, schema: SalidaPlanificador, priority: "batch", maxTokens: 5000 });
+  return ai().complete({ system: PROMPT_PLANIFICADOR, user: contexto, schema: SalidaPlanificador, priority: "batch", maxTokens: 5000, agente: "planificador" });
 }
 
-export const PROMPT_REDACTOR = `Recibes los hallazgos aprobados, los procesos y el plan de una empresa.
+export const PROMPT_REDACTOR = `${GUARDIA}
+
+Recibes los hallazgos aprobados, los procesos y el plan de una empresa.
 Redactas UN documento de entrega del tipo que se te indica.
 
 Devuelve JSON { "titulo", "secciones": [{ "titulo", "parrafos": [...], "fuentes": [...] }] }.
@@ -34,19 +40,21 @@ REGLAS:
   Nunca escribas "afirmacion", "pilar", "hallazgo", "AS-IS", "TO-BE", "KPI", "SOP":
   di "lo que dice tu empresa", "lo que encontramos", "como funciona hoy",
   "como deberia funcionar", "indicador", "como se hace".
+- Nunca menciones nombres de autores, metodologias ni referentes externos.
 - Toda afirmacion que hagas debe citar su fuente: el documento y
   la fecha, o "segun lo que nos contaste el [fecha]". Pon las citas en "fuentes".
+  Cada seccion debe tener al menos una fuente; si no la tiene, no escribas esa seccion.
 - Si un dato no tiene fuente, NO entra en el documento.
-- No uses superlativos ni lenguaje de venta. Este documento no vende:
-  informa.
-- Estructura: que encontramos, en que nos basamos, que significa,
-  que hacer.`;
+- No uses superlativos ni lenguaje de venta. Este documento no vende: informa.
+- Estructura: que encontramos, en que nos basamos, que significa, que hacer.`;
 
 export async function correrRedactor(contexto: string) {
-  return ai().complete({ system: PROMPT_REDACTOR, user: contexto, schema: SalidaRedactor, priority: "batch", maxTokens: 8000 });
+  return ai().complete({ system: PROMPT_REDACTOR, user: contexto, schema: SalidaRedactor, priority: "batch", maxTokens: 8000, agente: "redactor" });
 }
 
-export const PROMPT_ADMISION = `Evaluas si una empresa es admisible al programa 8X a partir de su cuestionario de admision.
+export const PROMPT_ADMISION = `${GUARDIA}
+
+Evaluas si una empresa es admisible al programa 8X a partir de su cuestionario de admision.
 
 Admisible: facturacion validada y sostenida · producto con validacion de mercado ·
 dueno comprometido con su propio cambio · disposicion a invertir y transformar ·
@@ -63,5 +71,5 @@ Devuelve JSON { "admisible": boolean, "motivo": "dos frases para el consultor", 
 Es una recomendacion: el consultor decide.`;
 
 export async function correrAdmision(cuestionario: string) {
-  return ai().complete({ system: PROMPT_ADMISION, user: cuestionario, schema: SalidaAdmision, priority: "batch", maxTokens: 800 });
+  return ai().complete({ system: PROMPT_ADMISION, user: comoDato("CUESTIONARIO", cuestionario), schema: SalidaAdmision, priority: "batch", maxTokens: 800, agente: "admision" });
 }

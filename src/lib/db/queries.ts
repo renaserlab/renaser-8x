@@ -1,5 +1,7 @@
 import { supabaseAdmin } from "../supabase/admin";
 import { fechaMes } from "../textos";
+import { VERSION_PROMPT } from "../ai";
+import type { CompleteResult } from "../ai/provider";
 
 export type ClaimRow = {
   id: string;
@@ -7,6 +9,7 @@ export type ClaimRow = {
   source_id: string;
   fragment_id: string | null;
   participant_id: string | null;
+  response_id: string | null;
   texto: string;
   pilar: string | null;
   tipo: string | null;
@@ -17,15 +20,16 @@ export type ClaimRow = {
   explicacion_contradiccion: string | null;
   pregunta_sugerida: string | null;
   prioridad_validacion: boolean;
+  validado_por: string | null;
   created_at: string;
-  sources?: { nombre: string; tipo: string; fecha_origen: string | null } | null;
+  sources?: { nombre: string; tipo: string; fecha_origen: string | null; origen?: string | null } | null;
   participants?: { nombre: string; rol: string | null; puesto: string | null } | null;
 };
 
 export async function claimsDeEmpresa(companyId: string, filtros: { pilar?: string; estado?: string; limit?: number; offset?: number } = {}) {
   let q = supabaseAdmin()
     .from("claims")
-    .select("*, sources(nombre,tipo,fecha_origen), participants(nombre,rol,puesto)")
+    .select("*, sources(nombre,tipo,fecha_origen,origen), participants(nombre,rol,puesto)")
     .eq("company_id", companyId)
     .order("created_at", { ascending: false });
   if (filtros.pilar) q = q.eq("pilar", filtros.pilar);
@@ -36,10 +40,10 @@ export async function claimsDeEmpresa(companyId: string, filtros: { pilar?: stri
   return (data ?? []) as ClaimRow[];
 }
 
-/** "Plan estratégico 2023 (documento, mayo 2023)" / "Rosa, Compras (entrevista)" */
-export function etiquetaFuente(c: ClaimRow): string {
+/** "Plan estratégico 2023 (documento, mayo 2023)" / "Compradora (entrevista)". Nunca el nombre de una persona del equipo. */
+export function etiquetaFuente(c: Pick<ClaimRow, "sources" | "participants">): string {
   if (c.participants) {
-    const quien = c.participants.rol === "dueno" ? "el dueño" : `${c.participants.puesto ?? c.participants.rol ?? "equipo"}`;
+    const quien = c.participants.rol === "dueno" ? "el dueño" : c.participants.rol === "socio" ? "un socio" : `${c.participants.puesto ?? c.participants.rol ?? "equipo"}`;
     return `${quien} (entrevista)`;
   }
   if (c.sources) {
@@ -55,8 +59,18 @@ export function columnaEspejo(c: ClaimRow): "documentos" | "dueno" | "equipo" {
   return "documentos";
 }
 
-export async function registrarTokens(companyId: string | null, jobId: string | null, agente: string, entrada: number, salida: number) {
-  await supabaseAdmin().from("token_usage").insert({ company_id: companyId, job_id: jobId, agente, tokens_entrada: entrada, tokens_salida: salida });
+/** Observabilidad (15): cada llamada con agente, modelo, versión del prompt, latencia, tokens y error. Nunca secretos ni contenido. */
+export async function registrarLlamada(companyId: string | null, jobId: string | null, agente: string, r: Pick<CompleteResult<unknown>, "tokens_entrada" | "tokens_salida" | "modelo" | "latencia_ms">) {
+  await supabaseAdmin().from("token_usage").insert({ company_id: companyId, job_id: jobId, agente, tokens_entrada: r.tokens_entrada, tokens_salida: r.tokens_salida, modelo: r.modelo, version_prompt: VERSION_PROMPT, latencia_ms: r.latencia_ms });
+}
+
+export async function registrarErrorLlamada(companyId: string | null, jobId: string | null, agente: string, error: string, latencia_ms: number) {
+  await supabaseAdmin().from("token_usage").insert({ company_id: companyId, job_id: jobId, agente, tokens_entrada: 0, tokens_salida: 0, version_prompt: VERSION_PROMPT, latencia_ms, error: error.slice(0, 300) });
+}
+
+/** Compatibilidad con los handlers: mismo nombre, ahora con observabilidad completa. */
+export async function registrarTokens(companyId: string | null, jobId: string | null, agente: string, entrada: number, salida: number, extra?: Partial<Pick<CompleteResult<unknown>, "modelo" | "latencia_ms">>) {
+  await registrarLlamada(companyId, jobId, agente, { tokens_entrada: entrada, tokens_salida: salida, modelo: extra?.modelo ?? "", latencia_ms: extra?.latencia_ms ?? 0 });
 }
 
 export async function tokensUsados(companyId: string): Promise<number> {
@@ -73,7 +87,7 @@ export async function superaTope(companyId: string): Promise<boolean> {
 /** Texto de afirmaciones para prompts: "[id] (fuente) texto — estado, fecha". */
 export function claimsComoTexto(claims: ClaimRow[]): string {
   return claims
-    .map((c) => `[${c.id}] (${etiquetaFuente(c)}; tipo ${c.tipo ?? "otro"}; ${c.temporalidad ?? "actual"}; ${c.estado}; fecha ${c.fecha_afirmacion ?? "desconocida"}) ${c.texto}`)
+    .map((c) => `[${c.id}] (${etiquetaFuente(c)}; fuente_id ${c.source_id}${c.participant_id ? `; persona ${c.participant_id}` : ""}; tipo ${c.tipo ?? "otro"}; ${c.temporalidad ?? "actual"}; ${c.estado}; fecha ${c.fecha_afirmacion ?? "desconocida"}) ${c.texto}`)
     .join("\n");
 }
 
@@ -90,7 +104,7 @@ export async function procesoCompleto(processId: string) {
 export function procesoComoJSON(nodos: Record<string, unknown>[], edges: Record<string, unknown>[]) {
   return JSON.stringify(
     {
-      nodos: nodos.map((n) => ({ id: n.id, tipo: n.tipo, etiqueta: n.etiqueta, responsable: n.responsable, ejecutor: n.ejecutor, tiempo: n.tiempo, herramienta: n.herramienta, problema: n.problema, veredicto: n.veredicto })),
+      nodos: nodos.map((n) => ({ id: n.id, tipo: n.tipo, etiqueta: n.etiqueta, responsable: n.responsable, rol: n.rol, ejecutor: n.ejecutor, tiempo: n.tiempo, espera: n.espera, herramienta: n.herramienta, entrada: n.entrada, salida: n.salida, evidencia: n.evidencia, estandar: n.estandar, problema: n.problema, veredicto: n.veredicto })),
       conexiones: edges.map((e) => ({ de: e.origen, a: e.destino, etiqueta: e.etiqueta })),
     },
     null,
@@ -98,15 +112,18 @@ export function procesoComoJSON(nodos: Record<string, unknown>[], edges: Record<
   );
 }
 
-/** Frontera: hallazgos visibles para el cliente. Capítulo 34. Solo aprobados/corregidos con evidencia. */
+/** Frontera: hallazgos visibles para el cliente. Capítulo 34. Solo aprobados/corregidos, con evidencia y sin validación pendiente. */
 export async function hallazgosAprobadosConEvidencia(companyId: string) {
   const { data } = await supabaseAdmin()
     .from("findings")
-    .select("*, finding_evidence(claim_id, relacion, claims(id,texto,fecha_afirmacion,sources(nombre,tipo,fecha_origen),participants(nombre,rol,puesto)))")
+    .select("*, finding_evidence(claim_id, relacion, claims(id,texto,fecha_afirmacion,source_id,fragment_id,sources(nombre,tipo,fecha_origen),participants(nombre,rol,puesto)))")
     .eq("company_id", companyId)
     .in("estado_revision", ["aprobado", "corregido"])
-    .order("impacto");
-  return (data ?? []).filter((f) => (f.finding_evidence ?? []).some((e: { relacion: string }) => e.relacion === "sustenta"));
+    .eq("requiere_validacion", false);
+  const orden: Record<string, number> = { alto: 0, medio: 1, bajo: 2 };
+  return (data ?? [])
+    .filter((f) => (f.finding_evidence ?? []).some((e: { relacion: string }) => e.relacion === "sustenta"))
+    .sort((a, b) => (orden[a.impacto ?? "bajo"] ?? 9) - (orden[b.impacto ?? "bajo"] ?? 9));
 }
 
 export async function refrescarStats() {

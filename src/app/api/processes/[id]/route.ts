@@ -39,7 +39,7 @@ export const PUT = protegido<Ctx>({}, async (perfil, req, ctx) => {
     p_process_id: id,
     p_nombre: b.nombre ?? null,
     p_area: b.area ?? null,
-    p_nodos: nodos.map((n) => ({ id: n.id ?? null, _tmp: n._tmp ?? null, tipo: n.tipo, etiqueta: n.etiqueta || "…", responsable: n.responsable ?? null, ejecutor: n.ejecutor ?? null, tiempo: n.tiempo ?? null, herramienta: n.herramienta ?? null, problema: n.problema ?? null, veredicto: n.veredicto ?? null, pos_x: Math.round(n.pos_x ?? 0), pos_y: Math.round(n.pos_y ?? 0) })),
+    p_nodos: nodos.map((n) => ({ id: n.id ?? null, _tmp: n._tmp ?? null, tipo: n.tipo, etiqueta: n.etiqueta || "…", responsable: n.responsable ?? null, ejecutor: n.ejecutor ?? null, tiempo: n.tiempo ?? null, herramienta: n.herramienta ?? null, problema: n.problema ?? null, veredicto: n.veredicto ?? null, pos_x: Math.round(n.pos_x ?? 0), pos_y: Math.round(n.pos_y ?? 0), rol: n.rol ?? null, espera: n.espera ?? null, entrada: n.entrada ?? null, salida: n.salida ?? null, evidencia: n.evidencia ?? null, estandar: n.estandar ?? null, know_how_id: n.know_how_id ?? null })),
     p_edges: b.edges.map((e) => ({ origen: e.origen, destino: e.destino, etiqueta: e.etiqueta ?? null })),
   });
   if (error) return fallo(error.message.includes("conexion_invalida") ? "No se guardó nada: una conexión apunta a un paso que no existe." : `No se guardó nada: ${error.message}`, 400);
