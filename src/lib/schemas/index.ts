@@ -123,7 +123,9 @@ export const SalidaDiagnosticador = z.object({
       impacto: Impacto,
       veredicto: Veredicto.nullable(),
       recomendacion: z.string().nullable(),
-      claim_ids: z.array(z.string()).min(1),
+      // Puede venir vacío: el handler y el benchmark descartan el hallazgo ("sin evidencia no entra") sin perder el resto
+      // de la respuesta. Verificado con Gemini: un hallazgo de know-how sin ids invalidaba los otros hallazgos del pilar.
+      claim_ids: z.array(z.string()),
       claims_contrarios: z.array(z.string()).default([]),
       filtros: z.object({ proposito: FiltroDetalle, sabiduria: FiltroDetalle, excelencia: FiltroDetalle }),
       dimension: z.string().nullable().optional(),

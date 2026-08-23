@@ -35,8 +35,8 @@ export async function handleContrastar(job: Job) {
       lote.map(async ({ a, b }) => {
         const ca = porId.get(a.id) as ClaimRow, cb = porId.get(b.id) as ClaimRow;
         const r = await correrContrastador(
-          { id: ca.id, texto: ca.texto, fuente: etiquetaFuente(ca), fecha: ca.fecha_afirmacion },
-          { id: cb.id, texto: cb.texto, fuente: etiquetaFuente(cb), fecha: cb.fecha_afirmacion }
+          { id: ca.id, texto: ca.texto, fuente: etiquetaFuente(ca), fecha: ca.fecha_afirmacion, temporalidad: ca.temporalidad },
+          { id: cb.id, texto: cb.texto, fuente: etiquetaFuente(cb), fecha: cb.fecha_afirmacion, temporalidad: cb.temporalidad }
         );
         await registrarLlamada(job.company_id, job.id, "contrastador", r);
         paresJuzgados.push(clavePar(a.id, b.id));

@@ -43,18 +43,23 @@ export async function handleDiagnosticar(job: Job) {
     }
     if (partes.length) procesosTxt = partes.join("\n\n");
   }
-  const { data: kh } = await sb.from("know_how").select("puesto,situacion,senal,decision,regla_practica,criticidad,documentado").eq("company_id", job.company_id);
+  // Know-how con la persona y sus afirmaciones: sin ids citables el modelo no puede sustentar (ni preservar) ese know-how.
+  const { data: kh } = await sb.from("know_how").select("participant_id,puesto,situacion,senal,decision,regla_practica,criticidad,documentado, participants(nombre)").eq("company_id", job.company_id);
+  const idsDe = (pid: string | null) => (pid ? todas.filter((c) => c.participant_id === pid).map((c) => c.id) : []);
+  // Las afirmaciones de quien tiene el know-how entran al contexto del pilar (con su texto): sin ellas el modelo no puede conectar el síntoma con su causa.
+  const idsKnowHow = new Set((kh ?? []).flatMap((k) => idsDe(k.participant_id)));
+  const conKnowHow = [...utiles, ...todas.filter((c) => idsKnowHow.has(c.id) && !utiles.some((u) => u.id === c.id) && (c.estado === "confirmado" || c.estado === "contradicho" || c.estado === "caducado"))];
   const { data: sueno } = await sb.from("interview_responses").select("bloque,pregunta,respuesta, interview_sessions!inner(tipo,company_id)").eq("interview_sessions.company_id", job.company_id).eq("interview_sessions.tipo", "sueno_dueno").not("respuesta", "is", null);
   const { data: empresa } = await sb.from("companies").select("nombre,sector").eq("id", job.company_id).single();
   const contexto = [
     `EMPRESA: ${empresa?.nombre} · sector: ${empresa?.sector ?? "desconocido"}`,
     `PILAR: ${pilar}`,
-    `AFIRMACIONES (${utiles.length}):`,
-    claimsComoTexto(utiles),
+    `AFIRMACIONES (${conKnowHow.length}):`,
+    claimsComoTexto(conKnowHow),
     `PROCESOS:`,
     procesosTxt,
     `KNOW-HOW MINADO (${kh?.length ?? 0}):`,
-    (kh ?? []).map((k) => `- ${k.puesto} [${k.criticidad}${k.documentado ? "" : ", no documentado"}]: ${k.situacion ?? ""} · señal: ${k.senal ?? ""} · regla: ${k.regla_practica ?? ""}`).join("\n") || "(ninguno)",
+    (kh ?? []).map((k) => { const nombre = (k.participants as unknown as { nombre: string } | null)?.nombre; const ids = idsDe(k.participant_id); return `- ${nombre ? `${nombre} (${k.puesto})` : k.puesto} [${k.criticidad}${k.documentado ? "" : ", no documentado"}]: ${k.situacion ?? ""} · señal: ${k.senal ?? ""} · regla: ${k.regla_practica ?? ""}${ids.length ? ` · afirmaciones de esta persona: ${ids.join(", ")}` : ""}`; }).join("\n") || "(ninguno)",
     `SUEÑO DEL DUEÑO (${sueno?.length ?? 0} respuestas):`,
     (sueno ?? []).map((s) => `- [${s.bloque}] ${s.pregunta} → ${String(s.respuesta).slice(0, 300)}`).join("\n") || "(sin sesión de sueño completada)",
   ].join("\n\n");
@@ -72,7 +77,7 @@ export async function handleDiagnosticar(job: Job) {
   const conIdx = hallazgos.map((h, i) => ({ id: `h${i + 1}`, ...h }));
   let auditorias: Record<string, { sustentado: boolean; evidencia_contraria: string[]; es_sintoma: boolean; culpa_persona_sin_auditar?: boolean; benchmark_como_hecho?: boolean; duplicado_de?: string | null; observacion: string }> = {};
   if (conIdx.length) {
-    const ctxA = [`HALLAZGOS:`, JSON.stringify(conIdx.map((h) => ({ id: h.id, titulo: h.titulo, causa_raiz: h.causa_raiz, impacto: h.impacto, claim_ids: h.claim_ids })), null, 1), `TODAS LAS AFIRMACIONES:`, claimsComoTexto(todas)].join("\n\n");
+    const ctxA = [`HALLAZGOS:`, JSON.stringify(conIdx.map((h) => ({ id: h.id, titulo: h.titulo, causa_raiz: h.causa_raiz, impacto: h.impacto, preserva: !!h.preserva, veredicto: h.veredicto ?? null, claim_ids: h.claim_ids })), null, 1), `TODAS LAS AFIRMACIONES:`, claimsComoTexto(todas)].join("\n\n");
     const a = await correrAuditor(ctxA);
     await registrarLlamada(job.company_id, job.id, "auditor", a);
     auditorias = Object.fromEntries(a.data.auditorias.map((x) => [x.id, x]));

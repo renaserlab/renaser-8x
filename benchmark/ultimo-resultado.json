@@ -1,0 +1,94 @@
+{
+  "fecha": "2026-08-23T18:12:50.507Z",
+  "version_prompt": "v4.1",
+  "contradicciones_detectadas": [
+    {
+      "a": "c-cliente-2022",
+      "b": "c-csv-cliente"
+    },
+    {
+      "a": "c-org-jefe",
+      "b": "c-diego-descuentos"
+    },
+    {
+      "a": "c-dueno-ventas",
+      "b": "c-pamela-parados"
+    }
+  ],
+  "pregunta_sueno": {
+    "preguntas": [
+      {
+        "texto": "¿Qué debería ser verdad en tu empresa dentro de tres años para que sientas que realmente construiste lo que querías?",
+        "bloque": "empresa_deseada"
+      },
+      {
+        "texto": "Imagina un martes normal dentro de tres años: ¿dónde estás y qué haces tú personalmente ese día?",
+        "bloque": "vida_deseada"
+      },
+      {
+        "texto": "¿Qué actividad de las que haces hoy sientes que amas, pero que ya no deberías estar haciendo?",
+        "bloque": "rol"
+      }
+    ],
+    "sesion_completa": false
+  },
+  "metricas": {
+    "cobertura": 0.667,
+    "precision": 1,
+    "falsos_positivos": 0,
+    "causa_raiz": 0.75,
+    "preservacion": 0,
+    "contradicciones": 0.667,
+    "preguntas": 0,
+    "omisiones": [
+      "fruta_pasada_know_how",
+      "fortaleza_rosa"
+    ],
+    "inventados": []
+  },
+  "aprueba": {
+    "ok": false,
+    "motivos": [
+      "cobertura 0.667 < 0.85: omite fruta_pasada_know_how, fortaleza_rosa",
+      "no reconoció todas las fortalezas",
+      "no detectó todas las contradicciones"
+    ]
+  },
+  "hallazgos_visibles": [
+    {
+      "titulo": "Dependencia del fundador en decisiones operativas",
+      "causa_raiz": "El diseño de autoridad otorga roles y procesos al Jefe de Ventas, pero en la práctica, el dueño retiene todas las decisiones de descuento.",
+      "pilar": "personas",
+      "patron": "dependencia_fundador",
+      "impacto": "alto",
+      "preserva": false
+    },
+    {
+      "titulo": "Discrepancia profunda entre estrategia declarada y realidad operativa",
+      "causa_raiz": "El plan estratégico está desactualizado respecto a la ambición real del dueño (foco en Lima vs. provincias, metas de facturación, horas de trabajo) y al mercado real atendido.",
+      "pilar": "marketing",
+      "patron": "sueno_vs_empresa",
+      "impacto": "alto",
+      "preserva": false
+    },
+    {
+      "titulo": "Desalineación entre cliente objetivo definido y cliente real",
+      "causa_raiz": "La estrategia comercial apunta a cadenas (>5 locales), pero el mercado real que sostiene la facturación (81%) son restaurantes independientes de 1 local.",
+      "pilar": "marketing",
+      "patron": "vision_obsoleta",
+      "impacto": "alto",
+      "preserva": false
+    },
+    {
+      "titulo": "Dependencia crítica de canal único",
+      "causa_raiz": "La captación de clientes nuevos depende casi exclusivamente (92%) de un tercero externo (Chef Ramos), sin procesos internos de prospección controlados.",
+      "pilar": "marketing",
+      "patron": "canal_unico",
+      "impacto": "alto",
+      "preserva": false
+    }
+  ],
+  "tokens": 38471,
+  "costo_usd_estimado": 0.23,
+  "latencia_total_s": 61
+}

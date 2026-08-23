@@ -1,11 +1,12 @@
 import type { AIProvider } from "./provider";
 import { AnthropicProvider } from "./anthropic";
+import { GeminiProvider } from "./gemini";
 
 let _ai: AIProvider | null = null;
 
-/** El proveedor se cambia aquí y en ningún otro lugar. */
+/** El proveedor se cambia aquí y en ningún otro lugar (AI_PROVIDER=anthropic|gemini). */
 export function ai(): AIProvider {
-  if (!_ai) _ai = new AnthropicProvider();
+  if (!_ai) _ai = process.env.AI_PROVIDER === "gemini" ? new GeminiProvider() : new AnthropicProvider();
   return _ai;
 }
 
@@ -20,4 +21,4 @@ export function hayTranscriptor(): boolean {
 }
 
 /** Versión de los prompts. Cambia cuando cambia cualquier prompt: entra en idempotencia y en token_usage. */
-export const VERSION_PROMPT = "v4.1";
+export const VERSION_PROMPT = "v4.2";

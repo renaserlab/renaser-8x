@@ -28,9 +28,11 @@ describe("esquemas Zod: salidas estructuradas siempre", () => {
   it("arquitecto: tipo de nodo inválido rechaza", () => {
     expect(SalidaArquitecto.safeParse({ nombre: "x", nodos: [{ id: "n1", tipo: "tarea", etiqueta: "a" }], conexiones: [] }).success).toBe(false);
   });
-  it("diagnosticador: un hallazgo sin claim_ids NO valida (sin evidencia no entra)", () => {
+  it("diagnosticador: un hallazgo sin claim_ids valida en esquema (lo descarta el filtro de código: sin evidencia no entra, sin perder los demás)", () => {
     const base = { titulo: "t", patron: null, causa_raiz: "c", impacto: "alto", veredicto: null, recomendacion: null, filtros: { proposito: { resultado: "pasa", nota: "" }, sabiduria: { resultado: "pasa", nota: "" }, excelencia: { resultado: "pasa", nota: "" } } };
-    expect(SalidaDiagnosticador.safeParse({ hallazgos: [{ ...base, claim_ids: [] }] }).success).toBe(false);
+    const r = SalidaDiagnosticador.safeParse({ hallazgos: [{ ...base, claim_ids: [] }, { ...base, claim_ids: ["a"] }] });
+    expect(r.success).toBe(true);
+    expect(r.success && r.data.hallazgos.filter((h) => h.claim_ids.length > 0).length).toBe(1);
     expect(SalidaDiagnosticador.safeParse({ hallazgos: [{ ...base, claim_ids: ["a"] }] }).success).toBe(true);
   });
   it("diagnosticador: los tres filtros son obligatorios", () => {

@@ -1,6 +1,6 @@
 /**
  * FASE 8 — Primera prueba con IA real sobre la EMPRESA DEMO, comparada contra benchmark/esperado.json.
- * Requiere ANTHROPIC_API_KEY. NO usa Supabase: corre los agentes en memoria sobre el fixture.
+ * Requiere ANTHROPIC_API_KEY (o AI_PROVIDER=gemini + GEMINI_API_KEY). NO usa Supabase: corre los agentes en memoria sobre el fixture.
  *   node --env-file=.env.local --import=tsx scripts/benchmark-ia.ts
  * Registra: omisiones, falsos positivos, preguntas, causalidad, costo (tokens) y latencia. Escribe benchmark/ultimo-resultado.json.
  * Si no hay llave → BLOCKED_EXTERNAL (sale con código 2).
@@ -16,8 +16,9 @@ import { calibrarImpacto, aplicarFiltros } from "../src/lib/rules/evidencia";
 import { medir, aprueba, type Esperado } from "../src/lib/benchmark";
 import { bancoComoTexto } from "../src/lib/rules/cobertura";
 
-if (!process.env.ANTHROPIC_API_KEY) {
-  console.error("BLOCKED_EXTERNAL: falta ANTHROPIC_API_KEY");
+const conLlave = process.env.AI_PROVIDER === "gemini" ? !!process.env.GEMINI_API_KEY : !!process.env.ANTHROPIC_API_KEY;
+if (!conLlave) {
+  console.error("BLOCKED_EXTERNAL: falta ANTHROPIC_API_KEY (o AI_PROVIDER=gemini + GEMINI_API_KEY)");
   process.exit(2);
 }
 
@@ -39,7 +40,7 @@ async function main() {
   const preguntas: string[] = [];
   for (const { a, b } of candidatasAContradiccion(CLAIMS)) {
     const ca = CLAIMS.find((c) => c.id === a.id)!, cb = CLAIMS.find((c) => c.id === b.id)!;
-    const r = await correrContrastador({ id: ca.id, texto: ca.texto, fuente: fuenteDe(ca), fecha: ca.fecha_afirmacion }, { id: cb.id, texto: cb.texto, fuente: fuenteDe(cb), fecha: cb.fecha_afirmacion });
+    const r = await correrContrastador({ id: ca.id, texto: ca.texto, fuente: fuenteDe(ca), fecha: ca.fecha_afirmacion, temporalidad: ca.temporalidad }, { id: cb.id, texto: cb.texto, fuente: fuenteDe(cb), fecha: cb.fecha_afirmacion, temporalidad: cb.temporalidad });
     tokens += r.tokens_entrada + r.tokens_salida;
     if (r.data.se_contradicen) contradicciones.push({ a: a.id, b: b.id });
     if (r.data.pregunta_sugerida) preguntas.push(r.data.pregunta_sugerida);
@@ -52,15 +53,19 @@ async function main() {
   registro.pregunta_sueno = e.data;
 
   // 3. Diagnóstico por pilar + auditor, con calibración y filtros en código
+  const porPilar: Record<string, unknown>[] = [];
+  registro.por_pilar = porPilar;
   const obtenidos: { titulo: string; causa_raiz: string; pilar: string; patron: string | null; impacto: string; preserva: boolean }[] = [];
   const sueno = RESPUESTAS.filter((r) => r.session_id === "ses-dueno-sueno").map((r) => `- [${r.bloque}] ${r.pregunta} → ${r.respuesta}`).join("\n");
   for (const pilar of ["personas", "procesos", "producto", "marketing"]) {
-    const del = CLAIMS.filter((c) => c.pilar === pilar || c.pilar === "transversal");
-    const ctx = [`EMPRESA: Frutas del Valle SAC · sector: distribución de alimentos`, `PILAR: ${pilar}`, `AFIRMACIONES (${del.length}):`, claimsTxt(del), `PROCESOS:`, pilar === "procesos" ? JSON.stringify(AS_IS_VENTAS) : "(sin procesos dibujados)", `KNOW-HOW MINADO (1):\n- Compradora [alta, no documentado]: compra de palta · señal: textura de la cáscara · regla: precio no decide, textura decide`, `SUEÑO DEL DUEÑO:\n${sueno}`].join("\n\n");
+    const delPilar = CLAIMS.filter((c) => c.pilar === pilar || c.pilar === "transversal");
+    const del = [...delPilar, ...CLAIMS.filter((c) => c.participant_id === "p-rosa" && !delPilar.includes(c))]; // + afirmaciones de la persona del know-how (como el worker)
+    const ctx = [`EMPRESA: Frutas del Valle SAC · sector: distribución de alimentos`, `PILAR: ${pilar}`, `AFIRMACIONES (${del.length}):`, claimsTxt(del), `PROCESOS:`, pilar === "procesos" ? JSON.stringify(AS_IS_VENTAS) : "(sin procesos dibujados)", `KNOW-HOW MINADO (1):\n- Rosa (Compradora) [alta, no documentado]: compra de palta · señal: textura de la cáscara · regla: precio no decide, textura decide · afirmaciones de esta persona: ${CLAIMS.filter((c) => c.participant_id === "p-rosa").map((c) => c.id).join(", ")}`, `SUEÑO DEL DUEÑO:\n${sueno}`].join("\n\n");
     const d = await correrDiagnosticador(ctx);
     tokens += d.tokens_entrada + d.tokens_salida;
+    porPilar.push({ pilar, modelo: d.modelo, latencia_ms: d.latencia_ms, hallazgos: d.data.hallazgos.map((h) => ({ titulo: h.titulo, patron: h.patron, impacto: h.impacto, claim_ids: h.claim_ids, preserva: !!h.preserva, causa_raiz: h.causa_raiz })) });
     const validos = d.data.hallazgos.filter((h) => h.claim_ids.some((id) => CLAIMS.some((c) => c.id === id)));
-    const a = await correrAuditor([`HALLAZGOS:`, JSON.stringify(validos.map((h, i) => ({ id: `h${i}`, titulo: h.titulo, causa_raiz: h.causa_raiz, impacto: h.impacto, claim_ids: h.claim_ids }))), `TODAS LAS AFIRMACIONES:`, claimsTxt(CLAIMS)].join("\n\n"));
+    const a = await correrAuditor([`HALLAZGOS:`, JSON.stringify(validos.map((h, i) => ({ id: `h${i}`, titulo: h.titulo, causa_raiz: h.causa_raiz, impacto: h.impacto, preserva: !!h.preserva, veredicto: h.veredicto ?? null, claim_ids: h.claim_ids }))), `TODAS LAS AFIRMACIONES:`, claimsTxt(CLAIMS)].join("\n\n"));
     tokens += a.tokens_entrada + a.tokens_salida;
     validos.forEach((h, i) => {
       const au = a.data.auditorias.find((x) => x.id === `h${i}`);
@@ -80,5 +85,9 @@ async function main() {
 
 main().catch((e) => {
   console.error("benchmark falló:", e?.message ?? e);
+  if (typeof e?.raw === "string") {
+    writeFileSync(path.resolve(__dirname, "../benchmark/ultimo-error.txt"), e.raw);
+    console.error("salida cruda completa en benchmark/ultimo-error.txt (primeros 800 chars): " + e.raw.slice(0, 800));
+  }
   process.exit(1);
 });

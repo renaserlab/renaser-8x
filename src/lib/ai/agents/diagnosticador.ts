@@ -44,8 +44,12 @@ preguntas_pendientes: [{ texto, dimension, para: dueno | lider | personal | dato
 la evidencia no cubre. Son preguntas para el levantamiento, no hallazgos.
 
 REGLAS ABSOLUTAS:
-- Un hallazgo sin claim_ids no es valido. No lo devuelvas.
-- Usa SOLO ids que aparecen en las afirmaciones recibidas.
+- Un hallazgo sin claim_ids no es valido. No lo devuelvas. Si nace del know-how minado o del sueno del dueno,
+  sustentalo con los ids de las afirmaciones de esa persona o de ese tema; si no existe ninguna, no lo devuelvas.
+- Usa SOLO ids que aparecen en las afirmaciones recibidas o citados en el know-how minado.
+- Identifica tambien las FORTALEZAS que no deben destruirse (preserva: true, veredicto keep): un know-how
+  critico que funciona, un proceso o criterio que da resultados. Nombralas por la persona o el proceso que
+  las sostiene y sustentalas con sus ids. Una recomendacion que las destruya no pasa el filtro de sabiduria.
 - Toda empresa tiene una o varias restricciones dominantes; no presupongas donde estan: pueden estar en el
   fundador, el liderazgo, las personas, los procesos, el producto, el marketing, la capacidad, la economia,
   la tecnologia o una decision estrategica. Deja que la evidencia decida.
@@ -72,7 +76,7 @@ export async function correrDiagnosticador(contexto: string) {
 
 export const PROMPT_AUDITOR = `${GUARDIA}
 
-Recibes los hallazgos generados para un pilar y todas las
+Recibes los hallazgos generados para un pilar (con preserva y veredicto) y todas las
 afirmaciones disponibles de la empresa.
 
 Devuelve JSON { "auditorias": [...] }. Para cada hallazgo:
@@ -80,7 +84,10 @@ Devuelve JSON { "auditorias": [...] }. Para cada hallazgo:
 - sustentado: true | false
 - evidencia_contraria: ids de afirmaciones que lo contradicen, si existen
 - es_sintoma: true si lo que llama causa raiz es en realidad un sintoma de algo mas profundo
-- culpa_persona_sin_auditar: true si responsabiliza a una persona sin evidencia sobre puesto, proceso, sistema, autoridad y capacidad
+- culpa_persona_sin_auditar: true si responsabiliza a una persona sin evidencia sobre puesto, proceso, sistema, autoridad y capacidad.
+  Culpar = atribuir el problema a la conducta o incompetencia de alguien. Decir que un criterio vive solo en una
+  persona, que falta un estandar escrito o que sin ella el proceso falla NO es culparla: es un hallazgo de sistema
+  (patron personas_disfrazado_de_proceso / know_how_en_una_persona) y no se marca aqui.
 - benchmark_como_hecho: true si afirma algo sobre la empresa apoyandose en conocimiento general y no en sus afirmaciones
 - duplicado_de: id de otro hallazgo si es el mismo problema con distinto nombre, o null
 - observacion
@@ -91,7 +98,11 @@ REGLAS:
 - Si un hallazgo de impacto alto se sostiene en una sola opinion individual, marcalo como no sustentado.
 - Si culpa a una persona sin auditar las seis cosas, marcalo como no sustentado.
 - Si convierte un benchmark en hecho, marcalo como no sustentado.
-- Si dos hallazgos son el mismo problema con distinto nombre, dilo.`;
+- Si dos hallazgos son el mismo problema con distinto nombre, dilo.
+- Una FORTALEZA (preserva: true, veredicto keep) no responsabiliza a nadie: reconocer que una persona
+  sostiene un criterio o un know-how NO es culparla. Si la afirmacion citada existe y ninguna la
+  contradice, esta sustentada aunque venga de la propia persona (es su oficio). Derribala solo con
+  evidencia contraria.`;
 
 export async function correrAuditor(contexto: string) {
   return ai().complete({ system: PROMPT_AUDITOR, user: contexto, schema: SalidaAuditor, priority: "batch", maxTokens: 4000, agente: "auditor" });
