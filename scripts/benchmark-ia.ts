@@ -55,7 +55,7 @@ async function main() {
   // 3. Diagnóstico por pilar + auditor, con calibración y filtros en código
   const porPilar: Record<string, unknown>[] = [];
   registro.por_pilar = porPilar;
-  const obtenidos: { titulo: string; causa_raiz: string; pilar: string; patron: string | null; impacto: string; preserva: boolean }[] = [];
+  const obtenidos: { titulo: string; causa_raiz: string; pilar: string; patron: string | null; impacto: string; preserva: boolean; claim_ids: string[] }[] = [];
   const sueno = RESPUESTAS.filter((r) => r.session_id === "ses-dueno-sueno").map((r) => `- [${r.bloque}] ${r.pregunta} → ${r.respuesta}`).join("\n");
   for (const pilar of ["personas", "procesos", "producto", "marketing"]) {
     const delPilar = CLAIMS.filter((c) => c.pilar === pilar || c.pilar === "transversal");
@@ -69,13 +69,23 @@ async function main() {
     tokens += a.tokens_entrada + a.tokens_salida;
     validos.forEach((h, i) => {
       const au = a.data.auditorias.find((x) => x.id === `h${i}`);
+      if (au?.duplicado_de) return; // el worker descarta duplicados marcados por el auditor (diagnostico.ts)
       const ev = h.claim_ids.map((id) => CLAIMS.find((c) => c.id === id)!).filter(Boolean).map((c) => ({ id: c.id, source_id: c.source_id, participant_id: c.participant_id, estado: c.participant_id ? "confirmado" : c.estado, source_tipo: c.source_tipo, participant_rol: rolDe(c.participant_id), source_origen: FUENTES.find((f) => f.id === c.source_id)?.origen ?? null }));
       const cal = calibrarImpacto(h.impacto, ev, au ? au.sustentado && !au.culpa_persona_sin_auditar && !au.benchmark_como_hecho : null);
       const f = aplicarFiltros(h.filtros, h.recomendacion);
-      if (!cal.requiere_validacion && (f.recomendacion !== null || h.preserva)) obtenidos.push({ titulo: h.titulo, causa_raiz: h.causa_raiz, pilar, patron: h.patron, impacto: cal.impacto, preserva: !!h.preserva });
+      if (!cal.requiere_validacion && (f.recomendacion !== null || h.preserva)) obtenidos.push({ titulo: h.titulo, causa_raiz: h.causa_raiz, pilar, patron: h.patron, impacto: cal.impacto, preserva: !!h.preserva, claim_ids: h.claim_ids });
     });
   }
-  const m = medir(esperado, obtenidos, contradicciones, preguntas);
+  // Consolidación cross-pilar idéntica a handleConsolidar: misma evidencia exacta, o mismo patrón con
+  // evidencia subconjunto (misma naturaleza problema/fortaleza) → queda el más evidenciado.
+  const esDuplicado = (h: (typeof obtenidos)[number]) =>
+    obtenidos.some((g) => g !== h && g.preserva === h.preserva && (
+      (h.claim_ids.slice().sort().join("|") === g.claim_ids.slice().sort().join("|") && obtenidos.indexOf(g) < obtenidos.indexOf(h)) ||
+      (((h.patron !== null && h.patron === g.patron) || (h.preserva && g.preserva)) && h.claim_ids.length < g.claim_ids.length && h.claim_ids.every((id) => g.claim_ids.includes(id)))
+    ));
+  const consolidados = obtenidos.filter((h) => !esDuplicado(h));
+  registro.consolidados = { antes: obtenidos.length, despues: consolidados.length };
+  const m = medir(esperado, consolidados, contradicciones, preguntas);
   const a = aprueba(m);
   Object.assign(registro, { metricas: m, aprueba: a, hallazgos_visibles: obtenidos, tokens, costo_usd_estimado: +((tokens / 1_000_000) * 6).toFixed(2), latencia_total_s: Math.round((Date.now() - t0) / 1000) });
   writeFileSync(path.resolve(__dirname, "../benchmark/ultimo-resultado.json"), JSON.stringify(registro, null, 2));

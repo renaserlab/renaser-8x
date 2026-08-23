@@ -35,7 +35,11 @@ REGLAS:
   Si dos fuentes distintas presentan valores distintos como actuales (las dos con temporalidad
   "actual"), devuelve contradicts y senala en cual_parece_vigente la que parece valer hoy: el
   sistema se lo preguntara al dueno. "updates" queda reservado a la misma fuente o persona
-  revisando su propio dato.`;
+  revisando su propio dato.
+- Un OBJETIVO declarado como vigente y una REALIDAD medida del mismo asunto (el cliente objetivo vs el
+  cliente que factura, el canal previsto vs el canal real) tambien es contradicts: la empresa no puede
+  sostener ambos como su verdad actual sin decidir. No es la brecha aspiracional (esa es futura y declarada
+  como deseo); aqui ambas se presentan como la situacion actual.`;
 
 type LadoContraste = { id: string; texto: string; fuente: string; fecha: string | null; temporalidad?: string | null };
 export async function correrContrastador(a: LadoContraste, b: LadoContraste) {

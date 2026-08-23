@@ -19,8 +19,15 @@ export type Esperado = {
 const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 const contiene = (texto: string, palabras: string[]) => palabras.every((p) => norm(texto).includes(norm(p)));
 
-export function emparejar(esperado: HallazgoEsperado, obtenidos: HallazgoObtenido[]): HallazgoObtenido | null {
-  return obtenidos.find((o) => (o.patron && esperado.patron && o.patron === esperado.patron) || contiene(`${o.titulo} ${o.causa_raiz ?? ""}`, esperado.palabras)) ?? null;
+export function emparejar(esperado: HallazgoEsperado, obtenidos: HallazgoObtenido[], usados?: Set<HallazgoObtenido>): HallazgoObtenido | null {
+  // Naturalezas simetricas: una FORTALEZA esperada solo la cubre un hallazgo preserva, y un problema esperado nunca consume una fortaleza.
+  const candidatos = obtenidos.filter((o) => !usados?.has(o) && (esperado.preserva ? !!o.preserva : !o.preserva));
+  const porPatron = candidatos.filter((o) => o.patron && esperado.patron && o.patron === esperado.patron);
+  const porPalabras = candidatos.filter((o) => contiene(`${o.titulo} ${o.causa_raiz ?? ""}`, esperado.palabras));
+  // Preferencia: patrón Y palabras > palabras > patrón. Uno-a-uno: el elegido queda usado.
+  const elegido = porPatron.find((o) => porPalabras.includes(o)) ?? porPalabras[0] ?? porPatron[0] ?? null;
+  if (elegido && usados) usados.add(elegido);
+  return elegido;
 }
 
 export type Metricas = {
@@ -36,7 +43,8 @@ export type Metricas = {
 };
 
 export function medir(esperado: Esperado, obtenidos: HallazgoObtenido[], contradiccionesDetectadas: { a: string; b: string }[], preguntasFormuladas: string[]): Metricas {
-  const encontrados = esperado.hallazgos.map((e) => ({ e, o: emparejar(e, obtenidos) }));
+  const usados = new Set<HallazgoObtenido>();
+  const encontrados = esperado.hallazgos.map((e) => ({ e, o: emparejar(e, obtenidos, usados) }));
   const omisiones = encontrados.filter((x) => !x.o).map((x) => x.e.clave);
   const emparejados = new Set(encontrados.filter((x) => x.o).map((x) => x.o!));
   const inventados = obtenidos.filter((o) => !emparejados.has(o) && esperado.falsos_positivos_prohibidos.some((pal) => contiene(`${o.titulo} ${o.causa_raiz ?? ""}`, pal))).map((o) => o.titulo);

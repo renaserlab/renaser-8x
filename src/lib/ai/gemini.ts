@@ -54,6 +54,9 @@ export class GeminiProvider implements AIProvider {
       systemInstruction: { parts: [{ text: p.system + "\n\nResponde ÚNICAMENTE con JSON válido, sin texto antes ni después." }] },
       contents: [{ role: "user", parts }],
       generationConfig: {
+        // Sin fijarla, Gemini usa temperature 1.0 y el diagnóstico varía muchísimo entre corridas (verificado
+        // con el benchmark). 0 = salida estable y mejor apego a las reglas; configurable por entorno.
+        temperature: Number(process.env.GEMINI_TEMPERATURE ?? 0),
         maxOutputTokens: (p.maxTokens ?? 8000) + THINKING_HEADROOM,
         responseMimeType: "application/json",
         // Salida estructurada nativa a partir del mismo esquema Zod (verificado: sin ella los modelos lite inventan claves).

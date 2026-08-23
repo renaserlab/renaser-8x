@@ -148,16 +148,25 @@ export async function handleDiagnosticar(job: Job) {
 /** Consolidación (pasadas B y F): dedupe de hallazgos que comparten la misma evidencia entre pilares; orden por multiplicación. Sin IA. */
 export async function handleConsolidar(job: Job) {
   const sb = supabaseAdmin();
-  const { data: fs } = await sb.from("findings").select("id,pilar,titulo,impacto,created_at, finding_evidence(claim_id,relacion)").eq("company_id", job.company_id).eq("estado_revision", "pendiente").eq("origen", "ia");
-  const vistos = new Map<string, string>();
+  const { data: fs } = await sb.from("findings").select("id,pilar,titulo,impacto,veredicto,patron,created_at, finding_evidence(claim_id,relacion)").eq("company_id", job.company_id).eq("estado_revision", "pendiente").eq("origen", "ia");
+  const filas = (fs ?? []).map((f) => ({
+    id: f.id,
+    fortaleza: f.veredicto === "keep",
+    patron: (f.patron as string | null) ?? null,
+    ids: new Set(((f.finding_evidence as { claim_id: string; relacion: string }[]) ?? []).filter((e) => e.relacion === "sustenta").map((e) => e.claim_id)),
+  })).filter((f) => f.ids.size > 0);
+  const duplicadoDe = (f: (typeof filas)[number]) =>
+    filas.find((g) => g !== f && g.fortaleza === f.fortaleza && (
+      // misma evidencia exacta (gana el de mayor evidencia; a igual evidencia, el otro si aún no fue eliminado)
+      ([...f.ids].sort().join("|") === [...g.ids].sort().join("|") && filas.indexOf(g) < filas.indexOf(f)) ||
+      // mismo patrón (o ambas fortalezas: el patrón es de problemas) con evidencia subconjunto estricto: mismo hallazgo con menos sustento
+      (((f.patron !== null && f.patron === g.patron) || (f.fortaleza && g.fortaleza)) && f.ids.size < g.ids.size && [...f.ids].every((id) => g.ids.has(id)))
+    ));
   let eliminados = 0;
-  for (const f of (fs ?? []).sort((a, b) => a.created_at.localeCompare(b.created_at))) {
-    const clave = ((f.finding_evidence as { claim_id: string; relacion: string }[]) ?? []).filter((e) => e.relacion === "sustenta").map((e) => e.claim_id).sort().join("|");
-    if (!clave) continue;
-    if (vistos.has(clave)) {
-      await sb.from("findings").delete().eq("id", f.id);
-      eliminados++;
-    } else vistos.set(clave, f.id);
+  const borrar = filas.filter((f) => duplicadoDe(f));
+  for (const f of borrar) {
+    await sb.from("findings").delete().eq("id", f.id);
+    eliminados++;
   }
   await sb.from("companies").update({ etapa: "diagnostico" }).eq("id", job.company_id).in("etapa", ["levantamiento", "contraste"]);
   return { duplicados_eliminados: eliminados, hallazgos: (fs?.length ?? 0) - eliminados };

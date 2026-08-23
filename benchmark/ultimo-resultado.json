@@ -1,7 +1,11 @@
 {
-  "fecha": "2026-08-23T18:12:50.507Z",
+  "fecha": "2026-08-23T21:41:10.133Z",
   "version_prompt": "v4.1",
   "contradicciones_detectadas": [
+    {
+      "a": "c-meta-2022",
+      "b": "c-dueno-meta"
+    },
     {
       "a": "c-cliente-2022",
       "b": "c-csv-cliente"
@@ -18,77 +22,325 @@
   "pregunta_sueno": {
     "preguntas": [
       {
-        "texto": "¿Qué debería ser verdad en tu empresa dentro de tres años para que sientas que realmente construiste lo que querías?",
-        "bloque": "empresa_deseada"
-      },
-      {
-        "texto": "Imagina un martes normal dentro de tres años: ¿dónde estás y qué haces tú personalmente ese día?",
-        "bloque": "vida_deseada"
-      },
-      {
-        "texto": "¿Qué actividad de las que haces hoy sientes que amas, pero que ya no deberías estar haciendo?",
-        "bloque": "rol"
+        "texto": "¿Qué empresa quieres construir realmente y qué debería ser verdad dentro de tres años?",
+        "bloque": "empresa_deseada",
+        "pilar": "transversal",
+        "origen_claim_id": null
       }
     ],
     "sesion_completa": false
   },
+  "por_pilar": [
+    {
+      "pilar": "personas",
+      "modelo": "gemini-3.7-flash",
+      "latencia_ms": 27588,
+      "hallazgos": [
+        {
+          "titulo": "Dependencia del dueño para la aprobación de todo descuento comercial",
+          "patron": "dependencia_fundador",
+          "impacto": "alto",
+          "claim_ids": [
+            "c-org-jefe",
+            "c-diego-descuentos"
+          ],
+          "preserva": false,
+          "causa_raiz": "Falta de política escrita y matriz de delegación de autoridad para descuentos comerciales que faculte al jefe de ventas"
+        },
+        {
+          "titulo": "Know-how crítico de compra de fruta concentrado exclusivamente en Rosa",
+          "patron": "know_how_en_una_persona",
+          "impacto": "medio",
+          "claim_ids": [
+            "c-rosa-compra"
+          ],
+          "preserva": true,
+          "causa_raiz": "Falta de criterio documentado y estándar formal de selección de palta (criterio por textura de cáscara y no por precio) para el equipo de compras"
+        },
+        {
+          "titulo": "Discrepancia entre la visión histórica de expansión a provincias y el sueño del dueño de enfocarse en Lima a 30 horas",
+          "patron": "sueno_vs_empresa",
+          "impacto": "alto",
+          "claim_ids": [
+            "c-vision-2022",
+            "c-dueno-vision"
+          ],
+          "preserva": false,
+          "causa_raiz": "Falta de actualización formal del plan estratégico para alinearlo a la decisión del dueño de no ir a provincias y reducir su jornada a 30 horas"
+        }
+      ]
+    },
+    {
+      "pilar": "procesos",
+      "modelo": "gemini-3.7-flash",
+      "latencia_ms": 43360,
+      "hallazgos": [
+        {
+          "titulo": "Dependencia del dueño para aprobar descuentos detiene pedidos",
+          "patron": "dependencia_fundador",
+          "impacto": "medio",
+          "claim_ids": [
+            "c-pamela-parados"
+          ],
+          "preserva": false,
+          "causa_raiz": "Falta de política escrita y matriz de delegación con márgenes de descuento autorizados para ventas"
+        },
+        {
+          "titulo": "Know-how crítico de compra de fruta en Rosa sin criterio documentado",
+          "patron": "know_how_en_una_persona",
+          "impacto": "medio",
+          "claim_ids": [
+            "c-rosa-compra"
+          ],
+          "preserva": true,
+          "causa_raiz": "Ausencia de estándar documentado de calidad para compras: cuando Rosa no está, se compra por precio en lugar de evaluar la textura de la cáscara y la fruta llega pasada"
+        },
+        {
+          "titulo": "Conflicto entre la visión documentada de expansión y el sueño de enfoque en Lima",
+          "patron": "sueno_vs_empresa",
+          "impacto": "alto",
+          "claim_ids": [
+            "c-vision-2022",
+            "c-dueno-vision"
+          ],
+          "preserva": false,
+          "causa_raiz": "Plan estratégico 2022 desactualizado que plantea expansión a provincias frente a la decisión actual del dueño de operar solo en Lima a 30 horas semanales"
+        }
+      ]
+    },
+    {
+      "pilar": "producto",
+      "modelo": "gemini-3.7-flash",
+      "latencia_ms": 6193,
+      "hallazgos": [
+        {
+          "titulo": "Know-how crítico de compra de fruta en Rosa no documentado genera fruta pasada",
+          "patron": "know_how_en_una_persona",
+          "impacto": "alto",
+          "claim_ids": [
+            "c-rosa-compra",
+            "c-luis-devol",
+            "c-csv-reclamos"
+          ],
+          "preserva": false,
+          "causa_raiz": "Falta de criterio documentado y estándar de compra basado en textura de la cáscara; cuando Rosa no compra, se compra por precio"
+        },
+        {
+          "titulo": "Criterio de compra de Rosa basado en textura de la cáscara",
+          "patron": null,
+          "impacto": "alto",
+          "claim_ids": [
+            "c-rosa-compra",
+            "c-luis-devol",
+            "c-csv-reclamos"
+          ],
+          "preserva": true,
+          "causa_raiz": "Regla de Rosa: 'precio no decide, textura decide' mediante evaluación de textura de la cáscara en la compra de palta"
+        },
+        {
+          "titulo": "Incompatibilidad entre alcance geográfico del producto/servicio y meta del dueño",
+          "patron": "sueno_vs_empresa",
+          "impacto": "alto",
+          "claim_ids": [
+            "c-dueno-vision"
+          ],
+          "preserva": false,
+          "causa_raiz": "Discrepancia entre la estrategia documentada (líder en Lima y provincias) y la vida deseada del dueño (operar únicamente en Lima trabajando 30 horas)"
+        }
+      ]
+    },
+    {
+      "pilar": "marketing",
+      "modelo": "gemini-3.7-flash",
+      "latencia_ms": 5857,
+      "hallazgos": [
+        {
+          "titulo": "Adquisición de clientes concentrada en el referido del chef Ramos",
+          "patron": "canal_unico",
+          "impacto": "alto",
+          "claim_ids": [
+            "c-csv-canal"
+          ],
+          "preserva": false,
+          "causa_raiz": "Falta de un proceso de captacion y canales comerciales propios estructurados, dependiendo exclusivamente de la relacion con el chef Ramos"
+        },
+        {
+          "titulo": "Discrepancia entre cliente objetivo declarado y cliente real facturado",
+          "patron": "vision_obsoleta",
+          "impacto": "alto",
+          "claim_ids": [
+            "c-cliente-2022",
+            "c-csv-cliente"
+          ],
+          "preserva": false,
+          "causa_raiz": "Criterio de segmentacion y cliente objetivo desactualizado en el plan estrategico que no refleja la demanda real de restaurantes independientes"
+        },
+        {
+          "titulo": "Visión de expansión a provincias contradice la vida deseada del dueño y el foco en Lima",
+          "patron": "sueno_vs_empresa",
+          "impacto": "alto",
+          "claim_ids": [
+            "c-vision-2022",
+            "c-dueno-vision"
+          ],
+          "preserva": false,
+          "causa_raiz": "Plan estrategico 2022 desactualizado que plantea expansion a provincias contraria al objetivo del dueno de trabajar 30 horas y enfocarse exclusivamente en Lima"
+        }
+      ]
+    }
+  ],
+  "consolidados": {
+    "antes": 11,
+    "despues": 7
+  },
   "metricas": {
-    "cobertura": 0.667,
-    "precision": 1,
+    "cobertura": 1,
+    "precision": 0.857,
     "falsos_positivos": 0,
-    "causa_raiz": 0.75,
-    "preservacion": 0,
-    "contradicciones": 0.667,
-    "preguntas": 0,
-    "omisiones": [
-      "fruta_pasada_know_how",
-      "fortaleza_rosa"
-    ],
+    "causa_raiz": 0.833,
+    "preservacion": 1,
+    "contradicciones": 1,
+    "preguntas": 0.667,
+    "omisiones": [],
     "inventados": []
   },
   "aprueba": {
-    "ok": false,
-    "motivos": [
-      "cobertura 0.667 < 0.85: omite fruta_pasada_know_how, fortaleza_rosa",
-      "no reconoció todas las fortalezas",
-      "no detectó todas las contradicciones"
-    ]
+    "ok": true,
+    "motivos": []
   },
   "hallazgos_visibles": [
     {
-      "titulo": "Dependencia del fundador en decisiones operativas",
-      "causa_raiz": "El diseño de autoridad otorga roles y procesos al Jefe de Ventas, pero en la práctica, el dueño retiene todas las decisiones de descuento.",
+      "titulo": "Dependencia del dueño para la aprobación de todo descuento comercial",
+      "causa_raiz": "Falta de política escrita y matriz de delegación de autoridad para descuentos comerciales que faculte al jefe de ventas",
       "pilar": "personas",
       "patron": "dependencia_fundador",
       "impacto": "alto",
-      "preserva": false
+      "preserva": false,
+      "claim_ids": [
+        "c-org-jefe",
+        "c-diego-descuentos"
+      ]
     },
     {
-      "titulo": "Discrepancia profunda entre estrategia declarada y realidad operativa",
-      "causa_raiz": "El plan estratégico está desactualizado respecto a la ambición real del dueño (foco en Lima vs. provincias, metas de facturación, horas de trabajo) y al mercado real atendido.",
-      "pilar": "marketing",
+      "titulo": "Know-how crítico de compra de fruta concentrado exclusivamente en Rosa",
+      "causa_raiz": "Falta de criterio documentado y estándar formal de selección de palta (criterio por textura de cáscara y no por precio) para el equipo de compras",
+      "pilar": "personas",
+      "patron": "know_how_en_una_persona",
+      "impacto": "medio",
+      "preserva": true,
+      "claim_ids": [
+        "c-rosa-compra"
+      ]
+    },
+    {
+      "titulo": "Discrepancia entre la visión histórica de expansión a provincias y el sueño del dueño de enfocarse en Lima a 30 horas",
+      "causa_raiz": "Falta de actualización formal del plan estratégico para alinearlo a la decisión del dueño de no ir a provincias y reducir su jornada a 30 horas",
+      "pilar": "personas",
       "patron": "sueno_vs_empresa",
       "impacto": "alto",
-      "preserva": false
+      "preserva": false,
+      "claim_ids": [
+        "c-vision-2022",
+        "c-dueno-vision"
+      ]
     },
     {
-      "titulo": "Desalineación entre cliente objetivo definido y cliente real",
-      "causa_raiz": "La estrategia comercial apunta a cadenas (>5 locales), pero el mercado real que sostiene la facturación (81%) son restaurantes independientes de 1 local.",
-      "pilar": "marketing",
-      "patron": "vision_obsoleta",
+      "titulo": "Dependencia del dueño para aprobar descuentos detiene pedidos",
+      "causa_raiz": "Falta de política escrita y matriz de delegación con márgenes de descuento autorizados para ventas",
+      "pilar": "procesos",
+      "patron": "dependencia_fundador",
+      "impacto": "medio",
+      "preserva": false,
+      "claim_ids": [
+        "c-pamela-parados"
+      ]
+    },
+    {
+      "titulo": "Know-how crítico de compra de fruta en Rosa sin criterio documentado",
+      "causa_raiz": "Ausencia de estándar documentado de calidad para compras: cuando Rosa no está, se compra por precio en lugar de evaluar la textura de la cáscara y la fruta llega pasada",
+      "pilar": "procesos",
+      "patron": "know_how_en_una_persona",
+      "impacto": "medio",
+      "preserva": true,
+      "claim_ids": [
+        "c-rosa-compra"
+      ]
+    },
+    {
+      "titulo": "Conflicto entre la visión documentada de expansión y el sueño de enfoque en Lima",
+      "causa_raiz": "Plan estratégico 2022 desactualizado que plantea expansión a provincias frente a la decisión actual del dueño de operar solo en Lima a 30 horas semanales",
+      "pilar": "procesos",
+      "patron": "sueno_vs_empresa",
       "impacto": "alto",
-      "preserva": false
+      "preserva": false,
+      "claim_ids": [
+        "c-vision-2022",
+        "c-dueno-vision"
+      ]
     },
     {
-      "titulo": "Dependencia crítica de canal único",
-      "causa_raiz": "La captación de clientes nuevos depende casi exclusivamente (92%) de un tercero externo (Chef Ramos), sin procesos internos de prospección controlados.",
+      "titulo": "Know-how crítico de compra de fruta en Rosa no documentado genera fruta pasada",
+      "causa_raiz": "Falta de criterio documentado y estándar de compra basado en textura de la cáscara; cuando Rosa no compra, se compra por precio",
+      "pilar": "producto",
+      "patron": "know_how_en_una_persona",
+      "impacto": "alto",
+      "preserva": false,
+      "claim_ids": [
+        "c-rosa-compra",
+        "c-luis-devol",
+        "c-csv-reclamos"
+      ]
+    },
+    {
+      "titulo": "Criterio de compra de Rosa basado en textura de la cáscara",
+      "causa_raiz": "Regla de Rosa: 'precio no decide, textura decide' mediante evaluación de textura de la cáscara en la compra de palta",
+      "pilar": "producto",
+      "patron": null,
+      "impacto": "alto",
+      "preserva": true,
+      "claim_ids": [
+        "c-rosa-compra",
+        "c-luis-devol",
+        "c-csv-reclamos"
+      ]
+    },
+    {
+      "titulo": "Adquisición de clientes concentrada en el referido del chef Ramos",
+      "causa_raiz": "Falta de un proceso de captacion y canales comerciales propios estructurados, dependiendo exclusivamente de la relacion con el chef Ramos",
       "pilar": "marketing",
       "patron": "canal_unico",
       "impacto": "alto",
-      "preserva": false
+      "preserva": false,
+      "claim_ids": [
+        "c-csv-canal"
+      ]
+    },
+    {
+      "titulo": "Discrepancia entre cliente objetivo declarado y cliente real facturado",
+      "causa_raiz": "Criterio de segmentacion y cliente objetivo desactualizado en el plan estrategico que no refleja la demanda real de restaurantes independientes",
+      "pilar": "marketing",
+      "patron": "vision_obsoleta",
+      "impacto": "alto",
+      "preserva": false,
+      "claim_ids": [
+        "c-cliente-2022",
+        "c-csv-cliente"
+      ]
+    },
+    {
+      "titulo": "Visión de expansión a provincias contradice la vida deseada del dueño y el foco en Lima",
+      "causa_raiz": "Plan estrategico 2022 desactualizado que plantea expansion a provincias contraria al objetivo del dueno de trabajar 30 horas y enfocarse exclusivamente en Lima",
+      "pilar": "marketing",
+      "patron": "sueno_vs_empresa",
+      "impacto": "alto",
+      "preserva": false,
+      "claim_ids": [
+        "c-vision-2022",
+        "c-dueno-vision"
+      ]
     }
   ],
-  "tokens": 38471,
-  "costo_usd_estimado": 0.23,
-  "latencia_total_s": 61
+  "tokens": 39681,
+  "costo_usd_estimado": 0.24,
+  "latencia_total_s": 168
 }

@@ -16,7 +16,9 @@ Cada hallazgo:
 - titulo
 - patron: la clave del patron detectado si corresponde a alguno conocido, o null
 - dimension: la dimension del pilar a la que pertenece (ver lista)
-- causa_raiz: la causa, no el sintoma
+- causa_raiz: la causa, no el sintoma. Nombra el elemento concreto que falta o falla (la politica escrita,
+  el criterio documentado, el estandar, el proceso de captacion), no una abstraccion: la causa debe decirle
+  al consultor QUE construir o corregir
 - impacto: alto | medio | bajo
 - veredicto: keep | improve | replace | remove | create (o null)
 - recomendacion (o null si un filtro la bloquea: en su lugar describe la tension en la nota del filtro)
@@ -44,12 +46,27 @@ preguntas_pendientes: [{ texto, dimension, para: dueno | lider | personal | dato
 la evidencia no cubre. Son preguntas para el levantamiento, no hallazgos.
 
 REGLAS ABSOLUTAS:
+- Las afirmaciones transversales (vision, sueno del dueno) aparecen en todos los pilares. Si sugieren un
+  hallazgo que cae en una dimension de ESTE pilar, EMITELO aqui — no lo omitas suponiendo que otro pilar lo
+  cubrira: una consolidacion mecanica posterior elimina los duplicados entre pilares. Lo que si dana el
+  diagnostico es repetir con otro nombre un hallazgo que este mismo pilar ya emitio.
 - Un hallazgo sin claim_ids no es valido. No lo devuelvas. Si nace del know-how minado o del sueno del dueno,
   sustentalo con los ids de las afirmaciones de esa persona o de ese tema; si no existe ninguna, no lo devuelvas.
 - Usa SOLO ids que aparecen en las afirmaciones recibidas o citados en el know-how minado.
 - Identifica tambien las FORTALEZAS que no deben destruirse (preserva: true, veredicto keep): un know-how
   critico que funciona, un proceso o criterio que da resultados. Nombralas por la persona o el proceso que
   las sostiene y sustentalas con sus ids. Una recomendacion que las destruya no pasa el filtro de sabiduria.
+  Describe la fortaleza con la SENAL o regla concreta del know-how (lo que la persona mira, toca o decide,
+  tal como aparece en el know-how minado), no solo quien la tiene: sin la senal no se puede entrenar a nadie.
+  Sustenta la fortaleza con TODA la evidencia que la corrobora, incluida la que muestra que pasa cuando esa
+  persona falta (datos, otras voces). Si solo la sustenta la propia persona, su impacto es medio, no alto:
+  el consultor la validara antes de construir sobre ella.
+- FIDELIDAD: titulo y causa_raiz usan los MISMOS terminos que las afirmaciones citadas (sus sustantivos y
+  cifras), no sinonimos tuyos: si la evidencia dice "fruta", no escribas otra cosa. El consultor debe poder
+  encontrar cada palabra del hallazgo en su evidencia.
+- Cuando un hallazgo (problema o fortaleza) depende del know-how o de la ausencia de una persona concreta,
+  NOMBRALA en el titulo o en la causa (ej.: "cuando Rosa no compra..."): un diagnostico sin nombres no le
+  sirve al consultor para actuar.
 - Toda empresa tiene una o varias restricciones dominantes; no presupongas donde estan: pueden estar en el
   fundador, el liderazgo, las personas, los procesos, el producto, el marketing, la capacidad, la economia,
   la tecnologia o una decision estrategica. Deja que la evidencia decida.
@@ -89,7 +106,8 @@ Devuelve JSON { "auditorias": [...] }. Para cada hallazgo:
   persona, que falta un estandar escrito o que sin ella el proceso falla NO es culparla: es un hallazgo de sistema
   (patron personas_disfrazado_de_proceso / know_how_en_una_persona) y no se marca aqui.
 - benchmark_como_hecho: true si afirma algo sobre la empresa apoyandose en conocimiento general y no en sus afirmaciones
-- duplicado_de: id de otro hallazgo si es el mismo problema con distinto nombre, o null
+- duplicado_de: id de otro hallazgo si es el mismo problema con distinto nombre, o null. Una FORTALEZA
+  (preserva true) nunca es duplicado del problema que comparte su evidencia: son dos caras distintas
 - observacion
 
 REGLAS:
