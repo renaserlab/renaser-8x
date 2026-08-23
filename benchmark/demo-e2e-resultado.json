@@ -1,0 +1,177 @@
+{
+  "fecha": "2026-08-23T22:18:25.695Z",
+  "empresa": "406afd2e-2359-41e9-9212-8528ba6dae02",
+  "claims": {
+    "total": 31,
+    "confirmados": 27,
+    "caducados": 3,
+    "contradichos": 1
+  },
+  "contradicciones_reales": {
+    "metas": true,
+    "cliente": true,
+    "descuentos": true
+  },
+  "metricas_hallazgos": {
+    "cobertura": 1,
+    "precision": 0.6,
+    "falsos_positivos": 0,
+    "causa_raiz": 0.833,
+    "preservacion": 1,
+    "contradicciones": 0,
+    "preguntas": 0,
+    "omisiones": [],
+    "inventados": []
+  },
+  "know_how_rosa": true,
+  "as_is": 1,
+  "to_be": 1,
+  "plan": {
+    "acciones": 7,
+    "max_frentes_por_semana": 3,
+    "primera": "Documentar el criterio técnico de selección y maduración de palta de Rosa en una ficha vis"
+  },
+  "entregables": [
+    "informe_realidad",
+    "diagnostico_4p",
+    "mapa_as_is",
+    "mapa_to_be",
+    "plan_90",
+    "mapa_automatizacion",
+    "manual_procesos"
+  ],
+  "destruye_fortaleza": false,
+  "pass": true,
+  "hallazgos": [
+    {
+      "titulo": "Visión estratégica desactualizada sobre alcance geográfico y metas de facturación",
+      "causa_raiz": "Falta de actualización formal de la estrategia corporativa: el documento 2022 declara expansión a provincias y meta de S/ 5 millones, mientras el dueño redefine el foco a Lima y USD 3 millones.",
+      "pilar": "producto",
+      "patron": "vision_obsoleta",
+      "impacto": "medio",
+      "preserva": false,
+      "claim_ids": [
+        "dccbc556-e628-4bf0-ad41-6ac0092999e6",
+        "aa238ac0-9f54-430f-8617-b9f1875e3a3c",
+        "80d6d656-be45-45ec-b682-adbda991dd8e",
+        "f8112edf-4006-472c-9da2-058f35b05c6e"
+      ]
+    },
+    {
+      "titulo": "Visión y mercado objetivo obsoletos frente al plan estratégico",
+      "causa_raiz": "El plan estratégico de 2022 no ha sido actualizado formalmente con las nuevas metas del dueño",
+      "pilar": "marketing",
+      "patron": "vision_obsoleta",
+      "impacto": "medio",
+      "preserva": false,
+      "claim_ids": [
+        "afee6f4b-55c2-42e6-96d8-7ba4badcceb5",
+        "80d6d656-be45-45ec-b682-adbda991dd8e",
+        "dccbc556-e628-4bf0-ad41-6ac0092999e6"
+      ]
+    },
+    {
+      "titulo": "Canal único de adquisición dependiente del chef Ramos",
+      "causa_raiz": "Falta un proceso estructurado de captación y canales diversificados de marketing",
+      "pilar": "marketing",
+      "patron": "canal_unico",
+      "impacto": "alto",
+      "preserva": false,
+      "claim_ids": [
+        "fb1b7a4b-8e63-408c-ae28-95589a9ce187",
+        "351706ff-da71-4911-a8b1-0126ffde289e"
+      ]
+    },
+    {
+      "titulo": "Quiebre en la promesa de fruta en su punto con 38% de reclamos y devoluciones en puerta",
+      "causa_raiz": "Falta de criterio documentado y estándar de compra de palta transferible: cuando Rosa Quispe no compra, se compra por precio y el producto llega pasado.",
+      "pilar": "producto",
+      "patron": "know_how_en_una_persona",
+      "impacto": "alto",
+      "preserva": false,
+      "claim_ids": [
+        "3656c87a-b8e9-4234-a2fe-4b7dad78f152",
+        "4fd2f48f-ce45-40bc-b1da-23edd8fe3c04",
+        "afe2e173-8609-4f15-845f-43174c5b7b61",
+        "80f8418f-f957-4f41-a9ee-f089991481fa",
+        "fee39599-e7cd-4f1a-b1cc-751028e8abc4"
+      ]
+    },
+    {
+      "titulo": "Sobrecarga horaria del dueño trabajando 70 horas semanales frente al objetivo de 30 horas",
+      "causa_raiz": "Falta de esquema de delegación operativa en la estructura de 12 personas que absorba la carga de dirección.",
+      "pilar": "personas",
+      "patron": "sueno_vs_empresa",
+      "impacto": "medio",
+      "preserva": false,
+      "claim_ids": [
+        "d6204d94-900c-4bf0-b633-ccd95cdf6284",
+        "911a786f-ea7f-4cbb-a6f5-f8a533d40bfa"
+      ]
+    },
+    {
+      "titulo": "Know-how crítico de selección de fruta concentrado exclusivamente en Rosa tras 14 años",
+      "causa_raiz": "Criterio de selección de fruta y evaluación de maduración no documentado formalmente ni transferido al equipo",
+      "pilar": "personas",
+      "patron": "know_how_en_una_persona",
+      "impacto": "alto",
+      "preserva": false,
+      "claim_ids": [
+        "af596a3f-1cba-469f-8677-e14e30a58fa5",
+        "8678be61-6c84-4007-86cc-6554dc7bf099",
+        "80f8418f-f957-4f41-a9ee-f089991481fa",
+        "2d9c5984-9efa-450c-b628-07687061c517"
+      ]
+    },
+    {
+      "titulo": "Fortaleza: Criterio experto de compra de palta desarrollado por Rosa",
+      "causa_raiz": "Rosa Quispe evalúa una pequeña textura específica en la palta para predecir que estará en punto óptimo en dos días.",
+      "pilar": "personas",
+      "patron": null,
+      "impacto": "medio",
+      "preserva": true,
+      "claim_ids": [
+        "af596a3f-1cba-469f-8677-e14e30a58fa5",
+        "2d9c5984-9efa-450c-b628-07687061c517",
+        "80f8418f-f957-4f41-a9ee-f089991481fa"
+      ]
+    },
+    {
+      "titulo": "Cuello de botella en aprobacion de descuentos por ausencia de delegacion",
+      "causa_raiz": "La politica exige que cualquier descuento sea aprobado exclusivamente por el dueño (Julio), sin delegacion ni umbrales alternativos.",
+      "pilar": "procesos",
+      "patron": "dependencia_fundador",
+      "impacto": "alto",
+      "preserva": false,
+      "claim_ids": [
+        "3536b6b9-4841-4e5f-a859-56679ba0a27d",
+        "3c8f5824-4953-4169-9006-10f339f3e182"
+      ]
+    },
+    {
+      "titulo": "Ausencia de estandares y manuales para la induccion de personal",
+      "causa_raiz": "Inexistencia de documentacion formal de procesos, delegando el aprendizaje unicamente a la observacion empirica.",
+      "pilar": "procesos",
+      "patron": "know_how_en_una_persona",
+      "impacto": "medio",
+      "preserva": false,
+      "claim_ids": [
+        "9efd90b1-aeb7-4621-b5b4-5a76e93bb7e9",
+        "80f8418f-f957-4f41-a9ee-f089991481fa"
+      ]
+    },
+    {
+      "titulo": "Fortaleza: Criterio de selección de palta de Rosa Quispe por textura para maduración en dos días",
+      "causa_raiz": "Know-how crítico de evaluación sensorial desarrollado por Rosa Quispe: identificar una pequeña textura específica que asegura que la palta estará perfecta para su uso en dos días.",
+      "pilar": "producto",
+      "patron": null,
+      "impacto": "alto",
+      "preserva": true,
+      "claim_ids": [
+        "2d9c5984-9efa-450c-b628-07687061c517",
+        "80f8418f-f957-4f41-a9ee-f089991481fa",
+        "4fd2f48f-ce45-40bc-b1da-23edd8fe3c04"
+      ]
+    }
+  ]
+}

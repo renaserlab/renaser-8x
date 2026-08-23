@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-08-23T21:41:10.133Z",
+  "fecha": "2026-08-23T21:44:28.458Z",
   "version_prompt": "v4.1",
   "contradicciones_detectadas": [
     {
@@ -34,69 +34,79 @@
     {
       "pilar": "personas",
       "modelo": "gemini-3.7-flash",
-      "latencia_ms": 27588,
+      "latencia_ms": 243281,
       "hallazgos": [
         {
-          "titulo": "Dependencia del dueño para la aprobación de todo descuento comercial",
+          "titulo": "Dependencia del dueño en aprobación de descuentos",
           "patron": "dependencia_fundador",
           "impacto": "alto",
           "claim_ids": [
-            "c-org-jefe",
-            "c-diego-descuentos"
+            "c-diego-descuentos",
+            "c-org-jefe"
           ],
           "preserva": false,
-          "causa_raiz": "Falta de política escrita y matriz de delegación de autoridad para descuentos comerciales que faculte al jefe de ventas"
+          "causa_raiz": "Falta de política escrita y matriz de límites de autoridad delegada para descuentos comerciales"
         },
         {
-          "titulo": "Know-how crítico de compra de fruta concentrado exclusivamente en Rosa",
+          "titulo": "Know-how crítico de compra de fruta centralizado en Rosa",
           "patron": "know_how_en_una_persona",
           "impacto": "medio",
           "claim_ids": [
             "c-rosa-compra"
           ],
-          "preserva": true,
-          "causa_raiz": "Falta de criterio documentado y estándar formal de selección de palta (criterio por textura de cáscara y no por precio) para el equipo de compras"
+          "preserva": false,
+          "causa_raiz": "Falta de estándar y criterio documentado de compra de palta por textura de cáscara cuando Rosa no compra"
         },
         {
-          "titulo": "Discrepancia entre la visión histórica de expansión a provincias y el sueño del dueño de enfocarse en Lima a 30 horas",
+          "titulo": "Criterio técnico de compra de palta por textura de Rosa",
+          "patron": null,
+          "impacto": "medio",
+          "claim_ids": [
+            "c-rosa-compra"
+          ],
+          "preserva": true,
+          "causa_raiz": "Regla empírica validada: el precio no decide, la textura de la cáscara decide la compra"
+        },
+        {
+          "titulo": "Conflicto entre plan estratégico institucional y vida deseada del dueño",
           "patron": "sueno_vs_empresa",
           "impacto": "alto",
           "claim_ids": [
-            "c-vision-2022",
-            "c-dueno-vision"
+            "c-dueno-vision",
+            "c-vision-2022"
           ],
           "preserva": false,
-          "causa_raiz": "Falta de actualización formal del plan estratégico para alinearlo a la decisión del dueño de no ir a provincias y reducir su jornada a 30 horas"
+          "causa_raiz": "Falta de actualización del plan estratégico formal que mantiene metas de expansión a provincias frente a la decisión del dueño de enfocarse exclusivamente en Lima y trabajar 30 horas"
         }
       ]
     },
     {
       "pilar": "procesos",
       "modelo": "gemini-3.7-flash",
-      "latencia_ms": 43360,
+      "latencia_ms": 33509,
       "hallazgos": [
         {
-          "titulo": "Dependencia del dueño para aprobar descuentos detiene pedidos",
+          "titulo": "Los pedidos con descuento se detienen dos o tres días cuando el dueño viaja por falta de política de precios",
           "patron": "dependencia_fundador",
           "impacto": "medio",
           "claim_ids": [
             "c-pamela-parados"
           ],
           "preserva": false,
-          "causa_raiz": "Falta de política escrita y matriz de delegación con márgenes de descuento autorizados para ventas"
+          "causa_raiz": "Falta de política escrita de márgenes y límites de descuento delegados al jefe de ventas o a Pamela"
         },
         {
-          "titulo": "Know-how crítico de compra de fruta en Rosa sin criterio documentado",
+          "titulo": "Criterio crítico de compra de fruta de Rosa basado en textura de la cáscara y no en precio",
           "patron": "know_how_en_una_persona",
           "impacto": "medio",
           "claim_ids": [
             "c-rosa-compra"
           ],
           "preserva": true,
-          "causa_raiz": "Ausencia de estándar documentado de calidad para compras: cuando Rosa no está, se compra por precio en lugar de evaluar la textura de la cáscara y la fruta llega pasada"
+          "causa_raiz": "Criterio de inspección y estándar de compra de palta no documentado ni transferido (señal: textura de la cáscara; regla: precio no decide, textura decide)"
         },
         {
-          "titulo": "Conflicto entre la visión documentada de expansión y el sueño de enfoque en Lima",
+          "titulo": "Contradicción entre plan de expansión a provincias y meta personal del dueño de operar solo en Lima a 30 horas",
           "patron": "sueno_vs_empresa",
           "impacto": "alto",
           "claim_ids": [
@@ -104,17 +114,17 @@
             "c-dueno-vision"
           ],
           "preserva": false,
-          "causa_raiz": "Plan estratégico 2022 desactualizado que plantea expansión a provincias frente a la decisión actual del dueño de operar solo en Lima a 30 horas semanales"
+          "causa_raiz": "Falta de actualización del plan estratégico formal frente al sueño actual del dueño"
         }
       ]
     },
     {
       "pilar": "producto",
       "modelo": "gemini-3.7-flash",
-      "latencia_ms": 6193,
+      "latencia_ms": 29933,
       "hallazgos": [
         {
-          "titulo": "Know-how crítico de compra de fruta en Rosa no documentado genera fruta pasada",
+          "titulo": "Fortaleza en criterio de compra de palta por Rosa",
           "patron": "know_how_en_una_persona",
           "impacto": "alto",
           "claim_ids": [
@@ -122,50 +132,51 @@
             "c-luis-devol",
             "c-csv-reclamos"
           ],
-          "preserva": false,
-          "causa_raiz": "Falta de criterio documentado y estándar de compra basado en textura de la cáscara; cuando Rosa no compra, se compra por precio"
-        },
-        {
-          "titulo": "Criterio de compra de Rosa basado en textura de la cáscara",
-          "patron": null,
-          "impacto": "alto",
-          "claim_ids": [
-            "c-rosa-compra",
-            "c-luis-devol",
-            "c-csv-reclamos"
-          ],
           "preserva": true,
-          "causa_raiz": "Regla de Rosa: 'precio no decide, textura decide' mediante evaluación de textura de la cáscara en la compra de palta"
+          "causa_raiz": "El criterio de compra basado en la señal de textura de la cáscara y la regla 'precio no decide, textura decide' vive exclusivamente en Rosa y no está documentado como estándar"
         },
         {
-          "titulo": "Incompatibilidad entre alcance geográfico del producto/servicio y meta del dueño",
-          "patron": "sueno_vs_empresa",
+          "titulo": "Alta tasa de reclamos y devoluciones por fruta blanda y pasada",
+          "patron": "know_how_en_una_persona",
           "impacto": "alto",
           "claim_ids": [
+            "c-csv-reclamos",
+            "c-luis-devol",
+            "c-rosa-compra"
+          ],
+          "preserva": false,
+          "causa_raiz": "Falta de estándar y criterio documentado de compra cuando Rosa no compra, comprándose por precio en lugar de textura de la cáscara"
+        },
+        {
+          "titulo": "Discrepancia en el alcance geográfico de la visión del producto y servicio",
+          "patron": "sueno_vs_empresa",
+          "impacto": "medio",
+          "claim_ids": [
+            "c-vision-2022",
             "c-dueno-vision"
           ],
           "preserva": false,
-          "causa_raiz": "Discrepancia entre la estrategia documentada (líder en Lima y provincias) y la vida deseada del dueño (operar únicamente en Lima trabajando 30 horas)"
+          "causa_raiz": "Plan estratégico 2022 desactualizado que plantea expansión a provincias frente a la decisión actual del dueño de enfocarse exclusivamente en Lima"
         }
       ]
     },
     {
       "pilar": "marketing",
       "modelo": "gemini-3.7-flash",
-      "latencia_ms": 5857,
+      "latencia_ms": 49586,
       "hallazgos": [
         {
-          "titulo": "Adquisición de clientes concentrada en el referido del chef Ramos",
+          "titulo": "Adquisición de clientes concentrada al 92% en referidos del chef Ramos",
           "patron": "canal_unico",
           "impacto": "alto",
           "claim_ids": [
             "c-csv-canal"
           ],
           "preserva": false,
-          "causa_raiz": "Falta de un proceso de captacion y canales comerciales propios estructurados, dependiendo exclusivamente de la relacion con el chef Ramos"
+          "causa_raiz": "Falta de un proceso estructurado de captación y diversificación de canales comerciales independientes de relaciones individuales"
         },
         {
-          "titulo": "Discrepancia entre cliente objetivo declarado y cliente real facturado",
+          "titulo": "Desconexión entre el cliente objetivo definido (cadenas >5 locales) y el cliente real (81% independientes de 1 local)",
           "patron": "vision_obsoleta",
           "impacto": "alto",
           "claim_ids": [
@@ -173,10 +184,10 @@
             "c-csv-cliente"
           ],
           "preserva": false,
-          "causa_raiz": "Criterio de segmentacion y cliente objetivo desactualizado en el plan estrategico que no refleja la demanda real de restaurantes independientes"
+          "causa_raiz": "Criterio de segmentación de mercado desactualizado en el plan estratégico respecto a la tracción comercial efectiva"
         },
         {
-          "titulo": "Visión de expansión a provincias contradice la vida deseada del dueño y el foco en Lima",
+          "titulo": "Discrepancia entre la visión territorial documentada (Lima y provincias) y el sueño del dueño (solo Lima a 30 horas)",
           "patron": "sueno_vs_empresa",
           "impacto": "alto",
           "claim_ids": [
@@ -184,13 +195,13 @@
             "c-dueno-vision"
           ],
           "preserva": false,
-          "causa_raiz": "Plan estrategico 2022 desactualizado que plantea expansion a provincias contraria al objetivo del dueno de trabajar 30 horas y enfocarse exclusivamente en Lima"
+          "causa_raiz": "Falta de actualización formal de la estrategia de posicionamiento geográfico conforme a la meta actual del dueño"
         }
       ]
     }
   ],
   "consolidados": {
-    "antes": 11,
+    "antes": 13,
     "despues": 7
   },
   "metricas": {
@@ -200,7 +211,7 @@
     "causa_raiz": 0.833,
     "preservacion": 1,
     "contradicciones": 1,
-    "preguntas": 0.667,
+    "preguntas": 0.333,
     "omisiones": [],
     "inventados": []
   },
@@ -210,22 +221,33 @@
   },
   "hallazgos_visibles": [
     {
-      "titulo": "Dependencia del dueño para la aprobación de todo descuento comercial",
-      "causa_raiz": "Falta de política escrita y matriz de delegación de autoridad para descuentos comerciales que faculte al jefe de ventas",
+      "titulo": "Dependencia del dueño en aprobación de descuentos",
+      "causa_raiz": "Falta de política escrita y matriz de límites de autoridad delegada para descuentos comerciales",
       "pilar": "personas",
       "patron": "dependencia_fundador",
       "impacto": "alto",
       "preserva": false,
       "claim_ids": [
-        "c-org-jefe",
-        "c-diego-descuentos"
+        "c-diego-descuentos",
+        "c-org-jefe"
       ]
     },
     {
-      "titulo": "Know-how crítico de compra de fruta concentrado exclusivamente en Rosa",
-      "causa_raiz": "Falta de criterio documentado y estándar formal de selección de palta (criterio por textura de cáscara y no por precio) para el equipo de compras",
+      "titulo": "Know-how crítico de compra de fruta centralizado en Rosa",
+      "causa_raiz": "Falta de estándar y criterio documentado de compra de palta por textura de cáscara cuando Rosa no compra",
       "pilar": "personas",
       "patron": "know_how_en_una_persona",
+      "impacto": "medio",
+      "preserva": false,
+      "claim_ids": [
+        "c-rosa-compra"
+      ]
+    },
+    {
+      "titulo": "Criterio técnico de compra de palta por textura de Rosa",
+      "causa_raiz": "Regla empírica validada: el precio no decide, la textura de la cáscara decide la compra",
+      "pilar": "personas",
+      "patron": null,
       "impacto": "medio",
       "preserva": true,
       "claim_ids": [
@@ -233,20 +255,20 @@
       ]
     },
     {
-      "titulo": "Discrepancia entre la visión histórica de expansión a provincias y el sueño del dueño de enfocarse en Lima a 30 horas",
-      "causa_raiz": "Falta de actualización formal del plan estratégico para alinearlo a la decisión del dueño de no ir a provincias y reducir su jornada a 30 horas",
+      "titulo": "Conflicto entre plan estratégico institucional y vida deseada del dueño",
+      "causa_raiz": "Falta de actualización del plan estratégico formal que mantiene metas de expansión a provincias frente a la decisión del dueño de enfocarse exclusivamente en Lima y trabajar 30 horas",
       "pilar": "personas",
       "patron": "sueno_vs_empresa",
       "impacto": "alto",
       "preserva": false,
       "claim_ids": [
-        "c-vision-2022",
-        "c-dueno-vision"
+        "c-dueno-vision",
+        "c-vision-2022"
       ]
     },
     {
-      "titulo": "Dependencia del dueño para aprobar descuentos detiene pedidos",
-      "causa_raiz": "Falta de política escrita y matriz de delegación con márgenes de descuento autorizados para ventas",
+      "titulo": "Los pedidos con descuento se detienen dos o tres días cuando el dueño viaja por falta de política de precios",
+      "causa_raiz": "Falta de política escrita de márgenes y límites de descuento delegados al jefe de ventas o a Pamela",
       "pilar": "procesos",
       "patron": "dependencia_fundador",
       "impacto": "medio",
@@ -256,8 +278,8 @@
       ]
     },
     {
-      "titulo": "Know-how crítico de compra de fruta en Rosa sin criterio documentado",
-      "causa_raiz": "Ausencia de estándar documentado de calidad para compras: cuando Rosa no está, se compra por precio en lugar de evaluar la textura de la cáscara y la fruta llega pasada",
+      "titulo": "Criterio crítico de compra de fruta de Rosa basado en textura de la cáscara y no en precio",
+      "causa_raiz": "Criterio de inspección y estándar de compra de palta no documentado ni transferido (señal: textura de la cáscara; regla: precio no decide, textura decide)",
       "pilar": "procesos",
       "patron": "know_how_en_una_persona",
       "impacto": "medio",
@@ -267,8 +289,8 @@
       ]
     },
     {
-      "titulo": "Conflicto entre la visión documentada de expansión y el sueño de enfoque en Lima",
-      "causa_raiz": "Plan estratégico 2022 desactualizado que plantea expansión a provincias frente a la decisión actual del dueño de operar solo en Lima a 30 horas semanales",
+      "titulo": "Contradicción entre plan de expansión a provincias y meta personal del dueño de operar solo en Lima a 30 horas",
+      "causa_raiz": "Falta de actualización del plan estratégico formal frente al sueño actual del dueño",
       "pilar": "procesos",
       "patron": "sueno_vs_empresa",
       "impacto": "alto",
@@ -279,23 +301,10 @@
       ]
     },
     {
-      "titulo": "Know-how crítico de compra de fruta en Rosa no documentado genera fruta pasada",
-      "causa_raiz": "Falta de criterio documentado y estándar de compra basado en textura de la cáscara; cuando Rosa no compra, se compra por precio",
+      "titulo": "Fortaleza en criterio de compra de palta por Rosa",
+      "causa_raiz": "El criterio de compra basado en la señal de textura de la cáscara y la regla 'precio no decide, textura decide' vive exclusivamente en Rosa y no está documentado como estándar",
       "pilar": "producto",
       "patron": "know_how_en_una_persona",
-      "impacto": "alto",
-      "preserva": false,
-      "claim_ids": [
-        "c-rosa-compra",
-        "c-luis-devol",
-        "c-csv-reclamos"
-      ]
-    },
-    {
-      "titulo": "Criterio de compra de Rosa basado en textura de la cáscara",
-      "causa_raiz": "Regla de Rosa: 'precio no decide, textura decide' mediante evaluación de textura de la cáscara en la compra de palta",
-      "pilar": "producto",
-      "patron": null,
       "impacto": "alto",
       "preserva": true,
       "claim_ids": [
@@ -305,8 +314,33 @@
       ]
     },
     {
-      "titulo": "Adquisición de clientes concentrada en el referido del chef Ramos",
-      "causa_raiz": "Falta de un proceso de captacion y canales comerciales propios estructurados, dependiendo exclusivamente de la relacion con el chef Ramos",
+      "titulo": "Alta tasa de reclamos y devoluciones por fruta blanda y pasada",
+      "causa_raiz": "Falta de estándar y criterio documentado de compra cuando Rosa no compra, comprándose por precio en lugar de textura de la cáscara",
+      "pilar": "producto",
+      "patron": "know_how_en_una_persona",
+      "impacto": "alto",
+      "preserva": false,
+      "claim_ids": [
+        "c-csv-reclamos",
+        "c-luis-devol",
+        "c-rosa-compra"
+      ]
+    },
+    {
+      "titulo": "Discrepancia en el alcance geográfico de la visión del producto y servicio",
+      "causa_raiz": "Plan estratégico 2022 desactualizado que plantea expansión a provincias frente a la decisión actual del dueño de enfocarse exclusivamente en Lima",
+      "pilar": "producto",
+      "patron": "sueno_vs_empresa",
+      "impacto": "medio",
+      "preserva": false,
+      "claim_ids": [
+        "c-vision-2022",
+        "c-dueno-vision"
+      ]
+    },
+    {
+      "titulo": "Adquisición de clientes concentrada al 92% en referidos del chef Ramos",
+      "causa_raiz": "Falta de un proceso estructurado de captación y diversificación de canales comerciales independientes de relaciones individuales",
       "pilar": "marketing",
       "patron": "canal_unico",
       "impacto": "alto",
@@ -316,8 +350,8 @@
       ]
     },
     {
-      "titulo": "Discrepancia entre cliente objetivo declarado y cliente real facturado",
-      "causa_raiz": "Criterio de segmentacion y cliente objetivo desactualizado en el plan estrategico que no refleja la demanda real de restaurantes independientes",
+      "titulo": "Desconexión entre el cliente objetivo definido (cadenas >5 locales) y el cliente real (81% independientes de 1 local)",
+      "causa_raiz": "Criterio de segmentación de mercado desactualizado en el plan estratégico respecto a la tracción comercial efectiva",
       "pilar": "marketing",
       "patron": "vision_obsoleta",
       "impacto": "alto",
@@ -328,8 +362,8 @@
       ]
     },
     {
-      "titulo": "Visión de expansión a provincias contradice la vida deseada del dueño y el foco en Lima",
-      "causa_raiz": "Plan estrategico 2022 desactualizado que plantea expansion a provincias contraria al objetivo del dueno de trabajar 30 horas y enfocarse exclusivamente en Lima",
+      "titulo": "Discrepancia entre la visión territorial documentada (Lima y provincias) y el sueño del dueño (solo Lima a 30 horas)",
+      "causa_raiz": "Falta de actualización formal de la estrategia de posicionamiento geográfico conforme a la meta actual del dueño",
       "pilar": "marketing",
       "patron": "sueno_vs_empresa",
       "impacto": "alto",
@@ -340,7 +374,7 @@
       ]
     }
   ],
-  "tokens": 39681,
+  "tokens": 40328,
   "costo_usd_estimado": 0.24,
-  "latencia_total_s": 168
+  "latencia_total_s": 409
 }

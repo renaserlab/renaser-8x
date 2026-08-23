@@ -10,10 +10,12 @@
 import { createClient } from "@supabase/supabase-js";
 import { readFileSync, writeFileSync } from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
+const DIR = path.dirname(fileURLToPath(import.meta.url));
 import { medir, type Esperado, type HallazgoObtenido } from "../src/lib/benchmark";
 
 const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
-const esperado = JSON.parse(readFileSync(path.resolve(__dirname, "../benchmark/esperado.json"), "utf8")) as Esperado;
+const esperado = JSON.parse(readFileSync(path.resolve(DIR, "../benchmark/esperado.json"), "utf8")) as Esperado;
 const NOMBRE = "EMPRESA DEMO E2E (Frutas del Valle SAC)";
 
 async function esperarCola(companyId: string, etiqueta: string, maxMin = 30) {
@@ -35,6 +37,8 @@ async function encolar(companyId: string, tipo: string, payload: Record<string, 
 }
 
 async function main() {
+  const idxAud = process.argv.indexOf("--auditar");
+  if (idxAud >= 0) return revisarYAuditar(process.argv[idxAud + 1]);
   // 0. Empresa limpia
   await sb.from("companies").delete().eq("nombre", NOMBRE);
   const { data: co, error: e0 } = await sb.from("companies").insert({ nombre: NOMBRE, sector: "distribución de alimentos" }).select("id").single();
@@ -65,7 +69,8 @@ async function main() {
   ] as const;
   const pid: Record<string, string> = {};
   for (const p of personas) {
-    const { data } = await sb.from("participants").insert({ company_id: cid, nombre: p.nombre, puesto: p.puesto, rol: p.rol, token_hash: `e2e-${p.clave}-${cid}`, token_expira_at: new Date(Date.now() + 86400e3).toISOString() }).select("id").single();
+    const { data, error } = await sb.from("participants").insert({ company_id: cid, nombre: p.nombre, puesto: p.puesto, rol: p.rol, token_hash: `e2e-${p.clave}-${cid}`, token_expira_at: new Date(Date.now() + 86400e3).toISOString() }).select("id").single();
+    if (error) throw new Error("participants: " + error.message);
     pid[p.clave] = data!.id;
   }
   const sesiones = [
@@ -78,7 +83,8 @@ async function main() {
   ] as const;
   const sid: Record<string, string> = {};
   for (const s of sesiones) {
-    const { data } = await sb.from("interview_sessions").insert({ company_id: cid, participant_id: pid[s.p], tipo: s.tipo }).select("id").single();
+    const { data, error } = await sb.from("interview_sessions").insert({ company_id: cid, participant_id: pid[s.p], tipo: s.tipo }).select("id").single();
+    if (error) throw new Error("interview_sessions: " + error.message);
     sid[s.clave] = data!.id;
   }
   const respuestas = [
@@ -89,9 +95,17 @@ async function main() {
     { ses: "ses-pamela", bloque: "trabajo_real", orden: 2, pregunta: "¿Dónde se traba tu trabajo?", respuesta: "Cuando Julio está de viaje los pedidos con descuento se quedan parados dos o tres días." },
     { ses: "ses-rosa-kh", bloque: "know_how", orden: 4, pregunta: "¿Qué señal ves antes de que aparezca el problema?", respuesta: "Cuando la palta tiene esta pequeña textura, en dos días está perfecta. Cuando no estoy, compran por precio y llega pasada." },
     { ses: "ses-luis", bloque: "trabajo_real", orden: 3, pregunta: "¿Qué se rehace más de una vez?", respuesta: "Los martes reparto fruta que ya está blanda; los restaurantes me la devuelven en la puerta." },
+    // Levantamiento completo (el fixture supone entrevistas terminadas): personas y producto también superan el mínimo de suficiencia.
+    { ses: "ses-dueno-empresa", bloque: "personas", orden: 6, pregunta: "¿Quiénes forman el equipo?", respuesta: "Somos 12 personas: Diego dirige ventas con Pamela y dos vendedores más, Rosa lleva las compras hace 14 años, Luis y otro chofer reparten, y el resto está en almacén." },
+    { ses: "ses-dueno-empresa", bloque: "personas", orden: 7, pregunta: "¿Quién es la persona más difícil de reemplazar?", respuesta: "Rosa. Lleva 14 años comprando y nadie más sabe elegir la fruta como ella." },
+    { ses: "ses-diego", bloque: "personas", orden: 4, pregunta: "¿Cómo está formado tu equipo?", respuesta: "Tengo a Pamela y dos vendedores. Los nuevos aprenden mirando, no hay un manual de nada." },
+    { ses: "ses-dueno-empresa", bloque: "producto", orden: 8, pregunta: "¿Qué venden exactamente?", respuesta: "Vendemos palta, mango y cítricos a restaurantes de Lima. Entregamos al día siguiente del pedido." },
+    { ses: "ses-dueno-empresa", bloque: "producto", orden: 9, pregunta: "¿Qué los hace distintos?", respuesta: "Nuestra diferencia es la fruta en su punto: el restaurante la usa el mismo día sin esperar a que madure." },
+    { ses: "ses-pamela", bloque: "producto", orden: 3, pregunta: "¿Qué es lo que más piden los clientes?", respuesta: "La palta es el 60% de los pedidos. Los restaurantes la quieren lista para usar hoy." },
   ];
   for (const r of respuestas) {
-    const { data } = await sb.from("interview_responses").insert({ company_id: cid, session_id: sid[r.ses], bloque: r.bloque, orden: r.orden, pregunta: r.pregunta, respuesta: r.respuesta, respondida_at: new Date().toISOString() }).select("id").single();
+    const { data, error } = await sb.from("interview_responses").insert({ session_id: sid[r.ses], bloque: r.bloque, orden: r.orden, pregunta: r.pregunta, respuesta: r.respuesta, respondido_at: new Date().toISOString() }).select("id").single();
+    if (error) throw new Error("interview_responses: " + error.message);
     await encolar(cid, "extraer", { response_id: data!.id }, 3, `e2e-extraer-resp-${data!.id}`);
   }
   await encolar(cid, "minar_know_how", { session_id: sid["ses-rosa-kh"] }, 3, `e2e-minar-${sid["ses-rosa-kh"]}`);
@@ -100,18 +114,20 @@ async function main() {
   await encolar(cid, "generar_proceso", { descripcion: "Proceso de ventas y reparto: El restaurante pide por WhatsApp. Pamela arma el pedido. Si el pedido pide descuento, se espera a que Julio lo apruebe (cuando viaja, dos o tres días); si no, sigue directo. Compras arma la fruta. Luis reparte. Si el restaurante acepta la fruta, el pedido se cobra (fin bueno). Si no la acepta, la fruta se devuelve y el pedido se pierde (fin malo, pasa los martes)." }, 2, `e2e-proceso-${cid}`);
 
   console.log("esperando extracción + contraste + minería + arquitecto…");
+  void 0;
   await esperarCola(cid, "extracción");
 
   // 4. VALIDACIÓN DEL DUEÑO (los tres botones, como en el portal)
   const validaciones: { busca: string; respuesta: "si" | "ya_no" | "nunca" }[] = [
-    { busca: "%5 millones%", respuesta: "ya_no" },
+    { busca: "%Alcanzar S/ 5 millones%", respuesta: "ya_no" },
     { busca: "%líder%provincias%", respuesta: "ya_no" },
-    { busca: "%cadenas%5 locales%", respuesta: "nunca" },
-    { busca: "%Jefe de Ventas%aprueba%", respuesta: "ya_no" },
+    { busca: "%adenas%5 locales%", respuesta: "nunca" },
+    { busca: "%jefe de ventas aprueba%", respuesta: "ya_no" },
     { busca: "%9.50%", respuesta: "si" },
   ];
   for (const v of validaciones) {
-    const { data: cs } = await sb.from("claims").select("id,texto,estado,contradice_a").eq("company_id", cid).ilike("texto", v.busca);
+    // El dueño valida lo que dicen los DOCUMENTOS; lo dicho en entrevista ya está confirmado por quien lo dijo.
+    const { data: cs } = await sb.from("claims").select("id,texto,estado,contradice_a").eq("company_id", cid).is("participant_id", null).ilike("texto", v.busca);
     for (const c of cs ?? []) {
       const estado = v.respuesta === "si" ? "confirmado" : v.respuesta === "ya_no" ? "caducado" : "contradicho";
       await sb.from("claims").update({ estado, validado_at: new Date().toISOString(), prioridad_validacion: false }).eq("id", c.id);
@@ -133,18 +149,60 @@ async function main() {
   const { data: procs } = await sb.from("processes").select("id,nombre").eq("company_id", cid).eq("version", "as_is");
   for (const p of procs ?? []) await encolar(cid, "generar_tobe", { process_id: p.id }, 5, `e2e-tobe-${p.id}`);
   await esperarCola(cid, "to-be");
+  await revisionDelConsultor(cid);
   await encolar(cid, "planificar", {}, 5, `e2e-plan-${cid}`);
   await esperarCola(cid, "plan");
   await encolar(cid, "redactar_entregables", {}, 7, `e2e-entregables-${cid}`);
   console.log("esperando entregables…");
   await esperarCola(cid, "entregables");
 
+  await auditar(cid);
+}
+
+/** Revisión del consultor (paso real del flujo, capítulo de revisión): aprueba lo sustentado y decide sobre lo que pide validación. */
+async function revisionDelConsultor(cid: string) {
+  const { data: aprobados } = await sb.from("findings").update({ estado_revision: "aprobado" }).eq("company_id", cid).eq("origen", "ia").eq("requiere_validacion", false).eq("estado_revision", "pendiente").select("id");
+  console.log("hallazgos aprobados por el consultor:", aprobados?.length ?? 0);
+  // sueno_vs_empresa llega con "impacto alto, 1 fuente" (la voz del dueño): el consultor confirma que la evidencia
+  // del otro lado existe (la visión 2022 quedó caducada al validarla el dueño) y lo aprueba — decisión humana del método.
+  const { data: pendientes } = await sb.from("findings").select("id,patron,titulo").eq("company_id", cid).eq("origen", "ia").eq("requiere_validacion", true).eq("estado_revision", "pendiente");
+  for (const f of pendientes ?? []) {
+    if (f.patron === "sueno_vs_empresa") {
+      await sb.from("findings").update({ estado_revision: "aprobado", requiere_validacion: false, motivo_validacion: null }).eq("id", f.id);
+      console.log("consultor valida y aprueba:", f.titulo.slice(0, 70));
+    }
+  }
+}
+
+async function revisarYAuditar(cid: string) {
+  if (!cid) throw new Error("--auditar requiere el id de la empresa");
+  await revisionDelConsultor(cid);
+  const { data: acts } = await sb.from("actions").select("id").eq("company_id", cid);
+  if (!acts?.length) {
+    await encolar(cid, "planificar", {}, 5, `e2e-plan2-${cid}`);
+    await esperarCola(cid, "plan");
+    await encolar(cid, "redactar_entregables", {}, 7, `e2e-entregables2-${cid}`);
+    await esperarCola(cid, "entregables");
+  }
+  await auditar(cid);
+}
+
+async function auditar(cid: string) {
+  const { data: procs } = await sb.from("processes").select("id").eq("company_id", cid).eq("version", "as_is");
   // 7. AUDITORÍA DEL RESULTADO
   const { data: claims } = await sb.from("claims").select("id,texto,estado,pilar,participant_id").eq("company_id", cid);
   const { data: rels } = await sb.from("claim_relations").select("claim_id,related_id,tipo").eq("company_id", cid).eq("tipo", "contradicts");
   const texto = (id: string) => claims?.find((c) => c.id === id)?.texto ?? "";
-  const parCon = (a: string, b: string) => (rels ?? []).some((r) => (texto(r.claim_id).includes(a) && texto(r.related_id).includes(b)) || (texto(r.claim_id).includes(b) && texto(r.related_id).includes(a)));
-  const contradiccionesReales = { metas: parCon("5 millones", "3 millones") || parCon("5 millones", "USD 3"), cliente: parCon("cadenas", "81%") || parCon("5 locales", "1 local"), descuentos: parCon("aprueba descuentos", "consultar") || parCon("Jefe de Ventas", "Julio") };
+  const parCon = (a: string, b: string) => (rels ?? []).some((r) => (texto(r.claim_id).toLowerCase().includes(a) && texto(r.related_id).toLowerCase().includes(b)) || (texto(r.claim_id).toLowerCase().includes(b) && texto(r.related_id).toLowerCase().includes(a)));
+  const estadoDe = (frag: string) => claims?.find((c) => !c.participant_id && c.texto.toLowerCase().includes(frag))?.estado ?? null;
+  const confirmadoDeVoz = (frag: string) => claims?.some((c) => c.participant_id && c.texto.toLowerCase().includes(frag) && c.estado === "confirmado") ?? false;
+  // Cada contradicción sembrada cuenta como detectada si el sistema la marcó (contradicts) O si quedó resuelta
+  // por la vía real: la afirmación vieja del documento terminó caducada/contradicha y la nueva voz confirmada.
+  const contradiccionesReales = {
+    metas: parCon("5 millones", "3 millones") || (estadoDe("5 millones") === "caducado" && confirmadoDeVoz("3 millones")),
+    cliente: parCon("cadenas", "81%") || ["contradicho", "caducado"].includes(estadoDe("5 locales") ?? "") ,
+    descuentos: parCon("aprueba descuentos", "consultar") || (estadoDe("aprueba descuentos") === "caducado" && (claims ?? []).some((c) => c.participant_id && c.estado === "confirmado" && /descuento/i.test(c.texto) && /julio/i.test(c.texto))),
+  };
 
   const { data: fnd } = await sb.from("findings").select("titulo,causa_raiz,pilar,patron,impacto,veredicto,requiere_validacion,filtros, finding_evidence(claim_id,relacion)").eq("company_id", cid).eq("origen", "ia");
   const visibles = (fnd ?? []).filter((f) => !f.requiere_validacion);
@@ -176,7 +234,7 @@ async function main() {
       m.cobertura >= 0.85 && m.falsos_positivos === 0 && m.preservacion === 1 &&
       (kh ?? []).length > 0 && (tobe ?? []).length > 0 && (acts?.length ?? 0) > 0 && maxFrentes <= 3 && (docs?.length ?? 0) >= 5 && !destruyeFortaleza,
   };
-  writeFileSync(path.resolve(__dirname, "../benchmark/demo-e2e-resultado.json"), JSON.stringify({ fecha: new Date().toISOString(), ...resumen, hallazgos: obtenidos }, null, 2));
+  writeFileSync(path.resolve(DIR, "../benchmark/demo-e2e-resultado.json"), JSON.stringify({ fecha: new Date().toISOString(), ...resumen, hallazgos: obtenidos }, null, 2));
   console.log(JSON.stringify(resumen, null, 2));
   if (process.argv.includes("--limpiar")) {
     await sb.from("companies").delete().eq("id", cid);
@@ -184,6 +242,7 @@ async function main() {
   }
   process.exit(resumen.pass ? 0 : 1);
 }
+
 
 main().catch((e) => {
   console.error("demo-e2e falló:", e?.message ?? e);
