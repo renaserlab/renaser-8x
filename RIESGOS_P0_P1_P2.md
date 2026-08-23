@@ -105,3 +105,12 @@ Cada ítem: dónde, cómo se demuestra, corrección propuesta. Ninguno está cor
 | P1-22 | `DELETE /api/sources/[id]/extract` permite a un cliente borrar una fuente `entrevista` de un empleado (y sus claims en cascada). | `src/app/api/sources/[id]/extract/route.ts` | P1 |
 | P2-17 | El token viaja en la URL (`/participar/<token>`): historial del navegador y logs de acceso. Mitigado por expiración 30 días + revocación + tope de usos. Alternativa futura: token en cuerpo + cookie de participante. | `src/app/participar/[token]` | P2 |
 | P2-18 | Las vistas `claims_cliente`/`participants_cliente` corren con privilegios del dueño (sin `security_invoker`); el linter de Supabase lo señalará. Intencional: el filtro está dentro. Documentar al conectar. | `supabase/schema.sql` | P2 |
+
+---
+
+# FASE DE CIERRE V1 — 2026-08-23
+
+P1 cerrados: 20 de 22 (tabla completa con archivo y test en `V1_FINAL_AUDIT.md` › "P1: clasificación y cierre"). No bloqueantes a `BACKLOG_V2.md`: P1-12 (Realtime para clientes; el sondeo cubre la UX) y la parte de P1-19 que exige fusión semántica.
+P2 de seguridad reclasificados y cerrados: P2-04, P2-06, P2-10 (vía P1-22), P2-12, P2-17 (token fuera de la URL). P2-18 justificado (vistas con filtro interno + security_barrier).
+P2 cerrados de paso: P2-01, P2-02, P2-11, P2-13. Resto en `BACKLOG_V2.md`.
+Nuevos riesgos detectados en esta fase: ninguno de nivel P0/P1. Residual documentado: token en URL en el primer request (V1_SECURITY_REPORT).

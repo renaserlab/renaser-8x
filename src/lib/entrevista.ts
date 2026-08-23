@@ -37,7 +37,7 @@ export async function estadoSesion(session_id: string) {
   const sb = supabaseAdmin();
   const [{ data: ses }, { data: resp }, { data: job }] = await Promise.all([
     sb.from("interview_sessions").select("*, participants(nombre,puesto,rol)").eq("id", session_id).single(),
-    sb.from("interview_responses").select("id,pregunta,respuesta,bloque,orden,respondido_at,origen_claim_id").eq("session_id", session_id).order("orden"),
+    sb.from("interview_responses").select("id,pregunta,respuesta,bloque,orden,respondido_at,origen_claim_id,respuesta_audio_path").eq("session_id", session_id).order("orden"),
     sb.from("jobs").select("id,estado,progreso,error").eq("tipo", "entrevista_siguiente").contains("payload", { session_id }).order("created_at", { ascending: false }).limit(1).maybeSingle(),
   ]);
   const abierta = (resp ?? []).find((r) => r.respuesta === null) ?? null;
