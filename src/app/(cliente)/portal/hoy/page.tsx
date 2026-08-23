@@ -121,6 +121,24 @@ export default async function Hoy() {
         </section>
       )}
 
+      {hoy.caleta.length > 0 && (
+        <section>
+          <h2 className="t-seccion mb-1">La Caleta de tu empresa</h2>
+          <p className="t-dato mb-4 medida" style={{ color: "var(--grafito)" }}>
+            Cosas valiosas que tu gente sabe hacer o detectar y que no estaban escritas. Protegerlas importa tanto como corregir problemas.
+          </p>
+          <ul className="flex flex-col gap-3">
+            {hoy.caleta.map((k, i) => (
+              <li key={i} className="panel p-4">
+                <p className="t-etiqueta">{k.puesto ?? "Una persona del equipo"}{k.critico ? " · crítica" : ""}{k.documentado ? "" : " · aún no escrita"}</p>
+                <p className="t-cuerpo mt-1 medida">{k.situacion ?? k.regla ?? k.senal}</p>
+                {k.senal && k.situacion && <p className="t-dato mt-1" style={{ color: "var(--grafito)" }}>La señal: {k.senal}{k.regla ? " · La regla: " + k.regla : ""}</p>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section>
         <h2 className="t-seccion mb-4">Los cuatro pilares</h2>
         <div className="grid gap-3 sm:grid-cols-2">

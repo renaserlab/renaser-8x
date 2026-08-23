@@ -49,7 +49,7 @@ const CASOS: Caso[] = [
     ],
     esperados: [
       { clave: "seguimiento", palabras: ["seguimiento"] },
-      { clave: "no_es_leads", palabras: ["conversi"] },
+      { clave: "tiempos_respuesta", palabras: ["respuesta"] },
     ],
     prohibidos: [["falta", "leads"], ["duplicar", "publicidad"], ["incompetente"]],
   },
@@ -69,6 +69,9 @@ const CASOS: Caso[] = [
       { p: "dueno", tipo: "empresa_dueno", bloque: "hoy", pregunta: "¿Qué te preocupa?", respuesta: "Que el día no me alcanza; paro pegado al teléfono resolviendo cosas de la operación." },
       { p: "dueno", tipo: "sueno_dueno", bloque: "rol", pregunta: "¿Qué haces porque nadie más puede?", respuesta: "Al final del día los muchachos me consultan las rutas y las compras, porque si algo sale mal el responsable soy yo." },
       { p: "jefe", tipo: "lider", bloque: "area_real", pregunta: "¿Quién decide cuando aparece una excepción?", respuesta: "En el papel yo apruebo rutas, pero en la práctica todo cambio se lo mando a Germán por WhatsApp y espero su ok. A veces los camiones esperan una o dos horas parados." },
+      { p: "jefe", tipo: "lider", bloque: "trabajo_real", pregunta: "¿Dónde se traba tu área?", respuesta: "En las aprobaciones: cuando Germán viaja o está en reunión, las rutas quedan esperando y los choferes me llaman a mí, pero yo no puedo autorizar sin su ok." },
+      { p: "jefe", tipo: "lider", bloque: "vision_lider", pregunta: "¿Qué crees que Dirección no ve?", respuesta: "Que el equipo sí sabe decidir. Tenemos diez choferes con años de experiencia y una administradora muy ordenada, pero nadie usa la autoridad del manual porque la costumbre es preguntarle todo a Germán." },
+      { p: "dueno", tipo: "empresa_dueno", bloque: "personas", pregunta: "¿Quién responde si un resultado no ocurre?", respuesta: "Somos 18: diez choferes, Iván en operaciones, la administradora Lucía con dos asistentes y yo. Si algo falla, al final respondo yo." },
     ],
     esperados: [
       { clave: "decisiones_vuelven", palabras: ["german"] },
@@ -91,6 +94,9 @@ const CASOS: Caso[] = [
       { p: "duena", tipo: "empresa_dueno", bloque: "producto", pregunta: "¿Qué los hace distintos?", respuesta: "El hojaldre: los clientes vienen de otros distritos por él. Es nuestra joya y la razón de que el 72% repita." },
       { p: "duena", tipo: "empresa_dueno", bloque: "personas", pregunta: "¿Qué puesto te costaría más reemplazar mañana?", respuesta: "Teresa, sin duda. El recetario existe, pero cuando ella descansa el hojaldre no sale igual y botamos mucha masa." },
       { p: "teresa", tipo: "know_how", bloque: "know_how", pregunta: "¿Qué sabes hacer tú que alguien nuevo tardaría meses en aprender?", respuesta: "La masa te avisa: cuando al doblarla se siente fría y se resiste un poquito, está lista. Si la mantequilla brilla, hay que parar y enfriar diez minutos aunque la receta no lo diga. Eso no está escrito en ningún lado; lo aprendí en veinte años." },
+      { p: "duena", tipo: "empresa_dueno", bloque: "hoy", pregunta: "¿Qué empresa tienes hoy?", respuesta: "Una pastelería con local propio, ocho personas y ventas estables: unos 60 mil soles al mes, la mitad por el hojaldre." },
+      { p: "duena", tipo: "empresa_dueno", bloque: "producto", pregunta: "¿Qué pasa con la calidad si mañana entra el triple de clientes?", respuesta: "No podríamos: el hojaldre depende del ojo de Teresa. Los días que ella descansa botamos hasta el 19% de la masa y salen reclamos." },
+      { p: "duena", tipo: "empresa_dueno", bloque: "procesos", pregunta: "¿Qué pasa cuando la persona que lo hace no está?", respuesta: "El segundo pastelero sigue el recetario al pie de la letra y aun así no le sale: nadie le ha enseñado las señales que Teresa mira." },
     ],
     esperados: [
       { clave: "caleta_teresa", palabras: ["teresa"], preserva: true },

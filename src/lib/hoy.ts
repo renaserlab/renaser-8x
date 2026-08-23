@@ -46,7 +46,7 @@ export async function empresaHoy(companyId: string) {
     sb.from("diagnoses").select("pilar,estado,resumen").eq("company_id", companyId),
     sb.from("findings").select("id,titulo,causa_raiz,impacto,pilar,patron,veredicto,recomendacion,requiere_validacion,estado_revision,filtros, finding_evidence(relacion, claims(texto,fecha_afirmacion, sources(nombre,tipo), participants(rol,puesto)))").eq("company_id", companyId).neq("estado_revision", "rechazado"),
     sb.from("processes").select("id,nombre,area, process_nodes(etiqueta,problema,tipo)").eq("company_id", companyId).eq("version", "as_is"),
-    sb.from("know_how").select("puesto,criticidad,documentado").eq("company_id", companyId),
+    sb.from("know_how").select("puesto,criticidad,documentado,situacion,senal,regla_practica").eq("company_id", companyId),
     sb.from("sources").select("id,estado").eq("company_id", companyId),
     sb.from("actions").select("accion,kpi,finding_id,prioridad").eq("company_id", companyId).order("prioridad"),
   ]);
@@ -127,11 +127,15 @@ export async function empresaHoy(companyId: string) {
     });
   }
 
+  // La Caleta capturada, como valor propio (anonima: solo el puesto).
+  const caleta = (kh ?? []).map((k) => ({ puesto: (k.puesto ?? null) as string | null, situacion: ((k as { situacion?: string | null }).situacion ?? null), senal: ((k as { senal?: string | null }).senal ?? null), regla: ((k as { regla_practica?: string | null }).regla_practica ?? null), documentado: !!k.documentado, critico: k.criticidad === "alta" }));
+
   // Nivel de la experiencia (valor progresivo).
   const hayDiagnostico = (diagnoses ?? []).some((d) => d.estado !== "desconocido");
-  const nivel = tentativo.length >= 3 && hayDiagnostico ? 4 : hayDiagnostico ? 3 : espejo.length > 0 || mostrables.length > 0 ? 2 : (claims ?? []).length > 0 ? 1 : 0;
+  const nivel = tentativo.length >= 3 && hayDiagnostico ? 4 : hayDiagnostico ? 3 : espejo.length > 0 || mostrables.length > 0 || (kh ?? []).length > 0 ? 2 : (claims ?? []).length > 0 ? 1 : 0;
 
   return {
+    caleta,
     stats: { fuentes: (fuentes ?? []).length, afirmaciones: (claims ?? []).length, confirmadas, porValidar, espejo: espejo.length },
     pilares: ["personas", "procesos", "producto", "marketing"].map((p) => (diagnoses ?? []).find((d) => d.pilar === p) ?? { pilar: p, estado: "desconocido", resumen: null }),
     espejo,

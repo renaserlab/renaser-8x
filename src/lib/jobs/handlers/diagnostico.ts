@@ -75,7 +75,7 @@ export async function handleDiagnosticar(job: Job) {
   await progreso(job.id, `${hallazgos.length} hallazgos. Auditando`);
 
   const conIdx = hallazgos.map((h, i) => ({ id: `h${i + 1}`, ...h }));
-  let auditorias: Record<string, { sustentado: boolean; evidencia_contraria: string[]; es_sintoma: boolean; culpa_persona_sin_auditar?: boolean; benchmark_como_hecho?: boolean; duplicado_de?: string | null; observacion: string }> = {};
+  let auditorias: Record<string, { sustentado: boolean; evidencia_contraria: string[]; es_sintoma: boolean; culpa_persona_sin_auditar?: boolean; benchmark_como_hecho?: boolean; duplicado_de?: string | null; causa_corregida?: string | null; observacion: string }> = {};
   if (conIdx.length) {
     const ctxA = [`HALLAZGOS:`, JSON.stringify(conIdx.map((h) => ({ id: h.id, titulo: h.titulo, causa_raiz: h.causa_raiz, impacto: h.impacto, preserva: !!h.preserva, veredicto: h.veredicto ?? null, claim_ids: h.claim_ids })), null, 1), `TODAS LAS AFIRMACIONES:`, claimsComoTexto(todas)].join("\n\n");
     const a = await correrAuditor(ctxA);
@@ -89,6 +89,8 @@ export async function handleDiagnosticar(job: Job) {
   for (const h of conIdx) {
     const au = auditorias[h.id];
     if (au?.duplicado_de) continue;
+    // Bucle de reparacion: el auditor corrigio la causa; el hallazgo sigue vivo con la causa correcta.
+    if (au?.causa_corregida?.trim()) h.causa_raiz = au.causa_corregida.trim();
     const evidencia = h.claim_ids.map((id) => todas.find((c) => c.id === id)).filter(Boolean).map((c) => ({ id: c!.id, source_id: c!.source_id, participant_id: c!.participant_id, estado: c!.estado, source_tipo: c!.sources?.tipo ?? null, source_origen: c!.sources?.origen ?? null, participant_rol: c!.participants?.rol ?? null }));
     const sustentado = au ? au.sustentado && !au.culpa_persona_sin_auditar && !au.benchmark_como_hecho : null;
     const cal = calibrarImpacto(h.impacto, evidencia, sustentado);
@@ -135,7 +137,10 @@ export async function handleDiagnosticar(job: Job) {
     }
   }
 
-  const estado = estadoPilar([...Array(altos).fill("alto"), ...Array(medios).fill("medio")], confirmadas.length, MIN_CONFIRMADAS_POR_PILAR);
+  let estado = estadoPilar([...Array(altos).fill("alto"), ...Array(medios).fill("medio")], confirmadas.length, MIN_CONFIRMADAS_POR_PILAR);
+  // Un pilar con hallazgos esperando validacion no puede leerse "solido": hay algo en revision.
+  const { count: enRevision } = await sb.from("findings").select("id", { count: "exact", head: true }).eq("company_id", job.company_id).eq("pilar", pilar).eq("requiere_validacion", true).neq("estado_revision", "rechazado");
+  if (estado === "solido" && (enRevision ?? 0) > 0) estado = "mejorable";
   await sb.from("diagnoses").upsert({ company_id: job.company_id, pilar, estado, resumen: d.data.resumen_pilar ?? null }, { onConflict: "company_id,pilar" });
 
   // ¿Terminaron los 4 pilares? → consolidación cross-pilar (P1-19)

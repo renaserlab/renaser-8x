@@ -1,0 +1,64 @@
+{
+  "fecha": "2026-08-23T23:40:40.994Z",
+  "pass": false,
+  "resultados": [
+    {
+      "empresa": "PRUEBA A · Estudio Jurídico Lex",
+      "cid": "a279e2c7-7f66-4f04-ad38-d4c426740fe9",
+      "hallazgos": 3,
+      "esperados": [
+        {
+          "clave": "seguimiento",
+          "ok": true
+        },
+        {
+          "clave": "no_es_leads",
+          "ok": false
+        }
+      ],
+      "falsos": [],
+      "preguntas_pendientes_generadas": 7,
+      "titulos": [
+        "Falta de sistema y proceso formal para registro y seguimiento de interesados com",
+        "Tiempos de respuesta inconsistentes y atencion discontinua de canales de captaci",
+        "Desperdicio de tiempo y falta de trazabilidad en la asignacion de tareas mediant"
+      ]
+    },
+    {
+      "empresa": "PRUEBA B · Transportes Andino",
+      "cid": "733d8505-5dec-4cb5-af95-13f873969bd5",
+      "hallazgos": 0,
+      "esperados": [
+        {
+          "clave": "decisiones_vuelven",
+          "ok": false
+        },
+        {
+          "clave": "delegacion_papel",
+          "ok": false
+        }
+      ],
+      "falsos": [],
+      "preguntas_pendientes_generadas": 6,
+      "titulos": []
+    },
+    {
+      "empresa": "PRUEBA C · Pastelería Dulce Norte",
+      "cid": "89bb950d-5b34-400d-bd3a-b08eecaa587b",
+      "hallazgos": 0,
+      "esperados": [
+        {
+          "clave": "caleta_teresa",
+          "ok": false
+        },
+        {
+          "clave": "riesgo_concentracion",
+          "ok": false
+        }
+      ],
+      "falsos": [],
+      "preguntas_pendientes_generadas": 0,
+      "titulos": []
+    }
+  ]
+}

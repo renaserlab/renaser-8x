@@ -156,6 +156,9 @@ export const SalidaAuditor = z.object({
       culpa_persona_sin_auditar: z.boolean().optional(),
       benchmark_como_hecho: z.boolean().optional(),
       duplicado_de: z.string().nullable().optional(),
+      // Si el fenomeno es real y esta evidenciado pero la causa esta mal formulada, el auditor la corrige aqui
+      // (y marca sustentado true): un hallazgo real no se entierra por una causa mal escrita.
+      causa_corregida: z.string().nullable().optional(),
       observacion: z.string(),
     })
   ),

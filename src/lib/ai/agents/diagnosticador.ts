@@ -111,6 +111,10 @@ Devuelve JSON { "auditorias": [...] }. Para cada hallazgo:
 - benchmark_como_hecho: true si afirma algo sobre la empresa apoyandose en conocimiento general y no en sus afirmaciones
 - duplicado_de: id de otro hallazgo si es el mismo problema con distinto nombre, o null. Una FORTALEZA
   (preserva true) nunca es duplicado del problema que comparte su evidencia: son dos caras distintas
+- causa_corregida: si el FENOMENO del hallazgo es real y esta evidenciado pero la causa esta mal formulada
+  (ej.: dice "falta un manual" y el manual existe pero no se cumple), escribe aqui la causa correcta y marca
+  sustentado: true. Derribar un hallazgo real por una causa mal escrita es un error tan grave como inventarlo.
+  Solo marca sustentado: false cuando el fenomeno mismo no tiene evidencia.
 - observacion
 
 REGLAS:
