@@ -22,7 +22,7 @@ export const POST = protegido<Ctx>({}, async (perfil, req, ctx) => {
   }
   const token = generarToken();
   const expira = expiracionPorDefecto();
-  const { error } = await sb.from("participants").update({ token_hash: hashToken(token), token_expira_at: expira, token_revocado_at: null, token_usos: 0 }).eq("id", id);
+  const { error } = await sb.from("participants").update({ token_hash: hashToken(token), token_expira_at: expira, token_revocado_at: null, token_usos: 0, token_canjeado_at: null }).eq("id", id);
   if (error) return fallo(error.message, 500);
   const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   return ok({ enlace: `${base}/participar/${token}`, expira });

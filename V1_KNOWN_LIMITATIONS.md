@@ -19,7 +19,7 @@ Lo que V1 NO hace o hace con condiciones. Nada de esto está oculto en la interf
 10. **Realtime para el cliente funciona por sondeo (4 s)**, no por suscripción: el cliente no tiene política de lectura sobre `jobs`. El consultor sí recibe Realtime.
 11. **`company_stats` se refresca cada 60 s** y al crear una empresa; un cambio de estado puede tardar hasta un minuto en la bandeja.
 12. **Una sola consultoría por instancia** (sin `workspaces`). Un cliente con varias empresas ve la primera.
-13. **El token del participante viaja en la URL una vez** (el primer clic del enlace); luego vive en `sessionStorage` y va en cabecera. Expira a los 30 días, se puede revocar y tiene tope de 200 usos.
+13. **El enlace del participante es de un solo uso.** Al abrirlo se canjea por una sesión guardada en ese celular (localStorage); si la persona cambia de celular o borra datos del navegador, necesita un enlace nuevo (el consultor lo genera en un clic). El enlace viaja en la URL solo en ese primer clic y queda inutilizado después.
 14. **El hallazgo "sueño vs empresa" depende del modelo**: la regla mecánica solo marca la brecha (aspiracional sin actual) para validación; el patrón lo emite el DIAGNOSTICADOR cuando hay evidencia de ambos lados.
 15. **Consolidación cross-pilar sin IA**: deduplica hallazgos con la misma evidencia; no fusiona hallazgos parecidos con evidencia distinta (los verá el consultor dos veces si el modelo los repite).
 16. **Los referentes no se muestran al cliente, pero sí se usan**: si el modelo ignora la guardia y escribe un nombre, `verificarDocumento` lo reemplaza en los entregables; en hallazgos en pantalla del consultor no se filtra (es para él).

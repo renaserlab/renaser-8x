@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { generarToken, hashToken, tokenValido, formatoValido, redactarToken, expiracionPorDefecto, DIAS_VIGENCIA_TOKEN } from "@/lib/tokens";
+import { generarToken, hashToken, tokenValido, formatoValido, redactarToken, expiracionPorDefecto, canjearEnlace, DIAS_VIGENCIA_TOKEN } from "@/lib/tokens";
 
 const ahora = new Date("2026-08-22T12:00:00Z");
 const vivo = (t: string) => ({ token_hash: hashToken(t), token_expira_at: "2026-09-21T12:00:00Z", token_revocado_at: null, token_usos: 3, token_max_usos: 200 });
@@ -49,5 +49,41 @@ describe("P0-04 · token de participante", () => {
   it("los logs no contienen tokens", () => {
     const t = generarToken();
     expect(redactarToken(`[api GET /api/participar/${t}] error`)).toBe("[api GET /api/participar/[token]] error");
+  });
+});
+
+describe("enlace de un solo uso → token de sesión", () => {
+  it("el canje devuelve un token de sesión distinto, guarda solo su hash y marca el enlace como canjeado", () => {
+    const enlace = generarToken();
+    const c = canjearEnlace(enlace, vivo(enlace), ahora);
+    expect(c.ok).toBe(true);
+    if (!c.ok) return;
+    expect(c.token_sesion).not.toBe(enlace);
+    expect(c.cambios.token_hash).toBe(hashToken(c.token_sesion));
+    expect(c.cambios.token_hash).not.toBe(hashToken(enlace));
+    expect(c.cambios.token_canjeado_at).toBe(ahora.toISOString());
+  });
+  it("el enlace original queda inutilizado tras el canje (su hash ya no está en la base)", () => {
+    const enlace = generarToken();
+    const c = canjearEnlace(enlace, vivo(enlace), ahora);
+    if (!c.ok) throw new Error();
+    const despues = { ...vivo(enlace), ...c.cambios };
+    expect(tokenValido(enlace, despues, ahora).ok).toBe(false);
+    expect(tokenValido(c.token_sesion, despues, ahora).ok).toBe(true);
+  });
+  it("un segundo canje del mismo enlace falla (enlace_ya_usado)", () => {
+    const enlace = generarToken();
+    const c = canjearEnlace(enlace, vivo(enlace), ahora);
+    if (!c.ok) throw new Error();
+    const r = canjearEnlace(enlace, { ...vivo(enlace), ...c.cambios }, ahora);
+    expect(r.ok).toBe(false);
+  });
+  it("enlace vencido o revocado no se canjea; la sesión hereda la expiración del enlace", () => {
+    const enlace = generarToken();
+    expect(canjearEnlace(enlace, { ...vivo(enlace), token_expira_at: "2026-08-22T11:59:59Z" }, ahora).ok).toBe(false);
+    expect(canjearEnlace(enlace, { ...vivo(enlace), token_revocado_at: "2026-08-22T10:00:00Z" }, ahora).ok).toBe(false);
+    const c = canjearEnlace(enlace, vivo(enlace), ahora);
+    if (!c.ok) throw new Error();
+    expect(c.cambios.token_expira_at).toBe("2026-09-21T12:00:00Z");
   });
 });

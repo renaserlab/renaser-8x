@@ -15,7 +15,7 @@ export const POST = protegido({}, async (perfil, req) => {
   const token = generarToken();
   const { data: p, error } = await sb
     .from("participants")
-    .insert({ company_id: b.company_id, nombre: b.nombre.trim(), puesto: b.puesto ?? null, rol, antiguedad: b.antiguedad ?? null, token_hash: hashToken(token), token_expira_at: expiracionPorDefecto(), token_usos: 0, token_max_usos: MAX_USOS_TOKEN })
+    .insert({ company_id: b.company_id, nombre: b.nombre.trim(), puesto: b.puesto ?? null, rol, antiguedad: b.antiguedad ?? null, token_hash: hashToken(token), token_expira_at: expiracionPorDefecto(), token_usos: 0, token_max_usos: MAX_USOS_TOKEN, token_canjeado_at: null })
     .select("id,company_id,nombre,puesto,rol,antiguedad,token_expira_at")
     .single();
   if (error) return fallo(error.message, 500);

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { pedir } from "@/lib/cliente";
 import { fechaCorta } from "@/lib/textos";
 
-type P = { id: string; nombre: string; puesto: string | null; rol: string | null; token_expira_at: string | null; token_revocado_at: string | null; sesiones: { id: string; tipo: string; estado: string }[] };
+type P = { id: string; nombre: string; puesto: string | null; rol: string | null; token_expira_at: string | null; token_revocado_at: string | null; token_canjeado_at?: string | null; sesiones: { id: string; tipo: string; estado: string }[] };
 
 const ROLES = [
   ["dueno", "Dueño"],
@@ -63,7 +63,8 @@ export function Participantes({ companyId, participantes }: { companyId: string;
   const estadoEnlace = (p: P) => {
     if (p.token_revocado_at) return "revocado";
     if (!p.token_expira_at) return "sin enlace";
-    return new Date(p.token_expira_at) < new Date() ? "vencido" : `vigente hasta ${fechaCorta(p.token_expira_at)}`;
+    if (new Date(p.token_expira_at) < new Date()) return "vencido";
+    return p.token_canjeado_at ? `en uso desde ${fechaCorta(p.token_canjeado_at)} (enlace ya canjeado)` : `enlace sin abrir · vence ${fechaCorta(p.token_expira_at)}`;
   };
 
   return (

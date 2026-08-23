@@ -1,23 +1,40 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "./supabase/admin";
 import { registrarRespuesta, pedirSiguiente, estadoSesion } from "./entrevista";
-import { hashToken, formatoValido, tokenValido } from "./tokens";
+import { hashToken, formatoValido, tokenValido, canjearEnlace } from "./tokens";
 import { hayTranscriptor } from "./ai";
 
 /**
  * Acceso por enlace, sin cuenta. El participante ve únicamente su propia sesión. Capítulo 36.
  * P0-04: búsqueda por hash; expiración, revocación y usos; 404 uniforme.
- * P2-17: el token puede viajar en cabecera (`x-participante-token`) en vez de en la URL.
+ * P2-17: el token viaja en cabecera (`x-participante-token`), nunca en la URL de la API.
+ * Enlace de un solo uso: `canjear` verifica el token del enlace una vez y lo sustituye por un token de sesión;
+ * el enlace original queda inutilizado. Las demás rutas solo aceptan el token de sesión (participante ya canjeado).
  */
 export const INVALIDO = () => NextResponse.json({ error: "Este enlace no es válido o ya venció. Pide uno nuevo a quien te lo envió." }, { status: 404 });
 
 export async function participantePorToken(token: string) {
   if (!formatoValido(token)) return null;
   const sb = supabaseAdmin();
-  const { data: p } = await sb.from("participants").select("id,company_id,nombre,puesto,rol,token_hash,token_expira_at,token_revocado_at,token_usos,token_max_usos, companies(nombre)").eq("token_hash", hashToken(token)).maybeSingle();
+  const { data: p } = await sb.from("participants").select("id,company_id,nombre,puesto,rol,token_hash,token_expira_at,token_revocado_at,token_usos,token_max_usos,token_canjeado_at, companies(nombre)").eq("token_hash", hashToken(token)).maybeSingle();
   if (!p) return null;
+  if (!p.token_canjeado_at) return null; // un enlace sin canjear no da acceso: primero /canjear
   if (!tokenValido(token, p).ok) return null;
   return p;
+}
+
+/** Canje único del enlace → token de sesión (se devuelve una sola vez). */
+export async function canjearParticipante(tokenEnlace: string) {
+  if (!formatoValido(tokenEnlace)) return INVALIDO();
+  const sb = supabaseAdmin();
+  const { data: p } = await sb.from("participants").select("id,token_hash,token_expira_at,token_revocado_at,token_usos,token_max_usos,token_canjeado_at").eq("token_hash", hashToken(tokenEnlace)).maybeSingle();
+  if (!p) return INVALIDO();
+  const c = canjearEnlace(tokenEnlace, p);
+  if (!c.ok) return INVALIDO();
+  // Condición de carrera: solo canjea si el hash sigue siendo el del enlace (un segundo clic simultáneo falla).
+  const { data: upd } = await sb.from("participants").update(c.cambios).eq("id", p.id).eq("token_hash", p.token_hash).is("token_canjeado_at", null).select("id").maybeSingle();
+  if (!upd) return INVALIDO();
+  return NextResponse.json({ token_sesion: c.token_sesion, expira: c.cambios.token_expira_at });
 }
 
 export async function estadoParticipante(token: string) {

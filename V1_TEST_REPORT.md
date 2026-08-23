@@ -5,7 +5,7 @@ npx tsc --noEmit              → 0 errores
 npx eslint src worker tests   → 0 errores
 npx next build                → exit 0 (34 rutas)
 npx vitest run                → Test Files 21 passed | 2 skipped (23)
-                                Tests 238 passed | 24 skipped | 23 todo (285) · 0 fallidos
+                                Tests 242 passed | 24 skipped | 23 todo (289) · 0 fallidos  (2026-08-23, tras el canje único del enlace: +4 en p0-tokens)
 ```
 
 ## Por archivo

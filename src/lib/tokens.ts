@@ -49,3 +49,16 @@ export function tokenValido(presentado: string, p: EstadoToken, ahora = new Date
 export function redactarToken(texto: string): string {
   return texto.replace(/\/participar\/[A-Za-z0-9_-]{20,}/g, "/participar/[token]");
 }
+
+/**
+ * Canje del enlace (un solo uso): el token del enlace se verifica una vez y se reemplaza por un token de sesión
+ * nuevo, cuyo hash sustituye al del enlace. El enlace original queda inutilizado; la sesión hereda la expiración.
+ */
+export function canjearEnlace(presentado: string, p: EstadoToken & { token_canjeado_at?: string | null }, ahora = new Date()): { ok: true; token_sesion: string; cambios: { token_hash: string; token_canjeado_at: string; token_usos: number; token_expira_at: string } } | { ok: false; motivo: string } {
+  if (p.token_canjeado_at) return { ok: false, motivo: "enlace_ya_usado" };
+  const v = tokenValido(presentado, p, ahora);
+  if (!v.ok) return { ok: false, motivo: v.motivo ?? "invalido" };
+  const token_sesion = generarToken();
+  const expira = p.token_expira_at && new Date(p.token_expira_at) > ahora ? p.token_expira_at : expiracionPorDefecto(ahora);
+  return { ok: true, token_sesion, cambios: { token_hash: hashToken(token_sesion), token_canjeado_at: ahora.toISOString(), token_usos: 0, token_expira_at: expira } };
+}

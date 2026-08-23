@@ -18,7 +18,7 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
   const [{ data: c }, { data: diag }, { data: parts }, { data: sesiones }, { data: stats }, usados] = await Promise.all([
     sb.from("companies").select("*").eq("id", id).single(),
     sb.from("diagnoses").select("pilar,estado,resumen").eq("company_id", id),
-    sb.from("participants").select("id,nombre,puesto,rol,token_expira_at,token_revocado_at").eq("company_id", id).order("created_at"),
+    sb.from("participants").select("id,nombre,puesto,rol,token_expira_at,token_revocado_at,token_canjeado_at").eq("company_id", id).order("created_at"),
     sb.from("interview_sessions").select("id,tipo,estado,participant_id").eq("company_id", id),
     sb.from("company_stats").select("*").eq("company_id", id).maybeSingle(),
     tokensUsados(id),

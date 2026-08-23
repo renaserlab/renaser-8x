@@ -1,5 +1,7 @@
 # SUPABASE READINESS — ¿se puede conectar ya?
 
+> **Estado 2026-08-23 (fase de integración real): BLOCKED_EXTERNAL.** No hay `.env.local` con credenciales ni Docker para `supabase start` en este equipo. Pasos 1–2 (conectar, ejecutar schema) no se pudieron ejecutar; `npm run test:supabase` queda en 24 skipped. Verificación previa del token: hecha y corregida (ver V1_SECURITY_REPORT › TOKENS). Qué hace falta: un proyecto Supabase (o Docker Desktop + `npx supabase start`) y poner en `.env.local` `SUPABASE_TEST_URL`, `SUPABASE_TEST_ANON_KEY`, `SUPABASE_TEST_SERVICE_ROLE_KEY` (base de prueba) y las `NEXT_PUBLIC_SUPABASE_*` / `SUPABASE_SERVICE_ROLE_KEY` (app). No pegar llaves en el chat.
+
 **Veredicto original (antes de la corrección P0): NO LISTO.** Ver la actualización al final: los 6 P0 están cerrados.
 
 ## Bloqueadores (todos P0, en orden de corrección)

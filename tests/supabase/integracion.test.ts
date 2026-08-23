@@ -135,12 +135,20 @@ d("P0-04 · tokens", () => {
     expect(v!.length).toBeGreaterThan(0);
     expect("token_hash" in v![0]).toBe(false);
   });
-  it("token válido → el hash resuelve al participante; token vencido/revocado → no (lógica de tokens.ts sobre datos reales)", async () => {
-    const { data } = await admin.from("participants").select("id,token_hash").eq("token_hash", hashToken(ids.tokenA)).maybeSingle();
-    expect(data?.id).toBe(ids.partEmpA);
+  it("canje de un solo uso: el enlace se canjea una vez (update condicional), el hash cambia, y un segundo canje no afecta ninguna fila", async () => {
+    const { data: antes } = await admin.from("participants").select("id,token_hash,token_canjeado_at").eq("token_hash", hashToken(ids.tokenA)).maybeSingle();
+    expect(antes?.id).toBe(ids.partEmpA);
+    expect(antes?.token_canjeado_at).toBeNull();
+    const sesion = generarToken();
+    const { data: upd } = await admin.from("participants").update({ token_hash: hashToken(sesion), token_canjeado_at: new Date().toISOString(), token_usos: 0 }).eq("id", ids.partEmpA).eq("token_hash", hashToken(ids.tokenA)).is("token_canjeado_at", null).select("id");
+    expect(upd).toHaveLength(1);
+    const { data: otra } = await admin.from("participants").update({ token_hash: hashToken(generarToken()) }).eq("id", ids.partEmpA).eq("token_hash", hashToken(ids.tokenA)).is("token_canjeado_at", null).select("id");
+    expect(otra ?? []).toHaveLength(0);
+    const { data: porEnlace } = await admin.from("participants").select("id").eq("token_hash", hashToken(ids.tokenA)).maybeSingle();
+    expect(porEnlace).toBeNull();
+    const { data: porSesion } = await admin.from("participants").select("id").eq("token_hash", hashToken(sesion)).maybeSingle();
+    expect(porSesion?.id).toBe(ids.partEmpA);
     await admin.from("participants").update({ token_revocado_at: new Date().toISOString() }).eq("id", ids.partEmpA);
-    const { data: p } = await admin.from("participants").select("token_revocado_at").eq("id", ids.partEmpA).single();
-    expect(p!.token_revocado_at).not.toBeNull();
   });
 });
 

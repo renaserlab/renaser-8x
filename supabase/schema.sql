@@ -48,9 +48,11 @@ create table if not exists participants (
   token_revocado_at timestamptz,
   token_usos int default 0,
   token_max_usos int default 200,
+  token_canjeado_at timestamptz,               -- el enlace es de un solo uso: al canjearse, el hash pasa a ser el del token de sesión
   created_at timestamptz default now()
 );
 alter table participants drop column if exists token;
+alter table participants add column if not exists token_canjeado_at timestamptz;
 alter table participants add column if not exists token_hash text unique;
 alter table participants add column if not exists token_expira_at timestamptz;
 alter table participants add column if not exists token_revocado_at timestamptz;
