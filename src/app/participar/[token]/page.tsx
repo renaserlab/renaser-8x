@@ -1,10 +1,27 @@
 "use client";
 import { use, useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Entrevista, type EstadoEntrevista } from "@/components/Entrevista";
 
 type Info = { participante: { nombre: string; puesto: string | null; empresa: string }; transcriptor: boolean } & EstadoEntrevista;
 
 const CLAVE = "8x_participante_sesion";
+
+// Un solo canje en vuelo aunque el efecto corra dos veces (StrictMode) o la persona toque dos veces:
+// el segundo intento reutiliza la misma promesa en vez de quemar el enlace de un solo uso.
+let canjeEnCurso: { token: string; promesa: Promise<string | null> } | null = null;
+function canjear(tokenUrl: string): Promise<string | null> {
+  if (canjeEnCurso?.token === tokenUrl) return canjeEnCurso.promesa;
+  const promesa = (async () => {
+    const r = await fetch("/api/participar/canjear", { method: "POST", headers: { "x-participante-token": tokenUrl } });
+    if (!r.ok) return null;
+    const j = (await r.json()) as { token_sesion: string };
+    localStorage.setItem(CLAVE, j.token_sesion);
+    return j.token_sesion;
+  })();
+  canjeEnCurso = { token: tokenUrl, promesa };
+  return promesa;
+}
 
 /**
  * Enlace del participante: desde su celular, sin cuenta, solo su sesión. Capítulo 7.4 y 36.
@@ -14,6 +31,7 @@ const CLAVE = "8x_participante_sesion";
  */
 export default function Participar({ params }: { params: Promise<{ token: string }> }) {
   const { token: tokenUrl } = use(params);
+  const router = useRouter();
   const [info, setInfo] = useState<Info | null>(null);
   const [invalido, setInvalido] = useState<null | "enlace" | "sesion">(null);
   const [token, setToken] = useState<string>("");
@@ -23,26 +41,28 @@ export default function Participar({ params }: { params: Promise<{ token: string
   useEffect(() => {
     let vivo = true;
     (async () => {
-      const guardado = localStorage.getItem(CLAVE) ?? "";
       if (tokenUrl && tokenUrl !== "sesion") {
-        window.history.replaceState(null, "", "/participar/sesion");
-        const r = await fetch("/api/participar/canjear", { method: "POST", headers: { "x-participante-token": tokenUrl } });
-        if (r.ok) {
-          const j = (await r.json()) as { token_sesion: string };
-          localStorage.setItem(CLAVE, j.token_sesion);
-          if (vivo) setToken(j.token_sesion);
-        } else if (guardado) {
-          if (vivo) setToken(guardado); // enlace ya canjeado en este mismo dispositivo: seguimos con la sesión
+        // router.replace (no history.replaceState): el router de Next restaura su URL interna en el siguiente
+        // refresh, y el enlace volvería a quedar visible (verificado en navegador).
+        const sesion = await canjear(tokenUrl);
+        router.replace("/participar/sesion");
+        // Se relee el almacenamiento DESPUÉS del canje: otro intento simultáneo pudo canjear ya (doble efecto, doble toque).
+        const guardado = sesion ?? localStorage.getItem(CLAVE);
+        if (guardado) {
+          if (vivo) setToken(guardado);
         } else if (vivo) setInvalido("enlace");
-      } else if (guardado) {
-        if (vivo) setToken(guardado);
-      } else if (vivo) setInvalido("sesion");
+      } else {
+        const guardado = localStorage.getItem(CLAVE);
+        if (guardado) {
+          if (vivo) setToken(guardado);
+        } else if (vivo) setInvalido("sesion");
+      }
       if (vivo) setListo(true);
     })();
     return () => {
       vivo = false;
     };
-  }, [tokenUrl]);
+  }, [tokenUrl, router]);
 
   const cabeceras = useCallback(() => ({ "x-participante-token": token }), [token]);
 
