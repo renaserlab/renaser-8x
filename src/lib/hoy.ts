@@ -83,8 +83,16 @@ export async function empresaHoy(companyId: string) {
         .map((e) => ({ texto: e.claims.texto, fuente: fuenteAnonima(e.claims), fecha: e.claims.fecha_afirmacion })),
     }));
 
-  const fortalezas = mostrables.filter((h) => h.preserva);
-  const problemas = mostrables.filter((h) => !h.preserva);
+  // Misma consolidación que el worker, aplicada al mostrar (protege contra hallazgos históricos duplicados):
+  // misma naturaleza con evidencia idéntica o subconjunto → queda el más evidenciado.
+  const evidenciaClave = (h: HallazgoHoy) => h.evidencia.map((e) => e.texto).sort().join("|");
+  const esDuplicadoHoy = (h: HallazgoHoy) => mostrables.some((g) => g !== h && g.preserva === h.preserva && (
+    (evidenciaClave(g) === evidenciaClave(h) && mostrables.indexOf(g) < mostrables.indexOf(h)) ||
+    (h.evidencia.length < g.evidencia.length && h.evidencia.every((e) => g.evidencia.some((x) => x.texto === e.texto)))
+  ));
+  const unicos = mostrables.filter((h) => !esDuplicadoHoy(h));
+  const fortalezas = unicos.filter((h) => h.preserva);
+  const problemas = unicos.filter((h) => !h.preserva);
   const peso = (h: HallazgoHoy) => (h.impacto === "alto" ? 3 : h.impacto === "medio" ? 2 : 1) + Math.min(h.evidencia.length, 3);
   const noVes = [...problemas].sort((a, b) => peso(b) - peso(a));
 

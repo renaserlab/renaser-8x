@@ -531,6 +531,21 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created after insert on auth.users
 for each row execute function handle_new_user();
 
+create table if not exists company_assets (
+  id uuid primary key default gen_random_uuid(),
+  company_id uuid references companies(id) on delete cascade,
+  bloque text not null,
+  clave text not null,
+  estado text check (estado in ('lo_tengo','incompleto','no_lo_tengo','no_se')),
+  nota text,
+  source_id uuid references sources(id),
+  updated_at timestamptz default now(),
+  unique (company_id, clave)
+);
+alter table company_assets enable row level security;
+create policy company_assets_cliente on company_assets for all using (company_id in (select mis_empresas())) with check (company_id in (select mis_empresas()));
+create policy company_assets_consultor on company_assets for all using (es_consultor()) with check (es_consultor());
+
 -- ============ HELPERS RLS ============
 
 create or replace function es_consultor() returns boolean

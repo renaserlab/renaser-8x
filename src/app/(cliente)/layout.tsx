@@ -11,6 +11,7 @@ export default async function LayoutCliente({ children }: { children: React.Reac
   const enlaces = [
     ["/portal", "Inicio"],
     ["/portal/hoy", "Mi empresa"],
+    ["/portal/activos", "Tu información"],
     ["/portal/documentos", "Subir"],
     ["/portal/conversacion", "Conversar"],
     ["/portal/validar", "Confirmar"],
