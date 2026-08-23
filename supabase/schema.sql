@@ -242,6 +242,8 @@ create table if not exists processes (
   padre_id uuid references processes(id),
   created_at timestamptz default now()
 );
+alter table processes add column if not exists confirmacion text check (confirmacion in ('borrador','por_confirmar','confirmado')) default 'borrador';
+alter table processes add column if not exists deseo text;
 create index if not exists processes_company_idx on processes (company_id);
 
 create table if not exists process_nodes (

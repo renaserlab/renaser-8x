@@ -72,7 +72,7 @@ export const TIPO_SESION: Record<string, string> = {
   empresa_dueno: "Tu empresa",
   lider: "Tu área",
   personal: "Tu trabajo",
-  know_how: "Lo que sabes hacer",
+  know_how: "La Caleta: lo que solo tú sabes",
   validacion: "Confirmar lo encontrado",
 };
 

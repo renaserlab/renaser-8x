@@ -111,6 +111,8 @@ export const SalidaArquitecto = z.object({
   area: z.string().nullable().optional(),
   nodos: z.array(NodoSalida),
   conexiones: z.array(z.object({ de: z.string(), a: z.string(), etiqueta: z.string().nullable().optional() })),
+  // Una pregunta de alto valor sobre el hueco mas importante del proceso (o null si esta completo).
+  pregunta_gap: z.string().nullable().optional(),
 });
 export type SalidaArquitecto = z.infer<typeof SalidaArquitecto>;
 

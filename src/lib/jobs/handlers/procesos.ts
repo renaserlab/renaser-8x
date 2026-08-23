@@ -67,6 +67,17 @@ export async function handleGenerarProceso(job: Job) {
   const r = await correrArquitecto(descripcion);
   await registrarLlamada(job.company_id, job.id, "arquitecto", r);
   const g = await guardarFlujograma(job.company_id, r.data, { version: "as_is", origen: "generado_ia", process_id: job.payload.process_id ? String(job.payload.process_id) : undefined });
+  const sbP = supabaseAdmin();
+  if (job.payload.process_id) await sbP.from("processes").update({ confirmacion: "por_confirmar" }).eq("id", String(job.payload.process_id));
+  // La pregunta del hueco (fase 17) entra a la conversación del dueño como siguiente pregunta pendiente.
+  if (r.data.pregunta_gap?.trim()) {
+    const { data: sesDueno } = await sbP.from("interview_sessions").select("id, participants!inner(rol)").eq("company_id", job.company_id).eq("tipo", "empresa_dueno").in("participants.rol", ["dueno", "socio"]).neq("estado", "completa").limit(1).maybeSingle();
+    if (sesDueno) {
+      const { data: ult } = await sbP.from("interview_responses").select("orden").eq("session_id", sesDueno.id).order("orden", { ascending: false }).limit(1);
+      const { data: hayAbierta } = await sbP.from("interview_responses").select("id").eq("session_id", sesDueno.id).is("respuesta", null).limit(1);
+      if (!hayAbierta?.length) await sbP.from("interview_responses").insert({ session_id: sesDueno.id, bloque: "procesos", pilar: "procesos", pregunta: r.data.pregunta_gap.trim(), orden: (ult?.[0]?.orden ?? 0) + 1 });
+    }
+  }
   return { process_id: g.processId, nodos: r.data.nodos.length, avisos: g.avisos, nodos_con_avisos: g.problemasPorNodo };
 }
 

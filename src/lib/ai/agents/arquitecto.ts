@@ -42,7 +42,11 @@ REGLAS:
 - Si la persona menciona una espera ("se queda parado hasta que…"), usa un nodo espera con su duracion.
 - Si menciona un problema en un paso ("aqui siempre se traba"), ponlo en problema de ese nodo.
 - Las etiquetas usan las palabras de la persona, no vocabulario de consultoria.
-- Sin posiciones: el layout lo calcula la aplicacion.`;
+- Sin posiciones: el layout lo calcula la aplicacion.
+- INVESTIGA EL HUECO: si entre dos pasos falta algo evidente ("el cliente escribe y luego paga" — ¿que pasa
+  en medio?, ¿que pasa si nadie responde?, ¿alguien vuelve a buscar al que no compro?), devuelve ademas
+  "pregunta_gap": UNA sola pregunta, la de mayor valor, en lenguaje simple, para que el dueno la responda.
+  Si el proceso esta completo, "pregunta_gap": null.`;
 
 export async function correrArquitecto(descripcion: string) {
   return ai().complete({ system: PROMPT_ARQUITECTO, user: comoDato("DESCRIPCIÓN DEL PROCESO", descripcion), schema: SalidaArquitecto, priority: "interactive", maxTokens: 4000, agente: "arquitecto" });

@@ -108,7 +108,13 @@ export default function Participar({ params }: { params: Promise<{ token: string
           <p className="t-etiqueta">{info.participante.empresa}</p>
           <h1 className="t-titulo mt-2">Hola, {info.participante.nombre.split(" ")[0]}</h1>
           <p className="t-cuerpo mt-2 medida" style={{ color: "var(--grafito)" }}>
-            Te vamos a hacer algunas preguntas sobre cómo haces tu trabajo. No hay respuestas buenas ni malas. Tu nombre no se muestra con tus respuestas: solo nos interesan los hechos. Puedes parar cuando quieras y volver desde este mismo celular.
+            Queremos entender cómo funciona realmente el trabajo, contado por quien lo hace. No hay respuestas buenas ni malas,
+            y tu nombre no se muestra con tus respuestas. Puedes hablar en vez de escribir, parar cuando quieras y volver
+            desde este mismo celular.
+          </p>
+          <p className="t-dato mt-3 medida" style={{ color: "var(--grafito)" }}>
+            Todas las empresas tienen una Caleta: cosas que las personas saben hacer o detectar y que nunca quedaron escritas.
+            Si es tu caso, esto sirve para protegerla — para que lo valioso no dependa de una sola persona.
           </p>
         </header>
       )}

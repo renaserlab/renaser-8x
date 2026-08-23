@@ -5,6 +5,7 @@ import { procesoConToBe } from "@/lib/procesos";
 import { Canvas } from "@/components/canvas/Canvas";
 import { Comparada } from "@/components/canvas/Comparada";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { ConfirmarProceso } from "@/components/cliente/ConfirmarProceso";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,7 @@ export default async function ProcesoCliente({ params }: { params: Promise<{ p: 
   const r = await procesoConToBe(p);
   if (!r || r.proceso.company_id !== c.companyId) notFound();
   const { data: pub } = await supabaseAdmin().from("deliverables").select("id").eq("company_id", c.companyId).eq("tipo", "mapa_to_be").eq("publicado", true).limit(1);
+  const { data: conf } = await supabaseAdmin().from("processes").select("confirmacion,deseo").eq("id", r.asis.id).single();
   const mostrarToBe = !!pub?.length && r.tobe;
   return (
     <>
@@ -27,6 +29,7 @@ export default async function ProcesoCliente({ params }: { params: Promise<{ p: 
       ) : (
         <Canvas processId={r.asis.id} companyId={c.companyId} nombre={r.asis.nombre} nodos={r.asis.nodos} edges={r.asis.edges} paraCliente alto="60vh" />
       )}
+      <ConfirmarProceso processId={r.asis.id} confirmacion={conf?.confirmacion ?? "borrador"} deseo={conf?.deseo ?? null} />
     </>
   );
 }
