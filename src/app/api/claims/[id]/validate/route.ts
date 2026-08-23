@@ -1,3 +1,4 @@
+import { dispararDiagnosticoSiListo } from "@/lib/jobs/auto";
 import { protegido, ok, fallo, leerJSON, exigirAcceso } from "@/lib/api";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { visibleParaCliente } from "@/lib/frontera";
@@ -35,5 +36,6 @@ export const POST = protegido<Ctx>({}, async (perfil, req, ctx) => {
     const { data: s } = await sb.from("sources").insert({ company_id: c.company_id, tipo: "observacion", nombre: `Seguimiento de validación`, fecha_origen: new Date().toISOString().slice(0, 10), contenido: `Sobre "${c.texto}": ${b.seguimiento.trim()}`, origen: perfil.rol === "consultor" ? "consultor" : "cliente", estado: "subido" }).select("id").single();
     if (s) await encolar({ company_id: c.company_id, tipo: "extraer", payload: { source_id: s.id }, prioridad: PRIORIDAD.contrastar, idempotency_key: claveIdempotente(["extraer-raiz", s.id]) });
   }
+  await dispararDiagnosticoSiListo(c.company_id).catch(() => {});
   return ok({ id, estado });
 });

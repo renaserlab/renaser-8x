@@ -10,6 +10,7 @@ export default async function LayoutCliente({ children }: { children: React.Reac
   const empresa = companyId ? (await supabaseAdmin().from("companies").select("nombre").eq("id", companyId).single()).data : null;
   const enlaces = [
     ["/portal", "Inicio"],
+    ["/portal/hoy", "Mi empresa"],
     ["/portal/documentos", "Subir"],
     ["/portal/conversacion", "Conversar"],
     ["/portal/validar", "Confirmar"],

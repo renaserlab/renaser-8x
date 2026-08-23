@@ -1,3 +1,4 @@
+import { dispararDiagnosticoSiListo } from "../auto";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { correrContrastador } from "@/lib/ai/agents/contrastador";
 import { claimsDeEmpresa, etiquetaFuente, registrarLlamada, type ClaimRow } from "@/lib/db/queries";
@@ -73,5 +74,7 @@ export async function handleContrastar(job: Job) {
     );
     await progreso(job.id, `Comparadas ${Math.min(i + tope, pares.length)} de ${pares.length}. ${contradicciones} contradicciones, ${relaciones} relaciones.`);
   }
-  return { pares: paresJuzgados, contradicciones, relaciones, brechas: brechas.length };
+  // Con el contraste al día, los pilares listos se diagnostican solos (autonomía del producto).
+  const auto = await dispararDiagnosticoSiListo(job.company_id);
+  return { pares: paresJuzgados, contradicciones, relaciones, brechas: brechas.length, diagnostico_auto: auto };
 }

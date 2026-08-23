@@ -104,7 +104,7 @@ export async function handleDiagnosticar(job: Job) {
         impacto: cal.impacto,
         veredicto: h.preserva ? "keep" : h.veredicto,
         recomendacion: filtros.recomendacion,
-        filtros: { ...h.filtros, bloqueada: filtros.bloqueada, tension: filtros.tension, dimension: h.dimension ?? null, preserva: !!h.preserva, fuerza_maxima: cal.fuerza_maxima, fuentes_independientes: cal.fuentes },
+        filtros: { ...h.filtros, bloqueada: filtros.bloqueada, tension: filtros.tension, dimension: h.dimension ?? null, preserva: !!h.preserva, fuerza_maxima: cal.fuerza_maxima, fuentes_independientes: cal.fuentes, costo_posible: h.costo_posible ?? null },
         auditoria: au ?? null,
         origen: "ia",
         estado_revision: "pendiente",

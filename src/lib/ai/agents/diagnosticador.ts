@@ -22,6 +22,9 @@ Cada hallazgo:
 - impacto: alto | medio | bajo
 - veredicto: keep | improve | replace | remove | create (o null)
 - recomendacion (o null si un filtro la bloquea: en su lugar describe la tension en la nota del filtro)
+- costo_posible: que puede estar costando este problema hoy (dinero, tiempo, calidad o libertad del dueno),
+  en UNA frase concreta apoyada en la evidencia (ej.: "38% de pedidos con reclamo = clientes que no vuelven").
+  Si no puedes sustentarlo con las afirmaciones, null. Nunca inventes cifras.
 - claim_ids: array de ids que lo sustentan
 - claims_contrarios: ids de afirmaciones que lo contradicen, si existen
 - filtros: { proposito, sabiduria, excelencia } — cada uno { resultado: "pasa" | "no_pasa", nota: una frase, respuestas: [una respuesta corta por cada sub-pregunta] }
