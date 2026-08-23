@@ -51,6 +51,8 @@ Lectura: con 30 empresas cargando todo a la vez, las personas que conversan nunc
 | Entrevistador (pregunta siguiente), `gemini-3.5-flash-lite` | 1,7 s · 2.553 entrada + 54 salida |
 | Ciclo completo respuesta→extraer→contrastar→repregunta (worker + Supabase reales) | < 12 s de punta a punta |
 | Benchmark completo (15 llamadas, `gemini-3.5-flash-lite`) | 61 s · 38.471 tokens |
+| Benchmark completo (15 llamadas, `gemini-3.7-flash`, facturación) | 168-455 s (según 503) · ~39.700 tokens · **PASS** |
+| EMPRESA DEMO e2e (≈40 jobs reales: extracción, contraste, minería, arquitecto, 4 diagnósticos, to-be, plan, entregables) | ≈ 12 min de pipeline · 0 jobs fallidos |
 | Costo real Gemini | plan gratuito (USD 0); el estimado de 6 USD/M del informe corresponde a Anthropic |
 
 Nota operativa: el plan gratuito de Gemini limita ~20 solicitudes/día por modelo; para operar 30 empresas hace falta facturación en Google AI Studio. `gemini-3.7-flash` mostró 503 intermitentes ("high demand"): el adaptador reintenta (hasta 5, backoff exponencial) y el worker aplica su propio backoff.

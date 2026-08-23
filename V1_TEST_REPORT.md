@@ -44,6 +44,9 @@ npx vitest run                → Test Files 21 passed | 2 skipped (23)
 
 ## Integración real (2026-08-23)
 
+- **Benchmark con el modelo de producción (`gemini-3.7-flash`, facturación activa): PASS** — cobertura 1.0 · precisión 0.857 · falsos positivos 0 · causa raíz 0.833 · preservación de fortalezas 1.0 · contradicciones 1.0 (`benchmark/ultimo-resultado.json`). Umbrales y fixture intactos; los fallos previos se corrigieron en su causa real: temperatura sin fijar (Gemini usa 1.0 por defecto → varianza enorme), consolidación cross-pilar (naturaleza problema/fortaleza + evidencia subconjunto, igual en worker y benchmark), emparejado de medición uno-a-uno y simétrico, y reglas de fidelidad/fortalezas/vigencia en los prompts.
+- **EMPRESA DEMO de extremo a extremo real (Supabase + Gemini + worker): PASS** — 31 claims extraídos de fuentes y entrevistas reales, las 3 contradicciones sembradas resueltas por las vías reales (relación contradicts o actualización validada por el dueño), diagnóstico en los 4 pilares, cobertura 1.0 con 0 inventados, fortaleza de Rosa preservada (y primera acción del plan: documentar su criterio), know-how minado con la señal, AS-IS + TO-BE generados por el ARQUITECTO, plan con ≤3 frentes/semana y 7 entregables (`benchmark/demo-e2e-resultado.json`; empresa visible en la app como "EMPRESA DEMO E2E").
+
 - `npm run test:supabase`: **24/24** contra el proyecto remoto (se mantuvo 24/24 tras todos los cambios de esta fase).
 - Ciclo real en navegador con Supabase + Gemini: enlace de participante canjeado, pregunta generada por el modelo, respuesta guardada, claims extraídos (5, bien clasificados por pilar), contraste corrido y repregunta operativa ("¿Dónde pierdes más tiempo en tu ruta?").
 - Responsive auditado por DOM en 375/390/430/768/1024/1280/1440 px: sin overflow horizontal, controles ≥ 44 px (entrar, registro, participante).
