@@ -17,6 +17,14 @@ export const POST = protegido({}, async (perfil, req) => {
   const fecha = String(form.get("fecha_origen") ?? "") || null;
   if (fecha && !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return fallo("La fecha no es válida.");
   const archivo = form.get("archivo");
+  const assetClave = String(form.get("asset_clave") ?? "") || null;
+  const assetEstado = String(form.get("asset_estado") ?? "") || null;
+  const ligarActivo = async (sourceId: string) => {
+    if (!assetClave) return;
+    const bloque = assetClave.split(".")[0];
+    const estado = ["lo_tengo", "incompleto", "contado"].includes(assetEstado ?? "") ? assetEstado : "lo_tengo";
+    await sb.from("company_assets").upsert({ company_id: companyId, bloque, clave: assetClave, estado, source_id: sourceId, updated_at: new Date().toISOString() }, { onConflict: "company_id,clave" });
+  };
   const processId = String(form.get("process_id") ?? "") || null;
   const processNodeId = String(form.get("process_node_id") ?? "") || null;
   if (processId) {
@@ -37,6 +45,7 @@ export const POST = protegido({}, async (perfil, req) => {
     if (e1) return fallo(`No pudimos guardar el archivo: ${e1.message}`, 500);
     const { data, error } = await sb.from("sources").insert({ company_id: companyId, tipo: v.tipo, nombre, fecha_origen: fecha, storage_path: path, mime: v.mime, origen, process_id: processId, process_node_id: processNodeId }).select("id").single();
     if (error) return fallo(error.message, 500);
+    await ligarActivo(data.id);
     row = data;
   } else if (texto) {
     if (texto.length > 200_000) return fallo("El texto es demasiado largo. Súbelo como archivo.");
@@ -45,6 +54,7 @@ export const POST = protegido({}, async (perfil, req) => {
     nombre = nombre || `Nota del ${new Date().toLocaleDateString("es-PE")}`;
     const { data, error } = await sb.from("sources").insert({ company_id: companyId, tipo, nombre, fecha_origen: fecha ?? new Date().toISOString().slice(0, 10), contenido: texto, mime: "text/plain", origen }).select("id").single();
     if (error) return fallo(error.message, 500);
+    await ligarActivo(data.id);
     row = data;
   } else {
     return fallo("Sube un archivo o escribe un texto.");

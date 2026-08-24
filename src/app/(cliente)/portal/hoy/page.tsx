@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { contextoPortal } from "@/lib/portal";
 import { empresaHoy, type HallazgoHoy } from "@/lib/hoy";
-import { ESTADO_PILAR, PILAR, fechaMes } from "@/lib/textos";
+import { ESTADO_PILAR, PILAR_CLIENTE, fechaMes } from "@/lib/textos";
 
 export const dynamic = "force-dynamic";
 
@@ -140,12 +140,12 @@ export default async function Hoy() {
       )}
 
       <section>
-        <h2 className="t-seccion mb-4">Los cuatro pilares</h2>
+        <h2 className="t-seccion mb-4">Tu empresa, por áreas</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           {hoy.pilares.map((p) => (
             <div key={p.pilar} className="panel p-4">
               <div className="flex items-center justify-between gap-3">
-                <span className="t-seccion" style={{ fontSize: 17 }}>{PILAR[p.pilar]}</span>
+                <span className="t-seccion" style={{ fontSize: 17 }}>{PILAR_CLIENTE[p.pilar] ?? p.pilar}</span>
                 <span className="t-dato" style={{ color: ESTADO_COLOR[p.estado] }}>{ESTADO_CLIENTE_PILAR[p.estado] ?? ESTADO_PILAR[p.estado]}</span>
               </div>
               {p.resumen && <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>{p.resumen}</p>}
@@ -207,7 +207,7 @@ export default async function Hoy() {
       {hoy.nivel < 3 && (
         <section className="panel p-5" style={{ background: "var(--suave)", border: "none" }}>
           <p className="t-cuerpo medida">
-            Todavía nos faltan piezas para darte una conclusión responsable sobre {hoy.pilares.filter((p) => p.estado === "desconocido").map((p) => PILAR[p.pilar]).join(", ") || "algunas áreas"}.
+            Todavía nos faltan piezas para darte una conclusión responsable sobre {hoy.pilares.filter((p) => p.estado === "desconocido").map((p) => PILAR_CLIENTE[p.pilar] ?? p.pilar).join(", ") || "algunas áreas"}.
             {" "}Sigue <Link href="/portal/conversacion" style={{ textDecoration: "underline" }}>contándonos</Link> o <Link href="/portal/documentos" style={{ textDecoration: "underline" }}>sube lo que tengas</Link>: la foto se completa sola.
           </p>
         </section>

@@ -536,7 +536,7 @@ create table if not exists company_assets (
   company_id uuid references companies(id) on delete cascade,
   bloque text not null,
   clave text not null,
-  estado text check (estado in ('lo_tengo','incompleto','no_lo_tengo','no_se','construyendo','borrador_generado','construido')),
+  estado text check (estado in ('lo_tengo','incompleto','no_lo_tengo','no_se','contado','construyendo','borrador_generado','construido')),
   nota text,
   source_id uuid references sources(id),
   updated_at timestamptz default now(),

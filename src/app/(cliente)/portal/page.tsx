@@ -24,7 +24,7 @@ export default async function Portal() {
 
   const PASOS: { titulo: string; href: string; texto: string; hecho: boolean; actual: boolean }[] = [
     { titulo: "Cuéntanos cómo funciona", href: "/portal/conversacion", texto: "Preguntas cortas, hablando o escribiendo. Sin respuestas buenas ni malas.", hecho: (c.sesionesPend ?? 0) === 0, actual: c.paso === 3 },
-    { titulo: "Sube lo que tengas", href: "/portal/documentos", texto: "Documentos, fotos del cuaderno, notas de voz. No necesitas nada perfecto.", hecho: (c.fuentes ?? 0) > 0, actual: c.paso === 2 },
+    { titulo: "Tu información, área por área", href: "/portal/activos", texto: "Lo que exista, súbelo ahí mismo; lo que no esté escrito, cuéntanos cómo funciona.", hecho: (c.fuentes ?? 0) > 0, actual: c.paso === 2 },
     { titulo: "Confirma lo que encontramos", href: "/portal/validar", texto: "Donde una cosa no cuadra con otra, tú decides cuál vale hoy.", hecho: (c.porValidar ?? 0) === 0 && cosas > 0, actual: c.paso === 4 },
     { titulo: "Tus procesos, dibujados", href: "/portal/procesos", texto: "Los ves como un mapa y los corriges si algo no es así.", hecho: false, actual: c.paso === 5 },
   ];

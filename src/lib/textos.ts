@@ -14,6 +14,15 @@ export const ESTADO_CONSULTOR: Record<string, string> = {
   contradicho: "Contradicho",
 };
 
+/** Nombres de cara al cliente: él ve SU empresa, no nuestra metodología. */
+export const PILAR_CLIENTE: Record<string, string> = {
+  personas: "Tu equipo",
+  procesos: "Cómo se hace el trabajo",
+  producto: "Lo que vendes",
+  marketing: "Tus clientes y ventas",
+  transversal: "Toda la empresa",
+};
+
 export const PILAR: Record<string, string> = {
   personas: "Personas",
   procesos: "Procesos",
