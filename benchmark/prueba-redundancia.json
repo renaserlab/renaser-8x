@@ -1,0 +1,13 @@
+{
+  "fecha": "2026-08-24T00:38:37.472Z",
+  "caso1": {
+    "redundant_question_count": 0,
+    "cubre_rol": true,
+    "pregunta_avanza": true
+  },
+  "caso2": {
+    "redundant_question_count": 0,
+    "repite_tema": false
+  },
+  "pass": true
+}

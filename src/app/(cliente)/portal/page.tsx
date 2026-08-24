@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { contextoPortal } from "@/lib/portal";
 import { empresaHoy } from "@/lib/hoy";
+import { CrearEmpresa } from "@/components/cliente/CrearEmpresa";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,7 @@ export default async function Portal() {
     return (
       <>
         <h1 className="t-titulo mt-2 mb-4 medida">Vamos a entender cómo funciona realmente tu empresa</h1>
-        <p className="t-cuerpo medida" style={{ color: "var(--grafito)" }}>{c.queFalta}</p>
+        <CrearEmpresa />
       </>
     );
 

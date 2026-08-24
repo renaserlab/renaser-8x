@@ -7,7 +7,7 @@ export async function contextoPortal() {
   const u = await requerirCliente();
   if (u.rol === "consultor") redirect("/bandeja");
   const companyId = await empresaDelCliente(u.id);
-  if (!companyId) return { u, companyId: null, empresa: null, queFalta: "Tu consultor todavía no te enlazó a una empresa. Escríbele para empezar.", paso: 0 as const, stats: null };
+  if (!companyId) return { u, companyId: null, empresa: null, queFalta: "Cuéntanos de tu empresa para empezar.", paso: 0 as const, stats: null };
   const sb = supabaseAdmin();
   // P0-05: el dueño opera solo SU participante. Si el consultor creó al dueño sin cuenta, se enlaza aquí una sola vez.
   const { data: propio } = await sb.from("participants").select("id").eq("company_id", companyId).eq("user_id", u.id).maybeSingle();
