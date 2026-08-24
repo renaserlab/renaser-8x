@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { pedir } from "@/lib/cliente";
 import { BotonGrabar } from "@/components/voz/BotonGrabar";
+import { transcribirAudio } from "@/lib/transcribir-cliente";
 import { Progreso } from "@/components/base/Progreso";
 import { VACIO } from "@/lib/textos";
 
@@ -13,6 +14,8 @@ export type ProcesoResumen = { id: string; nombre: string; area: string | null; 
 export function ProcesosLista({ companyId, procesos, base, paraCliente = false }: { companyId: string; procesos: ProcesoResumen[]; base: string; paraCliente?: boolean }) {
   const router = useRouter();
   const [descripcion, setDescripcion] = useState("");
+  const [audioOriginal, setAudioOriginal] = useState<Blob | null>(null);
+  const [transcribiendo, setTranscribiendo] = useState(false);
   const [nombre, setNombre] = useState("");
   const [job, setJob] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -20,9 +23,18 @@ export function ProcesosLista({ companyId, procesos, base, paraCliente = false }
   const generar = async () => {
     setError(null);
     try {
-      const r = await pedir<{ job_id: string }>("/api/processes/generate", { json: { company_id: companyId, descripcion, nombre } });
+      const r = await pedir<{ job_id: string; process_id: string }>("/api/processes/generate", { json: { company_id: companyId, descripcion, nombre } });
+      if (audioOriginal && r.process_id) {
+        const form = new FormData();
+        form.set("company_id", companyId);
+        form.set("archivo", new File([audioOriginal], "proceso.webm", { type: audioOriginal.type || "audio/webm" }));
+        form.set("nombre", `Audio original — ${nombre.trim() || "proceso contado"}`);
+        form.set("process_id", r.process_id);
+        fetch("/api/sources", { method: "POST", body: form }).catch(() => {});
+      }
       setJob(r.job_id);
       setDescripcion("");
+      setAudioOriginal(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo.");
     }
@@ -43,7 +55,23 @@ export function ProcesosLista({ companyId, procesos, base, paraCliente = false }
           {paraCliente ? "Por ejemplo: cómo entra un cliente hasta que paga. Cuéntalo como se lo contarías a alguien nuevo, con lo que se traba y lo que se pierde." : "Describe el proceso real, no el ideal. La IA devuelve nodos y conexiones editables."}
         </p>
         <input className="campo" placeholder="Nombre (opcional)" value={nombre} onChange={(e) => setNombre(e.target.value)} aria-label="Nombre del proceso" />
-        <BotonGrabar alTexto={(t) => setDescripcion((p) => (p ? p + " " + t : t))} />
+        <BotonGrabar
+          alTexto={(t) => setDescripcion((p) => (p ? p + " " + t : t))}
+          alAudio={async (b) => {
+            setTranscribiendo(true);
+            setError(null);
+            try {
+              const t = await transcribirAudio(b);
+              setDescripcion((p) => (p ? p + " " + t : t));
+              setAudioOriginal(b); // el audio original se conserva junto al proceso
+            } catch (e) {
+              setError(e instanceof Error ? e.message : "No pudimos entender el audio.");
+            } finally {
+              setTranscribiendo(false);
+            }
+          }}
+        />
+        {transcribiendo && <p className="t-dato aparece" aria-live="polite" style={{ color: "var(--grafito)" }}>Escuchando tu audio…</p>}
         <textarea className="campo" rows={5} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} aria-label="Describe el proceso" placeholder="El lead entra por WhatsApp, un asesor lo contacta…" />
         {error && <p className="t-dato" style={{ color: "var(--contradicho)" }}>{error}</p>}
         <div className="flex flex-wrap gap-3 items-center">

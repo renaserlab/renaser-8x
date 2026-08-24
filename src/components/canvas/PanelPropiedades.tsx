@@ -1,9 +1,10 @@
 "use client";
+import { useRef, useState } from "react";
 import type { DatosNodo } from "./nodos";
 import { EJECUTOR, EJECUTOR_CLIENTE, VEREDICTO, TIPO_NODO } from "@/lib/textos";
 
 /** Responsable · rol · ejecutor (pinta el nodo) · herramienta · tiempo · espera · entrada · salida · evidencia · estándar · problema · veredicto. Capítulo 15.3 y 1.13. */
-export function PanelPropiedades({ datos, cambiar, eliminar, soloLectura = false, paraCliente = false, avisos = [] }: { datos: DatosNodo; cambiar: (d: Partial<DatosNodo>) => void; eliminar: () => void; soloLectura?: boolean; paraCliente?: boolean; avisos?: string[] }) {
+export function PanelPropiedades({ datos, cambiar, eliminar, soloLectura = false, paraCliente = false, avisos = [], processId, companyId, nodoId }: { datos: DatosNodo; cambiar: (d: Partial<DatosNodo>) => void; eliminar: () => void; soloLectura?: boolean; paraCliente?: boolean; avisos?: string[]; processId?: string; companyId?: string; nodoId?: string }) {
   const campo = (k: keyof DatosNodo, etiqueta: string, placeholder = "") => (
     <label className="flex flex-col gap-1" key={String(k)}>
       <span className="t-etiqueta">{etiqueta}</span>
@@ -45,6 +46,12 @@ export function PanelPropiedades({ datos, cambiar, eliminar, soloLectura = false
         </>
       )}
       {(datos.tipo === "actividad" || datos.tipo === "espera") && campo("tiempo", "Tiempo real", "2 días, 15 min…")}
+      {datos.know_how_id && (
+        <p className="t-dato" style={{ color: "var(--confirmado)" }}>Este paso tiene Caleta asociada: un criterio valioso vive aquí.</p>
+      )}
+      {processId && companyId && nodoId && !nodoId.startsWith("tmp-") && !soloLectura && (
+        <AdjuntarNodo processId={processId} companyId={companyId} nodoId={nodoId} />
+      )}
       <label className="flex flex-col gap-1">
         <span className="t-etiqueta">Comentario</span>
         <textarea className="campo" style={{ minHeight: 60 }} value={datos.comentario ?? ""} placeholder="lo que haya que saber de este paso" disabled={soloLectura} onChange={(e) => cambiar({ comentario: e.target.value })} />
@@ -67,5 +74,39 @@ export function PanelPropiedades({ datos, cambiar, eliminar, soloLectura = false
       )}
       {!soloLectura && <button className="boton boton--peligro" onClick={eliminar}>Eliminar nodo</button>}
     </aside>
+  );
+}
+
+
+/** Adjuntar un archivo a ESTE paso (manual, checklist, foto, audio): se vuelve fuente relacionada al nodo. */
+function AdjuntarNodo({ processId, companyId, nodoId }: { processId: string; companyId: string; nodoId: string }) {
+  const [estado, setEstado] = useState<"quieto" | "subiendo" | "listo" | "error">("quieto");
+  const input = useRef<HTMLInputElement>(null);
+  const subir = async (files: FileList | null) => {
+    if (!files?.length) return;
+    setEstado("subiendo");
+    try {
+      const form = new FormData();
+      form.set("company_id", companyId);
+      form.set("archivo", files[0]);
+      form.set("process_id", processId);
+      form.set("process_node_id", nodoId);
+      const r = await fetch("/api/sources", { method: "POST", body: form });
+      setEstado(r.ok ? "listo" : "error");
+    } catch {
+      setEstado("error");
+    } finally {
+      if (input.current) input.current.value = "";
+    }
+  };
+  return (
+    <div className="flex flex-col gap-1">
+      <input ref={input} type="file" style={{ display: "none" }} aria-label="Adjuntar archivo a este paso" onChange={(e) => subir(e.target.files)} />
+      <button type="button" className="boton boton--secundario" style={{ minHeight: 36, fontSize: 14 }} disabled={estado === "subiendo"} onClick={() => input.current?.click()}>
+        {estado === "subiendo" ? "Subiendo…" : "Adjuntar archivo a este paso"}
+      </button>
+      {estado === "listo" && <span className="t-dato" style={{ color: "var(--confirmado)" }}>Archivo guardado en este paso.</span>}
+      {estado === "error" && <span className="t-dato" style={{ color: "var(--contradicho)" }}>No se pudo subir.</span>}
+    </div>
   );
 }

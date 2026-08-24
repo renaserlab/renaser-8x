@@ -560,6 +560,7 @@ alter table processes add column if not exists sale_mal text;
 alter table processes add column if not exists como_bien text;
 alter table processes add column if not exists descripcion_original text;
 alter table processes add column if not exists audio_original_path text;
+alter table processes add column if not exists comentario text;
 alter table process_nodes add column if not exists comentario text;
 alter table sources add column if not exists process_id uuid references processes(id) on delete set null;
 alter table sources add column if not exists process_node_id uuid references process_nodes(id) on delete set null;

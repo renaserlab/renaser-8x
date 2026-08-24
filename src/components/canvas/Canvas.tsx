@@ -160,7 +160,7 @@ function CanvasInterno({ processId, companyId, nombre, nodos, edges, soloLectura
             <Controls showInteractive={false} />
           </ReactFlow>
         </div>
-        {seleccionado && <PanelPropiedades datos={seleccionado.data} cambiar={cambiar} eliminar={eliminar} soloLectura={soloLectura} paraCliente={paraCliente} avisos={avisos.filter((a) => a.nodo === seleccionado.id).map((a) => a.mensaje)} />}
+        {seleccionado && <PanelPropiedades datos={seleccionado.data} cambiar={cambiar} eliminar={eliminar} soloLectura={soloLectura} paraCliente={paraCliente} avisos={avisos.filter((a) => a.nodo === seleccionado.id).map((a) => a.mensaje)} processId={processId} companyId={companyId} nodoId={seleccionado.id} />}
       </div>
 
       <LeyendaEjecutor paraCliente={paraCliente} />

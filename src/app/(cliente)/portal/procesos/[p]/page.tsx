@@ -20,7 +20,7 @@ export default async function ProcesoCliente({ params }: { params: Promise<{ p: 
   const { data: pub } = await supabaseAdmin().from("deliverables").select("id").eq("company_id", c.companyId).eq("tipo", "mapa_to_be").eq("publicado", true).limit(1);
   const sb = supabaseAdmin();
   const [{ data: conf }, { data: adjuntos }, { data: caleta }] = await Promise.all([
-    sb.from("processes").select("confirmacion,deseo,responsable,objetivo,inicio,resultado,tiempo,herramientas,sale_mal,como_bien,descripcion_original").eq("id", r.asis.id).single(),
+    sb.from("processes").select("confirmacion,deseo,responsable,objetivo,inicio,resultado,tiempo,herramientas,sale_mal,como_bien,comentario,descripcion_original").eq("id", r.asis.id).single(),
     sb.from("sources").select("id,nombre,tipo,created_at").eq("process_id", r.asis.id).order("created_at", { ascending: false }),
     sb.from("know_how").select("puesto,situacion,senal,regla_practica").eq("company_id", c.companyId).eq("process_id", r.asis.id),
   ]);
@@ -38,7 +38,7 @@ export default async function ProcesoCliente({ params }: { params: Promise<{ p: 
       <FichaProceso
         processId={r.asis.id}
         companyId={c.companyId}
-        ficha={{ responsable: conf?.responsable ?? null, objetivo: conf?.objetivo ?? null, inicio: conf?.inicio ?? null, resultado: conf?.resultado ?? null, tiempo: conf?.tiempo ?? null, herramientas: conf?.herramientas ?? null, sale_mal: conf?.sale_mal ?? null, como_bien: conf?.como_bien ?? null, descripcion_original: conf?.descripcion_original ?? null }}
+        ficha={{ responsable: conf?.responsable ?? null, objetivo: conf?.objetivo ?? null, inicio: conf?.inicio ?? null, resultado: conf?.resultado ?? null, tiempo: conf?.tiempo ?? null, herramientas: conf?.herramientas ?? null, sale_mal: conf?.sale_mal ?? null, como_bien: conf?.como_bien ?? null, comentario: (conf as { comentario?: string | null } | null)?.comentario ?? null, descripcion_original: conf?.descripcion_original ?? null }}
         adjuntos={(adjuntos ?? []).map((a) => ({ id: a.id, nombre: a.nombre, tipo: a.tipo ?? "archivo", created_at: a.created_at }))}
         caleta={caleta ?? []}
       />

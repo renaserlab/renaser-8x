@@ -3,7 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-const CAMPOS = ["responsable", "objetivo", "inicio", "resultado", "tiempo", "herramientas", "sale_mal", "como_bien"] as const;
+const CAMPOS = ["responsable", "objetivo", "inicio", "resultado", "tiempo", "herramientas", "sale_mal", "como_bien", "comentario"] as const;
 
 /** La ficha del proceso (bloqueador 4): PATCH con lista blanca de campos. El cliente completa solo huecos. */
 export const PATCH = protegido<Ctx>({}, async (perfil, req, ctx) => {
