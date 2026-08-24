@@ -162,7 +162,7 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         clave: "canales",
         nombre: "Por dónde llegan los clientes",
         ayuda: "Referidos, redes, el local, llamadas: por dónde entra la gente.",
-        preguntas: ["¿De dónde llegaron tus últimos 5 clientes nuevos?", "Si ese canal se apagara un mes, ¿qué pasaría?"],
+        preguntas: ["¿De dónde llegaron tus últimos 5 clientes nuevos?", "Si esa forma de llegar se apagara un mes, ¿qué pasaría?"],
       },
       {
         clave: "proceso_comercial",
@@ -193,7 +193,7 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         clave: "margen",
         nombre: "Lo que queda",
         ayuda: "Margen o utilidad después de los costos, si lo conocen.",
-        preguntas: ["Después de pagar todo, ¿cuánto queda en un mes normal?", "¿Sabes qué producto o servicio deja más margen?"],
+        preguntas: ["Después de pagar todo, ¿cuánto queda en un mes normal?", "¿Sabes cuál de tus productos o servicios te deja más ganancia por cada venta?"],
       },
       {
         clave: "retencion",

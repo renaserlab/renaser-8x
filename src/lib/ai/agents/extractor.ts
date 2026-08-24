@@ -33,6 +33,9 @@ REGLAS:
 - Si una frase es vaga ("somos los mejores", "cultura de excelencia"),
   extraela igual: la vaguedad es en si misma un hallazgo.
 - Una frase larga puede contener varias afirmaciones. Separalas.
+- Si la persona afirma una practica y en el mismo texto reconoce que no hay registro donde
+  verificarla ("hacemos seguimiento a todos" + "no queda apuntado en ningun lado"), extrae AMBAS
+  afirmaciones por separado: la practica declarada y la ausencia de registro. Juntas son una senal.
 - Si el texto viene de una foto o transcripcion y hay partes ilegibles,
   no las completes. Omitelas.
 - En tablas/CSV: una afirmación por hecho agregable relevante (totales, porcentajes,
