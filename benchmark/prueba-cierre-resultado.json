@@ -1,0 +1,69 @@
+{
+  "url": "https://8x-renaser-s-projects.vercel.app",
+  "empresa_nombre": "Ferretería Illari",
+  "entrevista": {
+    "sueno": 6,
+    "empresa": 9
+  },
+  "activos": {
+    "funciones": {
+      "ok": true,
+      "huecos": 2,
+      "largo": 1320
+    },
+    "cultura": {
+      "ok": true,
+      "huecos": 1,
+      "largo": 1081
+    },
+    "propuesta": {
+      "ok": true,
+      "huecos": 2,
+      "largo": 1316
+    }
+  },
+  "redundantes_post_activos": [],
+  "proceso": {
+    "generado": true,
+    "confirmado": true
+  },
+  "validadas": 7,
+  "persistencia": {
+    "descripcion_original": true,
+    "confirmado": true,
+    "deseo": true,
+    "comentario": true,
+    "nodos": 11,
+    "adjuntos": 0
+  },
+  "resultado": {
+    "nivel": 4,
+    "espejo": 11,
+    "noVes": [
+      "Adquisición dependiente al 100% de la recomendación de maestros de obra sin",
+      "Créditos otorgados y registrados en cuaderno sin proceso formal de cobranza",
+      "Inexistencia de plan de sucesion y metas de estructura para la jubilacion d",
+      "Falta de definicion del rol y tareas que el dueno debe delegar vs atender",
+      "Falta de claridad sobre las categorías y productos clave diferenciadores"
+    ],
+    "fortalezas": [
+      "Confianza y recomendación de boca a boca entre maestros de o"
+    ],
+    "caleta": 0,
+    "restriccion": "Adquisición dependiente al 100% de la recomendación de maestros de obra sin publicida",
+    "sistematizar": [
+      "Venta al crédito"
+    ],
+    "tentativo": 5,
+    "con_evidencia": true,
+    "insight_no_obvio": true
+  },
+  "metricas": {
+    "interacciones": 128,
+    "minutos_totales": 41,
+    "primer_insight_min": 5,
+    "preguntas_entrevista": 17,
+    "redundantes": 0
+  },
+  "pass": true
+}

@@ -19,7 +19,9 @@ export async function handleDiagnosticar(job: Job) {
   const delPilar = todas.filter((c) => c.pilar === pilar || c.pilar === "transversal");
   const abiertas = delPilar.filter((c) => c.estado === "contradicho");
   if (abiertas.length && !job.payload.forzar) {
-    throw new Error(`El pilar ${pilar} tiene ${abiertas.length} contradicciones sin resolver. Resuélvelas con el dueño antes de diagnosticar.`);
+    // Espera limpia, no fallo: el diagnóstico se re-dispara solo cuando el dueño valida (dispararDiagnosticoSiListo
+    // corre en la ruta de validación). Un job "fallido" aquí sería ruido: el sistema está esperando a la persona.
+    return { estado: "esperando_validacion", contradicciones_abiertas: abiertas.length, pilar };
   }
   const confirmadas = delPilar.filter((c) => c.estado === "confirmado");
   const utiles = delPilar.filter((c) => c.estado === "confirmado" || c.estado === "contradicho" || c.estado === "caducado");
