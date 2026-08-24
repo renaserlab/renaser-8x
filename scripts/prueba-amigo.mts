@@ -45,11 +45,13 @@ async function pagina(ruta: string): Promise<number> {
 }
 const esperar = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-async function esperarCola(cid: string, etiqueta: string, maxMin = 12) {
+async function esperarCola(cid: string, etiqueta: string, maxMin = 30, tipos: string[] | null = null) {
   const t0 = Date.now();
   let quietas = 0;
   for (;;) {
-    const { data } = await admin.from("jobs").select("id,tipo,estado").eq("company_id", cid).in("estado", ["pendiente", "corriendo"]);
+    let q = admin.from("jobs").select("id,tipo,estado").eq("company_id", cid).in("estado", ["pendiente", "corriendo"]);
+    if (tipos) q = q.in("tipo", tipos);
+    const { data } = await q;
     if (!data?.length) { quietas++; if (quietas >= 3) return; } else quietas = 0;
     if (Date.now() - t0 > maxMin * 60_000) throw new Error(`${etiqueta}: la nube no procesó a tiempo: ${JSON.stringify(data?.slice(0, 4))}`);
     await esperar(5000);
@@ -132,7 +134,7 @@ async function main() {
   formDato.set("tipo", "dato");
   const sube = await fetch(`${URL_PUB}/api/sources`, { method: "POST", headers: { cookie: COOKIE }, body: formDato });
   if (!sube.ok) throw new Error(`subir datos: ${sube.status}`);
-  await esperarCola(cid, "extracción+contraste");
+  await esperarCola(cid, "extracción+contraste", 30, ["extraer", "contrastar", "transcribir_respuesta", "minar_know_how"]);
 
   // 4. Activos: "no lo tengo" → construir → confirmar (organigrama).
   await api(`/api/companies/${cid}/assets`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ clave: "personas.organigrama", estado: "no_lo_tengo" }) });
@@ -164,12 +166,12 @@ async function main() {
   const proc = await api(`/api/processes/generate`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ company_id: cid, nombre: "Atención en barra", descripcion: "El cliente entra y hace cola en la caja. En la misma caja también entran los pedidos por aplicación, así que en hora punta se traba. Se cobra, la barista prepara el café, se entrega en la barra. Si el café sale mal o la espera pasa de diez minutos, el cliente se va molesto y a veces no vuelve." }) });
   if (proc.status !== 200) throw new Error(`generar proceso: ${proc.status}`);
   const pid = (proc.json as { process_id: string }).process_id;
-  await esperarCola(cid, "arquitecto");
+  await esperarCola(cid, "arquitecto", 20, ["generar_proceso"]);
   const ficha = await api(`/api/processes/${pid}/ficha`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ responsable: "Valeria (dueña)", como_bien: "el cliente se va con su nombre dicho en voz alta y el café en menos de 7 minutos" }) });
   resumen.ficha = ficha.status === 200;
   const confP = await api(`/api/processes/${pid}/confirmar`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ accion: "confirmado", deseo: "Quiero que los pedidos por aplicación no se mezclen con la cola del salón." }) });
   resumen.proceso_confirmado = confP.status === 200;
-  await esperarCola(cid, "deseo→extracción");
+  await esperarCola(cid, "deseo→extracción", 20, ["extraer", "contrastar"]);
 
   // 6. Valida lo que el sistema le pregunta (contradicciones/prioridad), como en el portal.
   const { data: porValidar } = await admin.from("claims").select("id,texto,estado").eq("company_id", cid).or("estado.eq.contradicho,and(estado.eq.sin_verificar,prioridad_validacion.eq.true)");
@@ -178,7 +180,7 @@ async function main() {
     await api(`/api/claims/${c.id}/validate`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ respuesta: esSegundaSede ? "si" : "si" }) });
   }
   resumen.validadas = (porValidar ?? []).length;
-  await esperarCola(cid, "diagnóstico automático", 15);
+  await esperarCola(cid, "diagnóstico automático", 35, ["diagnosticar", "consolidar"]);
 
   // 7. MI EMPRESA HOY (lo que el amigo ve, con el porqué de cada cosa).
   const hoy = await empresaHoy(cid);

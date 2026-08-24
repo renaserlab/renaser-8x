@@ -21,7 +21,14 @@ async function drenar(req: NextRequest) {
   marcarDrenando(true);
   try {
     const r = await drenarCola(270_000);
-    return NextResponse.json(r);
+    // Continuación: si el presupuesto se agotó con trabajo pendiente, la siguiente ráfaga se dispara sola
+    // (sin esperar al cron). El bucle es finito: solo se re-dispara cuando hay pendientes reales.
+    const { supabaseAdmin } = await import("@/lib/supabase/admin");
+    const { count } = await supabaseAdmin().from("jobs").select("id", { count: "exact", head: true }).eq("estado", "pendiente");
+    if ((count ?? 0) > 0 && secreto && process.env.NEXT_PUBLIC_APP_URL) {
+      fetch(process.env.NEXT_PUBLIC_APP_URL + "/api/worker/drain", { method: "POST", headers: { "x-worker-secret": secreto } }).catch(() => {});
+    }
+    return NextResponse.json({ ...r, pendientes: count ?? 0 });
   } finally {
     marcarDrenando(false);
   }
