@@ -169,7 +169,7 @@ export function InventarioActivos({ companyId, guardados }: { companyId: string;
           <label className="t-cuerpo" style={{ fontWeight: 500 }} htmlFor={`${clave}-p${i}`}>{p}</label>
           <div className="flex flex-col gap-2">
             <BotonGrabar grande={false} alTexto={(t) => setRespuestas((r) => ({ ...r, [clave]: { ...(r[clave] ?? {}), [i]: (((r[clave]?.[i] ?? "") + " " + t)).trim() } }))} />
-            <textarea id={`${clave}-p${i}`} className="campo" rows={2} value={respuestas[clave]?.[i] ?? ""} onChange={(e) => setRespuestas((r) => ({ ...r, [clave]: { ...(r[clave] ?? {}), [i]: e.target.value } }))} placeholder="Cuéntalo como se lo contarías a alguien de confianza" />
+            <textarea id={`${clave}-p${i}`} aria-label={p} className="campo" rows={2} value={respuestas[clave]?.[i] ?? ""} onChange={(e) => setRespuestas((r) => ({ ...r, [clave]: { ...(r[clave] ?? {}), [i]: e.target.value } }))} placeholder="Cuéntalo como se lo contarías a alguien de confianza" />
           </div>
         </div>
       ))}
