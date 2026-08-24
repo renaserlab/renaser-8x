@@ -14,11 +14,11 @@ describe("1.1 / 1.4 · cobertura de entrevistas (P1-02, P1-03)", () => {
     const claves = BLOQUES.sueno_dueno.map((b) => b.clave);
     expect(claves).toEqual(["origen", "historia_intentos", "empresa_deseada", "vida_deseada", "rol", "exito", "verdad_dificil"]);
     const todas = BLOQUES.sueno_dueno.flatMap((b) => b.preguntas).join(" ");
-    for (const frag of ["día que decidiste", "Con qué empezaste", "qué se cumplió", "qué pasó con cada intento", "Qué te frenó", "estuvo mejor que hoy", "todo sale bien", "NO quieres que crezca", "martes normal", "Cuántas horas", "fuera de la empresa", "más te gusta hacer", "ya te cansó", "nadie más puede", "te sentiste orgulloso", "Cuánto es suficiente", "dejar construido", "debe cambiar", "postergando", "miedo te da soltar", "nadie te juzgara"]) expect(todas).toContain(frag);
+    for (const frag of ["día que decidiste", "Con qué empezaste", "qué se cumplió", "qué pasó con cada intento", "Qué te frenó", "estuvo mejor que hoy", "todo sale bien", "NO quieres que crezca", "martes normal", "Cuántas horas", "fuera del negocio", "más te gusta hacer", "ya te cansó", "nadie más puede", "te sentiste orgulloso", "Cuánto es suficiente", "dejar construido", "debe cambiar", "postergando", "más miedo soltar", "nadie te juzgara"]) expect(todas).toContain(frag);
   });
   it("la entrevista al personal cubre las 15 investigaciones y las 4 preguntas de verdad operativa", () => {
     const todas = BLOQUES.personal.flatMap((b) => b.preguntas).join(" ").toLowerCase();
-    for (const frag of ["cómo haces realmente", "resultado esperan", "lo hiciste bien", "pierdes tiempo", "esperando", "repites o rehaces", "información te falta", "decisión tienes que escalar", "aceptan como normal", "whatsapp o sistema paralelo", "escuchas de los clientes", "eliminarías", "conservarías", "dirección no ve", "procedimiento dice una cosa", "cuando hay urgencia", "jefe no está", "resuelve de verdad"]) expect(todas).toContain(frag);
+    for (const frag of ["cómo haces realmente", "salga de tu trabajo", "lo hiciste bien", "pierdes más tiempo", "esperando", "repites o rehaces", "información te falta", "consultarle al jefe", "aceptan como normal", "whatsapp o sistema paralelo", "escuchas de los clientes", "eliminarías", "conservarías", "dirección no ve", "procedimiento dice una cosa", "cuando hay urgencia", "jefe no está", "resuelve de verdad"]) expect(todas).toContain(frag);
   });
   it("una sesión no se cierra con bloques sin cubrir; se cierra cuando todos tienen al menos una respuesta", () => {
     expect(puedeCerrarSesion("sueno_dueno", [{ bloque: "origen" }])).toBe(false);

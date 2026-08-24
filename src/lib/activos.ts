@@ -187,7 +187,7 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         clave: "ventas",
         nombre: "Ventas",
         ayuda: "Facturación por mes, aunque salga del cuaderno.",
-        preguntas: ["¿Cuánto facturas al mes, más o menos?", "¿Las ventas van subiendo, bajando o igual que el año pasado?"],
+        preguntas: ["¿Cuánto vende el negocio al mes, más o menos?", "¿Las ventas van subiendo, bajando o igual que el año pasado?"],
       },
       {
         clave: "margen",

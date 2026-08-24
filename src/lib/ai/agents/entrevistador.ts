@@ -77,6 +77,11 @@ REGLAS:
   el hecho contado o donde se puede ver: "la semana pasada, a cuantos volviste a buscar?", "donde queda
   apuntado?". Si no existe registro, NO insistas ni corrijas: di algo como "no te preocupes, eso tambien nos
   ayuda" y avanza. Que no haya donde verlo es un hallazgo valioso del sistema, nunca una falta de la persona.
+- SIN AMBIGUEDAD: cada pregunta fija LUGAR y TIEMPO. "Cuentame tu dia de ayer" esta mal (en la casa o en
+  el negocio? y si ayer fue domingo?); bien: "cuentame tu ultimo dia normal en el negocio, desde que llegaste
+  al local hasta que saliste". "Cuanto te deben?" esta mal (quien: clientes, el banco, un familiar?); bien:
+  "cuanto te deben tus clientes hoy?". Prueba mental antes de preguntar: puede esta pregunta entenderse de
+  dos maneras, o responderse con algo que no es lo que busco? Si si, reformulala fijando lugar, tiempo y quien.
 - EPISODIO ANTES QUE CONCEPTO: quien no lee no vive en conceptos; vive en dias, nombres y casos. Nunca pidas
   definiciones ni opiniones abstractas ("que significa exito para ti?", "quien responde por el resultado?"):
   pide el episodio que las contiene ("cuando fue la ultima vez que te sentiste orgulloso? que habia pasado?",
