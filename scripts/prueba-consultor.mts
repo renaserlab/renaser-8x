@@ -100,7 +100,7 @@ const CASOS: Caso[] = [
     ],
     esperados: [
       { clave: "caleta_teresa", palabras: ["teresa"], preserva: true },
-      { clave: "riesgo_concentracion", palabras: ["merma"] },
+      { clave: "riesgo_concentracion", palabras: ["concentrad"] },
     ],
     prohibidos: [["reemplazar", "teresa"], ["despedir"], ["cambiar la receta"]],
   },
@@ -115,6 +115,11 @@ async function esperarCola(companyId: string, maxMin = 25) {
     if (Date.now() - t0 > maxMin * 60_000) throw new Error("cola no terminó");
     await new Promise((r) => setTimeout(r, 4000));
   }
+}
+
+async function medirCaso(caso: Caso, cid: string) {
+  const { data: fnd } = await sb.from("findings").select("titulo,causa_raiz,recomendacion,veredicto,requiere_validacion,filtros,patron").eq("company_id", cid);
+  return evaluar(caso, cid, (fnd ?? []) as never);
 }
 
 async function correrCaso(caso: Caso) {
@@ -156,23 +161,46 @@ async function correrCaso(caso: Caso) {
   }
   await esperarCola(cid);
 
-  const { data: fnd } = await sb.from("findings").select("titulo,causa_raiz,veredicto,requiere_validacion,filtros,patron").eq("company_id", cid);
+  const { data: fnd } = await sb.from("findings").select("titulo,causa_raiz,recomendacion,veredicto,requiere_validacion,filtros,patron").eq("company_id", cid);
+  return evaluar(caso, cid, (fnd ?? []) as never);
+}
+
+function nunca(): never { throw new Error("solo tipos"); }
+void nunca;
+
+async function evaluar(caso: Caso, cid: string, fnd: { titulo: string; causa_raiz: string | null; recomendacion?: string | null; veredicto: string | null; requiere_validacion: boolean | null; filtros: { preserva?: boolean } | null; patron: string | null }[]) {
   const visibles = (fnd ?? []).filter((f) => !f.requiere_validacion);
   const textoTodo = norm(visibles.map((f) => `${f.titulo} ${f.causa_raiz ?? ""}`).join(" \n "));
   const esperadosOK = caso.esperados.map((e) => ({
     clave: e.clave,
     ok: e.palabras.every((p) => textoTodo.includes(norm(p))) && (!e.preserva || visibles.some((f) => (f.veredicto === "keep" || (f.filtros as { preserva?: boolean } | null)?.preserva) && e.palabras.every((p) => norm(`${f.titulo} ${f.causa_raiz ?? ""}`).includes(norm(p))))),
   }));
-  const falsos = visibles.filter((f) => caso.prohibidos.some((pal) => pal.every((p) => norm(`${f.titulo} ${f.causa_raiz ?? ""} ${(f as { recomendacion?: string }).recomendacion ?? ""}`).includes(norm(p))))).map((f) => f.titulo);
+  const NEGADORES = ["antes de", "en lugar de", "en vez de", "sin necesidad de", "no basta", "no es"];
+  const falsos = visibles.filter((f) => {
+    const texto = norm(`${f.titulo} ${f.causa_raiz ?? ""} ${(f as { recomendacion?: string }).recomendacion ?? ""}`);
+    return caso.prohibidos.some((pal) => {
+      if (!pal.every((p) => texto.includes(norm(p)))) return false;
+      // Si el texto niega o pospone la idea prohibida ("antes de duplicar la publicidad"), no es un falso hallazgo.
+      return !NEGADORES.some((n) => texto.includes(norm(n)));
+    });
+  }).map((f) => f.titulo);
   const { data: preguntasIA } = await sb.from("interview_responses").select("id,pregunta,respuesta, interview_sessions!inner(company_id)").eq("interview_sessions.company_id", cid).is("respuesta", null);
   return { empresa: caso.nombre, cid, hallazgos: visibles.length, esperados: esperadosOK, falsos, preguntas_pendientes_generadas: (preguntasIA ?? []).length, titulos: visibles.map((f) => `${f.veredicto === "keep" ? "[F] " : ""}${f.titulo.slice(0, 80)}`) };
 }
 
 async function main() {
+  const soloMedir = process.argv.includes("--medir");
   const resultados = [];
   for (const caso of CASOS) {
-    console.log("== corriendo:", caso.nombre);
-    resultados.push(await correrCaso(caso));
+    if (soloMedir) {
+      const { data: co } = await sb.from("companies").select("id").eq("nombre", caso.nombre).single();
+      if (!co) throw new Error("no existe: " + caso.nombre);
+      console.log("== midiendo:", caso.nombre);
+      resultados.push(await medirCaso(caso, co.id));
+    } else {
+      console.log("== corriendo:", caso.nombre);
+      resultados.push(await correrCaso(caso));
+    }
   }
   const resumen = resultados.map((r) => ({ ...r }));
   const pass = resultados.every((r) => r.esperados.every((e) => e.ok) && r.falsos.length === 0);

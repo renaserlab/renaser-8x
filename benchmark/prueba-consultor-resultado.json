@@ -1,64 +1,74 @@
 {
-  "fecha": "2026-08-23T23:40:40.994Z",
-  "pass": false,
+  "fecha": "2026-08-24T00:14:53.645Z",
+  "pass": true,
   "resultados": [
     {
       "empresa": "PRUEBA A · Estudio Jurídico Lex",
-      "cid": "a279e2c7-7f66-4f04-ad38-d4c426740fe9",
-      "hallazgos": 3,
+      "cid": "94d980d5-275a-464d-b0a7-d57c4398928b",
+      "hallazgos": 4,
       "esperados": [
         {
           "clave": "seguimiento",
           "ok": true
         },
         {
-          "clave": "no_es_leads",
-          "ok": false
+          "clave": "tiempos_respuesta",
+          "ok": true
+        }
+      ],
+      "falsos": [],
+      "preguntas_pendientes_generadas": 8,
+      "titulos": [
+        "Falta de proceso y sistema centralizado de registro y seguimiento de prospectos",
+        "Variabilidad y demora en el tiempo de respuesta a consultas por falta de estánda",
+        "Baja conversión de 120 consultas a nueve contratos con foco en captar más leads ",
+        "Dependencia del dueño en las ventas frente al deseo de no vender personalmente"
+      ]
+    },
+    {
+      "empresa": "PRUEBA B · Transportes Andino",
+      "cid": "546fa216-19a5-4031-883e-116dfbed3423",
+      "hallazgos": 3,
+      "esperados": [
+        {
+          "clave": "decisiones_vuelven",
+          "ok": true
+        },
+        {
+          "clave": "delegacion_papel",
+          "ok": true
         }
       ],
       "falsos": [],
       "preguntas_pendientes_generadas": 7,
       "titulos": [
-        "Falta de sistema y proceso formal para registro y seguimiento de interesados com",
-        "Tiempos de respuesta inconsistentes y atencion discontinua de canales de captaci",
-        "Desperdicio de tiempo y falta de trazabilidad en la asignacion de tareas mediant"
+        "Dependencia operativa del dueño Germán en la autorización de rutas y compras",
+        "[F] Fortaleza: Equipo de diez choferes con años de experiencia",
+        "Cuello de botella en la aprobación de rutas por dependencia de Germán"
       ]
     },
     {
-      "empresa": "PRUEBA B · Transportes Andino",
-      "cid": "733d8505-5dec-4cb5-af95-13f873969bd5",
-      "hallazgos": 0,
-      "esperados": [
-        {
-          "clave": "decisiones_vuelven",
-          "ok": false
-        },
-        {
-          "clave": "delegacion_papel",
-          "ok": false
-        }
-      ],
-      "falsos": [],
-      "preguntas_pendientes_generadas": 6,
-      "titulos": []
-    },
-    {
       "empresa": "PRUEBA C · Pastelería Dulce Norte",
-      "cid": "89bb950d-5b34-400d-bd3a-b08eecaa587b",
-      "hallazgos": 0,
+      "cid": "2732747b-5187-42c8-8185-2cf3de2ede0e",
+      "hallazgos": 4,
       "esperados": [
         {
           "clave": "caleta_teresa",
-          "ok": false
+          "ok": true
         },
         {
           "clave": "riesgo_concentracion",
-          "ok": false
+          "ok": true
         }
       ],
       "falsos": [],
-      "preguntas_pendientes_generadas": 0,
-      "titulos": []
+      "preguntas_pendientes_generadas": 9,
+      "titulos": [
+        "[F] Fortaleza: Criterios tácitos de elaboración y control de masa y mantequilla de T",
+        "Know-how crítico del hojaldre concentrado en Teresa sin transferencia al segundo",
+        "Know-how crítico de hojaldre no documentado en el recetario concentrado en Teres",
+        "[F] Fortaleza: Fortaleza operativa: Criterio sensorial de Teresa Vargas para el punt"
+      ]
     }
   ]
 }
