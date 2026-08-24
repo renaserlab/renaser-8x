@@ -47,3 +47,11 @@ Supabase, RLS y frontera cliente/consultor · cola y worker · extracción con f
 4. **Procesos** (h. 13,14,15): contar/confirmar/desear-cambio, gaps del arquitecto.
 5. **Diseño y copy** (h. 20,21,22): quiet luxury, sin contadores, sin jerga, sin "IA".
 6. **Prueba de calidad**: 3 empresas sintéticas con problemas escondidos; medir insights, redundancia, falsos hallazgos.
+
+## Estado de la transformación (2026-08-24)
+
+Implementado y desplegado: motor de cobertura de realidad (áreas comprendidas, no contador; cierre semántico `bloques_cubiertos`; repregunta; prohibición de redundancia; contexto con Caleta/procesos/fuentes) · "Mi empresa hoy" (`/portal/hoy`: espejo, lo-que-no-estás-viendo con costo posible, fortalezas, Caleta propia, 4P cualitativo, restricción, qué sistematizar, plan tentativo, suficiencia honesta) · diagnóstico auto-disparado · La Caleta (nombre y preguntas humanas) · inventario guiado de activos con 4 estados (`/portal/activos`) · confirmación del AS-IS + deseo de cambio como evidencia · pregunta de hueco del arquitecto hacia la conversación del dueño · bucle de reparación del auditor (`causa_corregida`) · diseño suavizado.
+
+Prueba de calidad (fase 36): **PASS** — 3 empresas sintéticas (benchmark/prueba-consultor-resultado.json); quedan en la base como demos.
+
+Limitaciones que siguen (honestas): hallazgos parecidos con evidencia distinta pueden aparecer dos veces (consolidación V2 con IA) · la construcción guiada de activos faltantes ("no lo tengo" → borrador generado → corregir → confirmar) hoy deriva a la conversación, no genera el borrador · el detalle por nodo de proceso (qué recibe/entrega/cómo sabemos que está bien) existe en el modelo pero el panel del cliente no lo pide guiado · "ya te lo dije" depende del modelo (regla en prompt, sin test dedicado) · el PDF descargable del informe online no existe (se imprime desde el navegador).
