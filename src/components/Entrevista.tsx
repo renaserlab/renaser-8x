@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import { BotonGrabar } from "@/components/voz/BotonGrabar";
 import { BotonEscuchar } from "@/components/voz/BotonEscuchar";
 import { TIPO_SESION } from "@/lib/textos";
@@ -86,6 +87,7 @@ export function Entrevista({ cargar, responder, transcribir, titulo, transcripto
   const cob = estado.cobertura ?? null;
 
   return (
+    <MotionConfig reducedMotion="user">
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-4">
@@ -101,8 +103,9 @@ export function Entrevista({ cargar, responder, transcribir, titulo, transcripto
         )}
       </div>
 
+      <AnimatePresence mode="wait" initial={false}>
       {estado.abierta ? (
-        <div className="aparece flex flex-col gap-6" key={estado.abierta.id}>
+        <motion.div className="flex flex-col gap-6" key={estado.abierta.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.3, ease: "easeOut" }}>
           <p className="t-seccion medida" style={{ fontSize: 24, lineHeight: 1.35 }}>{estado.abierta.pregunta}</p>
           <div className="flex flex-wrap gap-3">
             <BotonEscuchar texto={estado.abierta.pregunta} />
@@ -144,13 +147,15 @@ export function Entrevista({ cargar, responder, transcribir, titulo, transcripto
           <button className="boton boton--grande" disabled={enviando || !texto.trim()} onClick={() => enviar()}>
             {enviando ? "Guardando" : "Guardar respuesta"}
           </button>
-        </div>
+        </motion.div>
       ) : (
-        <p className="t-cuerpo aparece" style={{ color: "var(--grafito)" }} aria-live="polite">
+        <motion.p className="t-cuerpo" key="esperando" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }} style={{ color: "var(--grafito)" }} aria-live="polite">
           {estado.pendienteTranscripcion ? "Escuchando tu respuesta" : estado.progreso ?? "Preparando la siguiente pregunta"}
           <span aria-hidden="true"> …</span>
-        </p>
+        </motion.p>
       )}
+      </AnimatePresence>
     </div>
+    </MotionConfig>
   );
 }

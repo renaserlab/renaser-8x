@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { pedir } from "@/lib/cliente";
 import { BLOQUES_ACTIVOS, ESTADOS_ACTIVO, type ActivoDef } from "@/lib/activos";
 import { BotonGrabar } from "@/components/voz/BotonGrabar";
+import { motion, AnimatePresence, MotionConfig } from "motion/react";
 
 type EstadoGuardado = { clave: string; estado: string; nota: string | null; borrador?: string | null; faltantes?: { pregunta: string }[] | null };
 
@@ -184,6 +185,7 @@ export function InventarioActivos({ companyId, guardados }: { companyId: string;
   const pct = Math.round((levantados / totales) * 100);
 
   return (
+    <MotionConfig reducedMotion="user">
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-4" aria-label="Avance del levantamiento">
         <div style={{ flex: 1, height: 4, borderRadius: 3, background: "var(--linea)", overflow: "hidden" }}>
@@ -213,7 +215,9 @@ export function InventarioActivos({ companyId, guardados }: { companyId: string;
                 </span>
               </span>
             </button>
+            <AnimatePresence initial={false}>
             {abierto && (
+              <motion.div key="contenido" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.32, ease: [0.25, 0.1, 0.25, 1] }} style={{ overflow: "hidden" }}>
               <div className="px-5 pb-5 flex flex-col gap-6">
                 {b.activos.map((a) => {
                   const clave = `${b.clave}.${a.clave}`;
@@ -295,10 +299,13 @@ export function InventarioActivos({ companyId, guardados }: { companyId: string;
                   );
                 })}
               </div>
+              </motion.div>
             )}
+            </AnimatePresence>
           </section>
         );
       })}
     </div>
+    </MotionConfig>
   );
 }
