@@ -26,6 +26,7 @@ export type TipoJob =
   | "planificar"
   | "redactar_entregables"
   | "evaluar_admision"
+  | "construir_activo"
   | "evaluar";
 
 export function claveIdempotente(partes: (string | number | null | undefined)[]): string {

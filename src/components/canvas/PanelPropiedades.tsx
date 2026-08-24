@@ -45,6 +45,10 @@ export function PanelPropiedades({ datos, cambiar, eliminar, soloLectura = false
         </>
       )}
       {(datos.tipo === "actividad" || datos.tipo === "espera") && campo("tiempo", "Tiempo real", "2 días, 15 min…")}
+      <label className="flex flex-col gap-1">
+        <span className="t-etiqueta">Comentario</span>
+        <textarea className="campo" style={{ minHeight: 60 }} value={datos.comentario ?? ""} placeholder="lo que haya que saber de este paso" disabled={soloLectura} onChange={(e) => cambiar({ comentario: e.target.value })} />
+      </label>
       {datos.tipo === "espera" && campo("espera", "A qué se espera", "aprobación del dueño")}
       <label className="flex flex-col gap-1">
         <span className="t-etiqueta">{paraCliente ? "Qué se traba aquí" : "Problema"}</span>

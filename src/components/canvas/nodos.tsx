@@ -4,6 +4,7 @@ import { Handle, Position, type NodeProps, type Node } from "@xyflow/react";
 export type DatosNodo = {
   etiqueta: string;
   tipo: "inicio" | "actividad" | "decision" | "espera" | "fin";
+  comentario?: string | null;
   responsable?: string | null;
   ejecutor?: string | null;
   tiempo?: string | null;

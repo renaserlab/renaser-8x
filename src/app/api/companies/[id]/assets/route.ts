@@ -10,7 +10,7 @@ const CLAVES = new Set(BLOQUES_ACTIVOS.flatMap((b) => b.activos.map((a) => `${b.
 export const GET = protegido<Ctx>({}, async (perfil, _req, ctx) => {
   const { id } = await ctx.params;
   await exigirAcceso(perfil, id);
-  const { data } = await supabaseAdmin().from("company_assets").select("bloque,clave,estado,nota,source_id").eq("company_id", id);
+  const { data } = await supabaseAdmin().from("company_assets").select("bloque,clave,estado,nota,source_id,borrador,faltantes").eq("company_id", id);
   return ok({ activos: data ?? [] });
 });
 

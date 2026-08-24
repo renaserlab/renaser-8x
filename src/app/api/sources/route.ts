@@ -17,6 +17,12 @@ export const POST = protegido({}, async (perfil, req) => {
   const fecha = String(form.get("fecha_origen") ?? "") || null;
   if (fecha && !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return fallo("La fecha no es válida.");
   const archivo = form.get("archivo");
+  const processId = String(form.get("process_id") ?? "") || null;
+  const processNodeId = String(form.get("process_node_id") ?? "") || null;
+  if (processId) {
+    const { data: pr } = await sb.from("processes").select("company_id").eq("id", processId).maybeSingle();
+    if (!pr || pr.company_id !== companyId) return fallo("Ese proceso no es de esta empresa.", 404);
+  }
   const texto = String(form.get("texto") ?? "").trim();
   let nombre = String(form.get("nombre") ?? "").trim().slice(0, 160);
 
@@ -29,7 +35,7 @@ export const POST = protegido({}, async (perfil, req) => {
     const path = rutaStorage(companyId, v.nombre);
     const { error: e1 } = await sb.storage.from("fuentes").upload(path, archivo, { contentType: v.mime, upsert: false });
     if (e1) return fallo(`No pudimos guardar el archivo: ${e1.message}`, 500);
-    const { data, error } = await sb.from("sources").insert({ company_id: companyId, tipo: v.tipo, nombre, fecha_origen: fecha, storage_path: path, mime: v.mime, origen }).select("id").single();
+    const { data, error } = await sb.from("sources").insert({ company_id: companyId, tipo: v.tipo, nombre, fecha_origen: fecha, storage_path: path, mime: v.mime, origen, process_id: processId, process_node_id: processNodeId }).select("id").single();
     if (error) return fallo(error.message, 500);
     row = data;
   } else if (texto) {

@@ -15,7 +15,7 @@ export type NodoDB = { id: string; tipo: DatosNodo["tipo"]; etiqueta: string; re
 export type EdgeDB = { id: string; origen: string; destino: string; etiqueta: string | null };
 
 function aRF(nodos: NodoDB[], edges: EdgeDB[]) {
-  const ns: NodoRF[] = nodos.map((n) => ({ id: n.id, type: n.tipo, position: { x: n.pos_x, y: n.pos_y }, data: { etiqueta: n.etiqueta, tipo: n.tipo, responsable: n.responsable, ejecutor: n.ejecutor, tiempo: n.tiempo, herramienta: n.herramienta, problema: n.problema, veredicto: n.veredicto, rol: n.rol ?? null, espera: n.espera ?? null, entrada: n.entrada ?? null, salida: n.salida ?? null, evidencia: n.evidencia ?? null, estandar: n.estandar ?? null, know_how_id: n.know_how_id ?? null } }));
+  const ns: NodoRF[] = nodos.map((n) => ({ id: n.id, type: n.tipo, position: { x: n.pos_x, y: n.pos_y }, data: { etiqueta: n.etiqueta, tipo: n.tipo, comentario: (n as { comentario?: string | null }).comentario ?? null, responsable: n.responsable, ejecutor: n.ejecutor, tiempo: n.tiempo, herramienta: n.herramienta, problema: n.problema, veredicto: n.veredicto, rol: n.rol ?? null, espera: n.espera ?? null, entrada: n.entrada ?? null, salida: n.salida ?? null, evidencia: n.evidencia ?? null, estandar: n.estandar ?? null, know_how_id: n.know_how_id ?? null } }));
   const es: Edge[] = edges.map((e) => ({ id: e.id, source: e.origen, target: e.destino, label: e.etiqueta ?? undefined, markerEnd: { type: MarkerType.ArrowClosed, color: "#14171a" }, style: { stroke: "#14171a", strokeWidth: 1.5 }, labelStyle: { fontSize: 12, fill: "#6b7075" }, labelBgStyle: { fill: "#fcfcfb" } }));
   return { ns, es };
 }

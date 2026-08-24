@@ -30,7 +30,7 @@ Devuelve el flujograma como JSON.
 
 Tipos de nodo: inicio | actividad | decision | espera | fin.
 Ejecutor (solo en actividad): humano | software | ia | hibrido.
-Campos opcionales por nodo: responsable, rol, herramienta, tiempo, espera, entrada, salida, evidencia, estandar, problema.
+Campos opcionales por nodo: responsable, rol, herramienta, tiempo, espera, entrada, salida, evidencia, estandar, problema, comentario.
 
 REGLAS:
 - Dibuja el proceso REAL que describe la persona, no el ideal.
@@ -43,6 +43,9 @@ REGLAS:
 - Si menciona un problema en un paso ("aqui siempre se traba"), ponlo en problema de ese nodo.
 - Las etiquetas usan las palabras de la persona, no vocabulario de consultoria.
 - Sin posiciones: el layout lo calcula la aplicacion.
+- FICHA: si la persona conto para que existe el proceso, que lo inicia, con que termina, cuanto toma o con
+  que herramientas se hace, devuelvelo en "ficha": { "objetivo", "inicio", "resultado", "tiempo", "herramientas" }
+  (null lo que no conto; NUNCA lo inventes). Asi no se le vuelve a preguntar lo que ya dijo.
 - INVESTIGA EL HUECO: si entre dos pasos falta algo evidente ("el cliente escribe y luego paga" — ¿que pasa
   en medio?, ¿que pasa si nadie responde?, ¿alguien vuelve a buscar al que no compro?), devuelve ademas
   "pregunta_gap": UNA sola pregunta, la de mayor valor, en lenguaje simple, para que el dueno la responda.

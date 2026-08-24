@@ -5,7 +5,7 @@
  * La ausencia NO es defecto (fase 12): es una señal de investigación.
  */
 
-export type ActivoDef = { clave: string; nombre: string; ayuda: string };
+export type ActivoDef = { clave: string; nombre: string; ayuda: string; estructura?: string };
 export type BloqueActivos = { clave: string; nombre: string; intro: string; activos: ActivoDef[] };
 
 export const BLOQUES_ACTIVOS: BloqueActivos[] = [
@@ -14,9 +14,9 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
     nombre: "Personas",
     intro: "Quiénes son, qué hace cada uno y cómo entra alguien nuevo.",
     activos: [
-      { clave: "organigrama", nombre: "Organigrama", ayuda: "Aunque sea una foto de la pizarra o un dibujo a mano." },
-      { clave: "funciones", nombre: "Funciones por puesto", ayuda: "Qué se espera de cada puesto. Si vive en la cabeza de alguien, también cuenta." },
-      { clave: "mvv", nombre: "Misión, visión y valores", ayuda: "Lo que la empresa dice que es y quiere ser." },
+      { clave: "organigrama", nombre: "Organigrama", ayuda: "Aunque sea una foto de la pizarra o un dibujo a mano.", estructura: "quién dirige, quién reporta a quién, y qué hace cada puesto en una línea; solo personas y puestos que la empresa mencionó" },
+      { clave: "funciones", nombre: "Funciones por puesto", ayuda: "Qué se espera de cada puesto. Si vive en la cabeza de alguien, también cuenta.", estructura: "por cada puesto conocido: resultado que entrega, tareas principales, qué decide solo y qué escala, cómo se sabe que lo hizo bien" },
+      { clave: "mvv", nombre: "Misión, visión y valores", ayuda: "Lo que la empresa dice que es y quiere ser.", estructura: "propósito (por qué existe, en las palabras del dueño), misión (qué hace y para quién), visión (a dónde quiere llegar según lo dicho HOY, no planes viejos), valores (los que se ven en cómo trabajan, con un ejemplo real cada uno)" },
       { clave: "seleccion", nombre: "Cómo contratan", ayuda: "Cómo eligen a alguien nuevo: aviso, entrevista, prueba…" },
       { clave: "onboarding", nombre: "Cómo entra alguien nuevo", ayuda: "Qué le enseñan los primeros días y quién." },
       { clave: "evaluacion", nombre: "Cómo saben si alguien lo hace bien", ayuda: "Evaluación, conversación, indicador o simple ojo del jefe." },
@@ -27,7 +27,7 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
     nombre: "Procesos",
     intro: "Cómo se hace el trabajo, dónde vive la información y con qué herramientas.",
     activos: [
-      { clave: "mapa_procesos", nombre: "Mapa o lista de procesos", ayuda: "Los pasos de las cosas importantes: vender, entregar, cobrar." },
+      { clave: "mapa_procesos", nombre: "Mapa o lista de procesos", ayuda: "Los pasos de las cosas importantes: vender, entregar, cobrar.", estructura: "lista de los procesos que la empresa mostró, cada uno con: para qué existe, quién lo hace, con qué empieza y con qué termina; marcar cuáles están dibujados y cuáles solo mencionados" },
       { clave: "procedimientos", nombre: "Procedimientos escritos", ayuda: "Manuales, checklists, guías. Aunque estén desactualizados." },
       { clave: "politicas", nombre: "Políticas y reglas", ayuda: "Descuentos, créditos, devoluciones, permisos: ¿quién decide qué?" },
       { clave: "indicadores", nombre: "Indicadores que miran", ayuda: "Los números que revisan cada semana o mes, si existen." },
@@ -51,7 +51,7 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
     nombre: "Marketing / Ventas",
     intro: "De dónde vienen los clientes y qué pasa desde el primer contacto hasta la venta.",
     activos: [
-      { clave: "cliente_ideal", nombre: "Quién es su cliente", ayuda: "A quién le venden hoy de verdad, no el ideal del plan." },
+      { clave: "cliente_ideal", nombre: "Quién es su cliente", ayuda: "A quién le venden hoy de verdad, no el ideal del plan.", estructura: "quién compra hoy (con los datos reales si existen), qué problema le resuelve la empresa, qué promete (propuesta de valor en una frase), por qué la eligen frente a otras" },
       { clave: "oferta", nombre: "Qué prometen", ayuda: "Su oferta: qué te llevas, a qué precio, con qué garantía." },
       { clave: "canales", nombre: "De dónde llegan los clientes", ayuda: "Referidos, redes, local, llamadas: por dónde entran." },
       { clave: "proceso_comercial", nombre: "Qué pasa con un interesado", ayuda: "Del primer mensaje a la venta: pasos y quién hace seguimiento." },

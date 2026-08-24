@@ -6,6 +6,7 @@ import { Canvas } from "@/components/canvas/Canvas";
 import { Comparada } from "@/components/canvas/Comparada";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { ConfirmarProceso } from "@/components/cliente/ConfirmarProceso";
+import { FichaProceso } from "@/components/cliente/FichaProceso";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,12 @@ export default async function ProcesoCliente({ params }: { params: Promise<{ p: 
   const r = await procesoConToBe(p);
   if (!r || r.proceso.company_id !== c.companyId) notFound();
   const { data: pub } = await supabaseAdmin().from("deliverables").select("id").eq("company_id", c.companyId).eq("tipo", "mapa_to_be").eq("publicado", true).limit(1);
-  const { data: conf } = await supabaseAdmin().from("processes").select("confirmacion,deseo").eq("id", r.asis.id).single();
+  const sb = supabaseAdmin();
+  const [{ data: conf }, { data: adjuntos }, { data: caleta }] = await Promise.all([
+    sb.from("processes").select("confirmacion,deseo,responsable,objetivo,inicio,resultado,tiempo,herramientas,sale_mal,como_bien,descripcion_original").eq("id", r.asis.id).single(),
+    sb.from("sources").select("id,nombre,tipo,created_at").eq("process_id", r.asis.id).order("created_at", { ascending: false }),
+    sb.from("know_how").select("puesto,situacion,senal,regla_practica").eq("company_id", c.companyId).eq("process_id", r.asis.id),
+  ]);
   const mostrarToBe = !!pub?.length && r.tobe;
   return (
     <>
@@ -29,6 +35,13 @@ export default async function ProcesoCliente({ params }: { params: Promise<{ p: 
       ) : (
         <Canvas processId={r.asis.id} companyId={c.companyId} nombre={r.asis.nombre} nodos={r.asis.nodos} edges={r.asis.edges} paraCliente alto="60vh" />
       )}
+      <FichaProceso
+        processId={r.asis.id}
+        companyId={c.companyId}
+        ficha={{ responsable: conf?.responsable ?? null, objetivo: conf?.objetivo ?? null, inicio: conf?.inicio ?? null, resultado: conf?.resultado ?? null, tiempo: conf?.tiempo ?? null, herramientas: conf?.herramientas ?? null, sale_mal: conf?.sale_mal ?? null, como_bien: conf?.como_bien ?? null, descripcion_original: conf?.descripcion_original ?? null }}
+        adjuntos={(adjuntos ?? []).map((a) => ({ id: a.id, nombre: a.nombre, tipo: a.tipo ?? "archivo", created_at: a.created_at }))}
+        caleta={caleta ?? []}
+      />
       <ConfirmarProceso processId={r.asis.id} confirmacion={conf?.confirmacion ?? "borrador"} deseo={conf?.deseo ?? null} />
     </>
   );

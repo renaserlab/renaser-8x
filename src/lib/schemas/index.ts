@@ -113,6 +113,8 @@ export const SalidaArquitecto = z.object({
   conexiones: z.array(z.object({ de: z.string(), a: z.string(), etiqueta: z.string().nullable().optional() })),
   // Una pregunta de alto valor sobre el hueco mas importante del proceso (o null si esta completo).
   pregunta_gap: z.string().nullable().optional(),
+  // Ficha del proceso si la persona la contó (nunca inventada): el cliente completa solo huecos.
+  ficha: z.object({ objetivo: z.string().nullable().optional(), inicio: z.string().nullable().optional(), resultado: z.string().nullable().optional(), tiempo: z.string().nullable().optional(), herramientas: z.string().nullable().optional() }).nullable().optional(),
 });
 export type SalidaArquitecto = z.infer<typeof SalidaArquitecto>;
 
@@ -164,6 +166,14 @@ export const SalidaAuditor = z.object({
   ),
 });
 export type SalidaAuditor = z.infer<typeof SalidaAuditor>;
+
+// CONSTRUCTOR DE ACTIVOS (bloqueador 3): borrador + huecos, nunca inventos.
+export const SalidaConstructor = z.object({
+  borrador: z.string().nullable(),
+  faltantes: z.array(z.object({ pregunta: z.string().min(5) })).max(3).default([]),
+  nota: z.string().nullable().optional(),
+});
+export type SalidaConstructor = z.infer<typeof SalidaConstructor>;
 
 // 23.8 PLANIFICADOR
 export const SalidaPlanificador = z.object({

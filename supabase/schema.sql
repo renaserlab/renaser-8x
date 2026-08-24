@@ -714,7 +714,7 @@ grant select on participants_cliente to authenticated;
 -- Si una conexión apunta a un nodo inexistente → exception → rollback completo.
 
 create or replace function guardar_proceso(p_process_id uuid, p_nombre text, p_area text, p_nodos jsonb, p_edges jsonb)
-returns jsonb language plpgsql security definer set search_path = public as $$
+returns jsonb language plpgsql security definer set search_path = public as $
 declare
   n jsonb; e jsonb;
   mapa jsonb := '{}'::jsonb;
@@ -730,16 +730,16 @@ begin
       update process_nodes set
         tipo = n->>'tipo', etiqueta = coalesce(nullif(n->>'etiqueta',''),'…'),
         responsable = n->>'responsable', ejecutor = n->>'ejecutor', tiempo = n->>'tiempo',
-        herramienta = n->>'herramienta', problema = n->>'problema', veredicto = nullif(n->>'veredicto',''),
+        herramienta = n->>'herramienta', comentario = n->>'comentario', problema = n->>'problema', veredicto = nullif(n->>'veredicto',''),
         rol = n->>'rol', espera = n->>'espera', entrada = n->>'entrada', salida = n->>'salida', evidencia = n->>'evidencia', estandar = n->>'estandar',
         know_how_id = nullif(n->>'know_how_id','')::uuid,
         pos_x = coalesce((n->>'pos_x')::float,0), pos_y = coalesce((n->>'pos_y')::float,0)
       where id = (n->>'id')::uuid;
       nuevo_id := (n->>'id')::uuid;
     else
-      insert into process_nodes (process_id, tipo, etiqueta, responsable, ejecutor, tiempo, herramienta, problema, veredicto, rol, espera, entrada, salida, evidencia, estandar, know_how_id, pos_x, pos_y)
+      insert into process_nodes (process_id, tipo, etiqueta, responsable, ejecutor, tiempo, herramienta, comentario, problema, veredicto, rol, espera, entrada, salida, evidencia, estandar, know_how_id, pos_x, pos_y)
       values (p_process_id, n->>'tipo', coalesce(nullif(n->>'etiqueta',''),'…'), n->>'responsable', n->>'ejecutor', n->>'tiempo',
-              n->>'herramienta', n->>'problema', nullif(n->>'veredicto',''), n->>'rol', n->>'espera', n->>'entrada', n->>'salida', n->>'evidencia', n->>'estandar',
+              n->>'herramienta', n->>'comentario', n->>'problema', nullif(n->>'veredicto',''), n->>'rol', n->>'espera', n->>'entrada', n->>'salida', n->>'evidencia', n->>'estandar',
               nullif(n->>'know_how_id','')::uuid, coalesce((n->>'pos_x')::float,0), coalesce((n->>'pos_y')::float,0))
       returning id into nuevo_id;
     end if;
@@ -760,7 +760,7 @@ begin
   end loop;
 
   return mapa;
-end $$;
+end $;
 
 -- ============ PERMISOS DE FUNCIONES (P0-01) ============
 -- Las RPC de la cola y el guardado solo las llama el servidor con la service role. Nunca el navegador.

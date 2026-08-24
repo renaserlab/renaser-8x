@@ -68,7 +68,18 @@ export async function handleGenerarProceso(job: Job) {
   await registrarLlamada(job.company_id, job.id, "arquitecto", r);
   const g = await guardarFlujograma(job.company_id, r.data, { version: "as_is", origen: "generado_ia", process_id: job.payload.process_id ? String(job.payload.process_id) : undefined });
   const sbP = supabaseAdmin();
-  if (job.payload.process_id) await sbP.from("processes").update({ confirmacion: "por_confirmar" }).eq("id", String(job.payload.process_id));
+  if (job.payload.process_id) {
+    const ficha = r.data.ficha ?? null;
+    await sbP.from("processes").update({
+      confirmacion: "por_confirmar",
+      descripcion_original: descripcion,
+      objetivo: ficha?.objetivo ?? null,
+      inicio: ficha?.inicio ?? null,
+      resultado: ficha?.resultado ?? null,
+      tiempo: ficha?.tiempo ?? null,
+      herramientas: ficha?.herramientas ?? null,
+    }).eq("id", String(job.payload.process_id));
+  }
   // La pregunta del hueco (fase 17) entra a la conversación del dueño como siguiente pregunta pendiente.
   if (r.data.pregunta_gap?.trim()) {
     const { data: sesDueno } = await sbP.from("interview_sessions").select("id, participants!inner(rol)").eq("company_id", job.company_id).eq("tipo", "empresa_dueno").in("participants.rol", ["dueno", "socio"]).neq("estado", "completa").limit(1).maybeSingle();
