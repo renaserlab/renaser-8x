@@ -10,11 +10,11 @@ import { csvComoTexto, segmentoDe, trocear } from "@/lib/jobs/handlers/extraer";
 import { PATRONES, DIMENSIONES } from "@/lib/rules/patrones";
 
 describe("1.1 / 1.4 · cobertura de entrevistas (P1-02, P1-03)", () => {
-  it("el sueño del dueño tiene los 6 bloques y las 23 preguntas pedidas", () => {
+  it("el sueño del dueño tiene los 7 bloques (con lo-que-ya-intentó) y preguntas por episodio, no por concepto", () => {
     const claves = BLOQUES.sueno_dueno.map((b) => b.clave);
-    expect(claves).toEqual(["origen", "empresa_deseada", "vida_deseada", "rol", "exito", "verdad_dificil"]);
+    expect(claves).toEqual(["origen", "historia_intentos", "empresa_deseada", "vida_deseada", "rol", "exito", "verdad_dificil"]);
     const todas = BLOQUES.sueno_dueno.flatMap((b) => b.preguntas).join(" ");
-    for (const frag of ["Por qué empezaste", "Qué parte de ese sueño sigue viva", "Qué cambió", "Qué tamaño quieres", "Qué NO necesita crecer", "martes normal", "Qué ya no haces", "Cuántas horas", "fuera de la empresa", "Qué amas hacer", "ya no quieres hacer", "nadie más puede", "conservarías", "Cuánto es suficiente", "no estás dispuesto a sacrificar", "dejar construido", "debe cambiar", "postergando", "no quieres soltar", "nadie te juzgara"]) expect(todas).toContain(frag);
+    for (const frag of ["día que decidiste", "Con qué empezaste", "qué se cumplió", "qué pasó con cada intento", "Qué te frenó", "estuvo mejor que hoy", "todo sale bien", "NO quieres que crezca", "martes normal", "Cuántas horas", "fuera de la empresa", "más te gusta hacer", "ya te cansó", "nadie más puede", "te sentiste orgulloso", "Cuánto es suficiente", "dejar construido", "debe cambiar", "postergando", "miedo te da soltar", "nadie te juzgara"]) expect(todas).toContain(frag);
   });
   it("la entrevista al personal cubre las 15 investigaciones y las 4 preguntas de verdad operativa", () => {
     const todas = BLOQUES.personal.flatMap((b) => b.preguntas).join(" ").toLowerCase();
@@ -22,7 +22,7 @@ describe("1.1 / 1.4 · cobertura de entrevistas (P1-02, P1-03)", () => {
   });
   it("una sesión no se cierra con bloques sin cubrir; se cierra cuando todos tienen al menos una respuesta", () => {
     expect(puedeCerrarSesion("sueno_dueno", [{ bloque: "origen" }])).toBe(false);
-    expect(bloquesSinCubrir("sueno_dueno", [{ bloque: "origen" }]).map((b) => b.clave)).toEqual(["empresa_deseada", "vida_deseada", "rol", "exito", "verdad_dificil"]);
+    expect(bloquesSinCubrir("sueno_dueno", [{ bloque: "origen" }]).map((b) => b.clave)).toEqual(["historia_intentos", "empresa_deseada", "vida_deseada", "rol", "exito", "verdad_dificil"]);
     const todos = BLOQUES.sueno_dueno.map((b) => ({ bloque: b.clave }));
     expect(puedeCerrarSesion("sueno_dueno", todos)).toBe(true);
   });

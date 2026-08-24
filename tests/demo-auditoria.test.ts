@@ -37,7 +37,7 @@ describe("EMPRESA DEMO · flujo completo", () => {
 
   it("INTERVIEW OWNER: el sueño del dueño necesita los 6 bloques; con una sola respuesta no se cierra", () => {
     const resp = RESPUESTAS.filter((r) => r.session_id === "ses-dueno-sueno").map((r) => ({ bloque: r.bloque }));
-    expect(bloquesSinCubrir("sueno_dueno", resp).length).toBe(5);
+    expect(bloquesSinCubrir("sueno_dueno", resp).length).toBe(6);
     expect(BLOQUES.sueno_dueno.flatMap((b) => b.preguntas).length).toBeGreaterThanOrEqual(23);
   });
 
