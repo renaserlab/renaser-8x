@@ -115,7 +115,7 @@ export function InventarioActivos({ companyId, guardados }: { companyId: string;
                   const construible = !!a.estructura;
                   return (
                     <div key={a.clave} style={{ borderTop: "1px solid var(--linea)", paddingTop: 16 }}>
-                      <p className="t-cuerpo" style={{ fontWeight: 500 }}>{a.nombre}{estado === "construido" && <span className="t-dato" style={{ color: "var(--confirmado)" }}> · construido contigo ✓</span>}</p>
+                      <p className="t-cuerpo" style={{ fontWeight: 500 }}>{a.nombre}{estado === "construido" && <span className="t-dato" style={{ color: "var(--confirmado)" }}> · construido contigo</span>}</p>
                       <p className="t-dato mb-3" style={{ color: "var(--grafito)" }}>{a.ayuda}</p>
 
                       {estado !== "construyendo" && estado !== "borrador_generado" && estado !== "construido" && (
