@@ -19,7 +19,11 @@ export function BotonGrabar({ alTexto, alAudio, grande = true }: { alTexto: (t: 
   const [grabando, setGrabando] = useState(false);
   const [parcial, setParcial] = useState("");
   const esCliente = useEsCliente();
-  const soporte: "voz" | "audio" | "ninguno" = !esCliente ? "ninguno" : obtenerReconocimiento() ? "voz" : navigator.mediaDevices && typeof MediaRecorder !== "undefined" ? "audio" : "ninguno";
+  // Con transcriptor (alAudio), el micrófono graba AUDIO REAL (MediaRecorder): una sola toma, del largo que sea,
+  // con pausas incluidas, hasta que la persona pulsa detener. El reconocimiento del navegador queda solo como
+  // último recurso cuando no hay transcriptor.
+  const puedeGrabar = typeof navigator !== "undefined" && !!navigator.mediaDevices && typeof MediaRecorder !== "undefined";
+  const soporte: "voz" | "audio" | "ninguno" = !esCliente ? "ninguno" : alAudio && puedeGrabar ? "audio" : obtenerReconocimiento() ? "voz" : puedeGrabar ? "audio" : "ninguno";
   const rec = useRef<SR | null>(null);
   const mr = useRef<MediaRecorder | null>(null);
   const trozos = useRef<Blob[]>([]);
@@ -97,7 +101,7 @@ export function BotonGrabar({ alTexto, alAudio, grande = true }: { alTexto: (t: 
       </button>
       {grabando && (
         <p className="t-cuerpo aparece" aria-live="polite" style={{ color: "var(--grafito)", minHeight: 26 }}>
-          {parcial || "Te escucho…"}
+          {soporte === "audio" ? "Grabando… habla con calma, las pausas no cortan. Pulsa detener al terminar." : parcial || "Te escucho…"}
         </p>
       )}
     </div>

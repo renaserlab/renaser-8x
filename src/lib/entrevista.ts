@@ -12,6 +12,14 @@ export async function registrarRespuesta(opts: { session_id: string; company_id:
   }
   if (!responseId) throw new Error("No hay pregunta abierta en esta sesión.");
 
+  const textoConfirmado = (opts.texto ?? "").trim();
+  if (opts.audio && textoConfirmado) {
+    // Audio + texto confirmado por la persona: se guarda el audio original y el texto entra directo (sin re-transcribir).
+    const path = `${opts.company_id}/respuestas/${responseId}.webm`;
+    await sb.storage.from("fuentes").upload(path, opts.audio, { contentType: opts.mime ?? "audio/webm", upsert: true }).catch(() => {});
+    await sb.from("interview_responses").update({ respuesta_audio_path: path }).eq("id", responseId);
+    opts = { ...opts, audio: undefined };
+  }
   if (opts.audio) {
     const path = `${opts.company_id}/respuestas/${responseId}.webm`;
     const { error } = await sb.storage.from("fuentes").upload(path, opts.audio, { contentType: opts.mime ?? "audio/webm", upsert: true });

@@ -32,6 +32,22 @@ export function claveIdempotente(partes: (string | number | null | undefined)[])
   return createHash("sha256").update([...partes, VERSION_PROMPT].join("::")).digest("hex").slice(0, 40);
 }
 
+/**
+ * Despierta el drenaje serverless de la cola (Vercel). Sin await: nunca frena la respuesta al usuario.
+ * Guardas: solo con WORKER_DRAIN_SECRET configurado, y nunca desde dentro del propio drenaje o del worker
+ * local (los trabajos encadenados ya serán tomados por el bucle en curso).
+ */
+let drenando = false;
+export function marcarDrenando(v: boolean) {
+  drenando = v;
+}
+function despertarWorker() {
+  const secreto = process.env.WORKER_DRAIN_SECRET;
+  const base = process.env.NEXT_PUBLIC_APP_URL;
+  if (!secreto || !base || drenando || process.env.WORKER_LOCAL === "1") return;
+  fetch(`${base}/api/worker/drain`, { method: "POST", headers: { "x-worker-secret": secreto } }).catch(() => {});
+}
+
 export async function encolar(opts: {
   company_id: string | null;
   tipo: TipoJob;
@@ -53,6 +69,7 @@ export async function encolar(opts: {
     }
     throw error;
   }
+  despertarWorker();
   return { id: data.id, duplicado: false };
 }
 

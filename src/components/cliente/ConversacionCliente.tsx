@@ -1,4 +1,5 @@
 "use client";
+import { transcribirAudio } from "@/lib/transcribir-cliente";
 import { useCallback, useState } from "react";
 import { Entrevista, type EstadoEntrevista } from "@/components/Entrevista";
 import { pedir } from "@/lib/cliente";
@@ -47,7 +48,7 @@ export function ConversacionCliente({ companyId, sesiones, transcriptor = false 
           ))}
         </div>
       )}
-      <Entrevista key={activa.id} cargar={cargar} responder={responder} titulo={TIPO_SESION[activa.tipo]} transcriptor={transcriptor} />
+      <Entrevista key={activa.id} cargar={cargar} responder={responder} titulo={TIPO_SESION[activa.tipo]} transcriptor={transcriptor} transcribir={transcribirAudio} />
     </div>
   );
 }

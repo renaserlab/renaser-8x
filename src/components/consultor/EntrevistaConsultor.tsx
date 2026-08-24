@@ -1,4 +1,5 @@
 "use client";
+import { transcribirAudio } from "@/lib/transcribir-cliente";
 import { useCallback } from "react";
 import { Entrevista, type EstadoEntrevista } from "@/components/Entrevista";
 import { pedir } from "@/lib/cliente";
@@ -21,5 +22,5 @@ export function EntrevistaConsultor({ companyId, sessionId, transcriptor = false
     if (!r.ok) throw new Error(((await r.json()) as { error?: string }).error ?? "No se pudo guardar.");
   };
 
-  return <Entrevista cargar={cargar} responder={responder} transcriptor={transcriptor} />;
+  return <Entrevista cargar={cargar} responder={responder} transcriptor={transcriptor} transcribir={transcribirAudio} />;
 }

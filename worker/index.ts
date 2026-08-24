@@ -1,4 +1,5 @@
 // Arranque del worker: node --env-file=.env.local --import=tsx worker/index.ts
+process.env.WORKER_LOCAL = "1";
 import { correrWorker } from "../src/lib/jobs/worker";
 
 correrWorker().catch((e) => {

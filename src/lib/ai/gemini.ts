@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { AIProviderDownError, AIRateLimitError, AIValidationError, type AIProvider, type CompleteParams, type CompleteResult, type Transcripcion } from "./provider";
-import { AnthropicProvider } from "./anthropic";
 
 /**
  * Proveedor Gemini (REST, sin SDK). Mismo contrato que AnthropicProvider:
@@ -119,11 +118,31 @@ export class GeminiProvider implements AIProvider {
   }
 
   puedeTranscribir(): boolean {
-    return !!process.env.OPENAI_API_KEY;
+    return true; // Gemini transcribe audio nativamente
   }
 
-  transcribe(audio: Blob, mime: string): Promise<Transcripcion> {
-    // La transcripción sigue siendo Whisper (misma implementación, sin llave Anthropic).
-    return AnthropicProvider.prototype.transcribe.call({} as AnthropicProvider, audio, mime);
+  /** Transcripción con Gemini: el audio (MediaRecorder) entra como inlineData; sale el texto literal. */
+  async transcribe(audio: Blob, mime: string): Promise<Transcripcion> {
+    const buf = Buffer.from(await audio.arrayBuffer());
+    const body = {
+      systemInstruction: { parts: [{ text: "Transcribe el audio LITERALMENTE en español, tal como se dijo, sin resumir, sin corregir gramática y sin añadir nada. Si hay silencios, simplemente continúa. Devuelve SOLO el texto transcrito." }] },
+      contents: [{ role: "user", parts: [{ inlineData: { mimeType: mime || "audio/webm", data: buf.toString("base64") } }, { text: "Transcribe este audio." }] }],
+      generationConfig: { temperature: 0, maxOutputTokens: 8000, thinkingConfig: { thinkingLevel: THINKING_LEVEL } },
+    };
+    let reintentos = 0;
+    for (;;) {
+      const res = await fetch(`${BASE}/${MODEL}:generateContent`, { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": this.key }, body: JSON.stringify(body), signal: AbortSignal.timeout(TIMEOUT_MS) });
+      if (res.status === 503 && reintentos < MAX_REINTENTOS_503) {
+        reintentos++;
+        await new Promise((r) => setTimeout(r, Math.min(3000 * 2 ** (reintentos - 1), 40_000)));
+        continue;
+      }
+      if (res.status === 429) throw new AIRateLimitError(`Transcripción 429`);
+      if (!res.ok) throw new Error(`Transcripción falló: ${res.status}`);
+      const j = (await res.json()) as Respuesta;
+      const texto = (j.candidates?.[0]?.content?.parts ?? []).map((x) => x.text ?? "").join("").trim();
+      if (!texto) throw new Error("No pudimos entender el audio. Intenta de nuevo o escribe la respuesta.");
+      return { texto, segmentos: [] };
+    }
   }
 }

@@ -85,6 +85,48 @@ async function ejecutar(job: Job) {
   }
 }
 
+/**
+ * Drena la cola durante como máximo maxMs: toma y ejecuta trabajos (mismo take_job, mismos handlers,
+ * mismo heartbeat) y termina cuando la cola queda vacía o se acaba el presupuesto de tiempo.
+ * Es la versión por ráfagas del worker para entornos serverless (Vercel). Convive con el worker local.
+ */
+export async function drenarCola(maxMs: number): Promise<{ procesados: number; ms: number }> {
+  const sb = supabaseAdmin();
+  const t0 = Date.now();
+  let procesados = 0;
+  let ultimoHeartbeat = Date.now();
+  await sb.rpc("recover_stale_jobs").then(() => {});
+  const enVuelo: Promise<void>[] = [];
+  for (;;) {
+    if (Date.now() - t0 > maxMs - 20_000) break; // margen para cerrar limpio antes del límite de la función
+    if (activos.size && Date.now() - ultimoHeartbeat > HEARTBEAT_MS) {
+      ultimoHeartbeat = Date.now();
+      await sb.rpc("heartbeat_jobs", { ids: [...activos], lease_minutes: LEASE }).then(() => {});
+    }
+    if (activos.size >= CONCURRENCIA) {
+      await dormir(250);
+      continue;
+    }
+    const { data, error } = await sb.rpc("take_job", { lease_minutes: LEASE, max_pesados_por_empresa: MAX_PESADOS_POR_EMPRESA, max_global: MAX_GLOBAL });
+    if (error) {
+      await dormir(1500);
+      continue;
+    }
+    const job = (Array.isArray(data) ? data[0] : data) as Job | undefined;
+    if (!job) {
+      if (!activos.size) break; // cola vacía y nada en vuelo: terminamos
+      await dormir(300);
+      continue;
+    }
+    activos.add(job.id);
+    procesados++;
+    log(`→ ${job.tipo} (p${job.prioridad}) ${job.id} [drain]`);
+    enVuelo.push(ejecutar(job).finally(() => activos.delete(job.id)));
+  }
+  await Promise.allSettled(enVuelo);
+  return { procesados, ms: Date.now() - t0 };
+}
+
 export async function correrWorker() {
   const sb = supabaseAdmin();
   log(`8X worker · concurrencia ${CONCURRENCIA} · lease ${LEASE} min · máx ${MAX_PESADOS_POR_EMPRESA} pesados/empresa · máx global ${MAX_GLOBAL}`);

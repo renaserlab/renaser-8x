@@ -77,8 +77,8 @@ describe("superficie de API: toda ruta protegida usa `protegido` o el token de p
     const leer = (d: string, acc: string[] = []): string[] => { for (const e of readdirSync(d, { withFileTypes: true })) { const p = path.join(d, e.name); if (e.isDirectory()) leer(p, acc); else if (e.name === "route.ts") acc.push(p); } return acc; };
     for (const f of leer(dir)) {
       const s = readFileSync(f, "utf8");
-      const publica = /api[\\/](participar|auth)[\\/]/.test(f);
-      if (publica) expect(s, f).toMatch(/participantePorToken|estadoParticipante|canjearParticipante|signOut|exchangeCodeForSession/);
+      const publica = /api[\\/](participar|auth|worker)[\\/]/.test(f);
+      if (publica) expect(s, f).toMatch(/participantePorToken|estadoParticipante|canjearParticipante|signOut|exchangeCodeForSession|WORKER_DRAIN_SECRET/);
       else expect(s, f).toMatch(/protegido[<(]/);
     }
   });

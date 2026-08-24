@@ -15,8 +15,9 @@ export function usarProveedor(p: AIProvider | null) {
   _ai = p;
 }
 
-/** ¿Hay transcriptor? Se consulta sin instanciar el proveedor (no exige ANTHROPIC_API_KEY). */
+/** ¿Hay transcriptor? Gemini transcribe nativamente; con Anthropic se usa Whisper (OPENAI_API_KEY). */
 export function hayTranscriptor(): boolean {
+  if (process.env.AI_PROVIDER === "gemini") return !!process.env.GEMINI_API_KEY;
   return !!process.env.OPENAI_API_KEY;
 }
 

@@ -536,7 +536,7 @@ create table if not exists company_assets (
   company_id uuid references companies(id) on delete cascade,
   bloque text not null,
   clave text not null,
-  estado text check (estado in ('lo_tengo','incompleto','no_lo_tengo','no_se')),
+  estado text check (estado in ('lo_tengo','incompleto','no_lo_tengo','no_se','construyendo','borrador_generado','construido')),
   nota text,
   source_id uuid references sources(id),
   updated_at timestamptz default now(),
@@ -545,6 +545,24 @@ create table if not exists company_assets (
 alter table company_assets enable row level security;
 create policy company_assets_cliente on company_assets for all using (company_id in (select mis_empresas())) with check (company_id in (select mis_empresas()));
 create policy company_assets_consultor on company_assets for all using (es_consultor()) with check (es_consultor());
+
+-- Constructor de activos y procesos ricos (fase de cierre autoservicio)
+alter table company_assets add column if not exists borrador text;
+alter table company_assets add column if not exists faltantes jsonb;
+alter table company_assets add column if not exists confirmado_at timestamptz;
+alter table processes add column if not exists responsable text;
+alter table processes add column if not exists objetivo text;
+alter table processes add column if not exists inicio text;
+alter table processes add column if not exists resultado text;
+alter table processes add column if not exists tiempo text;
+alter table processes add column if not exists herramientas text;
+alter table processes add column if not exists sale_mal text;
+alter table processes add column if not exists como_bien text;
+alter table processes add column if not exists descripcion_original text;
+alter table processes add column if not exists audio_original_path text;
+alter table process_nodes add column if not exists comentario text;
+alter table sources add column if not exists process_id uuid references processes(id) on delete set null;
+alter table sources add column if not exists process_node_id uuid references process_nodes(id) on delete set null;
 
 -- ============ HELPERS RLS ============
 

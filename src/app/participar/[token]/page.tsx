@@ -118,7 +118,7 @@ export default function Participar({ params }: { params: Promise<{ token: string
           </p>
         </header>
       )}
-      <Entrevista cargar={cargar} responder={responder} transcriptor={info?.transcriptor ?? false} />
+      <Entrevista cargar={cargar} responder={responder} transcriptor={info?.transcriptor ?? false} transcribir={async (b) => { const form = new FormData(); form.set("audio", b, "respuesta.webm"); const r = await fetch("/api/participar/transcribir", { method: "POST", headers: cabeceras(), body: form }); const j = (await r.json()) as { texto?: string; error?: string }; if (!r.ok || !j.texto) throw new Error(j.error ?? "No pudimos entender el audio."); return j.texto; }} />
     </main>
   );
 }
