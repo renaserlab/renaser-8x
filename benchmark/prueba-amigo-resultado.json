@@ -1,0 +1,54 @@
+{
+  "url": "https://8x-renaser-s-projects.vercel.app",
+  "email": "amigo-1787533949754@example.test",
+  "portal_entra": 200,
+  "empresa": "08a36ce8-ea45-4f66-964e-fa0312379f1b",
+  "conversacion": {
+    "sueno": 7,
+    "empresa": 9
+  },
+  "activo_organigrama": {
+    "estado": "borrador_generado",
+    "borrador": true,
+    "faltantes": 2
+  },
+  "activo_confirmado": true,
+  "ficha": true,
+  "proceso_confirmado": true,
+  "validadas": 4,
+  "resultado": {
+    "nivel": 4,
+    "espejo": 6,
+    "noVes": [
+      "Know-how crítico de calibración y atención concentrado en Alexandra",
+      "Concentración de ingresos en el turno de la mañana (70%)",
+      "Falta de definición de responsabilidades y liderazgo en el equipo de b",
+      "Dependencia operativa total del dueño en compra de café y gestión de c",
+      "Cuello de botella en caja por despacho simultáneo de pedidos por aplic",
+      "Calibración de la máquina de café sin estándar documentado por Alexand"
+    ],
+    "fortalezas": [
+      "Preservación del trato directo con proveedores y fincas cafe",
+      "Propuesta de producto de café de barrio con cafés de origen "
+    ],
+    "caleta": 0,
+    "restriccion": "Know-how crítico de calibración y atención concentrado en Alexandra",
+    "sistematizar": [
+      "Atención en barra"
+    ],
+    "tentativo": [
+      "1. Preservación del trato directo con proveedores y fincas cafe",
+      "2. Propuesta de producto de café de barrio con cafés de origen ",
+      "3. Know-how crítico de calibración y atención concentrado en Al",
+      "4. Concentración de ingresos en el turno de la mañana (70%)",
+      "5. Falta de definición de responsabilidades y liderazgo en el e"
+    ],
+    "con_evidencia": true,
+    "paginas": {
+      "hoy": 200,
+      "activos": 200,
+      "procesos": 200
+    }
+  },
+  "pass": true
+}
