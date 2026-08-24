@@ -48,7 +48,10 @@ async function ejecutar(job: Job) {
   const sb = supabaseAdmin();
   const h = HANDLERS[job.tipo];
   if (!h) {
-    await sb.from("jobs").update({ estado: "fallido", error: `Tipo de trabajo desconocido: ${job.tipo}`, terminado_at: new Date().toISOString() }).eq("id", job.id);
+    // Tipo desconocido: puede ser una instancia VIEJA (deploy en curso) tomando un job nuevo. Nunca fallo
+    // terminal inmediato: se devuelve a la cola con reintento para que lo tome una instancia actual.
+    const agotado = estadoTrasFallo(job) === "fallido";
+    await sb.from("jobs").update({ estado: agotado ? "fallido" : "pendiente", error: `Tipo de trabajo desconocido en esta instancia: ${job.tipo}`, lease_expira_at: null, terminado_at: agotado ? new Date().toISOString() : null }).eq("id", job.id);
     return;
   }
   // Tope de costo por empresa (P1-20): aplica a todo trabajo que llame a la IA. Nunca un cobro sorpresa.
