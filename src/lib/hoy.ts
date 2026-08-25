@@ -113,7 +113,7 @@ export async function empresaHoy(companyId: string) {
   const caletaSinEscribir = (kh ?? []).filter((k) => !k.documentado);
   if (caletaSinEscribir.length) {
     const criticos = caletaSinEscribir.filter((k) => k.criticidad === "alta");
-    sistematizar.push({ nombre: "La Caleta del equipo", motivo: `${caletaSinEscribir.length} criterio(s) valiosos viven solo en la cabeza de alguien${criticos.length ? `, ${criticos.length} crítico(s)` : ""}: si esa persona falta, se pierden` });
+    sistematizar.push({ nombre: "El saber del equipo", motivo: `${caletaSinEscribir.length} criterio(s) valiosos viven solo en la cabeza de alguien${criticos.length ? `, ${criticos.length} crítico(s)` : ""}: si esa persona falta, se pierden` });
   }
 
   // Plan tentativo — "Por dónde empezaría": 3 a 5 prioridades desde los hallazgos de más peso.

@@ -38,7 +38,7 @@ export const BLOQUES: Record<string, Bloque[]> = {
     { clave: "vision_personal", nombre: "Lo que ve", preguntas: ["¿Qué escuchas de los clientes?", "¿Qué eliminarías?", "¿Qué conservarías?", "¿Qué harías distinto si esta empresa fuera tuya?", "¿Qué crees que Dirección no ve?"] },
   ],
   know_how: [
-    { clave: "know_how", nombre: "La Caleta", preguntas: ["¿Qué sabes hacer tú que alguien nuevo tardaría meses en aprender?", "¿Qué notas tú antes que los demás cuando algo va a salir mal?", "¿Qué haces diferente cuando aparece un caso complicado?", "¿Qué cosa importante de tu trabajo nunca quedó escrita?", "Si mañana no pudieras venir, ¿qué se perdería contigo?", "¿Qué error comete siempre un principiante que tú ya no cometes?", "¿Cuándo sabes que un problema te queda grande y hay que avisar?"] },
+    { clave: "know_how", nombre: "Lo que solo tú sabes", preguntas: ["¿Qué sabes hacer tú que alguien nuevo tardaría meses en aprender?", "¿Qué notas tú antes que los demás cuando algo va a salir mal?", "¿Qué haces diferente cuando aparece un caso complicado?", "¿Qué cosa importante de tu trabajo nunca quedó escrita?", "Si mañana no pudieras venir, ¿qué se perdería contigo?", "¿Qué error comete siempre un principiante que tú ya no cometes?", "¿Cuándo sabes que un problema te queda grande y hay que avisar?"] },
   ],
   validacion: [{ clave: "validacion", nombre: "Validación", preguntas: [] }],
 };

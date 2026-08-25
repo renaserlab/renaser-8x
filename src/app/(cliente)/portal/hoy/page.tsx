@@ -123,7 +123,7 @@ export default async function Hoy() {
 
       {hoy.caleta.length > 0 && (
         <section>
-          <h2 className="t-seccion mb-1">La Caleta de tu empresa</h2>
+          <h2 className="t-seccion mb-1">Lo que tu gente sabe (y no está escrito)</h2>
           <p className="t-dato mb-4 medida" style={{ color: "var(--grafito)" }}>
             Cosas valiosas que tu gente sabe hacer o detectar y que no estaban escritas. Protegerlas importa tanto como corregir problemas.
           </p>

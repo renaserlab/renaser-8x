@@ -120,7 +120,7 @@ export function FichaProceso({ processId, companyId, ficha, adjuntos, caleta }: 
 
       {caleta.length > 0 && (
         <div className="panel p-5">
-          <h2 className="t-seccion" style={{ fontSize: 18 }}>La Caleta de este proceso</h2>
+          <h2 className="t-seccion" style={{ fontSize: 18 }}>Lo que tu gente sabe de este proceso</h2>
           <p className="t-dato mt-1 mb-3" style={{ color: "var(--grafito)" }}>Lo que alguien sabe hacer o detectar aquí y no estaba escrito.</p>
           <ul className="flex flex-col gap-2">
             {caleta.map((k, i) => (

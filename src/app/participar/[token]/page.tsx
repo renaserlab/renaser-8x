@@ -113,7 +113,7 @@ export default function Participar({ params }: { params: Promise<{ token: string
             desde este mismo celular.
           </p>
           <p className="t-dato mt-3 medida" style={{ color: "var(--grafito)" }}>
-            Todas las empresas tienen una Caleta: cosas que las personas saben hacer o detectar y que nunca quedaron escritas.
+            En toda empresa hay cosas que las personas saben hacer o detectar y que nunca quedaron escritas.
             Si es tu caso, esto sirve para protegerla — para que lo valioso no dependa de una sola persona.
           </p>
         </header>

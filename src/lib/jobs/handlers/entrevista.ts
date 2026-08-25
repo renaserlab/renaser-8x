@@ -97,7 +97,7 @@ export async function handleEntrevistaSiguiente(job: Job) {
     `PILARES CON INFORMACIÓN INSUFICIENTE: ${desconocidos.join(", ") || "ninguno"}`,
     `LO QUE LA EMPRESA YA MOSTRÓ (no vuelvas a preguntar nada de esto):`,
     [
-      `- Caleta capturada (${khTodo?.length ?? 0}): ${(khTodo ?? []).map((k) => `${k.puesto}: ${k.situacion ?? k.regla_practica ?? k.senal ?? ""}`.slice(0, 90)).join(" · ") || "ninguna"}`,
+      `- Saber del equipo capturado (${khTodo?.length ?? 0}): ${(khTodo ?? []).map((k) => `${k.puesto}: ${k.situacion ?? k.regla_practica ?? k.senal ?? ""}`.slice(0, 90)).join(" · ") || "ninguna"}`,
       `- Procesos dibujados (${procesosTodo?.length ?? 0}): ${(procesosTodo ?? []).map((p) => { const probs = ((p.process_nodes as { etiqueta: string; problema: string | null }[]) ?? []).filter((n) => n.problema).map((n) => n.etiqueta); return `${p.nombre}${probs.length ? ` (trabas: ${probs.slice(0, 3).join(", ")})` : ""}`; }).join(" · ") || "ninguno"}`,
       `- Fuentes entregadas (${fuentesTodo?.length ?? 0}): ${(fuentesTodo ?? []).map((f) => `${f.nombre} [${f.estado}]`).join(" · ") || "ninguna"}`,
     ].join("\n"),

@@ -47,7 +47,7 @@ export function PanelPropiedades({ datos, cambiar, eliminar, soloLectura = false
       )}
       {(datos.tipo === "actividad" || datos.tipo === "espera") && campo("tiempo", "Tiempo real", "2 días, 15 min…")}
       {datos.know_how_id && (
-        <p className="t-dato" style={{ color: "var(--confirmado)" }}>Este paso tiene Caleta asociada: un criterio valioso vive aquí.</p>
+        <p className="t-dato" style={{ color: "var(--confirmado)" }}>En este paso vive un criterio valioso del equipo.</p>
       )}
       {processId && companyId && nodoId && !nodoId.startsWith("tmp-") && !soloLectura && (
         <AdjuntarNodo processId={processId} companyId={companyId} nodoId={nodoId} />
