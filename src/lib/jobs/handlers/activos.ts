@@ -116,6 +116,8 @@ REGLAS ABSOLUTAS:
 - Lo que funciona se conserva y se reconoce: sistematizar no es cambiar todo.
 - El documento lo leera el dueno EN VOZ ALTA a su equipo: cero lenguaje corporativo hueco.
 - No inventes nombres, cifras ni areas que el material no muestre.
+- La moneda es SIEMPRE soles (S/), nunca dolares. Los montos concretos (limites de caja, topes de
+  decision) se proponen como [por definir: p. ej. S/200] salvo que el material ya diga la cifra.
 - Si el declarado no alcanza para trabajar con seriedad, propuesta: null y en nota que falta.`;
 
 /** payload: { clave, comentario? } → SISTEMATIZADOR (capa 3): del documento declarado a la versión trabajada. */
