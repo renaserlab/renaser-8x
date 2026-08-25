@@ -105,7 +105,7 @@ export function CrearEmpresa() {
       {error && <p className="t-cuerpo" style={{ color: "var(--contradicho)" }} role="alert">{error}</p>}
       <div className="flex gap-3">
         <button type="button" className="boton boton--secundario" onClick={() => setPaso(0)} disabled={cargando}>Atrás</button>
-        <button className="boton" disabled={cargando}>{cargando ? "Un momento…" : "Empezar"}</button>
+        <button className="boton flex-1" disabled={cargando}>{cargando ? "Un momento…" : "Empezar"}</button>
       </div>
     </form>
   );

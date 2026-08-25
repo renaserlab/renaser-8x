@@ -53,12 +53,12 @@ export async function handleDiagnosticar(job: Job) {
   const idsKnowHow = new Set((kh ?? []).flatMap((k) => idsDe(k.participant_id)));
   const conKnowHow = [...utiles, ...todas.filter((c) => idsKnowHow.has(c.id) && !utiles.some((u) => u.id === c.id) && (c.estado === "confirmado" || c.estado === "contradicho" || c.estado === "caducado"))];
   const { data: sueno } = await sb.from("interview_responses").select("bloque,pregunta,respuesta, interview_sessions!inner(tipo,company_id)").eq("interview_sessions.company_id", job.company_id).eq("interview_sessions.tipo", "sueno_dueno").not("respuesta", "is", null);
-  const { data: empresa } = await sb.from("companies").select("nombre,sector,modelo_operativo,etapa").eq("id", job.company_id).single();
+  const { data: empresa } = await sb.from("companies").select("nombre,sector,modelo_operativo,etapa_negocio").eq("id", job.company_id).single();
   const { data: metricasRaw } = await sb.from("company_metricas").select("clave,periodo,valor,valor_texto,estado,nota").eq("company_id", job.company_id).limit(80);
   const metricas = (metricasRaw ?? []) as Metrica[];
   const senales = detectarAnomalias(metricas);
   const contexto = [
-    `EMPRESA: ${empresa?.nombre} · sector: ${empresa?.sector ?? "desconocido"}${empresa?.modelo_operativo?.length ? ` · modelo operativo: ${(empresa.modelo_operativo as string[]).join(", ")}` : ""}${empresa?.etapa ? ` · etapa: ${empresa.etapa}` : ""}`,
+    `EMPRESA: ${empresa?.nombre} · sector: ${empresa?.sector ?? "desconocido"}${empresa?.modelo_operativo?.length ? ` · modelo operativo: ${(empresa.modelo_operativo as string[]).join(", ")}` : ""}${empresa?.etapa_negocio ? ` · etapa del negocio: ${empresa.etapa_negocio}` : ""}`,
     `PILAR: ${pilar}`,
     metricas.length ? `TABLA DE RESULTADOS (contado por la empresa o verificado en sus registros):\n${tablaResultadosComoTexto(metricas)}` : null,
     senales.length ? `SEÑALES DETECTADAS POR EL MOTOR DE ANOMALÍAS:\n${senales.map((s) => `- [${s.regla}] ${s.titulo}: ${s.detalle}`).join("\n")}` : null,

@@ -35,7 +35,7 @@ export const POST = protegido({}, async (perfil, req) => {
   const anios = ficha?.antiguedad ? parseFloat(ficha.antiguedad.replace(",", ".")) : null;
   const { data: c, error } = await sb
     .from("companies")
-    .insert({ nombre: nombre.slice(0, 120), sector, ficha, modelo_operativo: modelos.length ? modelos : null, etapa: etapaDe(anios) })
+    .insert({ nombre: nombre.slice(0, 120), sector, ficha, modelo_operativo: modelos.length ? modelos : null, etapa_negocio: etapaDe(anios) })
     .select("id")
     .single();
   if (error) return fallo(error.message, 500);

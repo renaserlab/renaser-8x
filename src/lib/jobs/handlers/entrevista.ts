@@ -38,7 +38,7 @@ export async function handleEntrevistaSiguiente(job: Job) {
     sb.from("know_how").select("puesto,situacion,senal,regla_practica").eq("company_id", job.company_id).limit(30),
     sb.from("processes").select("id,nombre,area, process_nodes(etiqueta,problema)").eq("company_id", job.company_id).eq("version", "as_is").limit(10),
     sb.from("sources").select("nombre,tipo,estado").eq("company_id", job.company_id).order("created_at", { ascending: false }).limit(25),
-    sb.from("companies").select("nombre,sector,ficha,modelo_operativo,etapa").eq("id", job.company_id).single(),
+    sb.from("companies").select("nombre,sector,ficha,modelo_operativo,etapa_negocio").eq("id", job.company_id).single(),
     sb.from("company_metricas").select("clave,periodo,valor,valor_texto,estado,nota").eq("company_id", job.company_id).limit(60),
   ]);
   // Clasificación por modelo operativo (Sistema Adaptativo v2): usa la guardada o clasifica desde ficha/sector.
@@ -60,7 +60,7 @@ export async function handleEntrevistaSiguiente(job: Job) {
   const contexto = [
     `TIPO DE SESIÓN: ${ses.tipo}`,
     `PARTICIPANTE: puesto: ${p.puesto ?? "—"} · rol: ${p.rol ?? "—"} · antigüedad: ${p.antiguedad ?? "—"}`,
-    `EL NEGOCIO: ${empresa?.nombre ?? "—"} · a qué se dedica: ${ficha?.actividad ?? empresa?.sector ?? "aún no dicho"}${empresa?.etapa ? ` · etapa: ${empresa.etapa}` : ""}${ficha ? ` · ficha: ${Object.entries(ficha).filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join(" · ")}` : ""}`,
+    `EL NEGOCIO: ${empresa?.nombre ?? "—"} · a qué se dedica: ${ficha?.actividad ?? empresa?.sector ?? "aún no dicho"}${empresa?.etapa_negocio ? ` · etapa del negocio: ${empresa.etapa_negocio}` : ""}${ficha ? ` · ficha: ${Object.entries(ficha).filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join(" · ")}` : ""}`,
     matrizTxt ? `PREGUNTAS DEL OFICIO (su modelo de negocio):\n${matrizTxt}` : null,
     ses.tipo === "empresa_dueno" ? `TABLA DE RESULTADOS (lo ya contado — pregunta lo que falta, un mes a la vez):\n${tablaResultadosComoTexto((metricas ?? []) as Metrica[])}` : null,
     `BLOQUES SIN CUBRIR (${sinCubrir.length}): ${sinCubrir.map((b) => `[${b.clave}] ${b.nombre}`).join(", ") || "ninguno"}`,
