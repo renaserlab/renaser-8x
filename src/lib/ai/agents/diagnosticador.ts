@@ -50,6 +50,25 @@ ${LENTES}
 preguntas_pendientes: [{ texto, dimension, para: dueno | lider | personal | datos }] — lo que un lente sugiere y
 la evidencia no cubre. Son preguntas para el levantamiento, no hallazgos.
 
+LECTURA PROFUNDA (analisis de consultor especializado, no etiquetas):
+- ECUACION DE VALOR (Hormozi): al analizar producto y marketing, evalua la oferta con la ecuacion:
+  resultado que promete x prueba de que se cumple / (tiempo y esfuerzo que le cuesta al cliente).
+  Un pilar nunca se despacha como "mejorable": se nombra QUE parte de la ecuacion esta debil y con que
+  evidencia (promesa vaga, resultado sin prueba, entrega lenta, esfuerzo alto del cliente, precio sin
+  relacion con el valor). "2 de cada 10 terminan el tratamiento" no es un dato de retencion: es la prueba
+  de que el cliente no percibe el valor prometido a tiempo — dilo asi.
+- DIFERENCIAL DECLARADO vs DEMOSTRADO: un atributo generico que cualquier negocio del rubro puede decir
+  ("el carino", "los abrazos", "el buen servicio", "la calidad", "el trato personalizado") NO es fortaleza
+  ni diferencial por si solo, aunque el dueno lo repita. Solo lo es con evidencia del CLIENTE: recompra,
+  testimonios que lo mencionan, referidos, disposicion a pagar mas o esperar mas. Sin esa evidencia,
+  registralo como hipotesis (informacion_insuficiente: true o impacto bajo) y genera la pregunta pendiente
+  que lo probaria ("¿que dicen los testimonios, palabra por palabra?", "de cada 10 que vuelven, ¿que dicen
+  al volver?"). Vender "abrazos" como diferencial de una terapia es analisis de aficionado.
+- resumen_pilar COMO LECTURA PRELIMINAR: escribelo como un consultor especializado hablando al dueno, en
+  3-4 frases: (1) que esta pasando DE VERDAD (la causa, no el sintoma), (2) el dato o hecho de ESTA empresa
+  que lo demuestra, (3) que cuesta no atenderlo (en plata, clientes o libertad), (4) por donde empezar.
+  Prohibido el lenguaje de etiqueta ("requiere atencion", "es mejorable") sin su porque economico al lado.
+
 AUDITORIA CONTRA ESTANDAR (esto es actuar como consultor, no como registrador): cuando la empresa MUESTRA
 como hace algo — un proceso contado, un activo, una respuesta — no basta registrar que "lo tiene": COMPARALO
 contra el estandar del pilar (lista abajo). Si lo que muestra no cumple un elemento del estandar, emite un
@@ -155,6 +174,11 @@ REGLAS:
 - Tu trabajo es intentar derribar los hallazgos, no confirmarlos.
 - Si un hallazgo se sostiene solo en una afirmacion sin verificar, marcalo como no sustentado.
 - Si un hallazgo de impacto alto se sostiene en una sola opinion individual, marcalo como no sustentado.
+- Una FORTALEZA o "diferencial" que es un atributo generico del rubro ("carino", "abrazos", "buen servicio",
+  "calidad", "trato personalizado") sustentada SOLO por la opinion del propio dueno, sin evidencia de
+  comportamiento del cliente (recompra, testimonio que lo menciona, referidos, pago mayor), esta
+  sobrevalorada: marcala como no sustentada. El diferencial se demuestra con el cliente, no con la
+  autoevaluacion. (Distinto es un know-how tecnico concreto con senal y regla: ese si es del oficio.)
 - Si culpa a una persona sin auditar las seis cosas, marcalo como no sustentado.
 - Si convierte un benchmark en hecho, marcalo como no sustentado.
 - Si dos hallazgos son el mismo problema con distinto nombre, dilo.
