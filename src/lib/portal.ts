@@ -40,12 +40,14 @@ export async function contextoPortal() {
   const hayPlan = (acciones ?? []).length > 0;
   const hayResultados = (publicados ?? []).length > 0;
 
+  // Orden por valor: conversar (lo que más afina) > confirmar > subir > afinándose.
+  // (Antes "sube algo" podía aparecer con la comprensión al 100% — incoherente para el dueño.)
   let queFalta: string, paso: number;
   if (hayPlan && hayResultados) { queFalta = "Tu plan está en marcha. Marca lo que vas cerrando."; paso = 8; }
   else if (hayResultados) { queFalta = "Tus resultados están listos."; paso = 7; }
-  else if (fuentes === 0) { queFalta = "Sube lo que tengas: una foto del cuaderno sirve."; paso = 2; }
   else if (sesionesPend > 0) { queFalta = "Conversemos. Una pregunta a la vez, hablando o escribiendo."; paso = 3; }
-  else if ((porValidar ?? 0) > 0) { queFalta = `Hay ${porValidar} cosas que encontramos y necesitamos que confirmes.`; paso = 4; }
+  else if ((porValidar ?? 0) > 0) { queFalta = `Hay ${porValidar} cosa${(porValidar ?? 0) === 1 ? "" : "s"} que encontramos y necesitamos que confirmes.`; paso = 4; }
+  else if (fuentes === 0) { queFalta = "Sube lo que tengas: una foto del cuaderno sirve."; paso = 2; }
   else { queFalta = "Tu diagnóstico se está afinando con lo que ya contaste. Mientras tanto, cada cosa que agregues en Tu información lo hace más preciso."; paso = 6; }
 
   return { u, companyId, empresa, queFalta, paso, stats, porValidar: porValidar ?? 0, fuentes, sesionesPend };

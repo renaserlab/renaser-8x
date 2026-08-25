@@ -15,33 +15,28 @@ const ESTADO_COLOR: Record<string, string> = { solido: "var(--confirmado)", mejo
 const ESTADO_CLIENTE_PILAR: Record<string, string> = { solido: "Fortaleza", mejorable: "Requiere atención", critico: "Crítico", desconocido: "Información insuficiente" };
 const CLASE_NOMBRE: Record<string, string> = { documento: "Tus documentos", equipo: "Tu equipo", datos: "Tus datos", dueno: "Tú" };
 
+/**
+ * Tarjeta para el EMPRESARIO: el titular y UNA línea (lo que cuesta, o la causa en corto).
+ * El expediente completo — causa, recomendación, fuentes — vive en "Ver más".
+ * Feedback real: "yo como empresario no necesito tanto detalle; tú como consultor sí".
+ */
 function Insight({ h, n }: { h: HallazgoHoy; n?: number }) {
+  const linea = h.costo_posible ?? h.causa ?? null;
   return (
     <article className="panel p-5" style={{ borderLeft: `3px solid ${h.preserva ? "var(--confirmado)" : h.impacto === "alto" ? "var(--contradicho)" : "var(--caducado)"}` }}>
       <h3 className="t-seccion" style={{ fontSize: 18 }}>{n ? `${n}. ` : ""}{h.titulo}</h3>
-      {h.causa && (
-        <p className="t-cuerpo mt-2 medida">
-          <span style={{ color: "var(--grafito)" }}>Qué vemos: </span>
-          {h.causa}
-        </p>
-      )}
-      {h.costo_posible && (
-        <p className="t-cuerpo mt-2 medida">
-          <span style={{ color: "var(--grafito)" }}>Qué puede estar costando: </span>
-          {h.costo_posible}
-        </p>
-      )}
-      {h.recomendacion && (
-        <p className="t-cuerpo mt-2 medida">
-          <span style={{ color: "var(--grafito)" }}>{h.preserva ? "Cómo protegerla: " : "Por dónde tomarlo: "}</span>
-          {h.recomendacion}
-        </p>
-      )}
-      {h.evidencia.length > 0 && (
-        <p className="t-dato mt-3" style={{ color: "var(--grafito)" }}>
-          Según {h.evidencia.map((e) => e.fuente).filter((v, i, a) => a.indexOf(v) === i).join(" · ")}
-        </p>
-      )}
+      {linea && <p className="t-cuerpo mt-2 medida" style={{ color: "var(--grafito)" }}>{linea}</p>}
+      <details className="mt-2">
+        <summary className="t-dato" style={{ cursor: "pointer", color: "var(--marca)" }}>Ver más</summary>
+        <div className="mt-2 flex flex-col gap-2">
+          {h.causa && h.causa !== linea && <p className="t-cuerpo medida"><span style={{ color: "var(--grafito)" }}>Qué vemos: </span>{h.causa}</p>}
+          {h.costo_posible && h.costo_posible !== linea && <p className="t-cuerpo medida"><span style={{ color: "var(--grafito)" }}>Qué puede estar costando: </span>{h.costo_posible}</p>}
+          {h.recomendacion && <p className="t-cuerpo medida"><span style={{ color: "var(--grafito)" }}>{h.preserva ? "Cómo protegerla: " : "Por dónde tomarlo: "}</span>{h.recomendacion}</p>}
+          {h.evidencia.length > 0 && (
+            <p className="t-dato" style={{ color: "var(--grafito)" }}>Según {h.evidencia.map((e) => e.fuente).filter((v, i, a) => a.indexOf(v) === i).join(" · ")}</p>
+          )}
+        </div>
+      </details>
     </article>
   );
 }

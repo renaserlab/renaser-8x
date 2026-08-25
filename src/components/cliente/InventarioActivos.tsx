@@ -5,6 +5,7 @@ import { pedir } from "@/lib/cliente";
 import { BLOQUES_ACTIVOS, ESTADOS_ACTIVO, EJEMPLOS, type ActivoDef } from "@/lib/activos";
 import { BotonGrabar } from "@/components/voz/BotonGrabar";
 import { motion, AnimatePresence, MotionConfig } from "motion/react";
+import { DocMd } from "@/components/base/DocMd";
 
 type EstadoGuardado = { clave: string; estado: string; nota: string | null; borrador?: string | null; faltantes?: { pregunta: string }[] | null; implementacion?: { responsable?: string; desde?: string } | null; propuesta?: string | null; propuesta_cambios?: { cambio: string; por_que: string }[] | null; propuesta_estado?: string | null };
 
@@ -323,7 +324,7 @@ export function InventarioActivos({ companyId, guardados, prioridades = [] }: { 
                       {(estado === "construido" || estado === "en_uso") && g?.borrador && g?.propuesta_estado !== "lista" && (
                         <details className="mt-2">
                           <summary className="t-dato" style={{ cursor: "pointer", color: "var(--grafito)" }}>{g?.propuesta_estado === "confirmada" ? "Ver lo que nos contaste originalmente" : "Ver el documento confirmado"}</summary>
-                          <pre className="t-doc mt-2" style={{ whiteSpace: "pre-wrap", fontFamily: "var(--font-doc)" }}>{g.borrador}</pre>
+                          <div className="mt-2"><DocMd texto={g.borrador} /></div>
                         </details>
                       )}
 
@@ -350,13 +351,13 @@ export function InventarioActivos({ companyId, guardados, prioridades = [] }: { 
                       {g?.propuesta_estado === "lista" && g.propuesta && (
                         <div className="mt-3 flex flex-col gap-3 aparece">
                           <div className="grid gap-3 sm:grid-cols-2">
-                            <div className="p-4" style={{ background: "var(--suave)", borderRadius: "var(--radio)" }}>
-                              <p className="t-etiqueta mb-2">Lo que nos contaste</p>
-                              <pre className="t-doc" style={{ whiteSpace: "pre-wrap", fontFamily: "var(--font-doc)", fontSize: 14 }}>{g.borrador}</pre>
-                            </div>
+                            <details className="p-4" style={{ background: "var(--suave)", borderRadius: "var(--radio)" }}>
+                              <summary className="t-etiqueta" style={{ cursor: "pointer" }}>Lo que nos contaste — ver</summary>
+                              <div className="mt-2"><DocMd texto={g.borrador ?? ""} /></div>
+                            </details>
                             <div className="p-4" style={{ border: "1.5px solid var(--marca)", borderRadius: "var(--radio)" }}>
                               <p className="t-etiqueta mb-2" style={{ color: "var(--marca)" }}>La versión trabajada</p>
-                              <pre className="t-doc" style={{ whiteSpace: "pre-wrap", fontFamily: "var(--font-doc)", fontSize: 14 }}>{g.propuesta}</pre>
+                              <DocMd texto={g.propuesta} />
                             </div>
                           </div>
                           {(g.propuesta_cambios?.length ?? 0) > 0 && (
@@ -405,7 +406,7 @@ export function InventarioActivos({ companyId, guardados, prioridades = [] }: { 
                       {g?.propuesta_estado === "confirmada" && g.propuesta && (
                         <details className="mt-2" open>
                           <summary className="t-dato" style={{ cursor: "pointer", color: "var(--confirmado)" }}>La versión trabajada — confirmada por ti</summary>
-                          <pre className="t-doc mt-2" style={{ whiteSpace: "pre-wrap", fontFamily: "var(--font-doc)" }}>{g.propuesta}</pre>
+                          <div className="mt-2"><DocMd texto={g.propuesta} /></div>
                         </details>
                       )}
                       {estado === "construido" && (
