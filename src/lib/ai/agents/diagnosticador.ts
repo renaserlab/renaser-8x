@@ -49,6 +49,20 @@ ${LENTES}
 
 preguntas_pendientes: [{ texto, dimension, para: dueno | lider | personal | datos }] — lo que un lente sugiere y
 la evidencia no cubre. Son preguntas para el levantamiento, no hallazgos.
+LENGUAJE DE LAS PREGUNTAS PENDIENTES (obligatorio): el dueno las leera TAL CUAL en su pantalla, y puede ser
+una persona sin formacion. Cada pregunta: UNA sola cosa, palabras comunes (prohibido "mecanismos",
+"evaluacion comparativa", "perfil de puesto", "protocolo", "estructura de precios", "incentivos y retencion"),
+episodio antes que concepto, numeros con anclas ("de cada 10", "el mes pasado"), y un ejemplo entre
+parentesis si puede no entenderse. Ejemplos reales de lo que NO se acepta y su forma correcta:
+- MAL: "¿Existe algun proceso de evaluacion comparativa de candidatos con perfil de puesto antes de
+  contratar por referencia personal?" -> BIEN: "La ultima vez que contrataste a un recomendado, ¿lo
+  comparaste con alguien mas o entro directo? (Por ejemplo: ¿entrevistaste a otra persona para ese puesto?)"
+- MAL: "¿Que mecanismos o planes de incentivos y retencion existen para los terapeutas?" -> BIEN: "¿Que
+  hace que tus terapeutas se queden contigo y no se vayan a otro sitio? (Por ejemplo: el pago, los
+  horarios, el trato, capacitaciones)"
+- MAL: "¿Cual es la estructura de precios y que margen deja cada paquete?" -> son DOS preguntas: separalas
+  y en oral: "¿Cuanto cobras por cada tipo de sesion o paquete?" y "De esos precios, ¿cual te deja mas
+  ganancia despues de costos?"
 
 LECTURA PROFUNDA (analisis de consultor especializado, no etiquetas):
 - ECUACION DE VALOR (Hormozi): al analizar producto y marketing, evalua la oferta con la ecuacion:

@@ -155,7 +155,12 @@ export async function handleDiagnosticar(job: Job) {
   // (queja real: "me volvió a preguntar sobre TikTok y costos"). Nada se inserta si ya se preguntó.
   const { data: todasPreguntas } = await sb.from("interview_responses").select("pregunta, interview_sessions!inner(company_id)").eq("interview_sessions.company_id", job.company_id).limit(400);
   const yaPreguntadas = (todasPreguntas ?? []).map((x) => String(x.pregunta));
-  for (const q of d.data.preguntas_pendientes.slice(0, 6)) {
+  // Máximo 3 por pilar, y nunca más de 6 abiertas en total: cuatro pilares no pueden bombardear
+  // al dueño con veinte preguntas de golpe.
+  const { count: abiertasTotal } = await sb.from("interview_responses").select("id, interview_sessions!inner(company_id)", { count: "exact", head: true }).eq("interview_sessions.company_id", job.company_id).is("respuesta", null);
+  let cupo = Math.max(0, 6 - (abiertasTotal ?? 0));
+  for (const q of d.data.preguntas_pendientes.slice(0, 3)) {
+    if (cupo <= 0) break;
     if (preguntaRepetida(q.texto, yaPreguntadas)) continue;
     const tipoSesion = q.para === "lider" ? "lider" : q.para === "personal" ? "personal" : "empresa_dueno";
     const { data: ses } = await sb.from("interview_sessions").select("id").eq("company_id", job.company_id).eq("tipo", tipoSesion).neq("estado", "completa").limit(1).maybeSingle();
@@ -164,6 +169,7 @@ export async function handleDiagnosticar(job: Job) {
       const { data: ult } = await sb.from("interview_responses").select("orden").eq("session_id", destino).order("orden", { ascending: false }).limit(1);
       await sb.from("interview_responses").insert({ session_id: destino, bloque: ses ? pilar : "validacion", pilar, pregunta: q.texto, orden: (ult?.[0]?.orden ?? 0) + 1 });
       yaPreguntadas.push(q.texto); // tampoco dos parecidas dentro del mismo lote
+      cupo--;
     }
   }
 

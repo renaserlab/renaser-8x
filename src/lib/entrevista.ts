@@ -32,12 +32,20 @@ export async function registrarRespuesta(opts: { session_id: string; company_id:
   const texto = (opts.texto ?? "").trim();
   if (!texto) throw new Error("La respuesta está vacía.");
   await sb.from("interview_responses").update({ respuesta: texto, respondido_at: new Date().toISOString() }).eq("id", responseId);
-  await encolar({ company_id: opts.company_id, tipo: "extraer", payload: { response_id: responseId }, prioridad: PRIORIDAD.contrastar, idempotency_key: claveIdempotente(["extraer", "resp", responseId]) });
-  await encolar({ company_id: opts.company_id, tipo: "entrevista_siguiente", payload: { session_id: opts.session_id }, prioridad: PRIORIDAD.entrevista, idempotency_key: claveIdempotente(["siguiente", opts.session_id, responseId]) });
+  await Promise.all([
+    encolar({ company_id: opts.company_id, tipo: "extraer", payload: { response_id: responseId }, prioridad: PRIORIDAD.contrastar, idempotency_key: claveIdempotente(["extraer", "resp", responseId]) }),
+    encolar({ company_id: opts.company_id, tipo: "entrevista_siguiente", payload: { session_id: opts.session_id }, prioridad: PRIORIDAD.entrevista, idempotency_key: claveIdempotente(["siguiente", opts.session_id, responseId]) }),
+  ]);
   return { response_id: responseId, modo: "texto" as const };
 }
 
 export async function pedirSiguiente(session_id: string, company_id: string) {
+  // FUENTE DE LA TRIPLE PREGUNTA: la clave llevaba Date.now(), así que cada recarga de la pantalla
+  // mientras se generaba creaba OTRO trabajo generador, y todos insertaban sus preguntas a la vez.
+  // Si ya hay un generador pendiente o corriendo para esta sesión, se reutiliza — jamás dos en paralelo.
+  const sb = supabaseAdmin();
+  const { data: vivo } = await sb.from("jobs").select("id").eq("tipo", "entrevista_siguiente").in("estado", ["pendiente", "corriendo"]).contains("payload", { session_id }).limit(1).maybeSingle();
+  if (vivo) return { id: vivo.id, duplicado: true };
   return encolar({ company_id, tipo: "entrevista_siguiente", payload: { session_id }, prioridad: PRIORIDAD.entrevista, idempotency_key: claveIdempotente(["siguiente", session_id, Date.now()]) });
 }
 

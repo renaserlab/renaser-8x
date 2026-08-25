@@ -113,6 +113,11 @@ export async function handleEntrevistaSiguiente(job: Job) {
   const cubiertos = [...yaCubiertos, ...nuevosCubiertos];
   if (nuevosCubiertos.length) await sb.from("interview_sessions").update({ bloques_cubiertos: cubiertos }).eq("id", sessionId);
 
+  // Cierre de la ventana de carrera: si mientras el modelo generaba OTRA generación ya insertó su
+  // pregunta (dos jobs en vuelo), esta tanda se descarta — nunca dos generaciones insertan juntas.
+  const { data: abiertasAhora } = await sb.from("interview_responses").select("id").eq("session_id", sessionId).is("respuesta", null).limit(1);
+  if (abiertasAhora?.length) return { generadas: 0, motivo: "otra generación insertó primero" };
+
   const { data: ult } = await sb.from("interview_responses").select("orden").eq("session_id", sessionId).order("orden", { ascending: false }).limit(1);
   let orden = (ult?.[0]?.orden ?? 0) + 1;
   const validIds = new Set(claims.map((c) => c.id));
@@ -120,7 +125,10 @@ export async function handleEntrevistaSiguiente(job: Job) {
   // CANDADO DE REDUNDANCIA en código (no solo en el prompt):
   // 1) nada parecido a lo ya preguntado a esta persona; 2) máximo 2 preguntas por bloque salvo validación;
   // 3) tampoco dos parecidas dentro del mismo lote.
-  const yaHechas = propias.map((x) => String(x.pregunta));
+  // El dedup compara también contra las ABIERTAS (sin responder) de esta persona: una pregunta
+  // pendiente de respuesta es tan "ya hecha" como una respondida.
+  const { data: abiertasParticipante } = await sb.from("interview_responses").select("pregunta, interview_sessions!inner(participant_id)").eq("interview_sessions.participant_id", ses.participant_id).is("respuesta", null);
+  const yaHechas = [...propias.map((x) => String(x.pregunta)), ...(abiertasParticipante ?? []).map((x) => String(x.pregunta))];
   const porBloque = new Map<string, number>();
   for (const x of deEstaSesion) if (x.bloque) porBloque.set(x.bloque, (porBloque.get(x.bloque) ?? 0) + 1);
   const aceptadas: typeof r.data.preguntas = [];
