@@ -230,6 +230,27 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
       },
     ],
   },
+  {
+    clave: "direccion",
+    nombre: "Hacia dónde va la empresa",
+    intro: "La dirección puesta por escrito: la estrategia y el plan del negocio.",
+    activos: [
+      {
+        clave: "estrategia",
+        nombre: "La estrategia del negocio",
+        ayuda: "A quién le vendes, con qué ganas frente a otros, qué NO haces, y las 3 apuestas del año.",
+        preguntas: ["De todos los que podrían comprarte, ¿a quiénes decidiste dedicarte… y a quiénes NO?", "¿Con qué le ganas a los demás del rubro — qué haces tú que ellos no pueden copiar fácil?", "Si solo pudieras apostar por 3 cosas este año, ¿cuáles serían?", "¿Qué has decidido NO hacer aunque parezca negocio?"],
+        estructura: "a quién servimos (y a quién no), con qué ganamos (el diferencial demostrado, no declarado), las 3 apuestas del año con su porqué, lo que NO hacemos, y cómo sabremos que la estrategia funciona (2-3 números simples); todo con las palabras y los datos de la empresa",
+      },
+      {
+        clave: "plan_empresarial",
+        nombre: "El plan de la empresa",
+        ayuda: "El documento que resume el negocio completo: qué es, cómo gana dinero, sus metas y su plan.",
+        preguntas: ["En una frase: ¿qué es tu negocio y para quién?", "¿Cómo entra el dinero: qué vendes, a cuánto, y qué te cuesta?", "¿Cuál es tu meta de este año en plata y en clientes?", "¿Qué necesitas (gente, equipo, plata) para llegar a esa meta?"],
+        estructura: "resumen del negocio (qué es, para quién, con qué gana), cómo entra el dinero (productos, precios, costos y ganancia según lo contado), la foto de hoy (números con estado), las metas del año (las del dueño, no inventadas), el plan por frentes con responsable y primer paso, y los riesgos que el diagnóstico encontró",
+      },
+    ],
+  },
 ];
 
 /**

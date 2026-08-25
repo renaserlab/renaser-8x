@@ -34,8 +34,8 @@ const POR_PILAR: Record<string, string[]> = {
  */
 export function bibliotecaEsperada(personas: number | null | undefined): string[] {
   const chicas = ["personas.funciones", "personas.plan_personal", "procesos.politicas", "procesos.mapa_procesos"];
-  const medianas = [...chicas, "personas.organigrama", "personas.cultura", "personas.onboarding", "producto.calidad", "marketing.proceso_comercial"];
-  const grandes = [...medianas, "personas.reglamento", "personas.evaluacion", "procesos.indicadores", "personas.seleccion"];
+  const medianas = [...chicas, "personas.organigrama", "personas.cultura", "personas.onboarding", "producto.calidad", "marketing.proceso_comercial", "direccion.estrategia"];
+  const grandes = [...medianas, "personas.reglamento", "personas.evaluacion", "procesos.indicadores", "personas.seleccion", "direccion.plan_empresarial"];
   const n = personas == null || Number.isNaN(personas) ? null : personas;
   const lista = n == null ? medianas : n <= 3 ? chicas : n <= 10 ? medianas : grandes;
   return lista.filter((c) => CLAVES_VALIDAS.has(c));

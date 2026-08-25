@@ -235,12 +235,23 @@ export const SalidaToBe = SalidaArquitecto.extend({
   cambios: z.array(z.object({ nodo: z.string(), veredicto: Veredicto, por_que: z.string() })).default([]),
 });
 
-// SOP
+// SOP — detallado e imprimible (feedback de demo: "muy superficiales"). Una persona nueva lo sigue sin preguntar.
 export const SalidaSop = z.object({
   objetivo: z.string(),
   disparador: z.string(),
   responsable: z.string(),
-  pasos: z.array(z.object({ n: z.number().int(), que: z.string(), quien: z.string().nullable().optional(), estandar: z.string().nullable().optional() })),
+  pasos: z.array(
+    z.object({
+      n: z.number().int(),
+      que: z.string(),
+      como: z.string().nullable().optional(), // el detalle de CÓMO se hace: lo que un nuevo necesita saber
+      quien: z.string().nullable().optional(),
+      estandar: z.string().nullable().optional(),
+      tiempo: z.string().nullable().optional(),
+      error_comun: z.string().nullable().optional(), // el error típico en este paso y cómo evitarlo
+    })
+  ),
+  materiales: z.array(z.string()).default([]), // lo que hay que tener a mano antes de empezar
   entradas: z.array(z.string()).default([]),
   salidas: z.array(z.string()).default([]),
   estandar: z.string(),

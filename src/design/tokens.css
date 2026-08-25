@@ -21,7 +21,7 @@
   --font-ui: var(--font-public-sans), "Public Sans", "Instrument Sans", system-ui, sans-serif;
   --font-doc: var(--font-source-serif), "Source Serif 4", Georgia, serif;
 
-  --radio: 8px;
+  --radio: 14px; /* pedido de Kelin tras demo: "demasiado cuadrado" — un solo radio, más suave */
   --medida: 68ch;
   --dur: 200ms;
 }

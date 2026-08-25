@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { contextoPortal } from "@/lib/portal";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import { empresaHoy, type HallazgoHoy } from "@/lib/hoy";
+import { proyeccionPerdida } from "@/lib/perdida";
+import { caminosDesdeHallazgos } from "@/lib/caminos";
+import type { Metrica } from "@/lib/rules/anomalias";
 import { ESTADO_PILAR, PILAR_CLIENTE, fechaMes } from "@/lib/textos";
+
+const soles = (n: number) => `S/${Math.round(n).toLocaleString("es-PE")}`;
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +50,14 @@ function Insight({ h, n }: { h: HallazgoHoy; n?: number }) {
 export default async function Hoy() {
   const c = await contextoPortal();
   if (!c.companyId) return <p className="t-cuerpo medida">{c.queFalta}</p>;
-  const hoy = await empresaHoy(c.companyId);
+  const [hoy, { data: metricasRaw }] = await Promise.all([
+    empresaHoy(c.companyId),
+    supabaseAdmin().from("company_metricas").select("clave,periodo,valor,estado").eq("company_id", c.companyId).limit(80),
+  ]);
+  const perdida = proyeccionPerdida((metricasRaw ?? []) as Metrica[]);
+  const caminos = caminosDesdeHallazgos([hoy.restriccion, ...hoy.noVes, ...hoy.secundarias].filter(Boolean) as HallazgoHoy[]);
+  const altos = hoy.noVes.filter((h) => h.impacto === "alto" && h.id !== hoy.restriccion?.id);
+  const resto = hoy.noVes.filter((h) => h.impacto !== "alto" && h.id !== hoy.restriccion?.id);
 
   if (hoy.nivel === 0)
     return (
@@ -71,10 +84,58 @@ export default async function Hoy() {
         </p>
       </header>
 
-      {hoy.espejo.length > 0 && (
+      {/* LA PLATA PRIMERO: cuánto podría estar perdiendo, con SUS números y la fórmula a la vista. */}
+      {perdida.fugas.length > 0 && (
+        <section className="panel p-5" style={{ borderLeft: "4px solid var(--contradicho)" }}>
+          <p className="t-etiqueta mb-1">Lo que tus números dicen que podrías estar perdiendo</p>
+          {perdida.totalMensual > 0 && (
+            <p className="t-titulo" style={{ fontSize: 34, color: "var(--contradicho)" }}>~{soles(perdida.totalMensual)} <span className="t-cuerpo" style={{ color: "var(--grafito)" }}>al mes</span></p>
+          )}
+          <ul className="mt-3 flex flex-col gap-2">
+            {perdida.fugas.map((f, i) => (
+              <li key={i} className="t-cuerpo">
+                <span style={{ fontWeight: 550 }}>{f.concepto}: {soles(f.monto)}{f.mensual ? "/mes" : ""}</span>
+                <span className="block t-dato" style={{ color: "var(--grafito)" }}>De dónde sale: {f.base}.</span>
+              </li>
+            ))}
+          </ul>
+          <p className="t-dato mt-3" style={{ color: "var(--grafito)" }}>Calculado solo con lo que tú contaste o mostraste — nada está inventado.</p>
+        </section>
+      )}
+
+      {hoy.restriccion && (
         <section>
-          <h2 className="t-seccion mb-1">El espejo</h2>
-          <p className="t-dato mb-4 medida" style={{ color: "var(--grafito)" }}>Puntos donde una fuente dice una cosa y otra fuente dice otra. Aquí suele estar lo más valioso.</p>
+          <h2 className="t-seccion mb-1">Lo que más está frenando el siguiente nivel</h2>
+          <p className="t-dato mb-4 medida" style={{ color: "var(--grafito)" }}>Con lo visto hasta ahora. Puede cambiar si aparece nueva información.</p>
+          <Insight h={hoy.restriccion} />
+          {hoy.secundarias.length > 0 && (
+            <p className="t-dato mt-3 medida" style={{ color: "var(--grafito)" }}>
+              También pesan: {hoy.secundarias.map((s) => s.titulo).join(" · ")}
+            </p>
+          )}
+        </section>
+      )}
+
+      {/* LOS CAMINOS: lo que la empresa necesita, ofrecido como pregunta. */}
+      {caminos.length > 0 && (
+        <section>
+          <h2 className="t-seccion mb-3">¿Por dónde quieres empezar?</h2>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {caminos.map((k) => (
+              <Link key={k.pregunta} href={k.href} className="panel p-5 flex flex-col gap-2" style={{ borderColor: "var(--marca)" }}>
+                <span className="t-seccion" style={{ fontSize: 17 }}>{k.pregunta}</span>
+                <span className="t-dato" style={{ color: "var(--grafito)" }}>{k.detalle}</span>
+                <span className="t-dato" style={{ color: "var(--marca)", fontWeight: 600, marginTop: "auto" }}>Empezar →</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {hoy.espejo.length > 0 && (
+        <details>
+          <summary className="t-seccion" style={{ cursor: "pointer", fontSize: 18 }}>El espejo · {hoy.espejo.length} punto{hoy.espejo.length === 1 ? "" : "s"} donde una fuente contradice a otra</summary>
+          <p className="t-dato mt-2 mb-4 medida" style={{ color: "var(--grafito)" }}>Aquí suele estar lo más valioso.</p>
           <div className="flex flex-col gap-4">
             {hoy.espejo.map((e, i) => (
               <div key={i} className="panel p-5">
@@ -94,40 +155,47 @@ export default async function Hoy() {
               </div>
             ))}
           </div>
-        </section>
+        </details>
       )}
 
-      {hoy.noVes.length > 0 && (
+      {/* SOLO LOS PROBLEMAS DE VERDAD al frente; el resto, plegado. Feedback de la demo: "no tengo tiempo de leer tanto". */}
+      {altos.length > 0 && (
         <section>
-          <h2 className="t-seccion mb-1">Lo que tal vez no estás viendo</h2>
+          <h2 className="t-seccion mb-1">Lo que de verdad importa</h2>
           <p className="t-dato mb-4 medida" style={{ color: "var(--grafito)" }}>Cada punto sale de tu propia información. Nada está inventado.</p>
           <div className="flex flex-col gap-4">
-            {hoy.noVes.map((h) => (
+            {altos.map((h) => (
               <Insight key={h.id} h={h} />
             ))}
           </div>
         </section>
       )}
+      {resto.length > 0 && (
+        <details>
+          <summary className="t-seccion" style={{ cursor: "pointer", fontSize: 18 }}>Ver {resto.length} hallazgo{resto.length === 1 ? "" : "s"} más</summary>
+          <div className="flex flex-col gap-4 mt-4">
+            {resto.map((h) => (
+              <Insight key={h.id} h={h} />
+            ))}
+          </div>
+        </details>
+      )}
 
       {hoy.fortalezas.length > 0 && (
-        <section>
-          <h2 className="t-seccion mb-1">Lo que no debes romper</h2>
-          <p className="t-dato mb-4 medida" style={{ color: "var(--grafito)" }}>Fortalezas reales de tu empresa. Cualquier cambio tiene que protegerlas.</p>
-          <div className="flex flex-col gap-4">
+        <details>
+          <summary className="t-seccion" style={{ cursor: "pointer", fontSize: 18 }}>Lo que no debes romper · {hoy.fortalezas.length} fortaleza{hoy.fortalezas.length === 1 ? "" : "s"}</summary>
+          <div className="flex flex-col gap-4 mt-4">
             {hoy.fortalezas.map((h) => (
               <Insight key={h.id} h={h} />
             ))}
           </div>
-        </section>
+        </details>
       )}
 
       {hoy.caleta.length > 0 && (
-        <section>
-          <h2 className="t-seccion mb-1">Lo que tu gente sabe (y no está escrito)</h2>
-          <p className="t-dato mb-4 medida" style={{ color: "var(--grafito)" }}>
-            Cosas valiosas que tu gente sabe hacer o detectar y que no estaban escritas. Protegerlas importa tanto como corregir problemas.
-          </p>
-          <ul className="flex flex-col gap-3">
+        <details>
+          <summary className="t-seccion" style={{ cursor: "pointer", fontSize: 18 }}>Lo que tu gente sabe (y no está escrito) · {hoy.caleta.length}</summary>
+          <ul className="flex flex-col gap-3 mt-4">
             {hoy.caleta.map((k, i) => (
               <li key={i} className="panel p-4">
                 <p className="t-etiqueta">{k.puesto ?? "Una persona del equipo"}{k.critico ? " · crítica" : ""}{k.documentado ? "" : " · aún no escrita"}</p>
@@ -136,7 +204,7 @@ export default async function Hoy() {
               </li>
             ))}
           </ul>
-        </section>
+        </details>
       )}
 
       <section>
@@ -160,19 +228,6 @@ export default async function Hoy() {
           ))}
         </div>
       </section>
-
-      {hoy.restriccion && (
-        <section>
-          <h2 className="t-seccion mb-1">Lo que más está frenando el siguiente nivel</h2>
-          <p className="t-dato mb-4 medida" style={{ color: "var(--grafito)" }}>Con lo visto hasta ahora. Puede cambiar si aparece nueva información.</p>
-          <Insight h={hoy.restriccion} />
-          {hoy.secundarias.length > 0 && (
-            <p className="t-dato mt-3 medida" style={{ color: "var(--grafito)" }}>
-              También pesan: {hoy.secundarias.map((s) => s.titulo).join(" · ")}
-            </p>
-          )}
-        </section>
-      )}
 
       {hoy.sistematizar.length > 0 && (
         <section>

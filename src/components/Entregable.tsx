@@ -27,7 +27,7 @@ export function Documento({ contenido, marca }: { contenido: Redactado; marca?: 
   );
 }
 
-export type SopRow = { objetivo: string | null; disparador: string | null; responsable: string | null; pasos: { n: number; que: string; quien?: string | null; estandar?: string | null }[] | null; entradas: string[] | null; salidas: string[] | null; estandar: string | null; indicador: string | null; excepciones: { situacion: string; que_hacer: string }[] | null };
+export type SopRow = { objetivo: string | null; disparador: string | null; responsable: string | null; pasos: { n: number; que: string; como?: string | null; quien?: string | null; estandar?: string | null; tiempo?: string | null; error_comun?: string | null }[] | null; materiales?: string[] | null; entradas: string[] | null; salidas: string[] | null; estandar: string | null; indicador: string | null; excepciones: { situacion: string; que_hacer: string }[] | null };
 
 /** "Cómo se hace": el documento que más se usa después. */
 export function Sop({ sop, titulo }: { sop: SopRow; titulo?: string }) {
@@ -38,16 +38,20 @@ export function Sop({ sop, titulo }: { sop: SopRow; titulo?: string }) {
         <dt className="t-etiqueta">Para qué</dt><dd>{sop.objetivo}</dd>
         <dt className="t-etiqueta">Cuándo empieza</dt><dd>{sop.disparador}</dd>
         <dt className="t-etiqueta">Responsable</dt><dd>{sop.responsable}</dd>
+        {sop.materiales?.length ? (<><dt className="t-etiqueta">Tener a mano</dt><dd>{sop.materiales.join(" · ")}</dd></>) : null}
         {sop.entradas?.length ? (<><dt className="t-etiqueta">Necesita</dt><dd>{sop.entradas.join(" · ")}</dd></>) : null}
         {sop.salidas?.length ? (<><dt className="t-etiqueta">Produce</dt><dd>{sop.salidas.join(" · ")}</dd></>) : null}
       </dl>
       <h3 style={{ fontSize: 18, fontWeight: 600, margin: "20px 0 8px" }}>Pasos</h3>
       <ol style={{ paddingLeft: 24 }}>
         {(sop.pasos ?? []).map((p) => (
-          <li key={p.n} style={{ marginBottom: 8 }}>
-            {p.que}
+          <li key={p.n} style={{ marginBottom: 14 }}>
+            <strong>{p.que}</strong>
             {p.quien && <span style={{ color: "var(--grafito)" }}> — {p.quien}</span>}
-            {p.estandar && <div style={{ fontSize: 14, color: "var(--grafito)" }}>Bien hecho significa: {p.estandar}</div>}
+            {p.tiempo && <span style={{ color: "var(--grafito)", fontSize: 14 }}> · {p.tiempo}</span>}
+            {p.como && <div style={{ fontSize: 16, marginTop: 4 }}>{p.como}</div>}
+            {p.estandar && <div style={{ fontSize: 14, color: "var(--grafito)", marginTop: 4 }}>Bien hecho significa: {p.estandar}</div>}
+            {p.error_comun && <div style={{ fontSize: 14, color: "var(--caducado)", marginTop: 2 }}>Ojo: {p.error_comun}</div>}
           </li>
         ))}
       </ol>

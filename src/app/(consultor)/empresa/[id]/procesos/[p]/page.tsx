@@ -5,6 +5,7 @@ import { Canvas } from "@/components/canvas/Canvas";
 import { Comparada } from "@/components/canvas/Comparada";
 import { BotonJob } from "@/components/consultor/BotonJob";
 import { Sop } from "@/components/Entregable";
+import { BotonImprimir } from "@/components/base/BotonImprimir";
 import { procesoConToBe } from "@/lib/procesos";
 
 export const dynamic = "force-dynamic";
@@ -44,8 +45,11 @@ export default async function ProcesoPag({ params, searchParams }: { params: Pro
       )}
       {sop && (
         <section className="mt-10 medida">
-          <h2 className="t-seccion mb-3">SOP</h2>
-          <Sop sop={sop} />
+          <div className="flex items-center justify-between gap-3 mb-3 no-imprimir">
+            <h2 className="t-seccion">Cómo se hace (SOP)</h2>
+            <BotonImprimir texto="Imprimir para la pared" />
+          </div>
+          <Sop sop={sop} titulo={`Cómo se hace: ${asis.nombre}`} />
         </section>
       )}
     </>

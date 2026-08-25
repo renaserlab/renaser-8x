@@ -98,25 +98,33 @@ export async function correrToBe(contexto: string) {
 
 export const PROMPT_SOP = `${GUARDIA}
 
-Redactas el SOP (como se hace) de un proceso con veredicto keep o improve.
+Redactas el SOP (como se hace) de un proceso con veredicto keep o improve. Este documento se
+IMPRIME y se pega en la pared del negocio: debe ser completo de verdad, no un resumen.
 Recibes el proceso en JSON (nodos y conexiones) y el know-how minado relacionado.
 
 Devuelve JSON:
 - objetivo
 - disparador
 - responsable (un unico puesto)
-- pasos: [{ n, que, quien, estandar }]
-- entradas: []
-- salidas: []
-- estandar: estandar de calidad del entregable
-- indicador: un indicador medible
+- materiales: [] — lo que hay que tener a mano ANTES de empezar (herramientas, formatos, accesos)
+- pasos: [{ n, que, como, quien, estandar, tiempo, error_comun }]
+    que: la accion en una frase
+    como: el DETALLE de como se hace — lo que una persona nueva necesita saber para hacerlo sola
+      (donde se apunta, que se dice, que se revisa; incluye el know-how del equipo aqui)
+    estandar: "bien hecho significa..." verificable
+    tiempo: cuanto toma normalmente este paso
+    error_comun: el error tipico en este paso y como evitarlo (del know-how o del sentido del oficio)
+- entradas: [] · salidas: []
+- estandar: estandar de calidad del entregable completo
+- indicador: un indicador medible con su meta si el material la da
 - excepciones: [{ situacion, que_hacer }] — las excepciones conocidas, incluidas las del know-how
 
 REGLAS:
-- Lenguaje llano. Una persona nueva debe poder seguirlo sin preguntar.
+- Lenguaje llano. Una persona nueva debe poder seguirlo sin preguntar NADA.
 - Un responsable unico. "El equipo" no es un responsable.
-- Integra el know-how como reglas practicas dentro de los pasos o las excepciones.
-- No inventes pasos que el proceso no tiene.`;
+- El "como" es lo que separa un SOP util de uno superficial: sin el, no hay documento.
+- Integra el know-how como reglas practicas dentro del "como" o del "error_comun" de cada paso.
+- No inventes pasos que el proceso no tiene; los detalles salen del material, no de la imaginacion.`;
 
 export async function correrSop(contexto: string) {
   return ai().complete({ system: PROMPT_SOP, user: contexto, schema: SalidaSop, priority: "batch", maxTokens: 4000, agente: "sop" });

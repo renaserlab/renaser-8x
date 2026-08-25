@@ -25,9 +25,9 @@ describe("lo que este producto no debe parecer", () => {
   it("sin vidrio esmerilado ni desenfoque", () => {
     for (const f of ui) expect(f.s, f.p).not.toMatch(/backdrop-blur|backdrop-filter|glass/i);
   });
-  it("sin rounded-2xl/3xl ni radios grandes; un solo radio de 8px", () => {
+  it("sin rounded-2xl/3xl de Tailwind; un solo radio (14px, decisión de Kelin post-demo)", () => {
     for (const f of ui) expect(f.s, f.p).not.toMatch(/rounded-(2xl|3xl|full)\b(?!.*aria)/);
-    expect(readFileSync(path.join(raiz, "design/tokens.css"), "utf8")).toMatch(/--radio: 8px/);
+    expect(readFileSync(path.join(raiz, "design/tokens.css"), "utf8")).toMatch(/--radio: 14px/);
   });
   it("sin sombras decorativas (solo el anillo de selección del canvas)", () => {
     for (const f of ui) {

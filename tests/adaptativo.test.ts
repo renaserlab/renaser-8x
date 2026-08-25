@@ -135,6 +135,39 @@ describe("Biblioteca de documentos (el diagnóstico dicta qué construir)", asyn
   });
 });
 
+describe("Proyección de pérdida y caminos (feedback de demo)", async () => {
+  const { proyeccionPerdida } = await import("@/lib/perdida");
+  const { caminosDesdeHallazgos } = await import("@/lib/caminos");
+  it("calcula fugas solo con números contados y muestra de dónde sale cada una", () => {
+    const r = proyeccionPerdida([
+      { clave: "venta_mes", periodo: "2026-07", valor: 25000, estado: "contado" },
+      { clave: "cobrado_mes", periodo: "2026-07", valor: 18000, estado: "contado" },
+      { clave: "venta_epoca_dorada", periodo: "epoca_dorada", valor: 45000, estado: "contado" },
+    ]);
+    expect(r.fugas.map((f) => f.concepto)).toContain("Vendido y no cobrado");
+    expect(r.fugas.find((f) => f.concepto === "Vendido y no cobrado")!.monto).toBe(7000);
+    expect(r.fugas.find((f) => f.concepto === "La brecha con tu mejor época")!.monto).toBe(20000);
+    expect(r.totalMensual).toBe(27000);
+    for (const f of r.fugas) expect(f.base.length).toBeGreaterThan(10);
+  });
+  it("sin datos no hay fugas — jamás un monto inventado", () => {
+    expect(proyeccionPerdida([]).fugas).toEqual([]);
+  });
+  it("los caminos nacen de los hallazgos, en forma de pregunta", () => {
+    const r = caminosDesdeHallazgos([
+      { patron: "dependencia_fundador", titulo: "Todo pasa por la dueña" },
+      { patron: null, titulo: "80% de abandono antes de completar el tratamiento" },
+      { patron: null, titulo: "Alta rotación en el puesto de atención" },
+    ]);
+    expect(r.length).toBe(3);
+    expect(r.every((c) => c.pregunta.startsWith("¿"))).toBe(true);
+    expect(r.map((c) => c.pregunta).join(" ")).toMatch(/sin que todo pase por ti/);
+  });
+  it("sin hallazgos no hay caminos", () => {
+    expect(caminosDesdeHallazgos([])).toEqual([]);
+  });
+});
+
 describe("Sistema Adaptativo v2 · banco", () => {
   it("empresa_dueno incluye la época dorada con la secuencia completa", () => {
     const b = BLOQUES.empresa_dueno.find((x) => x.clave === "epoca_dorada");
