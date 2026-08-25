@@ -1,16 +1,24 @@
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { requerirCliente, empresaDelCliente } from "./auth";
 import { supabaseAdmin } from "./supabase/admin";
 
-/** Contexto del portal: usuario, empresa y "qué falta ahora" (una sola frase, siempre arriba). Capítulo 19.4 y 32. */
+/** Contexto del portal: usuario, empresa y "qué falta ahora" (una sola frase, siempre arriba). Capítulo 19.4 y 32.
+ *  El consultor puede entrar en modo "ver como el empresario" (cookie ver_como) para una empresa suya. */
 export async function contextoPortal() {
   const u = await requerirCliente();
-  if (u.rol === "consultor") redirect("/bandeja");
-  const companyId = await empresaDelCliente(u.id);
+  let companyId: string | null;
+  if (u.rol === "consultor") {
+    companyId = (await cookies()).get("ver_como")?.value || null;
+    if (!companyId) redirect("/bandeja");
+  } else {
+    companyId = await empresaDelCliente(u.id);
+  }
   if (!companyId) return { u, companyId: null, empresa: null, queFalta: "Cuéntanos de tu empresa para empezar.", paso: 0 as const, stats: null };
   const sb = supabaseAdmin();
   // P0-05: el dueño opera solo SU participante. Si el consultor creó al dueño sin cuenta, se enlaza aquí una sola vez.
-  const { data: propio } = await sb.from("participants").select("id").eq("company_id", companyId).eq("user_id", u.id).maybeSingle();
+  // En modo "ver como el empresario" NO se enlaza nada: el consultor mira, no se vuelve participante.
+  const { data: propio } = u.rol === "consultor" ? { data: { id: "vista" } } : await sb.from("participants").select("id").eq("company_id", companyId).eq("user_id", u.id).maybeSingle();
   if (!propio) {
     const { data: m } = await sb.from("memberships").select("nivel").eq("user_id", u.id).eq("company_id", companyId).maybeSingle();
     if (m?.nivel === "dueno") {

@@ -38,7 +38,16 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
 
   return (
     <>
-      <Encabezado titulo={c.nombre} sub={`${c.sector ?? "sector sin definir"} · ${ETAPA[c.etapa] ?? c.etapa}`} acciones={<Etapa companyId={id} etapa={c.etapa} />} />
+      <Encabezado
+        titulo={c.nombre}
+        sub={`${c.sector ?? "sector sin definir"} · ${ETAPA[c.etapa] ?? c.etapa}`}
+        acciones={
+          <span className="flex items-center gap-3 flex-wrap">
+            <a href={`/api/consultor/ver-portal?empresa=${id}`} className="boton boton--secundario" style={{ minHeight: 40 }}>Ver como el empresario</a>
+            <Etapa companyId={id} etapa={c.etapa} />
+          </span>
+        }
+      />
 
       <Admision companyId={id} estado={c.estado_admision} evaluacion={admision?.evaluacion} respuestas={admision} />
 
