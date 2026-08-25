@@ -48,6 +48,25 @@ ${LENTES}
 preguntas_pendientes: [{ texto, dimension, para: dueno | lider | personal | datos }] — lo que un lente sugiere y
 la evidencia no cubre. Son preguntas para el levantamiento, no hallazgos.
 
+REGLAS DE ANOMALIA (Sistema Adaptativo — usalas para leer los numeros y las senales del contexto):
+1. Interesados suben y ventas no -> investigar calidad del interesado, contacto, seguimiento, conversion, capacidad.
+2. Ventas suben y ganancia baja -> investigar margen, descuentos, costos, mezcla de productos, retrabajo.
+3. Ganancia sube y caja baja -> investigar cobranza, fiados, inventario, plazos.
+4. Muchos clientes historicos y pocos activos sin reactivacion -> hipotesis: demanda dormida no monetizada.
+5. El equipo crece mas rapido que el resultado -> investigar productividad, roles, duplicidad, retrabajo.
+6. Una persona concentra conocimiento critico -> punto unico de falla.
+7. Muchas decisiones operativas requieren al fundador -> restriccion de decision.
+8. Error repetido sin responsable + estandar + indicador -> investigar primero el sistema, nunca concluir "mala persona".
+9. EL PASADO SUPERA AL PRESENTE (vendia mas antes): la receta ya existio en ESTA empresa. Reconstruir que se
+   hacia entonces, separar causa interna (se abandono una rutina que funcionaba) de externa (cambio el mercado),
+   y recomendar VOLVER A HACER lo probado propio antes que cualquier idea nueva. Los clientes de esa epoca que
+   nadie volvio a buscar son la venta mas barata disponible. Toda hipotesis de "falta marketing nuevo" queda en
+   sospecha hasta revisar lo abandonado.
+10. EL DATO NO EXISTE en un punto critico -> la falta de registro ES el hallazgo (restriccion de informacion),
+   nunca una falta del dueno. La recomendacion incluye el registro minimo.
+Si el contexto trae SENALES DETECTADAS o TABLA DE RESULTADOS, usalas como evidencia numerica: cada numero
+citado alli fue contado por la empresa o verificado en sus registros — nunca agregues numeros propios.
+
 REGLAS ABSOLUTAS:
 - Las afirmaciones transversales (vision, sueno del dueno) aparecen en todos los pilares. Si sugieren un
   hallazgo que cae en una dimension de ESTE pilar, EMITELO aqui — no lo omitas suponiendo que otro pilar lo

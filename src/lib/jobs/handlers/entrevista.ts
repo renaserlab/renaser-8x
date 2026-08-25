@@ -4,6 +4,8 @@ import { correrMinero } from "@/lib/ai/agents/minero";
 import { claimsDeEmpresa, claimsComoTexto, registrarLlamada } from "@/lib/db/queries";
 import { TIPOS_CRITICOS } from "@/lib/rules/vigencia";
 import { bloquesSinCubrir, puedeCerrarSesion, BLOQUES } from "@/lib/rules/cobertura";
+import { clasificarModelo, matricesComoTexto } from "@/lib/rules/matrices";
+import { tablaResultadosComoTexto, type Metrica } from "@/lib/rules/anomalias";
 import { encolar, PRIORIDAD, progreso, claveIdempotente } from "../queue";
 import { ai } from "@/lib/ai";
 
@@ -32,11 +34,20 @@ export async function handleEntrevistaSiguiente(job: Job) {
   const ajenas = (todas ?? []).filter((r) => (r.interview_sessions as unknown as { participant_id: string }).participant_id !== ses.participant_id);
 
   const claims = await claimsDeEmpresa(job.company_id);
-  const [{ data: khTodo }, { data: procesosTodo }, { data: fuentesTodo }] = await Promise.all([
+  const [{ data: khTodo }, { data: procesosTodo }, { data: fuentesTodo }, { data: empresa }, { data: metricas }] = await Promise.all([
     sb.from("know_how").select("puesto,situacion,senal,regla_practica").eq("company_id", job.company_id).limit(30),
     sb.from("processes").select("id,nombre,area, process_nodes(etiqueta,problema)").eq("company_id", job.company_id).eq("version", "as_is").limit(10),
     sb.from("sources").select("nombre,tipo,estado").eq("company_id", job.company_id).order("created_at", { ascending: false }).limit(25),
+    sb.from("companies").select("nombre,sector,ficha,modelo_operativo,etapa").eq("id", job.company_id).single(),
+    sb.from("company_metricas").select("clave,periodo,valor,valor_texto,estado,nota").eq("company_id", job.company_id).limit(60),
   ]);
+  // Clasificación por modelo operativo (Sistema Adaptativo v2): usa la guardada o clasifica desde ficha/sector.
+  const ficha = (empresa?.ficha ?? null) as Record<string, string> | null;
+  let modelos = (empresa?.modelo_operativo ?? []) as string[];
+  if (!modelos.length) {
+    modelos = clasificarModelo([empresa?.sector, ficha?.actividad, ficha?.productos, ficha?.canales]);
+    if (modelos.length) await sb.from("companies").update({ modelo_operativo: modelos }).eq("id", job.company_id);
+  }
   const porValidar = claims.filter((c) => c.estado === "contradicho" || (c.estado === "sin_verificar" && c.prioridad_validacion));
   const porPilar: Record<string, number> = {};
   for (const c of claims) if (c.estado === "confirmado" && c.pilar) porPilar[c.pilar] = (porPilar[c.pilar] ?? 0) + 1;
@@ -45,9 +56,13 @@ export async function handleEntrevistaSiguiente(job: Job) {
   const sinCubrir = bloquesSinCubrir(ses.tipo, deEstaSesion, yaCubiertos);
 
   const p = ses.participants as { nombre: string; puesto: string | null; rol: string | null; antiguedad: string | null };
+  const matrizTxt = matricesComoTexto(modelos);
   const contexto = [
     `TIPO DE SESIÓN: ${ses.tipo}`,
     `PARTICIPANTE: puesto: ${p.puesto ?? "—"} · rol: ${p.rol ?? "—"} · antigüedad: ${p.antiguedad ?? "—"}`,
+    `EL NEGOCIO: ${empresa?.nombre ?? "—"} · a qué se dedica: ${ficha?.actividad ?? empresa?.sector ?? "aún no dicho"}${empresa?.etapa ? ` · etapa: ${empresa.etapa}` : ""}${ficha ? ` · ficha: ${Object.entries(ficha).filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join(" · ")}` : ""}`,
+    matrizTxt ? `PREGUNTAS DEL OFICIO (su modelo de negocio):\n${matrizTxt}` : null,
+    ses.tipo === "empresa_dueno" ? `TABLA DE RESULTADOS (lo ya contado — pregunta lo que falta, un mes a la vez):\n${tablaResultadosComoTexto((metricas ?? []) as Metrica[])}` : null,
     `BLOQUES SIN CUBRIR (${sinCubrir.length}): ${sinCubrir.map((b) => `[${b.clave}] ${b.nombre}`).join(", ") || "ninguno"}`,
     `PREGUNTAS YA RESPONDIDAS POR ESTA PERSONA (${propias.length}):`,
     propias.map((r) => `- [${r.bloque}] ${r.pregunta}\n  → ${r.respuesta}`).join("\n") || "(ninguna)",
@@ -63,7 +78,7 @@ export async function handleEntrevistaSiguiente(job: Job) {
       `- Fuentes entregadas (${fuentesTodo?.length ?? 0}): ${(fuentesTodo ?? []).map((f) => `${f.nombre} [${f.estado}]`).join(" · ") || "ninguna"}`,
     ].join("\n"),
     `TIPOS CRÍTICOS QUE DEBEN QUEDAR VERIFICADOS: ${TIPOS_CRITICOS.join(", ")}`,
-  ].join("\n\n");
+  ].filter(Boolean).join("\n\n");
 
   const r = await correrEntrevistador(contexto);
   await registrarLlamada(job.company_id, job.id, "entrevistador", r);

@@ -36,6 +36,20 @@ REGLAS:
 - Si la persona afirma una practica y en el mismo texto reconoce que no hay registro donde
   verificarla ("hacemos seguimiento a todos" + "no queda apuntado en ningun lado"), extrae AMBAS
   afirmaciones por separado: la practica declarada y la ausencia de registro. Juntas son una senal.
+
+METRICAS (clave "metricas", opcional): ademas de las afirmaciones, extrae los NUMEROS del negocio que
+el texto realmente contiene, para el arbol de resultados:
+- claves estandar: venta_mes, cobrado_mes, ganancia_mes, deuda_clientes, clientes_activos,
+  venta_epoca_dorada; otras en snake_case si el numero es claramente otro (merma_semana, citas_perdidas_10).
+- periodo: "YYYY-MM" si se sabe el mes ("el mes pasado" respecto a la fecha del contexto), "actual"
+  si es un dato vigente sin mes, "epoca_dorada" si habla de su mejor epoca pasada.
+- valor: el numero en soles o unidades tal como lo dijo ("unos 8 mil" -> 8000). "De cada 10, 3" en una
+  clave _10 -> valor 3. NUNCA calcules ni estimes tu: solo lo dicho.
+- estado: "contado" si lo dijo de memoria; "verificado" si viene de un documento, tabla o registro;
+  "sin_dato" SOLO si se le pregunto por ese numero y respondio que no lo sabe y no hay donde verlo
+  (en ese caso valor: null y nota con sus palabras).
+- valor_texto: las palabras exactas ("unos 8 mil", "como en el 2023 que vendia el doble").
+- Si el texto no contiene numeros del negocio, omite metricas o devuelvela vacia.
 - Si el texto viene de una foto o transcripcion y hay partes ilegibles,
   no las completes. Omitelas.
 - En tablas/CSV: una afirmación por hecho agregable relevante (totales, porcentajes,

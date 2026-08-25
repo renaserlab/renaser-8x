@@ -4,6 +4,7 @@ import { claimsDeEmpresa, claimsComoTexto, procesoComoJSON, registrarLlamada } f
 import { progreso, encolar, PRIORIDAD, claveIdempotente } from "../queue";
 import { calibrarImpacto, aplicarFiltros, estadoPilar } from "@/lib/rules/evidencia";
 import { MIN_CONFIRMADAS_POR_PILAR } from "@/lib/rules/suficiencia";
+import { detectarAnomalias, tablaResultadosComoTexto, type Metrica } from "@/lib/rules/anomalias";
 
 type Job = { id: string; company_id: string; payload: Record<string, unknown> };
 
@@ -52,10 +53,15 @@ export async function handleDiagnosticar(job: Job) {
   const idsKnowHow = new Set((kh ?? []).flatMap((k) => idsDe(k.participant_id)));
   const conKnowHow = [...utiles, ...todas.filter((c) => idsKnowHow.has(c.id) && !utiles.some((u) => u.id === c.id) && (c.estado === "confirmado" || c.estado === "contradicho" || c.estado === "caducado"))];
   const { data: sueno } = await sb.from("interview_responses").select("bloque,pregunta,respuesta, interview_sessions!inner(tipo,company_id)").eq("interview_sessions.company_id", job.company_id).eq("interview_sessions.tipo", "sueno_dueno").not("respuesta", "is", null);
-  const { data: empresa } = await sb.from("companies").select("nombre,sector").eq("id", job.company_id).single();
+  const { data: empresa } = await sb.from("companies").select("nombre,sector,modelo_operativo,etapa").eq("id", job.company_id).single();
+  const { data: metricasRaw } = await sb.from("company_metricas").select("clave,periodo,valor,valor_texto,estado,nota").eq("company_id", job.company_id).limit(80);
+  const metricas = (metricasRaw ?? []) as Metrica[];
+  const senales = detectarAnomalias(metricas);
   const contexto = [
-    `EMPRESA: ${empresa?.nombre} · sector: ${empresa?.sector ?? "desconocido"}`,
+    `EMPRESA: ${empresa?.nombre} · sector: ${empresa?.sector ?? "desconocido"}${empresa?.modelo_operativo?.length ? ` · modelo operativo: ${(empresa.modelo_operativo as string[]).join(", ")}` : ""}${empresa?.etapa ? ` · etapa: ${empresa.etapa}` : ""}`,
     `PILAR: ${pilar}`,
+    metricas.length ? `TABLA DE RESULTADOS (contado por la empresa o verificado en sus registros):\n${tablaResultadosComoTexto(metricas)}` : null,
+    senales.length ? `SEÑALES DETECTADAS POR EL MOTOR DE ANOMALÍAS:\n${senales.map((s) => `- [${s.regla}] ${s.titulo}: ${s.detalle}`).join("\n")}` : null,
     `AFIRMACIONES (${conKnowHow.length}):`,
     claimsComoTexto(conKnowHow),
     `PROCESOS:`,
@@ -64,7 +70,7 @@ export async function handleDiagnosticar(job: Job) {
     (kh ?? []).map((k) => { const nombre = (k.participants as unknown as { nombre: string } | null)?.nombre; const ids = idsDe(k.participant_id); return `- ${nombre ? `${nombre} (${k.puesto})` : k.puesto} [${k.criticidad}${k.documentado ? "" : ", no documentado"}]: ${k.situacion ?? ""} · señal: ${k.senal ?? ""} · regla: ${k.regla_practica ?? ""}${ids.length ? ` · afirmaciones de esta persona: ${ids.join(", ")}` : ""}`; }).join("\n") || "(ninguno)",
     `SUEÑO DEL DUEÑO (${sueno?.length ?? 0} respuestas):`,
     (sueno ?? []).map((s) => `- [${s.bloque}] ${s.pregunta} → ${String(s.respuesta).slice(0, 300)}`).join("\n") || "(sin sesión de sueño completada)",
-  ].join("\n\n");
+  ].filter(Boolean).join("\n\n");
 
   const d = await correrDiagnosticador(contexto);
   await registrarLlamada(job.company_id, job.id, "diagnosticador", d);

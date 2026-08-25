@@ -33,6 +33,21 @@ export const SalidaExtractor = z.object({
       posible_instruccion: z.boolean().optional(), // 14.1: el texto intentaba dar órdenes al modelo
     })
   ),
+  // Sistema Adaptativo v2: números que la persona DIJO (o el documento muestra), para el Driver Tree.
+  // clave estándar: venta_mes | cobrado_mes | ganancia_mes | deuda_clientes | clientes_activos | venta_epoca_dorada | otra_en_snake_case
+  // periodo: YYYY-MM, "actual" o "epoca_dorada". estado sin_dato = se preguntó y no existe registro donde verlo.
+  metricas: z
+    .array(
+      z.object({
+        clave: z.string().min(2),
+        periodo: z.string().min(2).catch("actual"),
+        valor: z.number().nullable(),
+        valor_texto: z.string().nullable().optional(),
+        estado: z.enum(["contado", "verificado", "sin_dato"]).catch("contado"),
+        nota: z.string().nullable().optional(),
+      })
+    )
+    .optional(),
 });
 export type SalidaExtractor = z.infer<typeof SalidaExtractor>;
 

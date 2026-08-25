@@ -45,6 +45,23 @@ export function segmentoDe(fragmento: string | null | undefined, segmentos: Segm
 
 type Job = { id: string; company_id: string; payload: Record<string, unknown> };
 
+type MetricaExtraida = { clave: string; periodo: string; valor: number | null; valor_texto?: string | null; estado: "contado" | "verificado" | "sin_dato"; nota?: string | null };
+
+/** Sistema Adaptativo v2: guarda los números contados/verificados en company_metricas (upsert por clave+periodo).
+ *  Un dato verificado nunca se degrada a contado; uno contado sí se mejora a verificado. */
+async function guardarMetricas(sb: ReturnType<typeof supabaseAdmin>, companyId: string, metricas: MetricaExtraida[] | undefined, ref: { response_id?: string; source_id?: string; minEstado?: "verificado" }) {
+  for (const m of metricas ?? []) {
+    const clave = m.clave.toLowerCase().replace(/[^a-z0-9_]/g, "_").slice(0, 60);
+    const periodo = /^\d{4}-\d{2}$/.test(m.periodo) ? m.periodo : m.periodo === "epoca_dorada" ? "epoca_dorada" : "actual";
+    const estado = ref.minEstado === "verificado" && m.estado !== "sin_dato" ? "verificado" : m.estado;
+    const { data: prev } = await sb.from("company_metricas").select("id,estado").eq("company_id", companyId).eq("clave", clave).eq("periodo", periodo).maybeSingle();
+    if (prev?.estado === "verificado" && estado !== "verificado") continue;
+    const fila = { company_id: companyId, clave, periodo, valor: m.valor, valor_texto: m.valor_texto ?? null, estado, nota: m.nota ?? null, response_id: ref.response_id ?? null, source_id: ref.source_id ?? null, updated_at: new Date().toISOString() };
+    if (prev) await sb.from("company_metricas").update(fila).eq("id", prev.id);
+    else await sb.from("company_metricas").insert(fila);
+  }
+}
+
 /**
  * payload: { source_id } → lee la fuente, la trocea (texto, CSV, PDF por páginas) y crea un job por tramo.
  * payload: { source_id, chunk_index, total, texto? | pdf_desde?, pdf_hasta? | adjunto? } → extrae ese tramo.
@@ -178,6 +195,8 @@ export async function handleExtraer(job: Job) {
     else if (e3.code !== "23505") throw e3;
   }
 
+  await guardarMetricas(sb, job.company_id, r.data.metricas, { source_id: sourceId, minEstado: "verificado" });
+
   // ¿Terminaron todos los tramos? → fuente leída + contraste en continuo (clave idempotente por fuente)
   const { count } = await sb.from("jobs").select("id", { count: "exact", head: true }).eq("company_id", job.company_id).eq("tipo", "extraer").in("estado", ["pendiente", "corriendo"]).neq("id", job.id).contains("payload", { source_id: sourceId });
   if (!count) {
@@ -232,6 +251,7 @@ async function extraerDeRespuesta(job: Job, responseId: string) {
     if (!error) nuevas++;
     else if (error.code !== "23505") throw error;
   }
+  await guardarMetricas(sb, ses.company_id, out.data.metricas, { response_id: responseId });
   if (nuevas) await encolar({ company_id: ses.company_id, tipo: "contrastar", payload: { response_id: responseId }, prioridad: PRIORIDAD.contrastar, idempotency_key: claveIdempotente(["contrastar", "resp", responseId]) });
   return { nuevas };
 }
