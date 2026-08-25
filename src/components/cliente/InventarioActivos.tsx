@@ -6,7 +6,9 @@ import { BLOQUES_ACTIVOS, ESTADOS_ACTIVO, EJEMPLOS, type ActivoDef } from "@/lib
 import { BotonGrabar } from "@/components/voz/BotonGrabar";
 import { motion, AnimatePresence, MotionConfig } from "motion/react";
 
-type EstadoGuardado = { clave: string; estado: string; nota: string | null; borrador?: string | null; faltantes?: { pregunta: string }[] | null };
+type EstadoGuardado = { clave: string; estado: string; nota: string | null; borrador?: string | null; faltantes?: { pregunta: string }[] | null; implementacion?: { responsable?: string; desde?: string } | null };
+
+const LISTOS = ["lo_tengo", "incompleto", "contado", "construido", "borrador_generado", "construyendo", "en_uso"];
 
 /**
  * LEVANTAMIENTO GUIADO — la mirada de un consultor conociendo la empresa (no un formulario).
@@ -14,7 +16,7 @@ type EstadoGuardado = { clave: string; estado: string; nota: string | null; borr
  * escrito, se pregunta CÓMO FUNCIONA HOY (respondible hablando). Nada se pide dos veces.
  * Construirlo por escrito es un paso posterior, ofrecido solo cuando ya contaron cómo funciona.
  */
-export function InventarioActivos({ companyId, guardados }: { companyId: string; guardados: EstadoGuardado[] }) {
+export function InventarioActivos({ companyId, guardados, prioridades = [] }: { companyId: string; guardados: EstadoGuardado[]; prioridades?: { clave: string; razon: string }[] }) {
   const router = useRouter();
   const [estados, setEstados] = useState<Record<string, EstadoGuardado>>(Object.fromEntries(guardados.map((g) => [g.clave, g])));
   const [bloqueAbierto, setBloqueAbierto] = useState(BLOQUES_ACTIVOS[0].clave);
@@ -137,7 +139,7 @@ export function InventarioActivos({ companyId, guardados }: { companyId: string;
 
   const avanceBloque = (bloque: string) => {
     const b = BLOQUES_ACTIVOS.find((x) => x.clave === bloque)!;
-    const listos = b.activos.filter((a) => ["lo_tengo", "incompleto", "contado", "construido", "borrador_generado", "construyendo"].includes(estados[`${b.clave}.${a.clave}`]?.estado ?? "")).length;
+    const listos = b.activos.filter((a) => LISTOS.includes(estados[`${b.clave}.${a.clave}`]?.estado ?? "")).length;
     return { listos, total: b.activos.length };
   };
 
@@ -183,7 +185,7 @@ export function InventarioActivos({ companyId, guardados }: { companyId: string;
   );
 
   const totales = BLOQUES_ACTIVOS.reduce((acc, b) => acc + b.activos.length, 0);
-  const levantados = BLOQUES_ACTIVOS.reduce((acc, b) => acc + b.activos.filter((a) => ["lo_tengo", "incompleto", "contado", "construido", "borrador_generado", "construyendo"].includes(estados[`${b.clave}.${a.clave}`]?.estado ?? "")).length, 0);
+  const levantados = BLOQUES_ACTIVOS.reduce((acc, b) => acc + b.activos.filter((a) => LISTOS.includes(estados[`${b.clave}.${a.clave}`]?.estado ?? "")).length, 0);
   const pct = Math.round((levantados / totales) * 100);
 
   return (
@@ -196,6 +198,25 @@ export function InventarioActivos({ companyId, guardados }: { companyId: string;
         <span className="t-dato" style={{ color: "var(--grafito)", flex: "none" }}>{pct === 100 ? "Levantamiento completo" : `Entendido ${pct}%`}</span>
       </div>
       {error && <p className="t-cuerpo" style={{ color: "var(--contradicho)" }} role="alert">{error}</p>}
+      {prioridades.length > 0 && (
+        <div className="panel p-4" style={{ borderColor: "var(--marca)" }}>
+          <p className="t-cuerpo" style={{ fontWeight: 550 }}>Según tu diagnóstico, estos documentos primero:</p>
+          <ul className="mt-2 flex flex-col gap-1">
+            {prioridades.map((p) => {
+              const def = BLOQUES_ACTIVOS.flatMap((b) => b.activos.map((a) => ({ clave: `${b.clave}.${a.clave}`, nombre: a.nombre, bloque: b.clave }))).find((x) => x.clave === p.clave);
+              if (!def) return null;
+              return (
+                <li key={p.clave} className="t-dato">
+                  <button className="text-left" style={{ background: "none", border: "none", cursor: "pointer", padding: 0, font: "inherit", color: "var(--marca)", textDecoration: "underline" }} onClick={() => setBloqueAbierto(def.bloque)}>
+                    {def.nombre}
+                  </button>
+                  <span style={{ color: "var(--grafito)" }}> — por: {p.razon}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
       {BLOQUES_ACTIVOS.map((b) => {
         const abierto = b.clave === bloqueAbierto;
         const av = avanceBloque(b.clave);
@@ -211,7 +232,7 @@ export function InventarioActivos({ companyId, guardados }: { companyId: string;
                 <span aria-hidden="true" style={{ display: "flex", gap: 3, marginTop: 6, width: 72 }}>
                   {b.activos.map((a) => {
                     const e = estados[`${b.clave}.${a.clave}`]?.estado;
-                    const listo = ["lo_tengo", "incompleto", "contado", "construido", "borrador_generado", "construyendo"].includes(e ?? "");
+                    const listo = LISTOS.includes(e ?? "");
                     return <span key={a.clave} style={{ flex: 1, height: 3, borderRadius: 2, background: listo ? "var(--marca)" : "var(--linea)" }} />;
                   })}
                 </span>
@@ -233,6 +254,7 @@ export function InventarioActivos({ companyId, guardados }: { companyId: string;
                           {estado === "contado" && <span className="t-dato" style={{ color: "var(--confirmado)" }}>nos contaste cómo funciona</span>}
                           {(estado === "lo_tengo" || estado === "incompleto") && gracias !== clave && <span className="t-dato" style={{ color: "var(--confirmado)" }}>recibido</span>}
                           {estado === "construido" && <span className="t-dato" style={{ color: "var(--confirmado)" }}>escrito y confirmado</span>}
+                          {estado === "en_uso" && <span className="t-dato" style={{ color: "var(--confirmado)" }}>en uso</span>}
                           {["lo_tengo", "incompleto", "no_lo_tengo", "no_se", "contado"].includes(estado ?? "") && (
                             <button className="t-dato" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--grafito)", textDecoration: "underline", padding: 0, font: "inherit" }} onClick={() => setEstados((e) => ({ ...e, [clave]: { ...(e[clave] ?? { clave, nota: null }), clave, estado: "" } }))}>
                               cambiar opción
@@ -298,11 +320,42 @@ export function InventarioActivos({ companyId, guardados }: { companyId: string;
                       )}
                       {estado === "borrador_generado" && !g?.borrador && (g?.faltantes?.length ?? 0) > 0 && preguntasLevantamiento(clave, { ...a, preguntas: (g!.faltantes ?? []).map((f) => f.pregunta) }, "Para no inventar nada, cuéntanos esto:")}
 
-                      {estado === "construido" && g?.borrador && (
+                      {(estado === "construido" || estado === "en_uso") && g?.borrador && (
                         <details className="mt-2">
                           <summary className="t-dato" style={{ cursor: "pointer", color: "var(--grafito)" }}>Ver el documento confirmado</summary>
                           <pre className="t-doc mt-2" style={{ whiteSpace: "pre-wrap", fontFamily: "var(--font-doc)" }}>{g.borrador}</pre>
                         </details>
+                      )}
+                      {estado === "construido" && (
+                        <div className="mt-3 flex flex-col gap-2 p-4" style={{ background: "var(--suave)", borderRadius: "var(--radio)" }}>
+                          <p className="t-cuerpo" style={{ fontWeight: 500 }}>Un documento confirmado todavía no cambia nada: hay que usarlo.</p>
+                          <label className="flex flex-col gap-1">
+                            <span className="t-dato" style={{ color: "var(--grafito)" }}>¿Quién responde por que se use? (una persona, con nombre)</span>
+                            <input className="campo" value={editando[`impl-${clave}`] ?? ""} onChange={(e) => setEditando((x) => ({ ...x, [`impl-${clave}`]: e.target.value }))} placeholder="Ej.: Marta — lo repasa con el equipo el lunes" aria-label={`Responsable de usar ${a.nombre}`} />
+                          </label>
+                          <button
+                            className="boton"
+                            style={{ alignSelf: "flex-start" }}
+                            disabled={ocupado === clave || !(editando[`impl-${clave}`] ?? "").trim()}
+                            onClick={async () => {
+                              setOcupado(clave);
+                              setError(null);
+                              try {
+                                await pedir(`/api/companies/${companyId}/assets`, { json: { clave, estado: "en_uso", implementacion: { responsable: (editando[`impl-${clave}`] ?? "").trim() } } });
+                                setEstados((e) => ({ ...e, [clave]: { ...e[clave], estado: "en_uso", implementacion: { responsable: (editando[`impl-${clave}`] ?? "").trim(), desde: new Date().toISOString().slice(0, 10) } } }));
+                              } catch (e) {
+                                setError(e instanceof Error ? e.message : "No se pudo.");
+                              } finally {
+                                setOcupado(null);
+                              }
+                            }}
+                          >
+                            Ponerlo en práctica
+                          </button>
+                        </div>
+                      )}
+                      {estado === "en_uso" && g?.implementacion?.responsable && (
+                        <p className="t-dato mt-2" style={{ color: "var(--confirmado)" }}>En uso desde {g.implementacion.desde ?? "hoy"} — responde {g.implementacion.responsable}</p>
                       )}
                     </div>
                   );

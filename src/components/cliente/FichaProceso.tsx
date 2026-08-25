@@ -3,7 +3,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { pedir } from "@/lib/cliente";
 
-type Ficha = { responsable: string | null; objetivo: string | null; inicio: string | null; resultado: string | null; tiempo: string | null; herramientas: string | null; sale_mal: string | null; como_bien: string | null; comentario: string | null; descripcion_original: string | null };
+type Ficha = { responsable: string | null; objetivo: string | null; inicio: string | null; resultado: string | null; tiempo: string | null; herramientas: string | null; sale_mal: string | null; como_bien: string | null; comentario: string | null; descripcion_original: string | null; indicador: string | null; meta: string | null; medicion_donde: string | null };
 type Adjunto = { id: string; nombre: string; tipo: string; created_at: string };
 type Caleta = { puesto: string | null; situacion: string | null; senal: string | null; regla_practica: string | null };
 
@@ -16,6 +16,10 @@ const CAMPOS: { k: keyof Ficha; etiqueta: string; placeholder: string }[] = [
   { k: "herramientas", etiqueta: "Con qué se hace", placeholder: "WhatsApp, Excel, cuaderno…" },
   { k: "sale_mal", etiqueta: "Qué suele salir mal", placeholder: "y cada cuánto pasa" },
   { k: "como_bien", etiqueta: "Cómo saben que quedó bien", placeholder: "la señal de que está correcto" },
+  // Medición del proceso: el número que dice si va bien, la meta, y dónde se mira. Sin esto no se puede mejorar.
+  { k: "indicador", etiqueta: "El número que dice si va bien", placeholder: "ej.: pedidos entregados a tiempo por semana" },
+  { k: "meta", etiqueta: "La meta de ese número", placeholder: "ej.: 9 de cada 10 a tiempo" },
+  { k: "medicion_donde", etiqueta: "Dónde se ve y quién lo mira", placeholder: "ej.: en el cuaderno de pedidos, lo revisa Marta los viernes" },
   { k: "comentario", etiqueta: "Comentario del proceso", placeholder: "cualquier cosa que haya que saber" },
 ];
 

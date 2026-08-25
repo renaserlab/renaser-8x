@@ -63,6 +63,27 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         ayuda: "Evaluaciones, conversaciones, indicadores o simple observación.",
         preguntas: ["¿Cómo te das cuenta de que alguien está rindiendo?", "¿Cada cuánto conversan sobre cómo le va a cada persona?"],
       },
+      {
+        clave: "plan_personal",
+        nombre: "Qué pasa si alguien falta",
+        ayuda: "El plan B por puesto: quién cubre, qué no puede esperar, y qué harías si tu mejor persona renuncia.",
+        preguntas: ["La última vez que alguien faltó sin avisar, ¿qué pasó ese día? ¿Quién cubrió?", "Por cada puesto clave: si esa persona no viene mañana, ¿quién sabe hacer lo suyo?", "¿Qué tarea NO puede esperar ni un día si falta quien la hace?", "Si tu mejor persona renuncia hoy con una semana de aviso, ¿qué harías esa semana?"],
+        estructura: "por cada puesto clave: quién cubre (plan B), qué tareas no pueden esperar, qué debe quedar escrito para que otro las haga; señales de alerta (tardanzas, bajón de ritmo) y qué se hace a la primera y a la tercera; qué hacer ante una renuncia (la semana de transición)",
+      },
+      {
+        clave: "reglamento",
+        nombre: "Las reglas de la casa",
+        ayuda: "Reglamento interno: horarios, permisos, faltas, adelantos… las reglas que ya existen aunque nadie las escribió.",
+        preguntas: ["¿Qué reglas ya existen aunque nadie las escribió? (horarios, celular, permisos, adelantos)", "Cuéntame la última vez que tuviste que llamar la atención a alguien: ¿por qué fue y cómo se resolvió?", "¿Cómo se piden los permisos y quién los aprueba? ¿Y las faltas: se descuentan, se recuperan, se conversan?", "¿Qué cosa se permite hoy que sabes que no deberías permitir?"],
+        estructura: "horario y asistencia (tardanzas y faltas: qué pasa), permisos (cómo se piden, quién aprueba), adelantos y préstamos si existen, uso de celular/herramientas, y las 3-5 reglas que el dueño ya aplica en la práctica — cada regla con su consecuencia real, no letra muerta",
+      },
+      {
+        clave: "cultura",
+        nombre: "Cómo somos aquí",
+        ayuda: "La cultura real: lo que se celebra, lo que no se tolera, y cómo se decide cuando hay que elegir.",
+        preguntas: ["Cuéntame algo que hizo alguien del equipo y te hizo pensar «así quiero que seamos siempre».", "¿Y algo que hizo alguien que te hizo decir «esto aquí no va»?", "Cuando hay que elegir entre hacerlo rápido o hacerlo bien, ¿qué se elige en tu empresa?", "¿Qué se celebra en tu empresa y cómo? ¿Qué te gustaría que se celebre?"],
+        estructura: "cada valor con el EJEMPLO REAL que lo demuestra (la historia contada, con nombre si lo dieron), los límites (lo que aquí no va, con su caso), cómo se decide ante los dilemas típicos (rápido vs bien, cliente vs caja), y qué se celebra; nada de palabras de póster sin historia detrás",
+      },
     ],
   },
   {
@@ -231,6 +252,12 @@ export const EJEMPLOS: Record<string, string> = {
   "¿Cuál es el reclamo que más se repite?": "«Que la entrega llegó tarde», «que no era el color que pidieron».",
   "Describe a tu cliente típico: ¿quién es y qué problema le resuelves?": "«Mamás de la zona que quieren la torta del cumpleaños sin complicarse.»",
   "¿Qué cosas se hacen 'como siempre se hicieron' sin nada escrito?": "«El inventario se cuenta como lo hacía mi papá: al ojo, cada fin de mes.»",
+  "La última vez que alguien faltó sin avisar, ¿qué pasó ese día? ¿Quién cubrió?": "«Faltó el repartidor y yo mismo salí a repartir; se atrasaron tres pedidos.»",
+  "Por cada puesto clave: si esa persona no viene mañana, ¿quién sabe hacer lo suyo?": "«Si falta la cajera, Marta sabe cobrar; si falta el maestro, nadie — ese es el hueco.»",
+  "¿Qué reglas ya existen aunque nadie las escribió? (horarios, celular, permisos, adelantos)": "«Se entra 8:30, el celular se deja en el cajón en atención, los permisos se piden con un día.»",
+  "Cuéntame la última vez que tuviste que llamar la atención a alguien: ¿por qué fue y cómo se resolvió?": "«Llegaba tarde toda la semana; conversamos y quedamos en que avisa por WhatsApp si se retrasa.»",
+  "Cuéntame algo que hizo alguien del equipo y te hizo pensar «así quiero que seamos siempre».": "«Luis se quedó hasta tarde para rehacer un pedido que salió mal, sin que nadie se lo pidiera.»",
+  "¿Y algo que hizo alguien que te hizo decir «esto aquí no va»?": "«Uno le echó la culpa al compañero delante del cliente. Eso aquí no va.»",
   "Cuando alguien duda de cómo hacer algo, ¿a quién o a qué recurre?": "«Le pregunta a Marta, que es la más antigua. Si ella no está, me llaman.»",
 };
 

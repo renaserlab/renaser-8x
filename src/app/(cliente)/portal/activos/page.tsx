@@ -1,14 +1,21 @@
 import { contextoPortal } from "@/lib/portal";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { InventarioActivos } from "@/components/cliente/InventarioActivos";
+import { bibliotecaRecomendada, type FindingLite } from "@/lib/biblioteca";
 
 export const dynamic = "force-dynamic";
 
-/** Datos empresariales guiados: qué existe hoy, por bloques. Nada de "sube lo que tengas" a secas. */
+/** Datos empresariales guiados: qué existe hoy, por bloques. El diagnóstico dicta qué construir primero. */
 export default async function Activos() {
   const c = await contextoPortal();
   if (!c.companyId) return <p className="t-cuerpo medida">{c.queFalta}</p>;
-  const { data } = await supabaseAdmin().from("company_assets").select("clave,estado,nota,borrador,faltantes").eq("company_id", c.companyId);
+  const sb = supabaseAdmin();
+  const [{ data }, { data: findings }, { data: emp }] = await Promise.all([
+    sb.from("company_assets").select("clave,estado,nota,borrador,faltantes,implementacion").eq("company_id", c.companyId),
+    sb.from("findings").select("patron,pilar,titulo,impacto,estado_revision").eq("company_id", c.companyId).neq("estado_revision", "rechazado").eq("requiere_validacion", false).limit(40),
+    sb.from("companies").select("etapa_negocio").eq("id", c.companyId).single(),
+  ]);
+  const recomendados = (findings ?? []).length ? bibliotecaRecomendada((findings ?? []) as FindingLite[], emp?.etapa_negocio) : [];
   return (
     <>
       <p className="t-etiqueta">Tu información</p>
@@ -18,7 +25,11 @@ export default async function Activos() {
         Y lo que nunca se escribió, cuéntanoslo con tus palabras. Con esto levantamos la foto real de tu
         empresa; ordenarla y ponerla por escrito viene después, con nuestra ayuda.
       </p>
-      <InventarioActivos companyId={c.companyId} guardados={(data ?? []).map((d) => ({ clave: d.clave, estado: d.estado, nota: d.nota, borrador: (d as { borrador?: string | null }).borrador ?? null, faltantes: ((d as { faltantes?: { pregunta: string }[] | null }).faltantes ?? null) }))} />
+      <InventarioActivos
+        companyId={c.companyId}
+        guardados={(data ?? []).map((d) => ({ clave: d.clave, estado: d.estado, nota: d.nota, borrador: (d as { borrador?: string | null }).borrador ?? null, faltantes: ((d as { faltantes?: { pregunta: string }[] | null }).faltantes ?? null), implementacion: ((d as { implementacion?: { responsable?: string; desde?: string } | null }).implementacion ?? null) }))}
+        prioridades={recomendados}
+      />
     </>
   );
 }
