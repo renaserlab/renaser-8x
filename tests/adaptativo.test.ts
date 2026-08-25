@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { clasificarModelo, etapaDe, matricesComoTexto, MATRICES } from "@/lib/rules/matrices";
+import { preguntaRepetida, RECLAMO_REPETIDO } from "@/lib/jobs/handlers/entrevista";
 import { detectarAnomalias, tablaResultadosComoTexto, type Metrica } from "@/lib/rules/anomalias";
 import { BLOQUES } from "@/lib/rules/cobertura";
 
@@ -75,6 +76,22 @@ describe("Sistema Adaptativo v2 · motor de anomalías", () => {
     expect(t).toContain("[contado]");
     expect(t).toContain("un");
     expect(tablaResultadosComoTexto([])).toContain("conversando");
+  });
+});
+
+describe("Candado de redundancia (queja real: la misma pregunta 5-6 veces)", () => {
+  const hechas = ["Cuéntame el día que decidiste empezar con las terapias: ¿qué estaba pasando en tu vida?"];
+  it("detecta la misma pregunta con una palabra cambiada", () => {
+    expect(preguntaRepetida("Cuéntame el día que decidiste empezar con las terapias: ¿qué pasaba en tu vida en ese momento?", hechas)).toBe(true);
+    expect(preguntaRepetida("Cuéntame ese día en que decidiste empezar con las terapias: ¿qué estaba pasando?", hechas)).toBe(true);
+  });
+  it("deja pasar preguntas realmente distintas", () => {
+    expect(preguntaRepetida("¿Cuánta plata entró al negocio el mes pasado, más o menos?", hechas)).toBe(false);
+    expect(preguntaRepetida("¿Quiénes trabajan contigo y cómo llegó cada uno?", hechas)).toBe(false);
+  });
+  it("reconoce el reclamo 'ya te lo dije' en sus variantes", () => {
+    for (const r of ["Ya te respondí en la anterior pregunta", "Te respondí por tercera vez", "eso ya lo dije", "ya respondí eso", "es la misma pregunta otra vez"]) expect(RECLAMO_REPETIDO.test(r)).toBe(true);
+    expect(RECLAMO_REPETIDO.test("Empecé hace seis años con mi esposa")).toBe(false);
   });
 });
 

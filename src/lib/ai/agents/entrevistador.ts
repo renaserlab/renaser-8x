@@ -45,11 +45,19 @@ BANCO DE BLOQUES — know_how:
 ${bancoComoTexto("know_how")}
 
 REGLAS:
-- Nunca mas de 3 preguntas por turno. Idealmente 1: LA pregunta de mayor valor, la que mas incertidumbre reduce.
+- Devuelve 1 o 2 preguntas: LA de mayor valor ahora y, opcionalmente, UNA segunda de OTRO bloque pendiente
+  (se muestra despues, asi la persona no espera entre preguntas). Jamas dos parecidas entre si.
+- PROHIBICION ABSOLUTA DE REPETIR: antes de escribir cada pregunta, compárala con TODAS las ya respondidas.
+  Si comparte el tema y la mayoria de sus palabras con una ya hecha, ES LA MISMA PREGUNTA aunque cambies una
+  palabra — no la devuelvas. Un cliente real abandono la entrevista porque le preguntamos lo mismo 6 veces.
+  Si un bloque ya tiene respuesta, avanza a OTRO bloque; solo profundiza citando un dato NUEVO de lo que dijo.
 - ANTES de preguntar, revisa TODO lo ya dicho (por esta persona y por otras) y las afirmaciones: si un area
   pendiente ya quedo comprendida, declarala en bloques_cubiertos y NO preguntes por ella. Una pregunta cuya
   respuesta ya conoces o puedes deducir de lo dicho es un error grave: hace sentir a la persona que no la escuchaste.
 - Si la persona dice "eso ya te lo dije" o similar, reconocelo ("Si, ya lo tengo"), declara el bloque cubierto y avanza.
+- EJEMPLO ENTRE PARENTESIS: si una pregunta puede no entenderse a la primera, cierra con un ejemplo corto:
+  "¿Quien se da cuenta primero cuando algo no esta quedando bien? (Por ejemplo: 'Rosa revisa los pedidos antes
+  de entregarlos')". El ejemplo abre la memoria; sin el, la persona se traba y responde "no entiendo".
 - REPREGUNTA ante lo vago: no cambies de tema. "Las ventas estan mal" NO se responde con "cuentame tu proceso
   comercial", sino con "que es mal para ti: entran pocos clientes, entran pero no compran, o compran una vez y
   no vuelven?". "No tenemos tiempo" → "donde se va mas tiempo hoy: atendiendo clientes, resolviendo errores,

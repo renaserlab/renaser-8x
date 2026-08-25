@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { pedir } from "@/lib/cliente";
-import { BLOQUES_ACTIVOS, ESTADOS_ACTIVO, type ActivoDef } from "@/lib/activos";
+import { BLOQUES_ACTIVOS, ESTADOS_ACTIVO, EJEMPLOS, type ActivoDef } from "@/lib/activos";
 import { BotonGrabar } from "@/components/voz/BotonGrabar";
 import { motion, AnimatePresence, MotionConfig } from "motion/react";
 
@@ -158,25 +158,27 @@ export function InventarioActivos({ companyId, guardados }: { companyId: string;
     >
       <input ref={(el) => { inputs.current[clave] = el; }} type="file" multiple style={{ display: "none" }} aria-label={`Archivo de ${a.nombre}`} tabIndex={-1} onChange={(e) => subirArchivos(clave, a, e.target.files)} />
       <p className="t-cuerpo" style={{ fontWeight: 500 }}>{ocupado === clave ? "Recibiendo…" : texto}</p>
-      <p className="t-dato mt-1" style={{ color: "var(--grafito)" }}>Documento, foto del cuaderno o audio — tal como esté. Toca aquí o arrástralo.</p>
+      <p className="t-dato mt-1" style={{ color: "var(--grafito)" }}>Puede ser un documento, una foto del cuaderno o un audio, tal como esté. Toca aquí para elegirlo.</p>
     </div>
   );
 
   const preguntasLevantamiento = (clave: string, a: ActivoDef, intro: string) => (
-    <div className="mt-3 flex flex-col gap-4 p-4" style={{ background: "var(--suave)", borderRadius: "var(--radio)" }}>
+    <div className="mt-3 flex flex-col gap-3 p-4" style={{ background: "var(--suave)", borderRadius: "var(--radio)" }}>
       <p className="t-cuerpo medida">{intro}</p>
       {a.preguntas.map((p, i) => (
-        <div key={i} className="flex flex-col gap-2">
+        <div key={i} className="flex flex-col gap-2 p-4" style={{ background: "var(--papel)", border: "1px solid var(--linea)", borderRadius: "var(--radio)" }}>
           <label className="t-cuerpo" style={{ fontWeight: 500 }} htmlFor={`${clave}-p${i}`}>{p}</label>
+          {EJEMPLOS[p] && <p className="t-dato" style={{ color: "var(--grafito)" }}>Por ejemplo: {EJEMPLOS[p]}</p>}
           <div className="flex flex-col gap-2">
             <BotonGrabar grande={false} alTexto={(t) => setRespuestas((r) => ({ ...r, [clave]: { ...(r[clave] ?? {}), [i]: (((r[clave]?.[i] ?? "") + " " + t)).trim() } }))} />
-            <textarea id={`${clave}-p${i}`} aria-label={p} className="campo" rows={2} value={respuestas[clave]?.[i] ?? ""} onChange={(e) => setRespuestas((r) => ({ ...r, [clave]: { ...(r[clave] ?? {}), [i]: e.target.value } }))} placeholder="Cuéntalo como se lo contarías a alguien de confianza" />
+            <textarea id={`${clave}-p${i}`} aria-label={p} className="campo" rows={2} value={respuestas[clave]?.[i] ?? ""} onChange={(e) => setRespuestas((r) => ({ ...r, [clave]: { ...(r[clave] ?? {}), [i]: e.target.value } }))} placeholder="Con tus palabras — no hay respuestas malas" />
           </div>
         </div>
       ))}
       <button className="boton" style={{ alignSelf: "flex-start" }} disabled={ocupado === clave || !a.preguntas.some((_, i) => (respuestas[clave]?.[i] ?? "").trim())} onClick={() => contarComoFunciona(clave, a)}>
         {ocupado === clave ? "Guardando…" : "Guardar lo contado"}
       </button>
+      <p className="t-dato" style={{ color: "var(--grafito)" }}>Puedes responder una sola pregunta y guardar — lo demás se puede completar después.</p>
     </div>
   );
 
@@ -227,9 +229,16 @@ export function InventarioActivos({ companyId, guardados }: { companyId: string;
                     <div key={a.clave} style={{ borderTop: "1px solid var(--linea)", paddingTop: 18 }}>
                       <div className="flex items-baseline justify-between gap-3 flex-wrap">
                         <p className="t-cuerpo" style={{ fontWeight: 550, fontSize: 18 }}>{a.nombre}</p>
-                        {estado === "contado" && <span className="t-dato" style={{ color: "var(--confirmado)" }}>nos contaste cómo funciona</span>}
-                        {(estado === "lo_tengo" || estado === "incompleto") && gracias !== clave && <span className="t-dato" style={{ color: "var(--confirmado)" }}>recibido</span>}
-                        {estado === "construido" && <span className="t-dato" style={{ color: "var(--confirmado)" }}>escrito y confirmado</span>}
+                        <span className="flex items-baseline gap-3">
+                          {estado === "contado" && <span className="t-dato" style={{ color: "var(--confirmado)" }}>nos contaste cómo funciona</span>}
+                          {(estado === "lo_tengo" || estado === "incompleto") && gracias !== clave && <span className="t-dato" style={{ color: "var(--confirmado)" }}>recibido</span>}
+                          {estado === "construido" && <span className="t-dato" style={{ color: "var(--confirmado)" }}>escrito y confirmado</span>}
+                          {["lo_tengo", "incompleto", "no_lo_tengo", "no_se", "contado"].includes(estado ?? "") && (
+                            <button className="t-dato" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--grafito)", textDecoration: "underline", padding: 0, font: "inherit" }} onClick={() => setEstados((e) => ({ ...e, [clave]: { ...(e[clave] ?? { clave, nota: null }), clave, estado: "" } }))}>
+                              cambiar opción
+                            </button>
+                          )}
+                        </span>
                       </div>
                       <p className="t-dato mt-1 mb-3" style={{ color: "var(--grafito)" }}>{a.ayuda}</p>
 
@@ -245,12 +254,12 @@ export function InventarioActivos({ companyId, guardados }: { companyId: string;
 
                       {(estado === "lo_tengo" || estado === "incompleto") && (
                         <>
-                          {zonaSubida(clave, a, gracias === clave ? "Recibido. ¿Tienes algo más de esto?" : "Suéltalo aquí")}
+                          {zonaSubida(clave, a, gracias === clave ? "Recibido. ¿Tienes algo más de esto?" : "Súbelo aquí")}
                           {estado === "incompleto" && preguntasLevantamiento(clave, a, "Y lo que no está en el documento, cuéntanoslo:")}
                         </>
                       )}
 
-                      {estado === "no_lo_tengo" && preguntasLevantamiento(clave, a, "No pasa nada — muchas empresas funcionan sin esto escrito. Cuéntanos cómo funciona hoy:")}
+                      {estado === "no_lo_tengo" && preguntasLevantamiento(clave, a, "Está bien — muchas empresas funcionan sin esto por escrito. Cuéntanos cómo funciona hoy:")}
 
                       {estado === "no_se" && (
                         <>

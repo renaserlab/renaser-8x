@@ -43,8 +43,13 @@ export default async function Portal() {
         </>
       ) : (
         <>
-          <p className="t-etiqueta">Qué falta ahora</p>
-          <h1 className="t-titulo mt-2 mb-6 medida">{c.queFalta}</h1>
+          <p className="t-etiqueta">Qué sigue ahora</p>
+          <h1 className="t-titulo mt-2 mb-4 medida">{c.queFalta}</h1>
+          <div className="mb-8">
+            <Link href={({ 2: "/portal/activos", 3: "/portal/conversacion", 4: "/portal/validar", 5: "/portal/procesos", 6: "/portal/activos", 7: "/portal/resultados", 8: "/portal/plan" } as Record<number, string>)[c.paso] ?? "/portal/hoy"} className="boton">
+              Continuar
+            </Link>
+          </div>
           {cosas > 0 && (
             <Link href="/portal/hoy" className="panel p-5 mb-8 block" style={{ borderColor: "var(--marca)" }}>
               <span className="t-seccion" style={{ fontSize: 18 }}>Ya encontramos {cosas} cosa{cosas === 1 ? "" : "s"} que vale la pena mirar</span>

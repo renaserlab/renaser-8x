@@ -57,10 +57,14 @@ export async function empresaHoy(companyId: string) {
   // EL ESPEJO: cada punto donde una fuente dice una cosa y otra dice otra (abierto o ya resuelto).
   const porId = new Map((claims ?? []).map((c) => [c.id, c]));
   const espejo: Espejo[] = [];
+  const paresVistos = new Set<string>(); // A↔B y B↔A son el MISMO punto: se muestra una sola vez
   for (const c of claims ?? []) {
     if (!c.contradice_a) continue;
     const otro = porId.get(c.contradice_a);
     if (!otro) continue;
+    const par = [c.id, otro.id].sort().join("|");
+    if (paresVistos.has(par)) continue;
+    paresVistos.add(par);
     const lado = (x: typeof c): LadoEspejo => ({ texto: x.texto, fuente: fuenteAnonima(x as unknown as Parameters<typeof fuenteAnonima>[0]), fecha: x.fecha_afirmacion, clase: CLASE_FUENTE((x.sources as unknown as { tipo: string | null } | null)?.tipo ?? null, (x.participants as unknown as { rol: string | null } | null)?.rol ?? null) });
     espejo.push({ declarado: lado(otro as typeof c), contraste: lado(c), explicacion: c.explicacion_contradiccion ?? null, resuelto: c.estado !== "contradicho" && otro.estado !== "contradicho" });
   }

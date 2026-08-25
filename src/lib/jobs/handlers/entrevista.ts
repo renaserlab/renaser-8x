@@ -11,6 +11,24 @@ import { ai } from "@/lib/ai";
 
 type Job = { id: string; company_id: string; payload: Record<string, unknown> };
 
+// ---- Candado de redundancia (queja real de cliente: la misma pregunta 5-6 veces con una palabra cambiada) ----
+const palabras = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9ñ ]/g, " ").split(/\s+/).filter((w) => w.length > 3);
+/** Dos preguntas son "la misma" si comparten la mayoría de sus palabras significativas. */
+export function preguntaRepetida(nueva: string, previas: string[]): boolean {
+  const A = new Set(palabras(nueva));
+  if (!A.size) return false;
+  for (const p of previas) {
+    const B = new Set(palabras(p));
+    if (!B.size) continue;
+    let inter = 0;
+    for (const w of A) if (B.has(w)) inter++;
+    if (inter / Math.min(A.size, B.size) >= 0.6) return true;
+  }
+  return false;
+}
+/** "Ya te lo dije": si la persona lo reclama, ese bloque se cierra en código — no se le vuelve a preguntar. */
+export const RECLAMO_REPETIDO = /\bya (te|se|le)? ?(lo|la)? ?(dije|cont[eé]|respond[ií]|expliqu[eé]|mencion[eé])|ya respond[ií]|te respond[ií]|misma pregunta|otra vez lo mismo/i;
+
 /** payload: { session_id } → genera las siguientes 1–3 preguntas (prioridad 1). No cierra la sesión hasta cubrir sus bloques. */
 export async function handleEntrevistaSiguiente(job: Job) {
   const sb = supabaseAdmin();
@@ -52,7 +70,13 @@ export async function handleEntrevistaSiguiente(job: Job) {
   const porPilar: Record<string, number> = {};
   for (const c of claims) if (c.estado === "confirmado" && c.pilar) porPilar[c.pilar] = (porPilar[c.pilar] ?? 0) + 1;
   const desconocidos = ["personas", "procesos", "producto", "marketing"].filter((p) => (porPilar[p] ?? 0) < 5);
-  const yaCubiertos = ((ses as { bloques_cubiertos?: string[] | null }).bloques_cubiertos ?? []) as string[];
+  let yaCubiertos = ((ses as { bloques_cubiertos?: string[] | null }).bloques_cubiertos ?? []) as string[];
+  // Candado en código: si la persona reclamó "ya te lo dije", ese bloque queda cubierto sin depender del modelo.
+  const reclamados = deEstaSesion.filter((r) => r.respuesta && RECLAMO_REPETIDO.test(String(r.respuesta))).map((r) => r.bloque).filter((b): b is string => !!b && !yaCubiertos.includes(b));
+  if (reclamados.length) {
+    yaCubiertos = [...yaCubiertos, ...reclamados];
+    await sb.from("interview_sessions").update({ bloques_cubiertos: yaCubiertos }).eq("id", sessionId);
+  }
   const sinCubrir = bloquesSinCubrir(ses.tipo, deEstaSesion, yaCubiertos);
 
   const p = ses.participants as { nombre: string; puesto: string | null; rol: string | null; antiguedad: string | null };
@@ -93,10 +117,27 @@ export async function handleEntrevistaSiguiente(job: Job) {
   let orden = (ult?.[0]?.orden ?? 0) + 1;
   const validIds = new Set(claims.map((c) => c.id));
   const clavesValidas = new Set((BLOQUES[ses.tipo] ?? []).map((b) => b.clave));
-  let preguntas = r.data.preguntas.slice(0, 3);
-  // Cobertura en código: si el modelo devolvió vacío pero faltan bloques, se inserta la primera pregunta del banco.
+  // CANDADO DE REDUNDANCIA en código (no solo en el prompt):
+  // 1) nada parecido a lo ya preguntado a esta persona; 2) máximo 2 preguntas por bloque salvo validación;
+  // 3) tampoco dos parecidas dentro del mismo lote.
+  const yaHechas = propias.map((x) => String(x.pregunta));
+  const porBloque = new Map<string, number>();
+  for (const x of deEstaSesion) if (x.bloque) porBloque.set(x.bloque, (porBloque.get(x.bloque) ?? 0) + 1);
+  const aceptadas: typeof r.data.preguntas = [];
+  for (const q of r.data.preguntas) {
+    if (preguntaRepetida(q.texto, [...yaHechas, ...aceptadas.map((x) => x.texto)])) continue;
+    if (!q.origen_claim_id && (porBloque.get(q.bloque) ?? 0) >= 2) continue;
+    aceptadas.push(q);
+  }
+  let preguntas = aceptadas.slice(0, 2);
+  // Cobertura en código: si nada sobrevivió pero faltan bloques, entra la primera pregunta del banco AÚN NO hecha.
   const faltanTras = bloquesSinCubrir(ses.tipo, deEstaSesion, cubiertos);
-  if (preguntas.length === 0 && faltanTras.length) preguntas = [{ texto: faltanTras[0].preguntas[0], bloque: faltanTras[0].clave, pilar: null, origen_claim_id: null }];
+  if (preguntas.length === 0 && faltanTras.length) {
+    for (const b of faltanTras) {
+      const libre = b.preguntas.find((t) => !preguntaRepetida(t, yaHechas));
+      if (libre) { preguntas = [{ texto: libre, bloque: b.clave, pilar: null, origen_claim_id: null }]; break; }
+    }
+  }
   for (const q of preguntas) {
     await sb.from("interview_responses").insert({
       session_id: sessionId,

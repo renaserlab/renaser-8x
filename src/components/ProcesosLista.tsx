@@ -72,12 +72,13 @@ export function ProcesosLista({ companyId, procesos, base, paraCliente = false }
           }}
         />
         {transcribiendo && <p className="t-dato aparece" aria-live="polite" style={{ color: "var(--grafito)" }}>Escuchando tu audio…</p>}
-        <textarea className="campo" rows={5} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} aria-label="Describe el proceso" placeholder="El lead entra por WhatsApp, un asesor lo contacta…" />
+        <textarea className="campo" rows={5} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} aria-label="Describe el proceso" placeholder={paraCliente ? "Un cliente escribe por WhatsApp, alguien le responde, se le pasa el precio…" : "El lead entra por WhatsApp, un asesor lo contacta…"} />
         {error && <p className="t-dato" style={{ color: "var(--contradicho)" }}>{error}</p>}
         <div className="flex flex-wrap gap-3 items-center">
           <button className="boton" onClick={generar} disabled={!descripcion.trim()}>Dibujarlo</button>
           {!paraCliente && <button className="boton boton--secundario" onClick={enBlanco}>Empezar en blanco</button>}
         </div>
+        {!descripcion.trim() && <p className="t-dato" style={{ color: "var(--grafito)" }}>Primero cuéntanos el proceso — hablando o escribiendo — y nosotros lo dibujamos.</p>}
         <Progreso jobId={job} paraCliente={paraCliente} alTerminar={() => router.refresh()} />
       </section>
 
@@ -85,6 +86,20 @@ export function ProcesosLista({ companyId, procesos, base, paraCliente = false }
         <h2 className="t-seccion mb-4">{paraCliente ? "Tus procesos" : "Procesos"}</h2>
         {asis.length === 0 ? (
           <p className="t-cuerpo" style={{ color: "var(--grafito)" }}>{VACIO.procesos}</p>
+        ) : paraCliente ? (
+          <div className="flex flex-col gap-3">
+            {asis.map((p) => (
+              <Link key={p.id} href={`${base}/${p.id}`} className="panel p-4 flex items-center justify-between gap-3">
+                <span style={{ minWidth: 0 }}>
+                  <span className="t-seccion" style={{ fontSize: 17 }}>{p.nombre}</span>
+                  <span className="block t-dato mt-1" style={{ color: "var(--grafito)" }}>
+                    {p.nodos} paso{p.nodos === 1 ? "" : "s"} · {p.origen === "generado_ia" ? "lo dibujamos con lo que contaste" : "dibujado a mano"}
+                  </span>
+                </span>
+                <span className="t-dato" style={{ color: "var(--marca)", flex: "none", fontWeight: 600 }}>Verlo y comentarlo →</span>
+              </Link>
+            ))}
+          </div>
         ) : (
           <table className="tabla">
             <thead>

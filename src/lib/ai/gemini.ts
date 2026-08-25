@@ -125,7 +125,7 @@ export class GeminiProvider implements AIProvider {
   async transcribe(audio: Blob, mime: string): Promise<Transcripcion> {
     const buf = Buffer.from(await audio.arrayBuffer());
     const body = {
-      systemInstruction: { parts: [{ text: "Transcribe el audio LITERALMENTE en español, tal como se dijo, sin resumir, sin corregir gramática y sin añadir nada. Si hay silencios, simplemente continúa. Devuelve SOLO el texto transcrito." }] },
+      systemInstruction: { parts: [{ text: "Quien habla es una persona de negocios en Perú describiendo su empresa, en español. Transcribe FIELMENTE lo dicho: no resumas, no cambies palabras, no añadas nada. Corrige SOLO la puntuación y la separación de frases para que se lea natural. Conserva los montos y números tal como se dijeron ('25 mil soles', 'de cada 10, unos 3'). Si una palabra no se entiende, escribe [inaudible] en su lugar — nunca la adivines. Si hay silencios, simplemente continúa. Devuelve SOLO el texto transcrito." }] },
       contents: [{ role: "user", parts: [{ inlineData: { mimeType: mime || "audio/webm", data: buf.toString("base64") } }, { text: "Transcribe este audio." }] }],
       generationConfig: { temperature: 0, maxOutputTokens: 8000, thinkingConfig: { thinkingLevel: THINKING_LEVEL } },
     };

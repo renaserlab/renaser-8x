@@ -149,7 +149,13 @@ export default async function Hoy() {
                 <span className="t-dato" style={{ color: ESTADO_COLOR[p.estado] }}>{ESTADO_CLIENTE_PILAR[p.estado] ?? ESTADO_PILAR[p.estado]}</span>
               </div>
               {p.resumen && <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>{p.resumen}</p>}
-              {p.estado === "desconocido" && !p.resumen && <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>Aún nos faltan piezas para una conclusión responsable.</p>}
+              {p.estado === "desconocido" && !p.resumen && (
+                <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>
+                  Aún nos faltan piezas para una conclusión responsable.{" "}
+                  <Link href="/portal/conversacion" style={{ textDecoration: "underline", color: "var(--marca)" }}>Sigue conversando</Link> o completa{" "}
+                  <Link href="/portal/activos" style={{ textDecoration: "underline", color: "var(--marca)" }}>Tu información</Link> — esta parte se llena sola con eso.
+                </p>
+              )}
             </div>
           ))}
         </div>

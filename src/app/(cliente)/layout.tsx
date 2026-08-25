@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requerirCliente, empresaDelCliente } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { NavCliente } from "@/components/cliente/NavCliente";
 
 export default async function LayoutCliente({ children }: { children: React.ReactNode }) {
   const u = await requerirCliente();
@@ -20,23 +20,13 @@ export default async function LayoutCliente({ children }: { children: React.Reac
   ];
   return (
     <div className="min-h-screen flex flex-col">
-      <nav className="no-imprimir px-4 py-3 flex flex-wrap items-center justify-between gap-3" style={{ borderBottom: "1px solid var(--linea)" }}>
-        <div className="flex items-center gap-4">
-          <span className="t-dato">{empresa?.nombre ?? "Tu empresa"}</span>
-        </div>
+      <header className="no-imprimir px-4 flex items-center justify-between gap-3" style={{ paddingTop: "max(env(safe-area-inset-top), 10px)", paddingBottom: 8 }}>
+        <span className="t-dato" style={{ fontWeight: 600 }}>{empresa?.nombre ?? "Tu empresa"}</span>
         <form action="/api/auth/salir" method="post">
-          <button className="boton boton--secundario" style={{ minHeight: 36 }}>Salir</button>
+          <button className="t-dato" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--grafito)", padding: "4px 0", font: "inherit" }}>Salir</button>
         </form>
-      </nav>
-      {companyId && (
-        <div className="no-imprimir px-4 py-2 flex gap-2 overflow-x-auto" style={{ borderBottom: "1px solid var(--linea)" }}>
-          {enlaces.map(([href, nombre]) => (
-            <Link key={href} href={href} className="boton boton--secundario" style={{ minHeight: 40, whiteSpace: "nowrap" }}>
-              {nombre}
-            </Link>
-          ))}
-        </div>
-      )}
+      </header>
+      {companyId && <NavCliente enlaces={enlaces as [string, string][]} />}
       <main className="flex-1 px-4 py-6 w-full" style={{ maxWidth: 760, margin: "0 auto" }}>{children}</main>
     </div>
   );

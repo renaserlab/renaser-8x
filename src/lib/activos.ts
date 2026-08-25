@@ -124,7 +124,7 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         clave: "calidad",
         nombre: "Cómo cuidas la calidad",
         ayuda: "Revisiones, estándares o el criterio de alguien con buen ojo.",
-        preguntas: ["¿Cómo sabes que lo que salió está bien hecho, antes de que lo vea el cliente?", "¿Quién tiene el mejor ojo para la calidad y qué es lo que mira?"],
+        preguntas: ["¿Cómo sabes que lo que salió está bien hecho, antes de que lo vea el cliente?", "¿Quién se da cuenta primero cuando algo no está quedando bien, y en qué se fija?"],
       },
       {
         clave: "reclamos",
@@ -210,6 +210,29 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
     ],
   },
 ];
+
+/**
+ * Ejemplos por pregunta: abren la memoria del que responde (queja real: "no entiendo esa pregunta").
+ * Se muestran en gris bajo la pregunta. Clave = texto exacto de la pregunta.
+ */
+export const EJEMPLOS: Record<string, string> = {
+  "¿Quiénes forman la empresa y qué hace cada uno, en una frase por persona?": "«Somos 4: yo vendo y compro; Marta atiende la caja; Luis reparte; mi hijo ve las redes.»",
+  "¿Quién le responde a quién cuando algo sale mal?": "«Si un pedido sale mal, Luis me avisa a mí y yo hablo con el cliente.»",
+  "Toma un puesto clave: ¿qué resultado tiene que entregar para decir que hizo bien su trabajo?": "«La cajera tiene que cuadrar la caja al centavo cada noche.»",
+  "La última vez que contrataron a alguien, ¿cómo fue, paso a paso?": "«Pusimos un aviso, vinieron tres personas, conversamos y escogimos a la más puntual.»",
+  "¿Quién le enseña a un nuevo y cuánto tarda en trabajar solo?": "«Lo pongo una semana al lado de Marta; al mes ya atiende solo.»",
+  "¿Cómo te das cuenta de que alguien está rindiendo?": "«Veo cuántos pedidos saca al día y si los clientes se quejan o lo felicitan.»",
+  "¿Quién puede dar un descuento o fiar, y hasta cuánto?": "«Solo yo doy descuentos; Marta puede fiar hasta 50 soles a caseros conocidos.»",
+  "¿Qué pasa cuando un cliente pide algo fuera de lo normal? ¿Quién decide?": "«Si piden entrega un domingo, me llaman y yo decido.»",
+  "¿Qué números revisas tú cada semana, aunque sea mentalmente?": "«Cuánto vendí, cuánto debo a proveedores y cuánto me deben a mí.»",
+  "Si mañana se pierde tu celular o tu cuaderno, ¿qué información se pierde con él?": "«Los pedidos apuntados, los números de los caseros y quiénes me deben.»",
+  "¿Cómo sabes que lo que salió está bien hecho, antes de que lo vea el cliente?": "«Antes de entregar, yo mismo reviso cada pedido: que esté completo y bien presentado.»",
+  "¿Quién se da cuenta primero cuando algo no está quedando bien, y en qué se fija?": "«Rosa se da cuenta al toque: mira el color de la masa y ya sabe si va a salir mal.»",
+  "¿Cuál es el reclamo que más se repite?": "«Que la entrega llegó tarde», «que no era el color que pidieron».",
+  "Describe a tu cliente típico: ¿quién es y qué problema le resuelves?": "«Mamás de la zona que quieren la torta del cumpleaños sin complicarse.»",
+  "¿Qué cosas se hacen 'como siempre se hicieron' sin nada escrito?": "«El inventario se cuenta como lo hacía mi papá: al ojo, cada fin de mes.»",
+  "Cuando alguien duda de cómo hacer algo, ¿a quién o a qué recurre?": "«Le pregunta a Marta, que es la más antigua. Si ella no está, me llaman.»",
+};
 
 export const ESTADOS_ACTIVO: { clave: string; nombre: string; sub: string }[] = [
   { clave: "lo_tengo", nombre: "Lo tengo", sub: "Súbelo aquí mismo" },

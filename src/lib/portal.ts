@@ -38,7 +38,7 @@ export async function contextoPortal() {
   else if (fuentes === 0) { queFalta = "Sube lo que tengas: una foto del cuaderno sirve."; paso = 2; }
   else if (sesionesPend > 0) { queFalta = "Conversemos. Una pregunta a la vez, hablando o escribiendo."; paso = 3; }
   else if ((porValidar ?? 0) > 0) { queFalta = `Hay ${porValidar} cosas que encontramos y necesitamos que confirmes.`; paso = 4; }
-  else { queFalta = "Tu consultor está revisando los resultados. Te avisamos cuando estén listos."; paso = 6; }
+  else { queFalta = "Tu diagnóstico se está afinando con lo que ya contaste. Mientras tanto, cada cosa que agregues en Tu información lo hace más preciso."; paso = 6; }
 
   return { u, companyId, empresa, queFalta, paso, stats, porValidar: porValidar ?? 0, fuentes, sesionesPend };
 }
