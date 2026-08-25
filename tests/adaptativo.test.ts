@@ -116,6 +116,15 @@ describe("Biblioteca de documentos (el diagnóstico dicta qué construir)", asyn
     const r = bibliotecaRecomendada([{ patron: "dependencia_fundador", pilar: "personas", titulo: "x", impacto: "alto", estado_revision: "rechazado" }], "madura");
     expect(r.every((x) => x.razon === "por la etapa de tu negocio")).toBe(true);
   });
+  it("la biblioteca esperada es proporcional al tamaño", async () => {
+    const { bibliotecaEsperada } = await import("@/lib/biblioteca");
+    expect(bibliotecaEsperada(2).length).toBeLessThan(bibliotecaEsperada(8).length);
+    expect(bibliotecaEsperada(8).length).toBeLessThan(bibliotecaEsperada(20).length);
+    expect(bibliotecaEsperada(2)).toContain("personas.plan_personal");
+    expect(bibliotecaEsperada(2)).not.toContain("personas.reglamento");
+    expect(bibliotecaEsperada(20)).toContain("personas.reglamento");
+    expect(bibliotecaEsperada(null).length).toBeGreaterThan(0);
+  });
   it("existen los 3 documentos nuevos con sus preguntas vividas", () => {
     const claves = BLOQUES_ACTIVOS.flatMap((b) => b.activos.map((a) => `${b.clave}.${a.clave}`));
     for (const c of ["personas.plan_personal", "personas.reglamento", "personas.cultura"]) expect(claves).toContain(c);

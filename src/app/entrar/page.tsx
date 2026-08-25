@@ -3,6 +3,7 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase/client";
+import { CampoClave } from "@/components/base/CampoClave";
 
 function Formulario() {
   const router = useRouter();
@@ -35,7 +36,7 @@ function Formulario() {
       </label>
       <label className="flex flex-col gap-2">
         <span className="t-etiqueta">Contraseña</span>
-        <input className="campo" type="password" autoComplete="current-password" required value={clave} onChange={(e) => setClave(e.target.value)} />
+        <CampoClave value={clave} onChange={setClave} autoComplete="current-password" />
       </label>
       {error && <p className="t-cuerpo" style={{ color: "var(--contradicho)" }} role="alert">{error}</p>}
       <button className="boton boton--grande" disabled={cargando}>{cargando ? "Entrando" : "Entrar"}</button>

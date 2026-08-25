@@ -29,6 +29,19 @@ const POR_PILAR: Record<string, string[]> = {
 };
 
 /**
+ * PROPORCIONALIDAD: los documentos que le tocan a una empresa según su tamaño.
+ * A 2 trabajadores no se le piden 100 procesos: la vara crece con la empresa.
+ */
+export function bibliotecaEsperada(personas: number | null | undefined): string[] {
+  const chicas = ["personas.funciones", "personas.plan_personal", "procesos.politicas", "procesos.mapa_procesos"];
+  const medianas = [...chicas, "personas.organigrama", "personas.cultura", "personas.onboarding", "producto.calidad", "marketing.proceso_comercial"];
+  const grandes = [...medianas, "personas.reglamento", "personas.evaluacion", "procesos.indicadores", "personas.seleccion"];
+  const n = personas == null || Number.isNaN(personas) ? null : personas;
+  const lista = n == null ? medianas : n <= 3 ? chicas : n <= 10 ? medianas : grandes;
+  return lista.filter((c) => CLAVES_VALIDAS.has(c));
+}
+
+/**
  * Los 3 documentos que ESTA empresa debe construir primero, cada uno con el hallazgo que lo pide.
  * Solo hallazgos vivos (no rechazados); el impacto alto pesa primero.
  */

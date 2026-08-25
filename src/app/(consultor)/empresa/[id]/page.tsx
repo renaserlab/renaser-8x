@@ -42,6 +42,36 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
 
       <Admision companyId={id} estado={c.estado_admision} evaluacion={admision?.evaluacion} respuestas={admision} />
 
+      {/* Las 3 capas del método: dónde está esta empresa (maqueta aprobada). */}
+      {await (async () => {
+        const [{ count: propuestas }, { count: porValidar }] = await Promise.all([
+          sb.from("company_assets").select("id", { count: "exact", head: true }).eq("company_id", id).not("propuesta_estado", "is", null),
+          sb.from("claims").select("id", { count: "exact", head: true }).eq("company_id", id).eq("estado", "contradicho"),
+        ]);
+        const hayDiag = (diag ?? []).some((d) => d.estado !== "desconocido");
+        const capa = (propuestas ?? 0) > 0 ? 3 : hayDiag ? 2 : 1;
+        const paso = (n: number, nombre: string, detalle: string) => {
+          const hecho = capa > n;
+          const act = capa === n;
+          return (
+            <span key={n} className="flex items-center gap-2" style={{ flex: "none" }}>
+              <span className="t-dato" style={{ width: 26, height: 26, borderRadius: "50%", display: "grid", placeItems: "center", fontWeight: 700, background: hecho ? "var(--confirmado)" : act ? "var(--marca)" : "var(--suave)", color: hecho || act ? "var(--papel)" : "var(--grafito)", border: "1.5px solid " + (hecho ? "var(--confirmado)" : act ? "var(--marca)" : "var(--linea)") }}>{n}</span>
+              <span>
+                <span className="t-dato" style={{ fontWeight: 600 }}>{nombre}</span>
+                <span className="block t-dato" style={{ color: "var(--grafito)", fontSize: 12 }}>{detalle}</span>
+              </span>
+            </span>
+          );
+        };
+        return (
+          <section className="panel p-5 mb-6 flex flex-wrap items-center gap-6">
+            {paso(1, "Diagnóstico", hayDiag ? "corrido" : "en levantamiento")}
+            {paso(2, "Profundización", (porValidar ?? 0) > 0 ? `${porValidar} contradicción(es) por resolver` : "validaciones al día")}
+            {paso(3, "Creación y sistematización", (propuestas ?? 0) > 0 ? `${propuestas} documento(s) en trabajo` : "aún sin documentos trabajados")}
+          </section>
+        );
+      })()}
+
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-10">
         {["personas", "procesos", "producto", "marketing"].map((p) => {
           const d = porPilar[p];

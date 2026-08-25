@@ -1,13 +1,63 @@
 import Link from "next/link";
 import { contextoPortal } from "@/lib/portal";
 import { empresaHoy } from "@/lib/hoy";
+import { tableroEmpresario, type PuntoVenta } from "@/lib/tablero";
 import { CrearEmpresa } from "@/components/cliente/CrearEmpresa";
 
 export const dynamic = "force-dynamic";
 
+const soles = (n: number) => `S/${Math.round(n).toLocaleString("es-PE")}`;
+const MES = ["", "ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "set", "oct", "nov", "dic"];
+const mesCorto = (p: string) => MES[Number(p.slice(5, 7))] ?? p;
+
+/** Medidor semicircular (comprensión). Solo SVG: sin librerías, ambos temas. */
+function Medidor({ pct }: { pct: number }) {
+  const a = Math.PI * (1 - pct / 100);
+  const x = 60 + 50 * Math.cos(a);
+  const y = 62 - 50 * Math.sin(a);
+  const grande = pct > 50 ? 1 : 0;
+  return (
+    <svg viewBox="0 0 120 70" style={{ width: 128 }} role="img" aria-label={`Entendido ${pct} por ciento`}>
+      <path d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke="var(--linea)" strokeWidth="9" strokeLinecap="round" />
+      {pct > 2 && <path d={`M10 62 A50 50 0 ${grande} 1 ${x.toFixed(1)} ${y.toFixed(1)}`} fill="none" stroke="var(--marca)" strokeWidth="9" strokeLinecap="round" />}
+      <text x="60" y="58" textAnchor="middle" fontSize="20" fontWeight="700" fill="var(--tinta)">{pct}%</text>
+    </svg>
+  );
+}
+
+/** Línea de ventas mes a mes + la referencia de la mejor época. Solo datos contados: nada decorativo. */
+function GraficaVentas({ serie, dorada }: { serie: PuntoVenta[]; dorada: number | null }) {
+  const W = 420, H = 172, X0 = 14, X1 = 406, YTOP = 34, YBASE = 138;
+  const max = Math.max(...serie.map((p) => p.valor), dorada ?? 0) || 1;
+  const min = Math.min(...serie.map((p) => p.valor));
+  const x = (i: number) => (serie.length === 1 ? (X0 + X1) / 2 : X0 + ((X1 - X0) * i) / (serie.length - 1));
+  const y = (v: number) => YBASE - ((YBASE - YTOP) * (v - Math.min(min, 0))) / (max - Math.min(min, 0) || 1);
+  const pts = serie.map((p, i) => `${x(i)},${y(p.valor).toFixed(1)}`).join(" ");
+  const ult = serie[serie.length - 1];
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", maxWidth: 560 }} role="img" aria-label="Ventas por mes">
+      {dorada != null && (
+        <>
+          <line x1={X0} y1={y(dorada)} x2={X1} y2={y(dorada)} stroke="var(--caducado)" strokeWidth="1.5" strokeDasharray="6 5" />
+          <text x={X0 + 2} y={y(dorada) - 6} fontSize="11" fill="var(--caducado)">tu mejor época: {soles(dorada)}</text>
+        </>
+      )}
+      <line x1={X0} y1={YBASE} x2={X1} y2={YBASE} stroke="var(--linea)" />
+      <polyline points={pts} fill="none" stroke="var(--marca)" strokeWidth="2.5" strokeLinejoin="round" />
+      {serie.map((p, i) => (
+        <circle key={p.periodo} cx={x(i)} cy={y(p.valor)} r={i === serie.length - 1 ? 4.5 : 4} fill="var(--marca)" />
+      ))}
+      {serie.map((p, i) => (
+        <text key={p.periodo + "t"} x={x(i)} y={H - 14} fontSize="11" fill="var(--grafito)" textAnchor="middle">{mesCorto(p.periodo)}</text>
+      ))}
+      {ult && <text x={x(serie.length - 1)} y={y(ult.valor) - 10} fontSize="11.5" fontWeight="600" fill="var(--tinta)" textAnchor="end">{soles(ult.valor)}</text>}
+    </svg>
+  );
+}
+
 /**
- * Entrada simple (fase 5 y 32): en 15 segundos se entiende qué es esto, se puede empezar sin manual,
- * y apenas hay señal aparece el primer espejo ("ya encontramos N cosas que vale la pena mirar").
+ * Inicio del portal = el tablero del empresario (maqueta aprobada): qué sigue, cuánto entendemos,
+ * sus números con estado, sus ventas frente a su mejor época, lo que más lo frena y su biblioteca.
  */
 export default async function Portal() {
   const c = await contextoPortal();
@@ -19,65 +69,112 @@ export default async function Portal() {
       </>
     );
 
-  const hoy = await empresaHoy(c.companyId);
+  const [hoy, t] = await Promise.all([empresaHoy(c.companyId), tableroEmpresario(c.companyId)]);
+
+  if (hoy.nivel === 0)
+    return (
+      <>
+        <h1 className="t-titulo mt-2 mb-4 medida">Vamos a entender cómo funciona realmente tu empresa</h1>
+        <p className="t-cuerpo medida mb-2" style={{ color: "var(--grafito)" }}>
+          En 15–20 minutos tendrás tu primer diagnóstico. No necesitas documentos perfectos: puedes hablar, subir fotos o simplemente contarnos cómo lo haces.
+        </p>
+        <div className="mt-6">
+          <Link href="/portal/conversacion" className="boton">Empezar</Link>
+        </div>
+      </>
+    );
+
+  const rutaContinuar = ({ 2: "/portal/activos", 3: "/portal/conversacion", 4: "/portal/validar", 5: "/portal/procesos", 6: "/portal/activos", 7: "/portal/resultados", 8: "/portal/plan" } as Record<number, string>)[c.paso] ?? "/portal/hoy";
   const cosas = hoy.espejo.length + hoy.noVes.length + hoy.fortalezas.length;
 
-  const PASOS: { titulo: string; href: string; texto: string; hecho: boolean; actual: boolean }[] = [
-    { titulo: "Cuéntanos cómo funciona", href: "/portal/conversacion", texto: "Preguntas cortas, hablando o escribiendo. Sin respuestas buenas ni malas.", hecho: (c.sesionesPend ?? 0) === 0, actual: c.paso === 3 },
-    { titulo: "Tu información, área por área", href: "/portal/activos", texto: "Lo que exista, súbelo ahí mismo; lo que no esté escrito, cuéntanos cómo funciona.", hecho: (c.fuentes ?? 0) > 0, actual: c.paso === 2 },
-    { titulo: "Confirma lo que encontramos", href: "/portal/validar", texto: "Donde una cosa no cuadra con otra, tú decides cuál vale hoy.", hecho: (c.porValidar ?? 0) === 0 && cosas > 0, actual: c.paso === 4 },
-    { titulo: "Tus procesos, dibujados", href: "/portal/procesos", texto: "Los ves como un mapa y los corriges si algo no es así.", hecho: false, actual: c.paso === 5 },
-  ];
-
   return (
-    <>
-      {hoy.nivel === 0 ? (
-        <>
-          <h1 className="t-titulo mt-2 mb-4 medida">Vamos a entender cómo funciona realmente tu empresa</h1>
-          <p className="t-cuerpo medida mb-2" style={{ color: "var(--grafito)" }}>
-            En 15–20 minutos tendrás tu primer diagnóstico. No necesitas documentos perfectos: puedes hablar, subir fotos o simplemente contarnos cómo lo haces.
-          </p>
-          <div className="mt-6 mb-10">
-            <Link href="/portal/conversacion" className="boton">Empezar</Link>
+    <div className="flex flex-col gap-4">
+      {/* Qué sigue + comprensión */}
+      <div className="grid gap-4 sm:grid-cols-[3fr_2fr]">
+        <section className="panel p-5">
+          <p className="t-etiqueta mb-2">Qué sigue ahora</p>
+          <p className="t-cuerpo medida" style={{ fontSize: 19, fontWeight: 550, marginBottom: 14 }}>{t.preguntaAbierta ?? c.queFalta}</p>
+          <div className="flex items-center gap-4 flex-wrap">
+            <Link href={t.preguntaAbierta ? "/portal/conversacion" : rutaContinuar} className="boton">Continuar</Link>
+            {cosas > 0 && (
+              <Link href="/portal/hoy" className="t-dato" style={{ textDecoration: "underline", color: "var(--marca)" }}>
+                Ya encontramos {cosas} cosa{cosas === 1 ? "" : "s"} que vale la pena mirar
+              </Link>
+            )}
           </div>
-        </>
-      ) : (
-        <>
-          <p className="t-etiqueta">Qué sigue ahora</p>
-          <h1 className="t-titulo mt-2 mb-4 medida">{c.queFalta}</h1>
-          <div className="mb-8">
-            <Link href={({ 2: "/portal/activos", 3: "/portal/conversacion", 4: "/portal/validar", 5: "/portal/procesos", 6: "/portal/activos", 7: "/portal/resultados", 8: "/portal/plan" } as Record<number, string>)[c.paso] ?? "/portal/hoy"} className="boton">
-              Continuar
-            </Link>
-          </div>
-          {cosas > 0 && (
-            <Link href="/portal/hoy" className="panel p-5 mb-8 block" style={{ borderColor: "var(--marca)" }}>
-              <span className="t-seccion" style={{ fontSize: 18 }}>Ya encontramos {cosas} cosa{cosas === 1 ? "" : "s"} que vale la pena mirar</span>
-              <span className="block t-dato mt-1" style={{ color: "var(--grafito)" }}>Mi empresa hoy: lo que entendimos, el espejo y por dónde empezar. Se actualiza solo.</span>
-            </Link>
+        </section>
+        <section className="panel p-5">
+          <p className="t-etiqueta mb-2">Cuánto entendemos tu empresa</p>
+          <Medidor pct={t.comprension} />
+          <p className="t-dato mt-1" style={{ color: "var(--grafito)" }}>Con cada respuesta, tu diagnóstico se afina.</p>
+        </section>
+      </div>
+
+      {/* Números con estado — solo los que existen */}
+      {(t.kpis.venta || t.kpis.ganancia || t.kpis.deuda != null) && (
+        <div className="grid gap-4 sm:grid-cols-3">
+          {t.kpis.venta && (
+            <section className="panel p-5">
+              <p className="t-etiqueta mb-2">Ventas de {mesCorto(t.kpis.venta.periodo)}</p>
+              <p className="t-titulo" style={{ fontSize: 28 }}>{soles(t.kpis.venta.valor)}</p>
+              <p className="t-dato" style={{ color: "var(--grafito)" }}>{t.kpis.venta.estado === "verificado" ? "verificado en tus registros" : "contado de memoria — un más o menos basta"}</p>
+            </section>
           )}
-        </>
+          {t.kpis.ganancia && (
+            <section className="panel p-5">
+              <p className="t-etiqueta mb-2">Lo que te quedó ({mesCorto(t.kpis.ganancia.periodo)})</p>
+              <p className="t-titulo" style={{ fontSize: 28 }}>{soles(t.kpis.ganancia.valor)}</p>
+              {t.kpis.venta && t.kpis.venta.periodo === t.kpis.ganancia.periodo && t.kpis.venta.valor > 0 && (
+                <p className="t-dato" style={{ color: "var(--grafito)" }}>{Math.round((t.kpis.ganancia.valor / t.kpis.venta.valor) * 100)} de cada 100 soles vendidos</p>
+              )}
+            </section>
+          )}
+          {t.kpis.deuda != null && (
+            <section className="panel p-5">
+              <p className="t-etiqueta mb-2">Te deben tus clientes</p>
+              <p className="t-titulo" style={{ fontSize: 28, color: "var(--caducado)" }}>{soles(t.kpis.deuda)}</p>
+              <p className="t-dato" style={{ color: "var(--grafito)" }}>plata tuya que aún no entra</p>
+            </section>
+          )}
+        </div>
       )}
 
-      <ol className="flex flex-col gap-3">
-        {PASOS.map((p, i) => (
-          <li key={p.href}>
-            <Link href={p.href} className="panel p-4 flex items-start gap-4" style={{ borderColor: p.actual ? "var(--marca)" : "var(--linea)", opacity: p.hecho ? 0.65 : 1 }}>
-              <span className="t-dato" style={{ width: 28, height: 28, borderRadius: "50%", display: "grid", placeItems: "center", background: p.hecho ? "var(--confirmado)" : p.actual ? "var(--tinta)" : "var(--suave)", color: p.hecho || p.actual ? "var(--papel)" : "var(--grafito)", flex: "none" }}>
-                {p.hecho ? <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7.5 5.5 11 12 3.5" fill="none" stroke="currentColor" strokeWidth="2" /></svg> : i + 1}
-              </span>
-              <span>
-                <span className="t-seccion" style={{ fontSize: 18 }}>{p.titulo}</span>
-                <span className="block t-dato" style={{ color: "var(--grafito)" }}>{p.texto}</span>
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ol>
+      {/* Ventas mes a mes vs mejor época */}
+      {t.serieVentas.length >= 2 && (
+        <section className="panel p-5">
+          <p className="t-etiqueta mb-2">Tus ventas, mes a mes</p>
+          <GraficaVentas serie={t.serieVentas} dorada={t.epocaDorada} />
+          {t.epocaDorada != null && t.serieVentas.length > 0 && t.epocaDorada > t.serieVentas[t.serieVentas.length - 1].valor * 1.25 && (
+            <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>
+              Antes vendías más. La receta ya existió — en <Link href="/portal/conversacion" style={{ textDecoration: "underline" }}>Conversar</Link> la estamos reconstruyendo contigo.
+            </p>
+          )}
+        </section>
+      )}
 
-      <p className="t-dato mt-8 medida" style={{ color: "var(--grafito)" }}>
-        Con cada cosa que cuentas o subes, tu diagnóstico se afina en <Link href="/portal/hoy" style={{ textDecoration: "underline" }}>Mi empresa hoy</Link>. Puedes parar cuando quieras y volver desde el celular.
+      {/* Lo que más frena + biblioteca proporcional */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        {hoy.restriccion && (
+          <section className="panel p-5" style={{ borderLeft: "4px solid var(--contradicho)" }}>
+            <p className="t-etiqueta mb-2">Lo que más te está frenando</p>
+            <p className="t-cuerpo" style={{ fontWeight: 550, marginBottom: 8 }}>{hoy.restriccion.titulo}</p>
+            <Link href="/portal/hoy" className="t-dato" style={{ textDecoration: "underline", color: "var(--marca)" }}>Ver el análisis completo</Link>
+          </section>
+        )}
+        <section className="panel p-5">
+          <p className="t-etiqueta mb-2">Los documentos que te tocan{t.biblioteca.personas ? ` · empresa de ${t.biblioteca.personas} persona${t.biblioteca.personas === 1 ? "" : "s"}` : ""}</p>
+          <div style={{ height: 6, borderRadius: 4, background: "var(--linea)", overflow: "hidden", marginBottom: 10 }}>
+            <div style={{ width: `${t.biblioteca.total ? Math.round((t.biblioteca.listos / t.biblioteca.total) * 100) : 0}%`, height: "100%", background: "var(--marca)" }} />
+          </div>
+          <p className="t-cuerpo" style={{ marginBottom: 6 }}>{t.biblioteca.listos} de {t.biblioteca.total}</p>
+          <p className="t-dato" style={{ color: "var(--grafito)", marginBottom: 10 }}>A tu tamaño no te pedimos más — la vara crece con tu empresa.</p>
+          <Link href="/portal/activos" className="t-dato" style={{ textDecoration: "underline", color: "var(--marca)" }}>Ir a Tu información</Link>
+        </section>
+      </div>
+
+      <p className="t-dato medida" style={{ color: "var(--grafito)" }}>
+        Todo lo que ves sale de lo que tu empresa contó o mostró — nada es decorativo. Puedes parar cuando quieras y volver desde el celular.
       </p>
-    </>
+    </div>
   );
 }

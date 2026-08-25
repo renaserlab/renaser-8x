@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase/client";
+import { CampoClave } from "@/components/base/CampoClave";
 
 export default function Registro() {
   const [nombre, setNombre] = useState("");
@@ -49,7 +50,7 @@ export default function Registro() {
             </label>
             <label className="flex flex-col gap-2">
               <span className="t-etiqueta">Contraseña</span>
-              <input className="campo" type="password" autoComplete="new-password" minLength={6} required value={clave} onChange={(e) => setClave(e.target.value)} />
+              <CampoClave value={clave} onChange={setClave} autoComplete="new-password" minLength={6} />
             </label>
             {error && <p className="t-cuerpo" style={{ color: "var(--contradicho)" }} role="alert">{error}</p>}
             <button className="boton boton--grande" disabled={cargando}>{cargando ? "Creando" : "Crear cuenta"}</button>
