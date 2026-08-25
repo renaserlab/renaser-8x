@@ -5,6 +5,7 @@ import { progreso, encolar, PRIORIDAD, claveIdempotente } from "../queue";
 import { calibrarImpacto, aplicarFiltros, estadoPilar } from "@/lib/rules/evidencia";
 import { MIN_CONFIRMADAS_POR_PILAR } from "@/lib/rules/suficiencia";
 import { detectarAnomalias, tablaResultadosComoTexto, type Metrica } from "@/lib/rules/anomalias";
+import { preguntaRepetida } from "./entrevista";
 
 type Job = { id: string; company_id: string; payload: Record<string, unknown> };
 
@@ -149,13 +150,20 @@ export async function handleDiagnosticar(job: Job) {
     const { data: nueva } = await sb.from("interview_sessions").insert({ company_id: job.company_id, participant_id: dueno.id, tipo: "validacion" }).select("id").single();
     return (sesionValidacion = nueva?.id ?? null);
   };
+  // CANDADO DE REDUNDANCIA también aquí: las preguntas pendientes del diagnóstico entraban a la
+  // conversación SIN pasar por el filtro — al re-diagnosticar, la misma pregunta llegaba dos veces
+  // (queja real: "me volvió a preguntar sobre TikTok y costos"). Nada se inserta si ya se preguntó.
+  const { data: todasPreguntas } = await sb.from("interview_responses").select("pregunta, interview_sessions!inner(company_id)").eq("interview_sessions.company_id", job.company_id).limit(400);
+  const yaPreguntadas = (todasPreguntas ?? []).map((x) => String(x.pregunta));
   for (const q of d.data.preguntas_pendientes.slice(0, 6)) {
+    if (preguntaRepetida(q.texto, yaPreguntadas)) continue;
     const tipoSesion = q.para === "lider" ? "lider" : q.para === "personal" ? "personal" : "empresa_dueno";
     const { data: ses } = await sb.from("interview_sessions").select("id").eq("company_id", job.company_id).eq("tipo", tipoSesion).neq("estado", "completa").limit(1).maybeSingle();
     const destino = ses?.id ?? (await abrirValidacion());
     if (destino) {
       const { data: ult } = await sb.from("interview_responses").select("orden").eq("session_id", destino).order("orden", { ascending: false }).limit(1);
       await sb.from("interview_responses").insert({ session_id: destino, bloque: ses ? pilar : "validacion", pilar, pregunta: q.texto, orden: (ult?.[0]?.orden ?? 0) + 1 });
+      yaPreguntadas.push(q.texto); // tampoco dos parecidas dentro del mismo lote
     }
   }
 

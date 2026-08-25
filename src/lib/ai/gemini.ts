@@ -121,20 +121,28 @@ export class GeminiProvider implements AIProvider {
     return true; // Gemini transcribe audio nativamente
   }
 
-  /** Transcripción con Gemini: el audio (MediaRecorder) entra como inlineData; sale el texto literal. */
+  /**
+   * Transcripción con Gemini: el audio (MediaRecorder) entra como inlineData; sale el texto literal.
+   * Es INTERACTIVA: la persona está mirando la pantalla. Por eso usa un modelo dedicado estable
+   * (el 3.7-flash sufre tormentas de "high demand" que con backoff largo tardaban minutos) y
+   * reintentos cortos: si Gemini está saturado, mejor fallar rápido y que la persona escriba.
+   */
   async transcribe(audio: Blob, mime: string): Promise<Transcripcion> {
+    const modelo = process.env.GEMINI_TRANSCRIBE_MODEL ?? "gemini-3.5-flash-lite";
+    const thinking = modelo.startsWith("gemini-2.5") ? { thinkingBudget: 0 } : { thinkingLevel: "low" };
     const buf = Buffer.from(await audio.arrayBuffer());
     const body = {
       systemInstruction: { parts: [{ text: "Quien habla es una persona de negocios en Perú describiendo su empresa, en español. Transcribe FIELMENTE lo dicho: no resumas, no cambies palabras, no añadas nada. Corrige SOLO la puntuación y la separación de frases para que se lea natural. Conserva los montos y números tal como se dijeron ('25 mil soles', 'de cada 10, unos 3'). Si una palabra no se entiende, escribe [inaudible] en su lugar — nunca la adivines. Si hay silencios, simplemente continúa. Devuelve SOLO el texto transcrito." }] },
       contents: [{ role: "user", parts: [{ inlineData: { mimeType: mime || "audio/webm", data: buf.toString("base64") } }, { text: "Transcribe este audio." }] }],
-      generationConfig: { temperature: 0, maxOutputTokens: 8000, thinkingConfig: { thinkingLevel: THINKING_LEVEL } },
+      generationConfig: { temperature: 0, maxOutputTokens: 8000, thinkingConfig: thinking },
     };
+    const MAX_REINTENTOS_INTERACTIVOS = 2;
     let reintentos = 0;
     for (;;) {
-      const res = await fetch(`${BASE}/${MODEL}:generateContent`, { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": this.key }, body: JSON.stringify(body), signal: AbortSignal.timeout(TIMEOUT_MS) });
-      if (res.status === 503 && reintentos < MAX_REINTENTOS_503) {
+      const res = await fetch(`${BASE}/${modelo}:generateContent`, { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": this.key }, body: JSON.stringify(body), signal: AbortSignal.timeout(TIMEOUT_MS) });
+      if (res.status === 503 && reintentos < MAX_REINTENTOS_INTERACTIVOS) {
         reintentos++;
-        await new Promise((r) => setTimeout(r, Math.min(3000 * 2 ** (reintentos - 1), 40_000)));
+        await new Promise((r) => setTimeout(r, 2000 * reintentos));
         continue;
       }
       if (res.status === 429) throw new AIRateLimitError(`Transcripción 429`);
