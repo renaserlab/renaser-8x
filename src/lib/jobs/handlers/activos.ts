@@ -1,8 +1,9 @@
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { ai } from "@/lib/ai";
 import { GUARDIA, comoDato } from "@/lib/rules/patrones";
-import { SalidaConstructor } from "@/lib/schemas";
+import { SalidaConstructor, SalidaSistematizador } from "@/lib/schemas";
 import { BLOQUES_ACTIVOS } from "@/lib/activos";
+import { ESTANDARES } from "@/lib/rules/estandares";
 import { claimsDeEmpresa, registrarLlamada, etiquetaFuente } from "@/lib/db/queries";
 
 type Job = { id: string; company_id: string; payload: Record<string, unknown> };
@@ -89,4 +90,71 @@ export async function handleConstruirActivo(job: Job) {
     .from("company_assets")
     .upsert({ company_id: job.company_id, bloque: def.bloque, clave, estado: "borrador_generado", borrador: r.data.borrador, faltantes: r.data.faltantes ?? [], updated_at: new Date().toISOString() }, { onConflict: "company_id,clave" });
   return { clave, borrador: !!r.data.borrador, faltantes: (r.data.faltantes ?? []).length };
+}
+
+export const PROMPT_SISTEMATIZADOR = `${GUARDIA}
+
+Eres el consultor senior de RENASER en la capa de SISTEMATIZACION: recibes el documento DECLARADO
+de una empresa (ya confirmado por el dueno: describe como funciona HOY, con sus nombres y sus palabras)
+y produces la VERSION TRABAJADA — el mismo documento, mejorado con criterio de consultor.
+
+Recibes ademas: los ESTANDARES del pilar (la vara de una empresa que crece), los HALLAZGOS del
+diagnostico de ESTA empresa, la Caleta (el saber del equipo) y la ficha (tamano, tipo, etapa).
+
+Devuelve JSON { "propuesta": string | null, "cambios": [...], "nota": string | null }.
+- propuesta: el documento trabajado, en markdown sencillo. PARTE del declarado: mismas personas,
+  mismos nombres, mismas palabras de la empresa. No es una plantilla nueva: es SU documento, mejorado.
+- cambios: maximo 6 — los que mas muevan la aguja. Cada uno { "cambio": "...", "por_que": "..." }:
+  el porque SIEMPRE anclado en un estandar de la lista o en un hallazgo del diagnostico, citandolo
+  ("el diagnostico encontro que 7 de 10 decisiones pasan por el dueno"). Un cambio sin ancla no se propone.
+- nota: si algo del declarado se conserva a proposito, dilo ("la estructura de X se queda como esta:
+  funciona"); o si falta una pieza para trabajar bien, dila.
+
+REGLAS ABSOLUTAS:
+- PROPORCIONALIDAD: la propuesta es del tamano de la empresa. A 5 personas no se le proponen comites,
+  jefaturas ni burocracia. Cada elemento nuevo debe poder mantenerlo la gente que YA existe.
+- Lo que funciona se conserva y se reconoce: sistematizar no es cambiar todo.
+- El documento lo leera el dueno EN VOZ ALTA a su equipo: cero lenguaje corporativo hueco.
+- No inventes nombres, cifras ni areas que el material no muestre.
+- Si el declarado no alcanza para trabajar con seriedad, propuesta: null y en nota que falta.`;
+
+/** payload: { clave, comentario? } → SISTEMATIZADOR (capa 3): del documento declarado a la versión trabajada. */
+export async function handleSistematizarActivo(job: Job) {
+  const sb = supabaseAdmin();
+  const clave = String(job.payload.clave ?? "");
+  const comentario = job.payload.comentario ? String(job.payload.comentario) : null;
+  const def = BLOQUES_ACTIVOS.flatMap((b) => b.activos.map((a) => ({ ...a, bloque: b.clave, claveCompleta: `${b.clave}.${a.clave}` }))).find((a) => a.claveCompleta === clave);
+  if (!def) throw new Error(`Activo desconocido: ${clave}`);
+  const { data: activo } = await sb.from("company_assets").select("borrador,estado").eq("company_id", job.company_id).eq("clave", clave).single();
+  if (!activo?.borrador) throw new Error("Primero hay que construir y confirmar el documento.");
+
+  const [{ data: empresa }, { data: findings }, { data: kh }] = await Promise.all([
+    sb.from("companies").select("nombre,sector,ficha,etapa_negocio,modelo_operativo").eq("id", job.company_id).single(),
+    sb.from("findings").select("titulo,causa_raiz,impacto,pilar,patron").eq("company_id", job.company_id).neq("estado_revision", "rechazado").limit(30),
+    sb.from("know_how").select("puesto,situacion,senal,regla_practica").eq("company_id", job.company_id).limit(20),
+  ]);
+  const pilarEstandar = def.bloque === "personas" ? "personas" : def.bloque === "procesos" ? "procesos" : def.bloque === "producto" ? "producto" : "marketing";
+  const ficha = (empresa?.ficha ?? {}) as Record<string, string>;
+
+  const contexto = [
+    `DOCUMENTO A TRABAJAR: ${def.nombre}`,
+    `EMPRESA: ${empresa?.nombre} · ${empresa?.sector ?? ""} · ${ficha.personas ?? "?"} personas · etapa: ${empresa?.etapa_negocio ?? "?"}`,
+    comoDato("DOCUMENTO DECLARADO (confirmado por el dueño — la base)", String(activo.borrador)),
+    `ESTANDARES DEL PILAR (la vara):\n${(ESTANDARES[pilarEstandar] ?? []).map((e) => "- " + e).join("\n")}`,
+    `HALLAZGOS DEL DIAGNOSTICO (${findings?.length ?? 0}):`,
+    (findings ?? []).map((f) => `- [${f.impacto} · ${f.pilar}] ${f.titulo}: ${f.causa_raiz ?? ""}`).join("\n") || "(ninguno todavía)",
+    `LA CALETA (${kh?.length ?? 0}):`,
+    (kh ?? []).map((k) => `- ${k.puesto}: ${k.situacion ?? ""} · señal: ${k.senal ?? ""} · regla: ${k.regla_practica ?? ""}`).join("\n") || "(ninguna)",
+    comentario ? `COMENTARIO DEL DUEÑO SOBRE LA PROPUESTA ANTERIOR (atiéndelo):\n${comentario}` : "",
+  ].filter(Boolean).join("\n\n");
+
+  const r = await ai().complete({ system: PROMPT_SISTEMATIZADOR, user: contexto, schema: SalidaSistematizador, priority: "interactive", maxTokens: 4000, agente: "sistematizador" });
+  await registrarLlamada(job.company_id, job.id, "sistematizador", r);
+
+  await sb
+    .from("company_assets")
+    .update({ propuesta: r.data.propuesta, propuesta_cambios: r.data.cambios ?? [], propuesta_estado: r.data.propuesta ? "lista" : null, nota: r.data.nota ?? null, updated_at: new Date().toISOString() })
+    .eq("company_id", job.company_id)
+    .eq("clave", clave);
+  return { clave, propuesta: !!r.data.propuesta, cambios: (r.data.cambios ?? []).length };
 }

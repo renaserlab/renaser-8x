@@ -190,6 +190,14 @@ export const SalidaConstructor = z.object({
 });
 export type SalidaConstructor = z.infer<typeof SalidaConstructor>;
 
+// SISTEMATIZADOR (capa 3): la versión trabajada de un documento — cada cambio con su porqué anclado.
+export const SalidaSistematizador = z.object({
+  propuesta: z.string().nullable(),
+  cambios: z.array(z.object({ cambio: z.string().min(3), por_que: z.string().min(3) })).max(6).default([]),
+  nota: z.string().nullable().optional(),
+});
+export type SalidaSistematizador = z.infer<typeof SalidaSistematizador>;
+
 // 23.8 PLANIFICADOR
 export const SalidaPlanificador = z.object({
   frentes: z.array(

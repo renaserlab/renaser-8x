@@ -11,7 +11,7 @@ export default async function Activos() {
   if (!c.companyId) return <p className="t-cuerpo medida">{c.queFalta}</p>;
   const sb = supabaseAdmin();
   const [{ data }, { data: findings }, { data: emp }] = await Promise.all([
-    sb.from("company_assets").select("clave,estado,nota,borrador,faltantes,implementacion").eq("company_id", c.companyId),
+    sb.from("company_assets").select("clave,estado,nota,borrador,faltantes,implementacion,propuesta,propuesta_cambios,propuesta_estado").eq("company_id", c.companyId),
     sb.from("findings").select("patron,pilar,titulo,impacto,estado_revision").eq("company_id", c.companyId).neq("estado_revision", "rechazado").eq("requiere_validacion", false).limit(40),
     sb.from("companies").select("etapa_negocio").eq("id", c.companyId).single(),
   ]);
@@ -27,7 +27,10 @@ export default async function Activos() {
       </p>
       <InventarioActivos
         companyId={c.companyId}
-        guardados={(data ?? []).map((d) => ({ clave: d.clave, estado: d.estado, nota: d.nota, borrador: (d as { borrador?: string | null }).borrador ?? null, faltantes: ((d as { faltantes?: { pregunta: string }[] | null }).faltantes ?? null), implementacion: ((d as { implementacion?: { responsable?: string; desde?: string } | null }).implementacion ?? null) }))}
+        guardados={(data ?? []).map((d) => {
+          const x = d as { borrador?: string | null; faltantes?: { pregunta: string }[] | null; implementacion?: { responsable?: string; desde?: string } | null; propuesta?: string | null; propuesta_cambios?: { cambio: string; por_que: string }[] | null; propuesta_estado?: string | null };
+          return { clave: d.clave, estado: d.estado, nota: d.nota, borrador: x.borrador ?? null, faltantes: x.faltantes ?? null, implementacion: x.implementacion ?? null, propuesta: x.propuesta ?? null, propuesta_cambios: x.propuesta_cambios ?? null, propuesta_estado: x.propuesta_estado ?? null };
+        })}
         prioridades={recomendados}
       />
     </>

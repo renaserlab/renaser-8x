@@ -6,7 +6,7 @@ import { BLOQUES_ACTIVOS, ESTADOS_ACTIVO, EJEMPLOS, type ActivoDef } from "@/lib
 import { BotonGrabar } from "@/components/voz/BotonGrabar";
 import { motion, AnimatePresence, MotionConfig } from "motion/react";
 
-type EstadoGuardado = { clave: string; estado: string; nota: string | null; borrador?: string | null; faltantes?: { pregunta: string }[] | null; implementacion?: { responsable?: string; desde?: string } | null };
+type EstadoGuardado = { clave: string; estado: string; nota: string | null; borrador?: string | null; faltantes?: { pregunta: string }[] | null; implementacion?: { responsable?: string; desde?: string } | null; propuesta?: string | null; propuesta_cambios?: { cambio: string; por_que: string }[] | null; propuesta_estado?: string | null };
 
 const LISTOS = ["lo_tengo", "incompleto", "contado", "construido", "borrador_generado", "construyendo", "en_uso"];
 
@@ -28,7 +28,7 @@ export function InventarioActivos({ companyId, guardados, prioridades = [] }: { 
   const inputs = useRef<Record<string, HTMLInputElement | null>>({});
   const sondeo = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const hayConstruyendo = Object.values(estados).some((e) => e.estado === "construyendo");
+  const hayConstruyendo = Object.values(estados).some((e) => e.estado === "construyendo" || e.propuesta_estado === "trabajando");
   useEffect(() => {
     if (sondeo.current) clearInterval(sondeo.current);
     if (!hayConstruyendo) return;
@@ -320,10 +320,92 @@ export function InventarioActivos({ companyId, guardados, prioridades = [] }: { 
                       )}
                       {estado === "borrador_generado" && !g?.borrador && (g?.faltantes?.length ?? 0) > 0 && preguntasLevantamiento(clave, { ...a, preguntas: (g!.faltantes ?? []).map((f) => f.pregunta) }, "Para no inventar nada, cuéntanos esto:")}
 
-                      {(estado === "construido" || estado === "en_uso") && g?.borrador && (
+                      {(estado === "construido" || estado === "en_uso") && g?.borrador && g?.propuesta_estado !== "lista" && (
                         <details className="mt-2">
-                          <summary className="t-dato" style={{ cursor: "pointer", color: "var(--grafito)" }}>Ver el documento confirmado</summary>
+                          <summary className="t-dato" style={{ cursor: "pointer", color: "var(--grafito)" }}>{g?.propuesta_estado === "confirmada" ? "Ver lo que nos contaste originalmente" : "Ver el documento confirmado"}</summary>
                           <pre className="t-doc mt-2" style={{ whiteSpace: "pre-wrap", fontFamily: "var(--font-doc)" }}>{g.borrador}</pre>
+                        </details>
+                      )}
+
+                      {/* CAPA 3 · Sistematización: de lo declarado a lo trabajado, lado a lado. */}
+                      {(estado === "construido" || estado === "en_uso") && g?.borrador && !g?.propuesta_estado && (
+                        <button className="boton boton--secundario mt-3" style={{ minHeight: 40, fontSize: 15 }} disabled={ocupado === clave} onClick={async () => {
+                          setOcupado(clave);
+                          setError(null);
+                          try {
+                            await pedir(`/api/companies/${companyId}/assets/sistematizar`, { json: { clave } });
+                            setEstados((e) => ({ ...e, [clave]: { ...e[clave], propuesta_estado: "trabajando" } }));
+                          } catch (e) {
+                            setError(e instanceof Error ? e.message : "No se pudo.");
+                          } finally {
+                            setOcupado(null);
+                          }
+                        }}>
+                          Trabajarlo con RENASER — la versión mejorada
+                        </button>
+                      )}
+                      {g?.propuesta_estado === "trabajando" && (
+                        <p className="t-cuerpo mt-3 aparece" aria-live="polite" style={{ color: "var(--grafito)" }}>Trabajando la versión mejorada con tu diagnóstico…</p>
+                      )}
+                      {g?.propuesta_estado === "lista" && g.propuesta && (
+                        <div className="mt-3 flex flex-col gap-3 aparece">
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="p-4" style={{ background: "var(--suave)", borderRadius: "var(--radio)" }}>
+                              <p className="t-etiqueta mb-2">Lo que nos contaste</p>
+                              <pre className="t-doc" style={{ whiteSpace: "pre-wrap", fontFamily: "var(--font-doc)", fontSize: 14 }}>{g.borrador}</pre>
+                            </div>
+                            <div className="p-4" style={{ border: "1.5px solid var(--marca)", borderRadius: "var(--radio)" }}>
+                              <p className="t-etiqueta mb-2" style={{ color: "var(--marca)" }}>La versión trabajada</p>
+                              <pre className="t-doc" style={{ whiteSpace: "pre-wrap", fontFamily: "var(--font-doc)", fontSize: 14 }}>{g.propuesta}</pre>
+                            </div>
+                          </div>
+                          {(g.propuesta_cambios?.length ?? 0) > 0 && (
+                            <div className="p-4" style={{ background: "var(--suave)", borderRadius: "var(--radio)" }}>
+                              <p className="t-etiqueta mb-2">Qué cambiamos y por qué</p>
+                              {(g.propuesta_cambios ?? []).map((c, i) => (
+                                <p key={i} className="t-cuerpo" style={{ marginBottom: 8 }}>
+                                  <span style={{ fontWeight: 550 }}>{i + 1}. {c.cambio}</span>
+                                  <span className="block t-dato" style={{ color: "var(--grafito)" }}>Por qué: {c.por_que}</span>
+                                </p>
+                              ))}
+                            </div>
+                          )}
+                          <div className="flex flex-wrap gap-3 items-center">
+                            <button className="boton" disabled={ocupado === clave} onClick={async () => {
+                              setOcupado(clave);
+                              setError(null);
+                              try {
+                                await pedir(`/api/companies/${companyId}/assets/sistematizar`, { json: { clave, accion: "confirmar" } });
+                                setEstados((e) => ({ ...e, [clave]: { ...e[clave], propuesta_estado: "confirmada" } }));
+                              } catch (e) {
+                                setError(e instanceof Error ? e.message : "No se pudo.");
+                              } finally {
+                                setOcupado(null);
+                              }
+                            }}>Así lo queremos</button>
+                            <div className="flex gap-2 items-center" style={{ flex: 1, minWidth: 260 }}>
+                              <input className="campo" style={{ flex: 1 }} placeholder="O dinos qué ajustar y lo rehacemos" value={editando[`sist-${clave}`] ?? ""} onChange={(e) => setEditando((x) => ({ ...x, [`sist-${clave}`]: e.target.value }))} aria-label={`Ajuste a la propuesta de ${a.nombre}`} />
+                              <button className="boton boton--secundario" disabled={ocupado === clave || !(editando[`sist-${clave}`] ?? "").trim()} onClick={async () => {
+                                setOcupado(clave);
+                                setError(null);
+                                try {
+                                  await pedir(`/api/companies/${companyId}/assets/sistematizar`, { json: { clave, comentario: (editando[`sist-${clave}`] ?? "").trim() } });
+                                  setEstados((e) => ({ ...e, [clave]: { ...e[clave], propuesta_estado: "trabajando" } }));
+                                  setEditando((x) => ({ ...x, [`sist-${clave}`]: "" }));
+                                } catch (e) {
+                                  setError(e instanceof Error ? e.message : "No se pudo.");
+                                } finally {
+                                  setOcupado(null);
+                                }
+                              }}>Rehacer</button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {g?.propuesta_estado === "confirmada" && g.propuesta && (
+                        <details className="mt-2" open>
+                          <summary className="t-dato" style={{ cursor: "pointer", color: "var(--confirmado)" }}>La versión trabajada — confirmada por ti</summary>
+                          <pre className="t-doc mt-2" style={{ whiteSpace: "pre-wrap", fontFamily: "var(--font-doc)" }}>{g.propuesta}</pre>
                         </details>
                       )}
                       {estado === "construido" && (
