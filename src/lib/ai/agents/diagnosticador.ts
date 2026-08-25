@@ -1,8 +1,10 @@
 import { ai } from "..";
 import { SalidaDiagnosticador, SalidaAuditor } from "@/lib/schemas";
 import { GUARDIA, LENTES, patronesComoTexto, DIMENSIONES } from "@/lib/rules/patrones";
+import { ESTANDARES } from "@/lib/rules/estandares";
 
 const DIMS = Object.entries(DIMENSIONES).map(([p, d]) => `${p}: ${d.join(" · ")}`).join("\n");
+const VARAS = Object.entries(ESTANDARES).map(([p, l]) => `${p}:\n${l.map((e) => "  - " + e).join("\n")}`).join("\n");
 
 export const PROMPT_DIAGNOSTICADOR = `${GUARDIA}
 
@@ -47,6 +49,19 @@ ${LENTES}
 
 preguntas_pendientes: [{ texto, dimension, para: dueno | lider | personal | datos }] — lo que un lente sugiere y
 la evidencia no cubre. Son preguntas para el levantamiento, no hallazgos.
+
+AUDITORIA CONTRA ESTANDAR (esto es actuar como consultor, no como registrador): cuando la empresa MUESTRA
+como hace algo — un proceso contado, un activo, una respuesta — no basta registrar que "lo tiene": COMPARALO
+contra el estandar del pilar (lista abajo). Si lo que muestra no cumple un elemento del estandar, emite un
+hallazgo con patron "brecha_estandar": titulo con la brecha exacta, evidencia = lo que SI mostro (sus claim_ids),
+causa = el elemento del estandar que falta, recomendacion = el estandar concreto a instalar (el registro minimo,
+el responsable, el indicador). NO es una contradiccion ni una culpa: es la distancia entre lo que hay y lo que
+una empresa que crece necesita. Ejemplo: la empresa cuenta su proceso de ventas pero nadie apunta a los
+interesados -> brecha_estandar: "el proceso de ventas no deja registro de interesados ni seguimiento con
+responsable", evidencia: su propio relato del proceso.
+
+ESTANDARES DE UNA EMPRESA QUE CRECE (la vara, por pilar):
+${VARAS}
 
 REGLAS DE ANOMALIA (Sistema Adaptativo — usalas para leer los numeros y las senales del contexto):
 1. Interesados suben y ventas no -> investigar calidad del interesado, contacto, seguimiento, conversion, capacidad.

@@ -136,12 +136,26 @@ export async function handleDiagnosticar(job: Job) {
   }
 
   // Preguntas pendientes (lentes sin evidencia) → vuelven al levantamiento como preguntas para el dueño/líder.
+  // El bloque corto de validación SIEMPRE llega: si no hay sesión abierta del tipo pedido, se abre (o reutiliza)
+  // una sesión de validación con el dueño. Así el sistema diagnostica con lo que hay y pide lo que falta,
+  // en vez de quedarse esperando entrevistas que quizá no existen (empresa de un solo dueño).
+  let sesionValidacion: string | null = null;
+  const abrirValidacion = async () => {
+    if (sesionValidacion) return sesionValidacion;
+    const { data: existente } = await sb.from("interview_sessions").select("id").eq("company_id", job.company_id).eq("tipo", "validacion").neq("estado", "completa").limit(1).maybeSingle();
+    if (existente) return (sesionValidacion = existente.id);
+    const { data: dueno } = await sb.from("participants").select("id").eq("company_id", job.company_id).in("rol", ["dueno", "socio"]).order("created_at").limit(1).maybeSingle();
+    if (!dueno) return null;
+    const { data: nueva } = await sb.from("interview_sessions").insert({ company_id: job.company_id, participant_id: dueno.id, tipo: "validacion" }).select("id").single();
+    return (sesionValidacion = nueva?.id ?? null);
+  };
   for (const q of d.data.preguntas_pendientes.slice(0, 6)) {
     const tipoSesion = q.para === "lider" ? "lider" : q.para === "personal" ? "personal" : "empresa_dueno";
     const { data: ses } = await sb.from("interview_sessions").select("id").eq("company_id", job.company_id).eq("tipo", tipoSesion).neq("estado", "completa").limit(1).maybeSingle();
-    if (ses) {
-      const { data: ult } = await sb.from("interview_responses").select("orden").eq("session_id", ses.id).order("orden", { ascending: false }).limit(1);
-      await sb.from("interview_responses").insert({ session_id: ses.id, bloque: pilar, pilar, pregunta: q.texto, orden: (ult?.[0]?.orden ?? 0) + 1 });
+    const destino = ses?.id ?? (await abrirValidacion());
+    if (destino) {
+      const { data: ult } = await sb.from("interview_responses").select("orden").eq("session_id", destino).order("orden", { ascending: false }).limit(1);
+      await sb.from("interview_responses").insert({ session_id: destino, bloque: ses ? pilar : "validacion", pilar, pregunta: q.texto, orden: (ult?.[0]?.orden ?? 0) + 1 });
     }
   }
 

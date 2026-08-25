@@ -45,7 +45,13 @@ export default async function Diagnostico({ params, searchParams }: { params: Pr
               <Link href={`/empresa/${id}/diagnostico?pilar=${p}`} className="t-etiqueta">{PILAR[p]}</Link>
               <div className="t-seccion" style={{ color: d ? COLOR[d.estado] : "var(--grafito)" }}>{d ? ESTADO_PILAR[d.estado] : "Sin diagnosticar"}</div>
               <p className="t-dato" style={{ color: "var(--grafito)" }}>{PILAR_PREGUNTA[p]}</p>
-              {abiertas[p] ? <p className="t-dato" style={{ color: "var(--contradicho)" }}>{abiertas[p]} contradicción(es) abierta(s)</p> : null}
+              {abiertas[p] ? (
+                <p className="t-dato" style={{ color: "var(--contradicho)" }}>
+                  {abiertas[p]} contradicción(es) abierta(s) —{" "}
+                  <Link href={`/empresa/${id}/afirmaciones?estado=contradicho`} style={{ textDecoration: "underline" }}>resuélvelas aquí</Link>{" "}
+                  (elige cuál versión vale hoy) o diagnostica igual
+                </p>
+              ) : null}
               <BotonJob url={`/api/companies/${id}/diagnose`} json={{ pilar: p, forzar: !!abiertas[p] }} texto={abiertas[p] ? "Diagnosticar igual" : "Diagnosticar"} secundario />
             </div>
           );

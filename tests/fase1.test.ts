@@ -48,9 +48,14 @@ describe("7.9 / 13 / 15 · suficiencia (P1-04)", () => {
     expect(s.completo).toBe(false);
     expect(s.criticas_pendientes).toBe(1);
   });
-  it("solo la versión del dueño (sin equipo) no es suficiente", () => {
+  it("empresa de un solo dueño (sin sesiones de equipo): la versión del dueño basta — se valida con casos, no con entrevistas que no existen", () => {
     const cs = [...claims(5, { pilar: "personas" }), ...claims(5), ...claims(5, { pilar: "producto" }), ...claims(5, { pilar: "marketing" })];
     const s = levantamientoCompleto(cs, sesionesOk.slice(0, 2));
+    expect(s.completo).toBe(true);
+  });
+  it("si existen sesiones de equipo pero ninguna está completa, sigue faltando el equipo", () => {
+    const cs = [...claims(5, { pilar: "personas" }), ...claims(5), ...claims(5, { pilar: "producto" }), ...claims(5, { pilar: "marketing" })];
+    const s = levantamientoCompleto(cs, [...sesionesOk.slice(0, 2), { tipo: "personal", estado: "pendiente", rol: "empleado" }]);
     expect(s.completo).toBe(false);
     expect(s.motivos.join()).toMatch(/equipo/);
   });

@@ -28,12 +28,15 @@ export function levantamientoCompleto(claims: ClaimS[], sesiones: SesionS[]): Su
   const porPilar = new Map<string, number>();
   for (const c of claims) if (c.estado === "confirmado" && c.pilar) porPilar.set(c.pilar, (porPilar.get(c.pilar) ?? 0) + 1);
   const desconocidos = PILARES.filter((p) => (porPilar.get(p) ?? 0) < MIN_CONFIRMADAS_POR_PILAR);
+  const haySesionesEquipo = sesiones.some((s) => ["lider", "personal"].includes(s.tipo));
   const equipo = sesiones.some((s) => ["lider", "personal"].includes(s.tipo) && s.estado === "completa");
   const motivos: string[] = [];
   if (criticas) motivos.push(`${criticas} afirmación(es) crítica(s) sin verificar o contradichas`);
   if (duenoInc) motivos.push(`${duenoInc} sesión(es) del dueño sin completar`);
   if (desconocidos.length) motivos.push(`pilares con información insuficiente: ${desconocidos.join(", ")}`);
-  if (!equipo) motivos.push("ninguna entrevista del equipo completada: solo se tiene la versión del dueño");
+  // Empresa de un solo dueño (o sin equipo entrevistable): no se exige lo imposible. La versión del dueño
+  // se valida con casos concretos, números y documentos — no con entrevistas que no existen.
+  if (haySesionesEquipo && !equipo) motivos.push("ninguna entrevista del equipo completada: solo se tiene la versión del dueño");
   return { completo: motivos.length === 0, criticas_pendientes: criticas, contradicciones_abiertas: contradicciones, sesiones_dueno_incompletas: duenoInc, pilares_desconocidos: desconocidos, equipo_entrevistado: equipo, motivos };
 }
 

@@ -146,46 +146,56 @@ export function MatrizRealidad({ companyId, modo, filtroInicial }: { companyId: 
       ) : filas.length === 0 ? (
         <p className="t-cuerpo" style={{ color: "var(--grafito)" }}>Nada con ese filtro.</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="tabla" style={{ minWidth: 960 }}>
-            <thead>
-              <tr>
-                <th>Tema</th>
-                <th>La empresa dice</th>
-                <th>Evidencia</th>
-                <th>Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filas.map((f) => (
-                <tr key={f.id} className="aparece">
-                  <td>
-                    <div className="t-dato" style={{ textTransform: "capitalize" }}>{f.tipo ?? "otro"}</div>
-                    <div className="t-etiqueta" style={{ textTransform: "none", letterSpacing: 0 }}>{PILAR[f.pilar ?? ""] ?? ""} · {f.temporalidad}</div>
-                  </td>
-                  <td>
-                    <span className="t-cuerpo">{f.texto}</span>
-                    {f.explicacion && <div className="t-dato mt-1" style={{ color: "var(--contradicho)" }}>{f.explicacion}</div>}
-                    {f.pregunta && <div className="t-dato mt-1" style={{ color: "var(--grafito)" }}>Pregunta: {f.pregunta}</div>}
-                  </td>
-                  <td>
-                    <button className="text-left underline t-dato" onClick={() => setAbierta({ s: f.source_id, f: f.fragment_id })} style={{ font: "inherit" }}>
-                      {f.fuente}
+        // Agrupado por fuente: 50-100 afirmaciones sueltas no se pueden trabajar una a una.
+        // Cada fuente es un grupo plegable con su resumen de estados y confirmación en bloque.
+        <div className="flex flex-col gap-3">
+          {[...filas.reduce((m, f) => m.set(f.fuente, [...(m.get(f.fuente) ?? []), f]), new Map<string, Fila[]>()).entries()].map(([fuente, grupo]) => {
+            const sinVerificar = grupo.filter((f) => (f.estado ?? "sin_verificar") === "sin_verificar");
+            const contradichas = grupo.filter((f) => f.estado === "contradicho").length;
+            return (
+              <details key={fuente} className="panel" open={contradichas > 0}>
+                <summary className="p-4 flex flex-wrap items-baseline gap-3" style={{ cursor: "pointer", listStyle: "none" }}>
+                  <span className="t-seccion" style={{ fontSize: 16 }}>{fuente}</span>
+                  <span className="t-dato" style={{ color: "var(--grafito)" }}>{grupo.length} definicion{grupo.length === 1 ? "" : "es"}</span>
+                  {sinVerificar.length > 0 && <span className="t-dato" style={{ color: "var(--caducado)" }}>{sinVerificar.length} sin verificar</span>}
+                  {contradichas > 0 && <span className="t-dato" style={{ color: "var(--contradicho)" }}>{contradichas} contradicha{contradichas === 1 ? "" : "s"}</span>}
+                  {sinVerificar.length > 1 && (
+                    <button
+                      className="boton boton--secundario"
+                      style={{ minHeight: 34, fontSize: 13, marginLeft: "auto" }}
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        for (const f of sinVerificar) await pedir(`/api/claims/${f.id}/validate`, { json: { estado: "confirmado" } });
+                        cargar();
+                      }}
+                    >
+                      Confirmar las {sinVerificar.length} de esta fuente
                     </button>
-                    <div className="t-dato" style={{ color: f.fecha ? "var(--grafito)" : "var(--caducado)" }}>{fechaCorta(f.fecha)}{f.prioridad_validacion ? " · validar" : ""}</div>
-                  </td>
-                  <td>
-                    <MarcaEstado estado={f.estado ?? "sin_verificar"} />
-                    <select className="campo mt-2" style={{ minHeight: 36, padding: "4px 8px", fontSize: 14 }} value={f.estado} onChange={(e) => cambiarEstado(f.id, e.target.value)} aria-label="Cambiar estado">
-                      {ESTADOS.map((e) => (
-                        <option key={e} value={e}>{e.replace("_", " ")}</option>
-                      ))}
-                    </select>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  )}
+                </summary>
+                <ul className="px-4 pb-4 flex flex-col">
+                  {grupo.map((f) => (
+                    <li key={f.id} className="py-3 flex flex-wrap items-start justify-between gap-3" style={{ borderTop: "1px solid var(--linea)" }}>
+                      <div style={{ flex: "1 1 320px", minWidth: 0 }}>
+                        <div className="t-etiqueta" style={{ textTransform: "none", letterSpacing: 0 }}>{(f.tipo ?? "otro")} · {PILAR[f.pilar ?? ""] ?? ""} · {f.temporalidad}{f.prioridad_validacion ? " · validar" : ""}</div>
+                        <button className="text-left t-cuerpo mt-1" onClick={() => setAbierta({ s: f.source_id, f: f.fragment_id })} style={{ font: "inherit" }}>{f.texto}</button>
+                        {f.explicacion && <div className="t-dato mt-1" style={{ color: "var(--contradicho)" }}>{f.explicacion}</div>}
+                        {f.pregunta && <div className="t-dato mt-1" style={{ color: "var(--grafito)" }}>Pregunta: {f.pregunta}</div>}
+                      </div>
+                      <div style={{ flex: "none" }}>
+                        <MarcaEstado estado={f.estado ?? "sin_verificar"} />
+                        <select className="campo mt-2" style={{ minHeight: 36, padding: "4px 8px", fontSize: 14 }} value={f.estado} onChange={(e) => cambiarEstado(f.id, e.target.value)} aria-label="Cambiar estado">
+                          {ESTADOS.map((e) => (
+                            <option key={e} value={e}>{e.replace("_", " ")}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            );
+          })}
         </div>
       )}
       {abierta && <VerFuente sourceId={abierta.s} fragmentId={abierta.f} cerrar={() => setAbierta(null)} />}

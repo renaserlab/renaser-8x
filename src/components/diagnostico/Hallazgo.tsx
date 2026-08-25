@@ -104,23 +104,29 @@ export function Hallazgo({ h, modo }: { h: HallazgoRow; modo: "consultor" | "cli
         )}
       </div>
 
-      {!esCliente && h.filtros && (
-        <div className="mt-4 flex flex-col gap-1">
-          {(["proposito", "sabiduria", "excelencia"] as const).map((f) => {
-            const v = h.filtros?.[f] as { resultado: string; nota: string; respuestas?: string[] } | undefined;
-            if (!v) return null;
-            return (
-              <div key={f} className="t-dato" style={{ color: v.resultado === "pasa" ? "var(--confirmado)" : "var(--contradicho)" }}>
-                {f}: {v.resultado === "pasa" ? "pasa" : "no pasa"} — <span style={{ color: "var(--grafito)" }}>{v.nota}</span>
-                {v.respuestas?.length ? <span style={{ color: "var(--grafito)" }}> · {v.respuestas.join(" · ")}</span> : null}
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {!esCliente && h.filtros && (() => {
+        const NOMBRE_FILTRO: Record<string, string> = { proposito: "Propósito (no daña lo esencial de la empresa)", sabiduria: "Sabiduría (es causa, no síntoma; no rompe otra cosa)", excelencia: "Excelencia (sostiene el estándar al crecer)" };
+        const filtros = (["proposito", "sabiduria", "excelencia"] as const).map((f) => ({ f, v: h.filtros?.[f] as { resultado: string; nota: string; respuestas?: string[] } | undefined })).filter((x) => x.v);
+        const fallan = filtros.filter((x) => x.v!.resultado !== "pasa");
+        return (
+          <details className="mt-4">
+            <summary className="t-dato" style={{ cursor: "pointer", color: fallan.length ? "var(--contradicho)" : "var(--confirmado)" }}>
+              {fallan.length === 0 ? "Pasó los 3 filtros de calidad (propósito, sabiduría, excelencia) — ver detalle" : `No pasa el filtro de ${fallan.map((x) => x.f).join(" y ")} — ver por qué`}
+            </summary>
+            <div className="mt-2 flex flex-col gap-2">
+              {filtros.map(({ f, v }) => (
+                <div key={f} className="t-dato">
+                  <span style={{ color: v!.resultado === "pasa" ? "var(--confirmado)" : "var(--contradicho)", fontWeight: 600 }}>{v!.resultado === "pasa" ? "Pasa" : "No pasa"} · {NOMBRE_FILTRO[f]}</span>
+                  <span style={{ color: "var(--grafito)" }}> — {v!.nota}</span>
+                </div>
+              ))}
+            </div>
+          </details>
+        );
+      })()}
       {!esCliente && h.auditoria && (
         <p className="t-dato mt-3" style={{ color: h.auditoria.sustentado ? "var(--grafito)" : "var(--contradicho)" }}>
-          Auditor: {h.auditoria.sustentado ? "sustentado" : "NO sustentado"}{h.auditoria.es_sintoma ? " · es síntoma, no causa" : ""}{h.auditoria.culpa_persona_sin_auditar ? " · culpa a una persona sin auditar" : ""}{h.auditoria.benchmark_como_hecho ? " · usa un benchmark como hecho" : ""} — {h.auditoria.observacion}
+          Revisión automática: {h.auditoria.sustentado ? "la evidencia lo sostiene" : "la evidencia NO lo sostiene"}{h.auditoria.es_sintoma ? " · parece síntoma, no causa" : ""}{h.auditoria.culpa_persona_sin_auditar ? " · culpa a una persona sin auditar el sistema" : ""}{h.auditoria.benchmark_como_hecho ? " · afirma con conocimiento general, no con datos de ESTA empresa" : ""} — {h.auditoria.observacion}
         </p>
       )}
 
@@ -128,12 +134,12 @@ export function Hallazgo({ h, modo }: { h: HallazgoRow; modo: "consultor" | "cli
         <div className="mt-5 flex flex-col gap-3 no-imprimir">
           <div className="flex flex-wrap gap-3 items-center">
             <select className="campo" style={{ width: "auto" }} value={motivo} onChange={(e) => setMotivo(e.target.value)} aria-label="Motivo">
-              <option value="">Motivo (obligatorio para corregir o rechazar)</option>
+              <option value="">¿Por qué? — elige el motivo</option>
               {Object.entries(MOTIVO_CORRECCION).map(([v, n]) => (
                 <option key={v} value={v}>{n}</option>
               ))}
             </select>
-            <input className="campo" style={{ flex: 1, minWidth: 200 }} placeholder="Comentario" value={comentario} onChange={(e) => setComentario(e.target.value)} aria-label="Comentario" />
+            <input className="campo" style={{ flex: 1, minWidth: 200 }} placeholder="Comentario (opcional)" value={comentario} onChange={(e) => setComentario(e.target.value)} aria-label="Comentario" />
           </div>
           {error && <p className="t-dato" style={{ color: "var(--contradicho)" }}>{error}</p>}
           <div className="flex flex-wrap gap-2">
@@ -154,6 +160,7 @@ export function Hallazgo({ h, modo }: { h: HallazgoRow; modo: "consultor" | "cli
               </>
             )}
           </div>
+          {!motivo && !modoCorregir && <p className="t-dato" style={{ color: "var(--grafito)" }}>Si estás de acuerdo, solo pulsa Aprobar. Para corregir o rechazar, elige primero el motivo en la lista.</p>}
           {necesitaValidacion && !modoCorregir && <p className="t-dato" style={{ color: "var(--grafito)" }}>Para validar, escribe en el comentario qué otra fuente lo sostiene. Sin eso, el botón queda apagado.</p>}
         </div>
       )}

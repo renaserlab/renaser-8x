@@ -52,12 +52,25 @@ export function NuevoHallazgo({ companyId }: { companyId: string }) {
           ))}
         </select>
       </div>
-      <input className="campo" placeholder="Título" aria-label="Título" value={f.titulo} onChange={(e) => setF({ ...f, titulo: e.target.value })} />
-      <textarea className="campo" rows={2} placeholder="Causa raíz" aria-label="Causa raíz" value={f.causa_raiz} onChange={(e) => setF({ ...f, causa_raiz: e.target.value })} />
-      <textarea className="campo" rows={2} placeholder="Recomendación" aria-label="Recomendación" value={f.recomendacion} onChange={(e) => setF({ ...f, recomendacion: e.target.value })} />
+      <label className="flex flex-col gap-1">
+        <span className="t-dato" style={{ color: "var(--grafito)" }}>El problema, como se lo dirías al dueño</span>
+        <input className="campo" placeholder="Ej.: Nadie vuelve a buscar a los interesados que no compraron" aria-label="Título" value={f.titulo} onChange={(e) => setF({ ...f, titulo: e.target.value })} />
+      </label>
+      <label className="flex flex-col gap-1">
+        <span className="t-dato" style={{ color: "var(--grafito)" }}>La causa de fondo — qué falta o falla (no el síntoma)</span>
+        <textarea className="campo" rows={2} placeholder="Ej.: No existe registro de interesados ni un responsable de hacer seguimiento" aria-label="Causa raíz" value={f.causa_raiz} onChange={(e) => setF({ ...f, causa_raiz: e.target.value })} />
+      </label>
+      <label className="flex flex-col gap-1">
+        <span className="t-dato" style={{ color: "var(--grafito)" }}>Qué construir o corregir</span>
+        <textarea className="campo" rows={2} placeholder="Ej.: Registro simple de interesados (cuaderno o Excel) con responsable y revisión semanal" aria-label="Recomendación" value={f.recomendacion} onChange={(e) => setF({ ...f, recomendacion: e.target.value })} />
+      </label>
       <div>
         <p className="t-etiqueta mb-2">Evidencia ({sel.length} elegidas)</p>
-        <input className="campo mb-2" placeholder="Buscar definición" aria-label="Buscar definición" value={busca} onChange={(e) => setBusca(e.target.value)} />
+        <p className="t-dato mb-2" style={{ color: "var(--grafito)" }}>
+          La evidencia son afirmaciones que la empresa ya dio. ¿Tu evidencia es un documento, PDF o foto?{" "}
+          <a href={`/empresa/${companyId}/fuentes`} style={{ textDecoration: "underline", color: "var(--marca)" }}>Súbelo primero en Fuentes</a>: sus afirmaciones se extraen solas y aparecen aquí para elegirlas.
+        </p>
+        <input className="campo mb-2" placeholder="Buscar entre lo que la empresa dijo o mostró" aria-label="Buscar definición" value={busca} onChange={(e) => setBusca(e.target.value)} />
         <ul className="flex flex-col gap-1" style={{ maxHeight: 260, overflow: "auto" }}>
           {visibles.map((c) => (
             <li key={c.id}>
