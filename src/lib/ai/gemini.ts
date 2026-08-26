@@ -6,7 +6,9 @@ import { AIProviderDownError, AIRateLimitError, AIValidationError, type AIProvid
  * salida JSON validada con Zod, un reintento, errores tipificados.
  * Se activa con AI_PROVIDER=gemini + GEMINI_API_KEY. El modelo sale de AI_MODEL.
  */
-const MODEL = process.env.AI_MODEL ?? "gemini-3.7-flash";
+// trim(): un salto de línea invisible en la variable (p. ej. al setearla por consola) produce
+// "unexpected model name format" y tumba TODA la IA — pasó en producción el 26-08.
+const MODEL = (process.env.AI_MODEL ?? "gemini-3.7-flash").trim();
 const TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS ?? 120_000);
 /**
  * Gemini 3.x descuenta los tokens de razonamiento de maxOutputTokens. `maxTokens` del contrato es presupuesto
@@ -17,7 +19,7 @@ const THINKING_LEVEL = process.env.GEMINI_THINKING_LEVEL ?? "low";
 const THINKING_HEADROOM = Number(process.env.GEMINI_THINKING_HEADROOM ?? 6000);
 const MAX_REINTENTOS_503 = Number(process.env.GEMINI_REINTENTOS_503 ?? 5);
 // Respaldo ante tormenta sostenida del principal: mismo proveedor, modelo estable.
-const MODELO_RESPALDO = process.env.AI_MODEL_RESPALDO ?? "gemini-3.6-flash";
+const MODELO_RESPALDO = (process.env.AI_MODEL_RESPALDO ?? "gemini-3.6-flash").trim();
 const BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
 function extraerJSON(texto: string): string {
