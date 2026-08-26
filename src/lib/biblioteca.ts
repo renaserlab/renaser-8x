@@ -42,6 +42,23 @@ export function bibliotecaEsperada(personas: number | null | undefined): string[
 }
 
 /**
+ * CUMPLIMIENTO LEGAL PERÚ por número de trabajadores — umbrales normativos, no opinión.
+ * Se muestra al consultor como lista de verificación; la exigencia exacta depende del sector y
+ * régimen, así que siempre se presenta como "verificar con asesoría laboral", nunca como dictamen.
+ */
+export function cumplimientoLegal(personas: number | null | undefined): { obligacion: string; detalle: string }[] {
+  const n = personas == null || Number.isNaN(personas) ? 0 : personas;
+  const base = [
+    { obligacion: "Contratos de trabajo y boletas", detalle: "todo trabajador en planilla, con contrato escrito según su régimen" },
+    { obligacion: "Registro de asistencia", detalle: "control de jornada y horas extra" },
+    { obligacion: "Prevención del hostigamiento sexual", detalle: n >= 20 ? "con 20 o más trabajadores: Comité de intervención" : "con menos de 20: basta un delegado, pero debe existir" },
+    { obligacion: "Seguridad y salud en el trabajo", detalle: n >= 20 ? "con 20 o más: Comité de SST y Reglamento interno de SST" : "con menos de 20: un supervisor de SST elegido por los trabajadores" },
+  ];
+  if (n >= 100) base.push({ obligacion: "Reglamento Interno de Trabajo (RIT)", detalle: "obligatorio con más de 100 trabajadores, aprobado ante la autoridad" });
+  return base;
+}
+
+/**
  * Los 3 documentos que ESTA empresa debe construir primero, cada uno con el hallazgo que lo pide.
  * Solo hallazgos vivos (no rechazados); el impacto alto pesa primero.
  */

@@ -93,19 +93,35 @@ export default async function PlanEstrategico({ params }: { params: Promise<{ id
               <p className="t-etiqueta mb-1">Resultados</p>
               <p style={{ fontSize: 14.5 }}><strong>90 días:</strong> {p.resumen.resultados.d90} · <strong>1 año:</strong> {p.resumen.resultados.a1} · <strong>3 años:</strong> {p.resumen.resultados.a3}</p>
             </div>
+            {p.resumen.pendientes.length > 0 && (
+              <div className="celda-caja" style={{ marginTop: -1.5, borderWidth: 2 }}>
+                <p className="t-etiqueta mb-1" style={{ color: "var(--contradicho)" }}>Decisiones pendientes del dueño</p>
+                {p.resumen.pendientes.map((x, i) => <p key={i} style={{ fontSize: 14.5 }}>{i + 1}. {x}</p>)}
+              </div>
+            )}
           </Hoja>
 
-          {/* 3 · RADIOGRAFÍA */}
-          <Hoja n={3} titulo="Radiografía empresarial">
-            <h2>Los indicadores vitales</h2>
-            <table><thead><tr><Th c="Indicador" /><Th c="Línea base" /><Th c="Tendencia" /><Th c="Meta" /></tr></thead>
+          {/* 3 · MANDATO */}
+          <Hoja n={3} titulo="Mandato estratégico">
+            <h2>Qué debe resolver este plan</h2>
+            <table><tbody>
+              {([["Qué lo originó", p.mandato.origen], ["Problema a resolver", p.mandato.problema], ["Qué cubre", p.mandato.alcance], ["Qué queda fuera", p.mandato.fuera], ["Restricciones", p.mandato.restricciones], ["Así se reconoce el éxito", p.mandato.exito]] as [string, string][]).map(([t, v]) => (
+                <tr key={t}><Td c={t} b /><Td c={v} /></tr>
+              ))}
+            </tbody></table>
+          </Hoja>
+
+          {/* 4 · RADIOGRAFÍA */}
+          <Hoja n={4} titulo="Radiografía empresarial">
+            <h2>Los signos vitales de esta empresa</h2>
+            <table><thead><tr><Th c="Indicador" /><Th c="Línea base" /><Th c="Tendencia" /><Th c="Meta" /><Th c="Fuente" /><Th c="Confianza" /></tr></thead>
               <tbody>{p.radiografia.map((r, i) => (
-                <tr key={i}><Td c={r.indicador} b /><Td c={r.base} /><Td c={<span style={{ color: TEND_COLOR[r.tendencia] }}>{TEND[r.tendencia]}</span>} /><Td c={r.meta} /></tr>
+                <tr key={i}><Td c={r.indicador} b /><Td c={r.base} /><Td c={<span style={{ color: TEND_COLOR[r.tendencia] }}>{TEND[r.tendencia]}</span>} /><Td c={r.meta} /><Td c={<span style={{ fontSize: 12.5, color: "var(--grafito)" }}>{r.fuente}</span>} /><Td c={<span style={{ color: r.confianza === "alta" ? "var(--confirmado)" : r.confianza === "media" ? "var(--caducado)" : "var(--contradicho)", fontWeight: 600 }}>{r.confianza}</span>} /></tr>
               ))}</tbody></table>
           </Hoja>
 
-          {/* 4 · DIAGNÓSTICO */}
-          <Hoja n={4} titulo="Diagnóstico principal">
+          {/* 5 · DIAGNÓSTICO */}
+          <Hoja n={5} titulo="Diagnóstico principal">
             <h2>Tres problemas, no veinte</h2>
             {p.problemas.map((pr, i) => (
               <div key={i} style={{ marginBottom: 20, paddingLeft: 16, borderLeft: "3px solid var(--contradicho)" }}>
@@ -121,8 +137,8 @@ export default async function PlanEstrategico({ params }: { params: Promise<{ id
             </div>
           </Hoja>
 
-          {/* 5 · FODA */}
-          <Hoja n={5} titulo="FODA estratégico">
+          {/* 6 · FODA */}
+          <Hoja n={6} titulo="FODA estratégico">
             <h2>Con evidencia e implicación</h2>
             <div className="grid sm:grid-cols-2" style={{ gap: 14 }}>
               {([["Fortalezas", p.foda.fortalezas, "var(--confirmado)"], ["Debilidades", p.foda.debilidades, "var(--contradicho)"], ["Oportunidades", p.foda.oportunidades, "var(--marca)"], ["Amenazas", p.foda.amenazas, "var(--caducado)"]] as [string, typeof p.foda.fortalezas, string][]).map(([t, lista, color]) => (
@@ -138,12 +154,13 @@ export default async function PlanEstrategico({ params }: { params: Promise<{ id
             <p style={{ fontSize: 14 }}><strong>FO:</strong> {p.foda.cruces.fo} · <strong>DO:</strong> {p.foda.cruces.do} · <strong>FA:</strong> {p.foda.cruces.fa} · <strong>DA:</strong> {p.foda.cruces.da}</p>
           </Hoja>
 
-          {/* 6 · CLIENTE */}
-          <Hoja n={6} titulo="Cliente y propuesta de valor">
+          {/* 7 · CLIENTE */}
+          <Hoja n={7} titulo="Cliente, propuesta y rentabilidad">
             <h2>{p.cliente.prioritario}</h2>
             <p><strong>El problema costoso que necesita resolver:</strong> {p.cliente.problema}</p>
             <p style={{ marginTop: 8 }}><strong>Criterios de compra:</strong> {p.cliente.criterios.join(" · ")}</p>
             <p><strong>Por qué abandona:</strong> {p.cliente.abandono.join(" · ")}</p>
+            <p><strong>Rentabilidad por tipo de cliente:</strong> {p.cliente.rentable}</p>
             <div className="celda-caja mt-4" style={{ background: "var(--suave)", border: "none" }}>
               <p className="t-etiqueta mb-1">Propuesta de valor</p>
               <p style={{ fontWeight: 600, fontSize: 16 }}>{p.cliente.propuesta}</p>
@@ -151,8 +168,8 @@ export default async function PlanEstrategico({ params }: { params: Promise<{ id
             </div>
           </Hoja>
 
-          {/* 7 · LEAN CANVAS */}
-          <Hoja n={7} titulo="Lean Canvas">
+          {/* 8 · LEAN CANVAS */}
+          <Hoja n={8} titulo="Lean Canvas">
             <h2>El modelo, con su estado de prueba</h2>
             <div className="grid sm:grid-cols-3" style={{ gap: 1, background: "var(--linea)", border: "1px solid var(--linea)" }}>
               {([["Segmentos", p.canvas.segmentos], ["Problemas", p.canvas.problemas], ["Propuesta de valor", p.canvas.propuesta], ["Solución", p.canvas.solucion], ["Canales", p.canvas.canales], ["Ingresos", p.canvas.ingresos], ["Costos", p.canvas.costos], ["Métricas", p.canvas.metricas], ["Ventaja difícil de copiar", p.canvas.ventaja]] as [string, typeof p.canvas.segmentos][]).map(([t, e]) => (
@@ -165,8 +182,8 @@ export default async function PlanEstrategico({ params }: { params: Promise<{ id
             </div>
           </Hoja>
 
-          {/* 8 · ELECCIONES */}
-          <Hoja n={8} titulo="Elecciones estratégicas — la página más importante">
+          {/* 9 · ELECCIONES */}
+          <Hoja n={9} titulo="Elecciones estratégicas — la página más importante">
             <h2>Elegir es renunciar</h2>
             <table><tbody>
               {([["Aspiración", p.elecciones.aspiracion], ["Dónde jugar", p.elecciones.donde], ["Cómo ganar", p.elecciones.como], ["Capacidades", p.elecciones.capacidades], ["Sistemas", p.elecciones.sistemas], ["Renuncias", p.elecciones.renuncias]] as [string, string][]).map(([t, v]) => (
@@ -175,19 +192,28 @@ export default async function PlanEstrategico({ params }: { params: Promise<{ id
             </tbody></table>
           </Hoja>
 
-          {/* 9 · OPCIONES */}
-          <Hoja n={9} titulo="Opciones evaluadas">
-            <h2>Los caminos comparados, no solo el elegido</h2>
+          {/* 10 · OPCIONES */}
+          <Hoja n={10} titulo="Opciones evaluadas">
+            <h2>Los caminos comparados — incluido no actuar</h2>
             <table><thead><tr><Th c="Criterio" />{p.opciones.map((o) => <Th key={o.nombre} c={o.nombre + (o.recomendada ? " · RECOMENDADA" : "")} />)}</tr></thead>
               <tbody>
-                {(["impacto", "inversion", "tiempo", "riesgo", "capacidad"] as const).map((k) => (
-                  <tr key={k}><Td c={{ impacto: "Impacto", inversion: "Inversión", tiempo: "Tiempo", riesgo: "Riesgo", capacidad: "Capacidad requerida" }[k]} b />{p.opciones.map((o) => <Td key={o.nombre} c={o[k]} />)}</tr>
+                {(["impacto", "inversion", "tiempo", "riesgo", "reversibilidad", "capacidad"] as const).map((k) => (
+                  <tr key={k}><Td c={{ impacto: "Impacto", inversion: "Inversión", tiempo: "Tiempo", riesgo: "Riesgo", reversibilidad: "Reversibilidad", capacidad: "Capacidad requerida" }[k]} b />{p.opciones.map((o) => <Td key={o.nombre} c={o[k]} />)}</tr>
                 ))}
               </tbody></table>
           </Hoja>
 
-          {/* 10 · MAPA */}
-          <Hoja n={10} titulo="Mapa estratégico">
+          {/* 11 · SUPUESTOS */}
+          <Hoja n={11} titulo="Supuestos críticos y señales">
+            <h2>Qué tiene que ser cierto para que este plan funcione</h2>
+            <table><thead><tr><Th c="Supuesto" /><Th c="Señal temprana si se cae" /><Th c="Marcha atrás" /></tr></thead>
+              <tbody>{p.supuestos.map((s, i) => (
+                <tr key={i}><Td c={s.supuesto} b /><Td c={s.senal} /><Td c={<span style={{ color: s.reversible ? "var(--confirmado)" : "var(--contradicho)", fontWeight: 600 }}>{s.reversible ? "reversible" : "difícil retorno"}</span>} /></tr>
+              ))}</tbody></table>
+          </Hoja>
+
+          {/* 12 · MAPA */}
+          <Hoja n={12} titulo="Mapa estratégico">
             <h2>{p.mapa.length} objetivos conectados</h2>
             <div className="grid sm:grid-cols-2" style={{ gap: 10 }}>
               {p.mapa.map((o) => (
@@ -199,15 +225,37 @@ export default async function PlanEstrategico({ params }: { params: Promise<{ id
             </div>
           </Hoja>
 
-          {/* 11 · PRIORIDADES */}
-          <Hoja n={11} titulo="Prioridades estratégicas">
+          {/* 13 · PRIORIDADES */}
+          <Hoja n={13} titulo="Prioridades estratégicas">
             <h2>Máximo cinco</h2>
             <table><thead><tr><Th c="Resultado buscado" /><Th c="Responsable" /><Th c="KPI" /><Th c="Meta" /><Th c="Fecha" /></tr></thead>
               <tbody>{p.prioridades.map((x, i) => <tr key={i}><Td c={x.resultado} b /><Td c={x.responsable} /><Td c={x.kpi} /><Td c={x.meta} /><Td c={x.fecha} /></tr>)}</tbody></table>
           </Hoja>
 
-          {/* 12 · ROADMAP */}
-          <Hoja n={12} titulo="Roadmap">
+          {/* 14 · MODELO OPERATIVO */}
+          <Hoja n={14} titulo="Modelo operativo">
+            <h2>Cómo la estrategia se vuelve trabajo de lunes</h2>
+            <p style={{ maxWidth: "62ch" }}>{p.operativo.como}</p>
+            <p className="t-etiqueta mt-4 mb-2">Capacidades que la empresa debe dominar</p>
+            <div className="flex flex-wrap" style={{ gap: 8 }}>
+              {p.operativo.capacidades.map((cp, i) => <span key={i} style={{ border: "1px solid var(--tinta)", borderRadius: "var(--radio)", padding: "6px 14px", fontSize: 13.5, fontWeight: 550 }}>{cp}</span>)}
+            </div>
+            <p className="t-etiqueta mt-5 mb-2">Quién decide qué</p>
+            <table><thead><tr><Th c="Decisión crítica" /><Th c="Decide" /><Th c="Ejecuta" /></tr></thead>
+              <tbody>{p.operativo.decisiones.map((d, i) => <tr key={i}><Td c={d.decision} b /><Td c={d.decide} /><Td c={d.ejecuta} /></tr>)}</tbody></table>
+          </Hoja>
+
+          {/* 15 · PORTAFOLIO */}
+          <Hoja n={15} titulo="Portafolio y asignación de recursos">
+            <h2>La estrategia también se escribe con los recursos</h2>
+            <table><thead><tr><Th c="Iniciativa" /><Th c="Decisión" /><Th c="Recursos" /><Th c="Responsable" /></tr></thead>
+              <tbody>{p.portafolio.map((x, i) => (
+                <tr key={i}><Td c={x.iniciativa} b /><Td c={<span style={{ fontWeight: 700, textTransform: "uppercase", fontSize: 12, letterSpacing: "0.04em", color: { acelerar: "var(--confirmado)", mantener: "var(--grafito)", probar: "var(--caducado)", detener: "var(--contradicho)" }[x.decision] }}>{x.decision}</span>} /><Td c={x.recursos} /><Td c={x.responsable} /></tr>
+              ))}</tbody></table>
+          </Hoja>
+
+          {/* 16 · ROADMAP */}
+          <Hoja n={16} titulo="Roadmap">
             <h2>Hitos, no cientos de tareas</h2>
             {([["Primeros 90 días", p.roadmap.d90], ["Primer año", p.roadmap.a1], ["Tres años", p.roadmap.a3]] as [string, typeof p.roadmap.d90][]).map(([t, hitos]) => (
               <div key={t} style={{ marginBottom: 16 }}>
@@ -217,28 +265,33 @@ export default async function PlanEstrategico({ params }: { params: Promise<{ id
             ))}
           </Hoja>
 
-          {/* 13 · TABLERO */}
-          <Hoja n={13} titulo="Tablero estratégico">
+          {/* 17 · TABLERO */}
+          <Hoja n={17} titulo="Tablero estratégico">
             <h2>{p.tablero.length} indicadores — no más</h2>
-            <table><thead><tr><Th c="Objetivo" /><Th c="Indicador" /><Th c="Base" /><Th c="Meta" /><Th c="Responsable" /><Th c="Frecuencia" /></tr></thead>
-              <tbody>{p.tablero.map((x, i) => <tr key={i}><Td c={x.objetivo} /><Td c={x.indicador} b /><Td c={x.base} /><Td c={x.meta} /><Td c={x.responsable} /><Td c={x.frecuencia} /></tr>)}</tbody></table>
+            <table><thead><tr><Th c="Objetivo" /><Th c="Indicador" /><Th c="Tipo" /><Th c="Base" /><Th c="Meta" /><Th c="Responsable" /><Th c="Frecuencia" /></tr></thead>
+              <tbody>{p.tablero.map((x, i) => <tr key={i}><Td c={x.objetivo} /><Td c={x.indicador} b /><Td c={<span style={{ fontSize: 12, color: "var(--grafito)" }}>{x.tipo}</span>} /><Td c={x.base} /><Td c={x.meta} /><Td c={x.responsable} /><Td c={x.frecuencia} /></tr>)}</tbody></table>
           </Hoja>
 
-          {/* 14 · RIESGOS */}
-          <Hoja n={14} titulo="Riesgos y supuestos">
+          {/* 18 · RIESGOS */}
+          <Hoja n={18} titulo="Riesgos y criterios de corrección">
             <h2>Con señal temprana y respuesta</h2>
             <table><thead><tr><Th c="Riesgo" /><Th c="Señal temprana" /><Th c="Impacto" /><Th c="Respuesta" /><Th c="Responsable" /></tr></thead>
               <tbody>{p.riesgos.map((x, i) => <tr key={i}><Td c={x.riesgo} b /><Td c={x.senal} /><Td c={x.impacto} /><Td c={x.respuesta} /><Td c={x.responsable} /></tr>)}</tbody></table>
           </Hoja>
 
-          {/* 15 · GOBIERNO */}
-          <Hoja n={15} titulo="Gobierno de ejecución">
-            <h2>Dónde se decide</h2>
+          {/* 19 · GOBIERNO Y APRENDIZAJE */}
+          <Hoja n={19} titulo="Gobierno y aprendizaje">
+            <h2>El plan es una agenda viva, no un archivo</h2>
             <table><tbody>
-              <tr><Td c="Revisión semanal" b /><Td c={p.gobierno.semanal} /></tr>
-              <tr><Td c="Comité mensual" b /><Td c={p.gobierno.mensual} /></tr>
-              <tr><Td c="Revisión trimestral" b /><Td c={p.gobierno.trimestral} /></tr>
+              <tr><Td c="Semanal" b /><Td c={p.gobierno.semanal} /></tr>
+              <tr><Td c="Mensual" b /><Td c={p.gobierno.mensual} /></tr>
+              <tr><Td c="Trimestral" b /><Td c={p.gobierno.trimestral} /></tr>
+              <tr><Td c="Anual" b /><Td c={p.gobierno.anual} /></tr>
             </tbody></table>
+            <div className="celda-caja mt-4" style={{ background: "var(--suave)", border: "none" }}>
+              <p className="t-etiqueta mb-1">Qué se aprende y qué haría cambiar el plan</p>
+              <p style={{ fontSize: 14 }}>{p.gobierno.aprendizaje}</p>
+            </div>
             <div className="celda-caja mt-6" style={{ background: "var(--suave)", border: "none" }}>
               <p className="t-etiqueta mb-1">Nota de confianza — con qué evidencia se hizo este plan</p>
               <p style={{ fontSize: 14 }}>{p.nota_confianza}</p>

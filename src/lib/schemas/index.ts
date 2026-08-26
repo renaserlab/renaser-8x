@@ -276,28 +276,38 @@ export const SalidaPlanEstrategico = z.object({
     apuestas: z.array(z.string()).max(3),
     renuncias: z.array(z.string()).max(3),
     resultados: z.object({ d90: z.string(), a1: z.string(), a3: z.string() }),
+    pendientes: z.array(z.string()).max(3).default([]),
   }),
-  radiografia: z.array(z.object({ indicador: z.string(), base: z.string(), tendencia: z.enum(["sube", "baja", "estable", "sin_dato"]).catch("sin_dato"), meta: z.string() })).max(7),
+  // Mandato: qué decisión originó el plan, qué cubre y qué queda fuera — sin mandato se diagnostica mucho y se decide poco.
+  mandato: z.object({ origen: z.string(), problema: z.string(), alcance: z.string(), fuera: z.string(), restricciones: z.string(), exito: z.string() }),
+  radiografia: z.array(z.object({ indicador: z.string(), base: z.string(), tendencia: z.enum(["sube", "baja", "estable", "sin_dato"]).catch("sin_dato"), meta: z.string(), fuente: z.string(), confianza: z.enum(["alta", "media", "baja"]).catch("baja") })).max(8),
   problemas: z.array(z.object({ titulo: z.string(), costo: z.string(), evidencias: z.array(z.string()).max(3), causas: z.array(z.string()).max(3) })).max(3),
   cuello: z.string(),
   foda: z.object({
     fortalezas: z.array(ItemFoda).max(3), debilidades: z.array(ItemFoda).max(3), oportunidades: z.array(ItemFoda).max(3), amenazas: z.array(ItemFoda).max(3),
     cruces: z.object({ fo: z.string(), do: z.string(), fa: z.string(), da: z.string() }),
   }),
-  cliente: z.object({ prioritario: z.string(), problema: z.string(), criterios: z.array(z.string()).max(4), abandono: z.array(z.string()).max(3), propuesta: z.string(), evidencia: z.string() }),
+  cliente: z.object({ prioritario: z.string(), problema: z.string(), criterios: z.array(z.string()).max(4), abandono: z.array(z.string()).max(3), propuesta: z.string(), evidencia: z.string(), rentable: z.string() }),
   canvas: z.object({ segmentos: ElementoCanvas, problemas: ElementoCanvas, propuesta: ElementoCanvas, solucion: ElementoCanvas, canales: ElementoCanvas, ingresos: ElementoCanvas, costos: ElementoCanvas, metricas: ElementoCanvas, ventaja: ElementoCanvas }),
   elecciones: z.object({ aspiracion: z.string(), donde: z.string(), como: z.string(), capacidades: z.string(), sistemas: z.string(), renuncias: z.string() }),
-  opciones: z.array(z.object({ nombre: z.string(), impacto: z.string(), inversion: z.string(), tiempo: z.string(), riesgo: z.string(), capacidad: z.string(), recomendada: z.boolean() })).min(2).max(3),
+  // Siempre incluye la opción "No actuar" — comparar contra ella es lo que hace visible el costo de no decidir.
+  opciones: z.array(z.object({ nombre: z.string(), impacto: z.string(), inversion: z.string(), tiempo: z.string(), riesgo: z.string(), reversibilidad: z.string(), capacidad: z.string(), recomendada: z.boolean() })).min(3).max(4),
+  // Supuestos críticos con señal temprana: la versión pyme de "escenarios" — qué tendría que ser cierto y cómo nos damos cuenta a tiempo.
+  supuestos: z.array(z.object({ supuesto: z.string(), senal: z.string(), reversible: z.boolean() })).min(2).max(4),
   mapa: z.array(z.object({ n: z.number().int(), objetivo: z.string(), area: z.string() })).min(6).max(12),
   prioridades: z.array(z.object({ resultado: z.string(), responsable: z.string(), kpi: z.string(), meta: z.string(), fecha: z.string() })).min(3).max(5),
+  // Modelo operativo proporcional: cómo funcionará la empresa para sostener la estrategia + quién decide qué.
+  operativo: z.object({ como: z.string(), capacidades: z.array(z.string()).min(2).max(4), decisiones: z.array(z.object({ decision: z.string(), decide: z.string(), ejecuta: z.string() })).min(3).max(5) }),
+  // Portafolio: la estrategia también se escribe con los recursos — qué se acelera, qué se prueba y qué se detiene.
+  portafolio: z.array(z.object({ iniciativa: z.string(), decision: z.enum(["acelerar", "mantener", "probar", "detener"]).catch("probar"), recursos: z.string(), responsable: z.string() })).min(3).max(6),
   roadmap: z.object({
     d90: z.array(z.object({ hito: z.string(), resultado: z.string() })).max(5),
     a1: z.array(z.object({ hito: z.string(), resultado: z.string() })).max(5),
     a3: z.array(z.object({ hito: z.string(), resultado: z.string() })).max(4),
   }),
-  tablero: z.array(z.object({ objetivo: z.string(), indicador: z.string(), base: z.string(), meta: z.string(), responsable: z.string(), frecuencia: z.string() })).max(15),
+  tablero: z.array(z.object({ objetivo: z.string(), indicador: z.string(), tipo: z.enum(["resultado", "predictivo", "disciplina", "guardarrail"]).catch("resultado"), base: z.string(), meta: z.string(), responsable: z.string(), frecuencia: z.string() })).max(15),
   riesgos: z.array(z.object({ riesgo: z.string(), senal: z.string(), impacto: z.string(), respuesta: z.string(), responsable: z.string() })).max(5),
-  gobierno: z.object({ semanal: z.string(), mensual: z.string(), trimestral: z.string() }),
+  gobierno: z.object({ semanal: z.string(), mensual: z.string(), trimestral: z.string(), anual: z.string(), aprendizaje: z.string() }),
   nota_confianza: z.string(),
 });
 export type SalidaPlanEstrategico = z.infer<typeof SalidaPlanEstrategico>;

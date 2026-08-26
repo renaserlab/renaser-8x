@@ -6,6 +6,7 @@ import { Participantes } from "@/components/consultor/Participantes";
 import { Etapa } from "@/components/consultor/Etapa";
 import { PILAR, ESTADO_PILAR, ETAPA } from "@/lib/textos";
 import { tokensUsados } from "@/lib/db/queries";
+import { cumplimientoLegal } from "@/lib/biblioteca";
 
 export const dynamic = "force-dynamic";
 
@@ -133,8 +134,21 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
             <Link href={`/empresa/${id}/diagnostico`} className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>Diagnosticar</Link>
             <Link href={`/empresa/${id}/afirmaciones?estado=contradicho`} className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>Resolver contradicciones</Link>
             <Link href={`/empresa/${id}/procesos`} className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>Sistematizar procesos</Link>
+            <Link href={`/empresa/${id}/plan-estrategico`} className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>Plan estratégico</Link>
             <Link href={`/empresa/${id}/plan`} className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>Armar el plan</Link>
           </div>
+          <details className="mt-4">
+            <summary className="t-etiqueta" style={{ cursor: "pointer" }}>Cumplimiento legal (Perú) · {(c.ficha as { personas?: string } | null)?.personas ?? "?"} trabajadores</summary>
+            <ul className="lista-editorial mt-2">
+              {cumplimientoLegal(Number((c.ficha as { personas?: string } | null)?.personas)).map((o) => (
+                <li key={o.obligacion} style={{ padding: "8px 0" }}>
+                  <span style={{ fontWeight: 550, fontSize: 13.5 }}>{o.obligacion}</span>
+                  <span className="t-dato" style={{ color: "var(--grafito)", display: "block" }}>{o.detalle}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>La exigencia exacta depende del sector y régimen: verificar con asesoría laboral.</p>
+          </details>
         </div>
       </section>
 
