@@ -132,8 +132,12 @@ export function Entrevista({ cargar, responder, transcribir, titulo, transcripto
                       const t = await transcribir(b);
                       setTexto(t);
                       setAudioListo(b);
-                    } catch (e) {
-                      setError(e instanceof Error ? e.message : "No pudimos entender el audio. Intenta de nuevo o escribe.");
+                    } catch {
+                      // JAMÁS se pierde lo hablado: si la transcripción en vivo falla (audio largo,
+                      // servidor saturado), el audio queda listo para guardarse igual — lo
+                      // transcribimos nosotros en segundo plano (caso real: 5 minutos de Darren).
+                      setAudioListo(b);
+                      setError("El audio quedó grabado, pero tardamos en convertirlo a texto. Guárdalo con el botón de abajo y nosotros lo escuchamos — no tienes que repetir nada.");
                     } finally {
                       setTranscribiendo(false);
                     }
@@ -154,9 +158,15 @@ export function Entrevista({ cargar, responder, transcribir, titulo, transcripto
             </p>
           )}
           {error && <p className="t-cuerpo" style={{ color: "var(--contradicho)" }} role="alert">{error}</p>}
-          <button className="boton boton--grande" disabled={enviando || !texto.trim()} onClick={() => enviar()}>
-            {enviando ? "Guardando" : "Guardar respuesta"}
-          </button>
+          {audioListo && !texto.trim() ? (
+            <button className="boton boton--grande" disabled={enviando} onClick={() => enviar(undefined, audioListo)}>
+              {enviando ? "Guardando tu audio" : "Guardar mi audio (lo escuchamos nosotros)"}
+            </button>
+          ) : (
+            <button className="boton boton--grande" disabled={enviando || !texto.trim()} onClick={() => enviar()}>
+              {enviando ? "Guardando" : "Guardar respuesta"}
+            </button>
+          )}
         </motion.div>
       ) : (
         <motion.p className="t-cuerpo" key="esperando" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }} style={{ color: "var(--grafito)" }} aria-live="polite">

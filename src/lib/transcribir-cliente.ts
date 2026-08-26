@@ -3,7 +3,13 @@ export async function transcribirAudio(b: Blob): Promise<string> {
   const form = new FormData();
   form.set("audio", b, "respuesta.webm");
   const r = await fetch("/api/transcribir", { method: "POST", body: form });
-  const j = (await r.json()) as { texto?: string; error?: string };
-  if (!r.ok || !j.texto) throw new Error(j.error ?? "No pudimos entender el audio.");
+  // Un timeout del servidor devuelve texto plano, no JSON: jamás reventar por eso.
+  let j: { texto?: string; error?: string } = {};
+  try {
+    j = (await r.json()) as { texto?: string; error?: string };
+  } catch {
+    j = {};
+  }
+  if (!r.ok || !j.texto) throw new Error(j.error ?? "No pudimos convertir el audio a texto en este momento.");
   return j.texto;
 }
