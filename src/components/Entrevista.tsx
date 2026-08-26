@@ -31,6 +31,16 @@ export function Entrevista({ cargar, responder, transcribir, titulo, transcripto
   const [esperando, setEsperando] = useState(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // La espera se siente viva: se ve el trabajo, no el silencio (auditoría anti-aburrimiento).
+  const FRASES_ESPERA = ["Cruzando tu respuesta con todo lo que ya sabemos", "Buscando qué es lo más valioso que preguntarte ahora", "Revisando que no te preguntemos nada dos veces", "Preparando la siguiente pregunta"];
+  const [fraseEspera, setFraseEspera] = useState(0);
+  useEffect(() => {
+    if (!esperando) return;
+    const t = setInterval(() => setFraseEspera((f) => (f + 1) % FRASES_ESPERA.length), 3500);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [esperando]);
+
   const refrescar = useCallback(async () => {
     try {
       const e = await cargar();
@@ -150,7 +160,7 @@ export function Entrevista({ cargar, responder, transcribir, titulo, transcripto
         </motion.div>
       ) : (
         <motion.p className="t-cuerpo" key="esperando" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }} style={{ color: "var(--grafito)" }} aria-live="polite">
-          {estado.pendienteTranscripcion ? "Escuchando tu respuesta" : estado.progreso ?? "Preparando la siguiente pregunta"}
+          {estado.pendienteTranscripcion ? "Escuchando tu respuesta" : estado.progreso ?? FRASES_ESPERA[fraseEspera]}
           <span aria-hidden="true"> …</span>
         </motion.p>
       )}

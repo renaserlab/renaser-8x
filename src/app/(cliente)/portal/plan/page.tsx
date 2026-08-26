@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { contextoPortal } from "@/lib/portal";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { Plan } from "@/components/Plan";
@@ -14,8 +15,12 @@ export default async function PlanCliente() {
     return (
       <>
         <p className="t-etiqueta">Tu implementación</p>
-        <h1 className="t-titulo mt-2 mb-6">Todavía no hay plan</h1>
-        <p className="t-cuerpo medida">El plan aparece aquí cuando tu consultor lo publique, después de que lo aprueben juntos en la sesión.</p>
+        <h1 className="t-titulo mt-2 mb-6">Tu plan se está armando</h1>
+        <p className="t-cuerpo medida mb-6" style={{ color: "var(--grafito)" }}>
+          El punto de partida ya vive en <strong>Mi empresa</strong> (la sección «Por dónde empezaría»). Cuando lo convirtamos
+          juntos en un plan con fechas y responsables, aparece aquí para que marques lo que vas cerrando.
+        </p>
+        <Link href="/portal/hoy" className="boton">Ver por dónde empezar</Link>
       </>
     );
   const [{ data: acciones }, { data: cortes }] = await Promise.all([

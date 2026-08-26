@@ -17,8 +17,12 @@ export default async function Resultados() {
     return (
       <>
         <p className="t-etiqueta">Tus resultados</p>
-        <h1 className="t-titulo mt-2 mb-6">Todavía no están listos</h1>
-        <p className="t-cuerpo medida">{VACIO.resultados}</p>
+        <h1 className="t-titulo mt-2 mb-6">Tu diagnóstico ya está vivo</h1>
+        <p className="t-cuerpo medida mb-6" style={{ color: "var(--grafito)" }}>
+          No tienes que esperar a nadie: todo lo que vamos entendiendo de tu empresa está en <strong>Mi empresa</strong>,
+          y se afina con cada cosa que cuentas. Los informes finales para descargar aparecerán aquí.
+        </p>
+        <Link href="/portal/hoy" className="boton">Ver mi empresa hoy</Link>
       </>
     );
   // P0-03: hacia el cliente nunca viaja el nombre de quien dijo algo; solo puesto/rol.

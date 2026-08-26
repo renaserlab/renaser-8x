@@ -28,10 +28,18 @@ export async function procesoConToBe(processId: string) {
     return { nodos: nodos ?? [], edges: edges ?? [] };
   };
   const asisId = p.version === "to_be" ? (p.padre_id as string) : p.id;
-  const { data: asisRow } = asisId === p.id ? { data: p } : await sb.from("processes").select("*").eq("id", asisId).single();
-  const { data: tobeRow } = await sb.from("processes").select("*").eq("padre_id", asisId).eq("version", "to_be").maybeSingle();
-  const asis = { ...(asisRow ?? p), ...(await cargar(asisId)) };
-  const tobe = tobeRow ? { ...tobeRow, ...(await cargar(tobeRow.id)) } : null;
-  const { data: sop } = await sb.from("sops").select("*").eq("process_id", tobeRow?.id ?? asisId).maybeSingle();
+  // Auditoría de latencia: esta función era una cadena de ~6 viajes a la base; el detalle de proceso
+  // tardaba segundos. Ahora todo lo independiente viaja en paralelo.
+  const [{ data: asisRow }, { data: tobeRow }, cuerpoAsis] = await Promise.all([
+    asisId === p.id ? Promise.resolve({ data: p }) : sb.from("processes").select("*").eq("id", asisId).single(),
+    sb.from("processes").select("*").eq("padre_id", asisId).eq("version", "to_be").maybeSingle(),
+    cargar(asisId),
+  ]);
+  const [cuerpoTobe, { data: sop }] = await Promise.all([
+    tobeRow ? cargar(tobeRow.id) : Promise.resolve(null),
+    sb.from("sops").select("*").eq("process_id", tobeRow?.id ?? asisId).maybeSingle(),
+  ]);
+  const asis = { ...(asisRow ?? p), ...cuerpoAsis };
+  const tobe = tobeRow && cuerpoTobe ? { ...tobeRow, ...cuerpoTobe } : null;
   return { proceso: p, asis, tobe, sop };
 }

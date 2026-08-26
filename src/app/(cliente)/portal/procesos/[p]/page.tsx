@@ -17,9 +17,9 @@ export default async function ProcesoCliente({ params }: { params: Promise<{ p: 
   const { p } = await params;
   const r = await procesoConToBe(p);
   if (!r || r.proceso.company_id !== c.companyId) notFound();
-  const { data: pub } = await supabaseAdmin().from("deliverables").select("id").eq("company_id", c.companyId).eq("tipo", "mapa_to_be").eq("publicado", true).limit(1);
   const sb = supabaseAdmin();
-  const [{ data: conf }, { data: adjuntos }, { data: caleta }] = await Promise.all([
+  const [{ data: pub }, { data: conf }, { data: adjuntos }, { data: caleta }] = await Promise.all([
+    sb.from("deliverables").select("id").eq("company_id", c.companyId).eq("tipo", "mapa_to_be").eq("publicado", true).limit(1),
     sb.from("processes").select("confirmacion,deseo,responsable,objetivo,inicio,resultado,tiempo,herramientas,sale_mal,como_bien,comentario,descripcion_original,indicador,meta,medicion_donde").eq("id", r.asis.id).single(),
     sb.from("sources").select("id,nombre,tipo,created_at").eq("process_id", r.asis.id).order("created_at", { ascending: false }),
     sb.from("know_how").select("puesto,situacion,senal,regla_practica").eq("company_id", c.companyId).eq("process_id", r.asis.id),
