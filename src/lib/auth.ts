@@ -29,7 +29,8 @@ export async function requerirCliente(): Promise<Perfil> {
 
 /** Empresa del cliente (la primera membresía). Un cliente normalmente tiene una. */
 export async function empresaDelCliente(userId: string): Promise<string | null> {
-  const { data } = await supabaseAdmin().from("memberships").select("company_id").eq("user_id", userId).limit(1).maybeSingle();
+  // Con más de una membresía, gana la más reciente (determinista): la última empresa a la que se le dio acceso.
+  const { data } = await supabaseAdmin().from("memberships").select("company_id").eq("user_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle();
   return data?.company_id ?? null;
 }
 
