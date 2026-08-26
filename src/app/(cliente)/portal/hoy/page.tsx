@@ -20,15 +20,18 @@ const CLASE_NOMBRE: Record<string, string> = { documento: "Tus documentos", equi
  * El expediente completo — causa, recomendación, fuentes — vive en "Ver más".
  * Feedback real: "yo como empresario no necesito tanto detalle; tú como consultor sí".
  */
-function Insight({ h, n }: { h: HallazgoHoy; n?: number }) {
+function Insight({ h }: { h: HallazgoHoy }) {
   const linea = h.costo_posible ?? h.causa ?? null;
   const acento = h.preserva ? "var(--confirmado)" : h.impacto === "alto" ? "var(--contradicho)" : "var(--caducado)";
+  const chip = h.preserva ? "Fortaleza" : h.impacto === "alto" ? "Crítico" : "Atención";
   return (
-    // Lista editorial: título en serif con su punto de color — sin cajitas repetidas.
-    <article style={{ paddingLeft: 18, position: "relative" }}>
-      <span aria-hidden="true" style={{ position: "absolute", left: 0, top: 9, width: 8, height: 8, borderRadius: "50%", background: acento }} />
-      <h3 className="t-hero" style={{ fontSize: 20 }}>{n ? `${n}. ` : ""}{h.titulo}</h3>
-      {linea && <p className="t-cuerpo mt-1 medida" style={{ color: "var(--grafito)" }}>{linea}</p>}
+    // Tarjeta con chip de severidad: titular + UNA línea; el expediente vive en "Ver más".
+    <article className="panel p-5" style={{ borderLeft: `4px solid ${acento}` }}>
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="t-hero" style={{ fontSize: 18, minWidth: 0 }}>{h.titulo}</h3>
+        <span className="t-dato" style={{ flex: "none", fontSize: 12, fontWeight: 700, color: acento, border: `1px solid ${acento}`, borderRadius: "var(--radio)", padding: "2px 10px" }}>{chip}</span>
+      </div>
+      {linea && <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>{linea}</p>}
       <details className="mt-1">
         <summary className="t-dato" style={{ cursor: "pointer", color: "var(--marca)" }}>Ver más</summary>
         <div className="mt-2 flex flex-col gap-2">
@@ -41,6 +44,65 @@ function Insight({ h, n }: { h: HallazgoHoy; n?: number }) {
         </div>
       </details>
     </article>
+  );
+}
+
+/** ÁRBOL DE TU VENTA: de dónde sale la plata, con lo contado — y "sin dato" como invitación, nunca inventado. */
+function ArbolVentas({ metricas }: { metricas: Metrica[] }) {
+  const buscar = (re: RegExp) => {
+    const m = [...metricas].filter((x) => re.test(x.clave.toLowerCase())).sort((a, b) => (b.periodo ?? "").localeCompare(a.periodo ?? ""))[0];
+    if (!m || m.valor == null) return null;
+    return { texto: soles(Number(m.valor)), estado: m.estado };
+  };
+  const buscarNum = (re: RegExp) => {
+    const m = [...metricas].filter((x) => re.test(x.clave.toLowerCase())).sort((a, b) => (b.periodo ?? "").localeCompare(a.periodo ?? ""))[0];
+    if (!m || m.valor == null) return null;
+    return { texto: String(m.valor), estado: m.estado };
+  };
+  const venta = buscar(/venta|factur|ingreso/);
+  const clientes = buscarNum(/client|pacient|atendid/);
+  const ticket = buscar(/ticket|promedio/);
+  const interesados = buscarNum(/lead|interesad|prospect|contact/);
+  const compran = buscarNum(/conversi|cierr|compran/);
+  const Caja = ({ titulo, dato, ancho }: { titulo: string; dato: { texto: string; estado: string } | null; ancho?: boolean }) => (
+    <div style={{ border: `1.5px solid ${dato ? "var(--marca)" : "var(--linea)"}`, borderRadius: "var(--radio)", padding: "8px 12px", textAlign: "center", background: dato ? "color-mix(in srgb, var(--marca) 6%, var(--papel))" : "var(--papel)", minWidth: 0, ...(ancho ? { maxWidth: 260, margin: "0 auto" } : {}) }}>
+      <p className="t-etiqueta" style={{ fontSize: 11 }}>{titulo}</p>
+      {dato ? (
+        <>
+          <p className="t-dato" style={{ fontWeight: 700, fontSize: 17 }}>{dato.texto}</p>
+          <p className="t-dato" style={{ fontSize: 11, color: "var(--grafito)" }}>{dato.estado === "verificado" ? "verificado" : "contado"}</p>
+        </>
+      ) : (
+        <Link href="/portal/conversacion" className="t-dato" style={{ fontSize: 12.5, color: "var(--marca)", textDecoration: "underline" }}>sin dato — cuéntanoslo</Link>
+      )}
+    </div>
+  );
+  const Conector = ({ d }: { d: string }) => (
+    <svg viewBox="0 0 100 20" preserveAspectRatio="none" style={{ width: "100%", height: 18, display: "block" }} aria-hidden="true">
+      <path d={d} fill="none" stroke="var(--linea)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+    </svg>
+  );
+  return (
+    <section className="panel p-5">
+      <p className="t-etiqueta mb-3">De dónde sale tu venta</p>
+      <Caja titulo="Ventas del mes" dato={venta} ancho />
+      <Conector d="M50,0 V8 M25,8 H75 M25,8 V20 M75,8 V20" />
+      <div className="grid grid-cols-2 gap-3">
+        <Caja titulo="Clientes que te compran" dato={clientes} />
+        <Caja titulo="Lo que gasta cada uno" dato={ticket} />
+      </div>
+      <div className="grid grid-cols-2" style={{ columnGap: 12 }}>
+        <div>
+          <Conector d="M50,0 V8 M25,8 H75 M25,8 V20 M75,8 V20" />
+          <div className="grid grid-cols-2 gap-3">
+            <Caja titulo="Interesados que llegan" dato={interesados} />
+            <Caja titulo="De cada 10, compran" dato={compran} />
+          </div>
+        </div>
+        <div aria-hidden="true" />
+      </div>
+      <p className="t-dato mt-3" style={{ color: "var(--grafito)" }}>Cada casilla con dato mueve la de arriba. Las vacías son lo primero que conviene contar.</p>
+    </section>
   );
 }
 
@@ -116,6 +178,9 @@ export default async function Hoy() {
         </section>
       )}
 
+      {/* EL ÁRBOL DE LA VENTA: gráfico, con lo contado; lo vacío invita a contarlo. */}
+      {(metricasRaw ?? []).length > 0 && <ArbolVentas metricas={(metricasRaw ?? []) as Metrica[]} />}
+
       {/* LOS CAMINOS: lo que la empresa necesita, ofrecido como pregunta. */}
       {caminos.length > 0 && (
         <section>
@@ -163,7 +228,7 @@ export default async function Hoy() {
         <section>
           <h2 className="t-seccion mb-1">Lo que de verdad importa</h2>
           <p className="t-dato mb-4 medida" style={{ color: "var(--grafito)" }}>Cada punto sale de tu propia información. Nada está inventado.</p>
-          <div className="flex flex-col gap-4">
+          <div className="grid gap-4 lg:grid-cols-2">
             {altos.map((h) => (
               <Insight key={h.id} h={h} />
             ))}
@@ -173,7 +238,7 @@ export default async function Hoy() {
       {resto.length > 0 && (
         <details>
           <summary className="t-seccion" style={{ cursor: "pointer", fontSize: 18 }}>Ver {resto.length} hallazgo{resto.length === 1 ? "" : "s"} más</summary>
-          <div className="flex flex-col gap-4 mt-4">
+          <div className="grid gap-4 lg:grid-cols-2 mt-4">
             {resto.map((h) => (
               <Insight key={h.id} h={h} />
             ))}
@@ -184,7 +249,7 @@ export default async function Hoy() {
       {hoy.fortalezas.length > 0 && (
         <details>
           <summary className="t-seccion" style={{ cursor: "pointer", fontSize: 18 }}>Lo que no debes romper · {hoy.fortalezas.length} fortaleza{hoy.fortalezas.length === 1 ? "" : "s"}</summary>
-          <div className="flex flex-col gap-4 mt-4">
+          <div className="grid gap-4 lg:grid-cols-2 mt-4">
             {hoy.fortalezas.map((h) => (
               <Insight key={h.id} h={h} />
             ))}
@@ -208,24 +273,21 @@ export default async function Hoy() {
       )}
 
       <section>
-        <h2 className="t-seccion mb-2">Tu empresa, por áreas</h2>
-        <div className="grid sm:grid-cols-2" style={{ columnGap: 32 }}>
-          {hoy.pilares.map((p) => (
-            <div key={p.pilar} style={{ borderTop: "1px solid var(--linea)", padding: "14px 0" }}>
-              <div className="flex items-center justify-between gap-3">
-                <span className="t-seccion" style={{ fontSize: 17 }}>{PILAR_CLIENTE[p.pilar] ?? p.pilar}</span>
-                <span className="t-dato" style={{ color: ESTADO_COLOR[p.estado] }}>{ESTADO_CLIENTE_PILAR[p.estado] ?? ESTADO_PILAR[p.estado]}</span>
+        <h2 className="t-seccion mb-3">Tu empresa, por áreas</h2>
+        <div className="grid grid-cols-2 gap-3">
+          {hoy.pilares.map((p) => {
+            const color = ESTADO_COLOR[p.estado];
+            return (
+              <div key={p.pilar} style={{ borderRadius: "var(--radio)", border: `1.5px solid ${p.estado === "desconocido" ? "var(--linea)" : color}`, background: p.estado === "desconocido" ? "var(--papel)" : `color-mix(in srgb, ${color} 8%, var(--papel))`, padding: "14px 16px" }}>
+                <p className="t-etiqueta">{PILAR_CLIENTE[p.pilar] ?? p.pilar}</p>
+                <p className="t-dato" style={{ fontWeight: 700, fontSize: 16, color: p.estado === "desconocido" ? "var(--grafito)" : color }}>{ESTADO_CLIENTE_PILAR[p.estado] ?? ESTADO_PILAR[p.estado]}</p>
+                {p.resumen && <p className="t-dato mt-1" style={{ color: "var(--grafito)", fontSize: 13 }}>{p.resumen}</p>}
+                {p.estado === "desconocido" && !p.resumen && (
+                  <Link href="/portal/conversacion" className="t-dato" style={{ fontSize: 13, color: "var(--marca)", textDecoration: "underline" }}>faltan piezas — conversemos</Link>
+                )}
               </div>
-              {p.resumen && <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>{p.resumen}</p>}
-              {p.estado === "desconocido" && !p.resumen && (
-                <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>
-                  Aún nos faltan piezas para una conclusión responsable.{" "}
-                  <Link href="/portal/conversacion" style={{ textDecoration: "underline", color: "var(--marca)" }}>Sigue conversando</Link> o completa{" "}
-                  <Link href="/portal/activos" style={{ textDecoration: "underline", color: "var(--marca)" }}>Tu información</Link> — esta parte se llena sola con eso.
-                </p>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -248,16 +310,24 @@ export default async function Hoy() {
         <section>
           <h2 className="t-seccion mb-1">Por dónde empezaría</h2>
           <p className="t-dato mb-4 medida" style={{ color: "var(--grafito)" }}>Un punto de partida, no un plan definitivo. Pocas cosas, bien elegidas.</p>
-          <ol className="lista-editorial">
+          <div className="flex flex-col gap-3">
             {hoy.tentativo.map((p) => (
-              <li key={p.n}>
-                <h3 className="t-hero" style={{ fontSize: 19 }}>{p.n}. {p.problema}</h3>
-                {p.porQue && <p className="t-cuerpo mt-2 medida"><span style={{ color: "var(--grafito)" }}>Por qué importa: </span>{p.porQue}</p>}
-                <p className="t-cuerpo mt-2 medida"><span style={{ color: "var(--grafito)" }}>Primer movimiento: </span>{p.primerMovimiento}</p>
-                {p.indicador && <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>Para saber que funciona: {p.indicador}</p>}
-              </li>
+              <article key={p.n} className="panel p-5 flex gap-4">
+                <span className="t-dato" aria-hidden="true" style={{ flex: "none", width: 30, height: 30, borderRadius: "50%", display: "grid", placeItems: "center", fontWeight: 700, background: "var(--marca)", color: "var(--papel)" }}>{p.n}</span>
+                <div style={{ minWidth: 0 }}>
+                  <h3 className="t-hero" style={{ fontSize: 18 }}>{p.problema}</h3>
+                  <p className="t-dato mt-1" style={{ color: "var(--grafito)" }}>Primer movimiento: {p.primerMovimiento}</p>
+                  {(p.porQue || p.indicador) && (
+                    <details className="mt-1">
+                      <summary className="t-dato" style={{ cursor: "pointer", color: "var(--marca)" }}>Ver más</summary>
+                      {p.porQue && <p className="t-cuerpo mt-2 medida"><span style={{ color: "var(--grafito)" }}>Por qué importa: </span>{p.porQue}</p>}
+                      {p.indicador && <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>Para saber que funciona: {p.indicador}</p>}
+                    </details>
+                  )}
+                </div>
+              </article>
             ))}
-          </ol>
+          </div>
           <div className="panel p-5 mt-8" style={{ background: "var(--suave)", border: "none" }}>
             <p className="t-cuerpo medida">Esto es un diagnóstico inicial. Convertir estas prioridades en sistemas que funcionen sin depender de la memoria es el trabajo que sigue.</p>
             <Link href="/portal/conversacion" className="boton boton--secundario mt-4" style={{ display: "inline-flex" }}>Quiero trabajar este plan</Link>
