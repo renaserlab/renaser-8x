@@ -141,6 +141,7 @@ export default async function Hoy() {
           {hoy.stats.porValidar > 0 && (
             <> <Link href="/portal/validar" style={{ textDecoration: "underline" }}>{hoy.stats.porValidar} punto(s) esperan tu confirmación</Link>.</>
           )}
+          {" "}<Link href="/portal/resultados" style={{ textDecoration: "underline" }}>Ver el informe completo</Link>.
         </p>
       </header>
 

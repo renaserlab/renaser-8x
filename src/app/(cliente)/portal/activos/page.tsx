@@ -20,11 +20,16 @@ export default async function Activos() {
     <>
       <p className="t-etiqueta">Tu información</p>
       <h1 className="t-titulo mt-2 mb-3 medida">Ayúdanos a entender cómo funciona tu empresa</h1>
-      <p className="t-cuerpo mb-8 medida" style={{ color: "var(--grafito)" }}>
+      <p className="t-cuerpo mb-4 medida" style={{ color: "var(--grafito)" }}>
         Área por área: lo que exista —un documento, una foto del cuaderno, un audio— súbelo aquí mismo.
-        Y lo que nunca se escribió, cuéntanoslo con tus palabras. Con esto levantamos la foto real de tu
-        empresa; ordenarla y ponerla por escrito viene después, con nuestra ayuda.
+        Lo que nunca se escribió, cuéntanoslo con tus palabras.
       </p>
+      {/* Todo lo tuyo, a un toque: los procesos dibujados y lo subido viven aquí dentro. */}
+      <div className="flex flex-wrap gap-2 mb-8">
+        <a href="/portal/procesos" className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>Tus procesos dibujados</a>
+        <a href="/portal/documentos" className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>Todo lo que subiste</a>
+        <a href="/portal/validar" className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>Puntos por confirmar</a>
+      </div>
       <InventarioActivos
         companyId={c.companyId}
         guardados={(data ?? []).map((d) => {
