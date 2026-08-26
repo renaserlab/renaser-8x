@@ -88,12 +88,12 @@ export default async function Portal() {
   const cosas = hoy.espejo.length + hoy.noVes.length + hoy.fortalezas.length;
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Qué sigue + comprensión */}
-      <div className="grid gap-4 sm:grid-cols-[3fr_2fr]">
-        <section className="panel p-5">
-          <p className="t-etiqueta mb-2">Qué sigue ahora</p>
-          <p className="t-cuerpo medida" style={{ fontSize: 19, fontWeight: 550, marginBottom: 14 }}>{t.preguntaAbierta ?? c.queFalta}</p>
+    <div className="flex flex-col" style={{ gap: 40 }}>
+      {/* HERO: la siguiente pregunta como afirmación, sin caja. La caja se gana con acción. */}
+      <header className="flex flex-wrap items-end justify-between gap-6" style={{ paddingTop: 8 }}>
+        <div style={{ flex: "1 1 340px", minWidth: 0 }}>
+          <p className="t-etiqueta mb-3">Qué sigue ahora</p>
+          <p className="t-hero medida" style={{ marginBottom: 18 }}>{t.preguntaAbierta ?? c.queFalta}</p>
           <div className="flex items-center gap-4 flex-wrap">
             <Link href={t.preguntaAbierta ? "/portal/conversacion" : rutaContinuar} className="boton">Continuar</Link>
             {cosas > 0 && (
@@ -102,47 +102,46 @@ export default async function Portal() {
               </Link>
             )}
           </div>
-        </section>
-        <section className="panel p-5">
-          <p className="t-etiqueta mb-2">Cuánto entendemos tu empresa</p>
+        </div>
+        <div style={{ flex: "none" }}>
           <Medidor pct={t.comprension} />
-          <p className="t-dato mt-1" style={{ color: "var(--grafito)" }}>Con cada respuesta, tu diagnóstico se afina.</p>
-        </section>
-      </div>
+          <p className="t-dato" style={{ color: "var(--grafito)" }}>entendido de tu empresa</p>
+        </div>
+      </header>
 
-      {/* Números con estado — solo los que existen */}
+      {/* Números: fila editorial entre líneas finas, sin cajitas */}
       {(t.kpis.venta || t.kpis.ganancia || t.kpis.deuda != null) && (
-        <div className="grid gap-4 sm:grid-cols-3">
+        <section className="fila-numeros">
           {t.kpis.venta && (
-            <section className="panel p-5">
-              <p className="t-etiqueta mb-2">Ventas de {mesCorto(t.kpis.venta.periodo)}</p>
-              <p className="t-titulo" style={{ fontSize: 28 }}>{soles(t.kpis.venta.valor)}</p>
-              <p className="t-dato" style={{ color: "var(--grafito)" }}>{t.kpis.venta.estado === "verificado" ? "verificado en tus registros" : "contado de memoria — un más o menos basta"}</p>
-            </section>
+            <div>
+              <p className="t-etiqueta mb-1">Ventas de {mesCorto(t.kpis.venta.periodo)}</p>
+              <p className="num-grande">{soles(t.kpis.venta.valor)}</p>
+              <p className="t-dato" style={{ color: "var(--grafito)" }}>{t.kpis.venta.estado === "verificado" ? "verificado en tus registros" : "contado de memoria"}</p>
+            </div>
           )}
           {t.kpis.ganancia && (
-            <section className="panel p-5">
-              <p className="t-etiqueta mb-2">Lo que te quedó ({mesCorto(t.kpis.ganancia.periodo)})</p>
-              <p className="t-titulo" style={{ fontSize: 28 }}>{soles(t.kpis.ganancia.valor)}</p>
+            <div>
+              <p className="t-etiqueta mb-1">Lo que te quedó</p>
+              <p className="num-grande">{soles(t.kpis.ganancia.valor)}</p>
               {t.kpis.venta && t.kpis.venta.periodo === t.kpis.ganancia.periodo && t.kpis.venta.valor > 0 && (
                 <p className="t-dato" style={{ color: "var(--grafito)" }}>{Math.round((t.kpis.ganancia.valor / t.kpis.venta.valor) * 100)} de cada 100 soles vendidos</p>
               )}
-            </section>
+            </div>
           )}
           {t.kpis.deuda != null && (
-            <section className="panel p-5">
-              <p className="t-etiqueta mb-2">Te deben tus clientes</p>
-              <p className="t-titulo" style={{ fontSize: 28, color: "var(--caducado)" }}>{soles(t.kpis.deuda)}</p>
+            <div>
+              <p className="t-etiqueta mb-1">Te deben tus clientes</p>
+              <p className="num-grande" style={{ color: "var(--caducado)" }}>{soles(t.kpis.deuda)}</p>
               <p className="t-dato" style={{ color: "var(--grafito)" }}>plata tuya que aún no entra</p>
-            </section>
+            </div>
           )}
-        </div>
+        </section>
       )}
 
-      {/* Ventas mes a mes vs mejor época */}
+      {/* Ventas mes a mes vs mejor época — a página abierta, sin marco */}
       {t.serieVentas.length >= 2 && (
-        <section className="panel p-5">
-          <p className="t-etiqueta mb-2">Tus ventas, mes a mes</p>
+        <section>
+          <p className="t-etiqueta mb-3">Tus ventas, mes a mes</p>
           <GraficaVentas serie={t.serieVentas} dorada={t.epocaDorada} />
           {t.epocaDorada != null && t.serieVentas.length > 0 && t.epocaDorada > t.serieVentas[t.serieVentas.length - 1].valor * 1.25 && (
             <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>
@@ -152,7 +151,7 @@ export default async function Portal() {
         </section>
       )}
 
-      {/* Lo que más frena + biblioteca proporcional */}
+      {/* Lo que más frena + biblioteca: aquí SÍ hay caja — son accionables */}
       <div className="grid gap-4 sm:grid-cols-2">
         {hoy.restriccion && (
           <section className="panel p-5" style={{ borderLeft: "4px solid var(--contradicho)" }}>

@@ -22,11 +22,14 @@ const CLASE_NOMBRE: Record<string, string> = { documento: "Tus documentos", equi
  */
 function Insight({ h, n }: { h: HallazgoHoy; n?: number }) {
   const linea = h.costo_posible ?? h.causa ?? null;
+  const acento = h.preserva ? "var(--confirmado)" : h.impacto === "alto" ? "var(--contradicho)" : "var(--caducado)";
   return (
-    <article className="panel p-5" style={{ borderLeft: `3px solid ${h.preserva ? "var(--confirmado)" : h.impacto === "alto" ? "var(--contradicho)" : "var(--caducado)"}` }}>
-      <h3 className="t-seccion" style={{ fontSize: 18 }}>{n ? `${n}. ` : ""}{h.titulo}</h3>
-      {linea && <p className="t-cuerpo mt-2 medida" style={{ color: "var(--grafito)" }}>{linea}</p>}
-      <details className="mt-2">
+    // Lista editorial: título en serif con su punto de color — sin cajitas repetidas.
+    <article style={{ paddingLeft: 18, position: "relative" }}>
+      <span aria-hidden="true" style={{ position: "absolute", left: 0, top: 9, width: 8, height: 8, borderRadius: "50%", background: acento }} />
+      <h3 className="t-hero" style={{ fontSize: 20 }}>{n ? `${n}. ` : ""}{h.titulo}</h3>
+      {linea && <p className="t-cuerpo mt-1 medida" style={{ color: "var(--grafito)" }}>{linea}</p>}
+      <details className="mt-1">
         <summary className="t-dato" style={{ cursor: "pointer", color: "var(--marca)" }}>Ver más</summary>
         <div className="mt-2 flex flex-col gap-2">
           {h.causa && h.causa !== linea && <p className="t-cuerpo medida"><span style={{ color: "var(--grafito)" }}>Qué vemos: </span>{h.causa}</p>}
@@ -79,17 +82,19 @@ export default async function Hoy() {
         </p>
       </header>
 
-      {/* LA PLATA PRIMERO: cuánto podría estar perdiendo, con SUS números y la fórmula a la vista. */}
+      {/* LA PLATA COMO HÉROE: una afirmación en grande, no una cajita más. */}
       {perdida.fugas.length > 0 && (
-        <section className="panel p-5" style={{ borderLeft: "4px solid var(--contradicho)" }}>
-          <p className="t-etiqueta mb-1">Lo que tus números dicen que podrías estar perdiendo</p>
+        <section>
+          <p className="t-etiqueta mb-2">Lo que tus números dicen que podrías estar perdiendo</p>
           {perdida.totalMensual > 0 && (
-            <p className="t-titulo" style={{ fontSize: 34, color: "var(--contradicho)" }}>~{soles(perdida.totalMensual)} <span className="t-cuerpo" style={{ color: "var(--grafito)" }}>al mes</span></p>
+            <p className="num-grande" style={{ color: "var(--contradicho)", fontSize: "clamp(38px, 8vw, 56px)" }}>
+              ~{soles(perdida.totalMensual)} <span className="t-cuerpo" style={{ color: "var(--grafito)", fontFamily: "var(--font-ui)" }}>al mes</span>
+            </p>
           )}
-          <ul className="mt-3 flex flex-col gap-2">
+          <ul className="lista-editorial mt-4">
             {perdida.fugas.map((f, i) => (
-              <li key={i} className="t-cuerpo">
-                <span style={{ fontWeight: 550 }}>{f.concepto}: {soles(f.monto)}{f.mensual ? "/mes" : ""}</span>
+              <li key={i}>
+                <span className="t-cuerpo" style={{ fontWeight: 550 }}>{f.concepto} · {soles(f.monto)}{f.mensual ? "/mes" : ""}</span>
                 <span className="block t-dato" style={{ color: "var(--grafito)" }}>De dónde sale: {f.base}.</span>
               </li>
             ))}
@@ -203,10 +208,10 @@ export default async function Hoy() {
       )}
 
       <section>
-        <h2 className="t-seccion mb-4">Tu empresa, por áreas</h2>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <h2 className="t-seccion mb-2">Tu empresa, por áreas</h2>
+        <div className="grid sm:grid-cols-2" style={{ columnGap: 32 }}>
           {hoy.pilares.map((p) => (
-            <div key={p.pilar} className="panel p-4">
+            <div key={p.pilar} style={{ borderTop: "1px solid var(--linea)", padding: "14px 0" }}>
               <div className="flex items-center justify-between gap-3">
                 <span className="t-seccion" style={{ fontSize: 17 }}>{PILAR_CLIENTE[p.pilar] ?? p.pilar}</span>
                 <span className="t-dato" style={{ color: ESTADO_COLOR[p.estado] }}>{ESTADO_CLIENTE_PILAR[p.estado] ?? ESTADO_PILAR[p.estado]}</span>
@@ -228,10 +233,10 @@ export default async function Hoy() {
         <section>
           <h2 className="t-seccion mb-1">Qué ordenaría primero</h2>
           <p className="t-dato mb-4 medida" style={{ color: "var(--grafito)" }}>Lo que hoy depende de la memoria o de una persona, convertido en sistema.</p>
-          <ul className="flex flex-col gap-2">
+          <ul className="lista-editorial">
             {hoy.sistematizar.map((s, i) => (
-              <li key={i} className="panel p-4">
-                <span className="t-seccion" style={{ fontSize: 17 }}>{s.nombre}</span>
+              <li key={i}>
+                <span className="t-cuerpo" style={{ fontWeight: 550 }}>{s.nombre}</span>
                 <p className="t-dato mt-1" style={{ color: "var(--grafito)" }}>{s.motivo}</p>
               </li>
             ))}
@@ -243,10 +248,10 @@ export default async function Hoy() {
         <section>
           <h2 className="t-seccion mb-1">Por dónde empezaría</h2>
           <p className="t-dato mb-4 medida" style={{ color: "var(--grafito)" }}>Un punto de partida, no un plan definitivo. Pocas cosas, bien elegidas.</p>
-          <ol className="flex flex-col gap-4">
+          <ol className="lista-editorial">
             {hoy.tentativo.map((p) => (
-              <li key={p.n} className="panel p-5">
-                <h3 className="t-seccion" style={{ fontSize: 18 }}>{p.n}. {p.problema}</h3>
+              <li key={p.n}>
+                <h3 className="t-hero" style={{ fontSize: 19 }}>{p.n}. {p.problema}</h3>
                 {p.porQue && <p className="t-cuerpo mt-2 medida"><span style={{ color: "var(--grafito)" }}>Por qué importa: </span>{p.porQue}</p>}
                 <p className="t-cuerpo mt-2 medida"><span style={{ color: "var(--grafito)" }}>Primer movimiento: </span>{p.primerMovimiento}</p>
                 {p.indicador && <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>Para saber que funciona: {p.indicador}</p>}

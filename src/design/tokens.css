@@ -82,6 +82,17 @@ textarea.campo { min-height: 120px; resize: vertical; }
 .panel { border: 1px solid var(--linea); border-radius: var(--radio); background: #fff; }
 .separador { border: 0; border-top: 1px solid var(--linea); margin: 0; }
 
+/* ——— Rediseño editorial (pedido de Kelin: "todas las vistas iguales") ———
+   La caja se reserva para lo ACCIONABLE. Lo demás respira: héroes en serif,
+   listas editoriales con línea fina, números grandes sin marco. */
+.t-hero { font-family: var(--font-doc); font-size: clamp(26px, 5vw, 36px); font-weight: 600; line-height: 1.25; letter-spacing: -0.01em; text-wrap: balance; }
+.num-grande { font-family: var(--font-doc); font-size: clamp(30px, 6vw, 44px); font-weight: 700; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.lista-editorial { list-style: none; padding: 0; margin: 0; }
+.lista-editorial > li { border-top: 1px solid var(--linea); padding: 18px 0; }
+.lista-editorial > li:last-child { border-bottom: 1px solid var(--linea); }
+.fila-numeros { display: grid; gap: 24px; border-top: 1px solid var(--linea); border-bottom: 1px solid var(--linea); padding: 20px 0; }
+@media (min-width: 640px) { .fila-numeros { grid-template-columns: repeat(3, 1fr); } }
+
 /* marca de estado — el elemento firma */
 .marca-estado { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
 .marca-estado svg { flex: none; }

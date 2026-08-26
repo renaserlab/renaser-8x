@@ -116,7 +116,7 @@ export function Entrevista({ cargar, responder, transcribir, titulo, transcripto
       <AnimatePresence mode="wait" initial={false}>
       {estado.abierta ? (
         <motion.div className="flex flex-col gap-6" key={estado.abierta.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.3, ease: "easeOut" }}>
-          <p className="t-seccion medida" style={{ fontSize: 24, lineHeight: 1.35 }}>{estado.abierta.pregunta}</p>
+          <p className="t-hero medida" style={{ fontSize: "clamp(24px, 4.5vw, 30px)" }}>{estado.abierta.pregunta}</p>
           <div className="flex flex-wrap gap-3">
             <BotonEscuchar texto={estado.abierta.pregunta} />
           </div>
