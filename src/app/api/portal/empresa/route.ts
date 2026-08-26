@@ -31,7 +31,7 @@ export const POST = protegido({}, async (perfil, req) => {
   const sb = supabaseAdmin();
   // IDEMPOTENTE: si esta cuenta ya tiene su empresa, se devuelve esa — un doble envío (o una pantalla
   // que no avanzó y se reintentó) jamás vuelve a crear otra empresa (caso real: 3 duplicadas en un registro).
-  const { data: yaTiene } = await sb.from("memberships").select("company_id").eq("user_id", perfil.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+  const { data: yaTiene } = await sb.from("memberships").select("company_id").eq("user_id", perfil.id).order("company_id").limit(1).maybeSingle();
   if (yaTiene) return ok({ company_id: yaTiene.company_id, existente: true }, 200);
   const ficha = limpiarFicha(b.ficha);
   const sector = (b.sector ?? "").trim().slice(0, 120) || ficha?.actividad?.slice(0, 120) || null;

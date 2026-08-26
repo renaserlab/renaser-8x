@@ -29,8 +29,10 @@ export async function requerirCliente(): Promise<Perfil> {
 
 /** Empresa del cliente (la primera membresía). Un cliente normalmente tiene una. */
 export async function empresaDelCliente(userId: string): Promise<string | null> {
-  // Con más de una membresía, gana la más reciente (determinista): la última empresa a la que se le dio acceso.
-  const { data } = await supabaseAdmin().from("memberships").select("company_id").eq("user_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle();
+  // OJO: memberships NO tiene created_at — ordenar por esa columna rompía la consulta en silencio
+  // y el portal le pedía crear empresa a gente que YA la tenía (bug real del 26-08). Con varias
+  // membresías se ordena por company_id solo para que el resultado sea estable entre cargas.
+  const { data } = await supabaseAdmin().from("memberships").select("company_id").eq("user_id", userId).order("company_id").limit(1).maybeSingle();
   return data?.company_id ?? null;
 }
 
