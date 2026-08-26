@@ -35,7 +35,7 @@ function GraficaVentas({ serie, dorada }: { serie: PuntoVenta[]; dorada: number 
   const pts = serie.map((p, i) => `${x(i)},${y(p.valor).toFixed(1)}`).join(" ");
   const ult = serie[serie.length - 1];
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", maxWidth: 560 }} role="img" aria-label="Ventas por mes">
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", maxWidth: 680 }} role="img" aria-label="Ventas por mes">
       {dorada != null && (
         <>
           <line x1={X0} y1={y(dorada)} x2={X1} y2={y(dorada)} stroke="var(--caducado)" strokeWidth="1.5" strokeDasharray="6 5" />
@@ -88,7 +88,7 @@ export default async function Portal() {
   const cosas = hoy.espejo.length + hoy.noVes.length + hoy.fortalezas.length;
 
   return (
-    <div className="flex flex-col" style={{ gap: 40 }}>
+    <div className="flex flex-col lienzo" style={{ gap: 40 }}>
       {/* HERO: la siguiente pregunta como afirmación, sin caja. La caja se gana con acción. */}
       <header className="flex flex-wrap items-end justify-between gap-6" style={{ paddingTop: 8 }}>
         <div style={{ flex: "1 1 340px", minWidth: 0 }}>
@@ -109,6 +109,9 @@ export default async function Portal() {
         </div>
       </header>
 
+      {/* En PC: números y gráfica a la izquierda, lo accionable a la derecha — un tablero, no una columna. */}
+      <div className="grid gap-10 lg:grid-cols-[1fr_340px] lg:gap-x-14 items-start">
+      <div className="flex flex-col" style={{ gap: 40, minWidth: 0 }}>
       {/* Números: fila editorial entre líneas finas, sin cajitas */}
       {(t.kpis.venta || t.kpis.ganancia || t.kpis.deuda != null) && (
         <section className="fila-numeros">
@@ -151,8 +154,10 @@ export default async function Portal() {
         </section>
       )}
 
+      </div>
+
       {/* Lo que más frena + biblioteca: aquí SÍ hay caja — son accionables */}
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 lg:self-start">
         {hoy.restriccion && (
           <section className="panel p-5" style={{ borderLeft: "4px solid var(--contradicho)" }}>
             <p className="t-etiqueta mb-2">Lo que más te está frenando</p>
@@ -169,6 +174,7 @@ export default async function Portal() {
           <p className="t-dato" style={{ color: "var(--grafito)", marginBottom: 10 }}>A tu tamaño no te pedimos más — la vara crece con tu empresa.</p>
           <Link href="/portal/activos" className="t-dato" style={{ textDecoration: "underline", color: "var(--marca)" }}>Ir a Tu información</Link>
         </section>
+      </div>
       </div>
 
       <p className="t-dato medida" style={{ color: "var(--grafito)" }}>

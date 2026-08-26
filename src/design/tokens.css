@@ -44,6 +44,15 @@ body {
 
 .medida { max-width: var(--medida); }
 
+/* LIENZO: los tableros (portal y hoy) rompen el marco angosto del portal SOLO en pantallas grandes.
+   En celular y tablet no cambia nada; en PC el contenido usa la pantalla en vez de dejarla vacía. */
+@media (min-width: 1120px) {
+  .lienzo {
+    width: min(1080px, calc(100vw - 48px));
+    margin-left: calc((100% - min(1080px, calc(100vw - 48px))) / 2);
+  }
+}
+
 /* foco visible siempre */
 :focus-visible { outline: 2px solid var(--marca); outline-offset: 2px; }
 
