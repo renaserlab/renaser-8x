@@ -56,11 +56,19 @@ export async function handleDiagnosticar(job: Job) {
   const { data: sueno } = await sb.from("interview_responses").select("bloque,pregunta,respuesta, interview_sessions!inner(tipo,company_id)").eq("interview_sessions.company_id", job.company_id).eq("interview_sessions.tipo", "sueno_dueno").not("respuesta", "is", null);
   const { data: empresa } = await sb.from("companies").select("nombre,sector,modelo_operativo,etapa_negocio").eq("id", job.company_id).single();
   const { data: metricasRaw } = await sb.from("company_metricas").select("clave,periodo,valor,valor_texto,estado,nota").eq("company_id", job.company_id).limit(80);
+  // RAG de la Base Maestra: el motor del pilar (preguntas diagnósticas, evidencias mínimas y KPI del método)
+  // se recupera de conocimiento_base y entra al contexto — el conocimiento vive en la base, no clavado al código.
+  const { data: conocimiento } = await sb.from("conocimiento_base").select("seccion,contenido").eq("fuente", "base-maestra-renaser").contains("ejes", [pilar]).order("orden");
+  const trozosBase = (conocimiento ?? [])
+    .sort((a, b) => Number(b.seccion.startsWith("Motor")) - Number(a.seccion.startsWith("Motor")))
+    .slice(0, 3)
+    .map((k) => `## ${k.seccion}\n${String(k.contenido).slice(0, 3500)}`);
   const metricas = (metricasRaw ?? []) as Metrica[];
   const senales = detectarAnomalias(metricas);
   const contexto = [
     `EMPRESA: ${empresa?.nombre} · sector: ${empresa?.sector ?? "desconocido"}${empresa?.modelo_operativo?.length ? ` · modelo operativo: ${(empresa.modelo_operativo as string[]).join(", ")}` : ""}${empresa?.etapa_negocio ? ` · etapa del negocio: ${empresa.etapa_negocio}` : ""}`,
     `PILAR: ${pilar}`,
+    trozosBase.length ? `BASE DE CONOCIMIENTO RENASER — el motor de este pilar (criterios, evidencias mínimas y KPI del método; guía tu análisis, pero solo AFIRMAS con la evidencia de ESTA empresa):\n${trozosBase.join("\n\n")}` : null,
     metricas.length ? `TABLA DE RESULTADOS (contado por la empresa o verificado en sus registros):\n${tablaResultadosComoTexto(metricas)}` : null,
     senales.length ? `SEÑALES DETECTADAS POR EL MOTOR DE ANOMALÍAS:\n${senales.map((s) => `- [${s.regla}] ${s.titulo}: ${s.detalle}`).join("\n")}` : null,
     `AFIRMACIONES (${conKnowHow.length}):`,
