@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { pedir } from "@/lib/cliente";
 
 /**
@@ -9,7 +8,6 @@ import { pedir } from "@/lib/cliente";
  * Con la ficha el sistema clasifica el negocio y activa las preguntas de su oficio.
  */
 export function CrearEmpresa() {
-  const router = useRouter();
   const [paso, setPaso] = useState(0);
   const [nombre, setNombre] = useState("");
   const [f, setF] = useState<Record<string, string>>({});
@@ -22,7 +20,9 @@ export function CrearEmpresa() {
     setCargando(true);
     try {
       await pedir("/api/portal/empresa", { json: { nombre, ficha: f } });
-      router.refresh();
+      // Recarga COMPLETA: router.refresh() fallaba en silencio en celulares y la persona
+      // volvía a enviar el formulario creando empresas duplicadas (caso real de Darren).
+      window.location.assign("/portal");
     } catch (err) {
       setError(err instanceof Error ? err.message : "No pudimos crear tu empresa.");
       setCargando(false);

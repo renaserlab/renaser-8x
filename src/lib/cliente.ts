@@ -16,6 +16,11 @@ export async function pedir<T = unknown>(url: string, init?: RequestInit & { jso
   } catch {
     data = null;
   }
+  if (r.status === 401) {
+    // Sesión muerta (expiró o la cuenta cambió): a entrar de nuevo, nunca una pantalla colgada.
+    window.location.assign("/entrar");
+    throw new Error("Tu sesión expiró. Vuelve a entrar.");
+  }
   if (!r.ok) {
     const msg = (data as { error?: string } | null)?.error ?? `Error ${r.status}`;
     throw new Error(msg);
