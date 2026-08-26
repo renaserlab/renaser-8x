@@ -40,7 +40,8 @@ export async function handlePlanEstrategico(job: Job) {
   const r = await correrEstratega(contexto);
   await registrarLlamada(job.company_id, job.id, "estratega", r);
   const { data: prev } = await sb.from("deliverables").select("version").eq("company_id", job.company_id).eq("tipo", "plan_estrategico").order("version", { ascending: false }).limit(1);
-  await sb.from("deliverables").insert({ company_id: job.company_id, tipo: "plan_estrategico", contenido: r.data, version: (prev?.[0]?.version ?? 0) + 1 });
+  const { error: errIns } = await sb.from("deliverables").insert({ company_id: job.company_id, tipo: "plan_estrategico", contenido: r.data, version: (prev?.[0]?.version ?? 0) + 1 });
+  if (errIns) throw new Error(`No se pudo guardar el plan: ${errIns.message}`);
   return { version: (prev?.[0]?.version ?? 0) + 1, prioridades: r.data.prioridades.length };
 }
 

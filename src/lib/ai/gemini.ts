@@ -98,6 +98,16 @@ export class GeminiProvider implements AIProvider {
         continue;
       }
       if (res.status >= 500) throw new AIProviderDownError(`Gemini ${res.status}: ${(await res.text()).slice(0, 300)}`);
+      if (res.status === 400 && jsonSchema) {
+        // Esquemas grandes (p. ej. el plan estratégico completo) exceden el límite de responseJsonSchema
+        // aunque cada sección pase sola (verificado por bisección). Se reintenta sin esquema nativo:
+        // el prompt exige JSON y la validación Zod de abajo sigue siendo la puerta.
+        jsonSchema = null;
+        delete (body.generationConfig as Record<string, unknown>).responseJsonSchema;
+        await res.text();
+        intento--;
+        continue;
+      }
       if (!res.ok) throw new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 300)}`);
       const j = (await res.json()) as Respuesta;
       entrada += j.usageMetadata?.promptTokenCount ?? 0;
