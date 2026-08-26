@@ -24,7 +24,15 @@ export default function Registro() {
     });
     setCargando(false);
     if (error) {
-      setError(error.message.includes("least") ? "La contraseña necesita al menos 6 caracteres." : error.message);
+      // Los mensajes de Supabase llegan en inglés: se traducen los conocidos y el resto se dice en cristiano.
+      const m = error.message;
+      setError(
+        /least|password/i.test(m) ? "La contraseña necesita al menos 6 caracteres."
+        : /invalid/i.test(m) ? "Ese correo no parece válido. Revísalo (ejemplo: nombre@gmail.com)."
+        : /already|registered|exists/i.test(m) ? "Ya existe una cuenta con ese correo. Prueba entrar."
+        : /rate|too many/i.test(m) ? "Demasiados intentos seguidos. Espera un minuto y vuelve a probar."
+        : "No pudimos crear la cuenta. Revisa el correo y la contraseña e intenta de nuevo."
+      );
       return;
     }
     if (data.session) window.location.href = "/";

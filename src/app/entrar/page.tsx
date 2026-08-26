@@ -21,7 +21,7 @@ function Formulario() {
     const { error } = await sb.auth.signInWithPassword({ email: email.trim().toLowerCase(), password: clave });
     setCargando(false);
     if (error) {
-      setError(error.message.includes("Invalid") ? "Correo o contraseña incorrectos. Revísalos e intenta de nuevo." : error.message.includes("confirm") ? "Tu correo todavía no está confirmado. Revisa tu bandeja." : error.message);
+      setError(error.message.includes("Invalid") ? "Correo o contraseña incorrectos. Revísalos e intenta de nuevo." : error.message.includes("confirm") ? "Tu correo todavía no está confirmado. Revisa tu bandeja." : /rate|too many/i.test(error.message) ? "Demasiados intentos seguidos. Espera un minuto y vuelve a probar." : "No pudimos entrar. Revisa el correo y la contraseña e intenta de nuevo.");
       return;
     }
     router.replace(params.get("volver") ?? "/");
