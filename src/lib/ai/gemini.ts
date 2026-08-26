@@ -153,13 +153,18 @@ export class GeminiProvider implements AIProvider {
    * reintentos cortos: si Gemini está saturado, mejor fallar rápido y que la persona escriba.
    */
   async transcribe(audio: Blob, mime: string): Promise<Transcripcion> {
-    const modelo = process.env.GEMINI_TRANSCRIBE_MODEL ?? "gemini-3.5-flash-lite";
+    // Audios LARGOS (2+ min): el modelo ligero recorta o parafrasea la cola — caso real: "no traduce
+    // todo lo que digo" en una respuesta de 5 minutos. Para esos entra el modelo grande con más presupuesto.
+    const largo = audio.size > 1_200_000;
+    const modelo = largo
+      ? (process.env.GEMINI_TRANSCRIBE_MODEL_LARGO ?? "gemini-3.6-flash").trim()
+      : (process.env.GEMINI_TRANSCRIBE_MODEL ?? "gemini-3.5-flash-lite").trim();
     const thinking = modelo.startsWith("gemini-2.5") ? { thinkingBudget: 0 } : { thinkingLevel: "low" };
     const buf = Buffer.from(await audio.arrayBuffer());
     const body = {
       systemInstruction: { parts: [{ text: "Quien habla es una persona de negocios en Perú describiendo su empresa, en español. Transcribe FIELMENTE lo dicho: no resumas, no cambies palabras, no añadas nada. Corrige SOLO la puntuación y la separación de frases para que se lea natural. Conserva los montos y números tal como se dijeron ('25 mil soles', 'de cada 10, unos 3'). Si una palabra no se entiende, escribe [inaudible] en su lugar — nunca la adivines. Si hay silencios, simplemente continúa. Devuelve SOLO el texto transcrito." }] },
       contents: [{ role: "user", parts: [{ inlineData: { mimeType: mime || "audio/webm", data: buf.toString("base64") } }, { text: "Transcribe este audio." }] }],
-      generationConfig: { temperature: 0, maxOutputTokens: 8000, thinkingConfig: thinking },
+      generationConfig: { temperature: 0, maxOutputTokens: largo ? 16000 : 8000, thinkingConfig: thinking },
     };
     const MAX_REINTENTOS_INTERACTIVOS = 2;
     let reintentos = 0;
@@ -175,6 +180,8 @@ export class GeminiProvider implements AIProvider {
       const j = (await res.json()) as Respuesta;
       const texto = (j.candidates?.[0]?.content?.parts ?? []).map((x) => x.text ?? "").join("").trim();
       if (!texto) throw new Error("No pudimos entender el audio. Intenta de nuevo o escribe la respuesta.");
+      // Si el modelo se quedó sin presupuesto a mitad del audio, mejor decirlo que entregar la mitad en silencio.
+      if (j.candidates?.[0]?.finishReason === "MAX_TOKENS") throw new Error("El audio es muy largo para convertirlo de una vez. Guárdalo como audio y nosotros lo escuchamos completo.");
       return { texto, segmentos: [] };
     }
   }
