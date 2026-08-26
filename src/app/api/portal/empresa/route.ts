@@ -35,7 +35,8 @@ export const POST = protegido({}, async (perfil, req) => {
   const anios = ficha?.antiguedad ? parseFloat(ficha.antiguedad.replace(",", ".")) : null;
   const { data: c, error } = await sb
     .from("companies")
-    .insert({ nombre: nombre.slice(0, 120), sector, ficha, modelo_operativo: modelos.length ? modelos : null, etapa_negocio: etapaDe(anios) })
+    // Autoservicio SIN puertas: la empresa nace admitida y en levantamiento — nadie espera a un consultor para empezar.
+    .insert({ nombre: nombre.slice(0, 120), sector, ficha, modelo_operativo: modelos.length ? modelos : null, etapa_negocio: etapaDe(anios), estado_admision: "admitida", etapa: "levantamiento" })
     .select("id")
     .single();
   if (error) return fallo(error.message, 500);

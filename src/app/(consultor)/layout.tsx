@@ -11,17 +11,13 @@ export default async function LayoutConsultor({ children }: { children: React.Re
       <NavConsultor empresas={(empresas ?? []).map((e) => ({ id: e.id, nombre: e.nombre }))} usuario={u.nombre ?? u.email ?? ""} />
       <div className="flex-1 flex flex-col" style={{ minWidth: 0 }}>
         {/* Barra superior: manda en móvil; en escritorio queda mínima porque la lateral navega. */}
-        <nav className="no-imprimir flex items-center justify-between px-6 h-14 lg:hidden" style={{ borderBottom: "1px solid var(--linea)" }}>
-          <div className="flex items-center gap-6 overflow-x-auto">
-            <Link href="/bandeja" className="t-etiqueta" style={{ color: "var(--tinta)" }}>8X</Link>
-            <Link href="/bandeja" className="t-dato">Inicio</Link>
-            <Link href="/empresas" className="t-dato">Empresas</Link>
-          </div>
+        <nav className="no-imprimir flex items-center justify-between px-6 h-12 lg:hidden" style={{ borderBottom: "1px solid var(--linea)" }}>
+          <Link href="/bandeja" className="t-etiqueta" style={{ color: "var(--tinta)", fontWeight: 700 }}>8X</Link>
           <form action="/api/auth/salir" method="post">
             <button className="t-dato" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--grafito)", font: "inherit" }}>Salir</button>
           </form>
         </nav>
-        <main className="flex-1 px-6 py-8 w-full" style={{ maxWidth: 1280, margin: "0 auto" }}>{children}</main>
+        <main className="flex-1 px-6 py-8 w-full" style={{ maxWidth: 1280, margin: "0 auto", paddingBottom: "calc(88px + env(safe-area-inset-bottom))" }}>{children}</main>
       </div>
     </div>
   );

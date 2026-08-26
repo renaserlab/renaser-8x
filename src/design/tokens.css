@@ -1,11 +1,14 @@
 /* 8X — única fuente de color, tipo y espacio. Capítulo 17. */
 :root {
-  --papel: #fcfcfb;
+  --papel: #ffffff;
+  /* Fondo de aplicativo (pedido de Kelin, maqueta RENASER BUSINESS): gris frío suave
+     para que las tarjetas blancas SE VEAN como tarjetas, no todo blanco plano. */
+  --fondo: #eef1f4;
   --tinta: #14171a;
   --grafito: #6b7075;
-  --linea: #e8e8e5;
+  --linea: #e3e6ea;
   --marca: #0f2a3f;
-  --suave: #f3f3f1;
+  --suave: #f3f4f6;
 
   --confirmado: #1f6f4a;
   --caducado: #8a6d1f;
@@ -26,7 +29,8 @@
   --dur: 200ms;
 }
 
-html { background: var(--papel); color: var(--tinta); }
+html { background: var(--fondo); color: var(--tinta); }
+@media print { html { background: #fff; } }
 body {
   font-family: var(--font-ui);
   font-size: 17px;
