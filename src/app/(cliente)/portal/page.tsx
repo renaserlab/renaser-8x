@@ -86,6 +86,7 @@ export default async function Portal() {
 
   const rutaContinuar = ({ 2: "/portal/activos", 3: "/portal/conversacion", 4: "/portal/validar", 5: "/portal/procesos", 6: "/portal/activos", 7: "/portal/resultados", 8: "/portal/plan" } as Record<number, string>)[c.paso] ?? "/portal/hoy";
   const cosas = hoy.espejo.length + hoy.noVes.length + hoy.fortalezas.length;
+  const hayNumeros = Boolean(t.kpis.venta || t.kpis.ganancia || t.kpis.deuda != null || t.serieVentas.length >= 2);
 
   return (
     <div className="flex flex-col lienzo" style={{ gap: 40 }}>
@@ -109,8 +110,9 @@ export default async function Portal() {
         </div>
       </header>
 
-      {/* En PC: números y gráfica a la izquierda, lo accionable a la derecha — un tablero, no una columna. */}
-      <div className="grid gap-10 lg:grid-cols-[1fr_340px] lg:gap-x-14 items-start">
+      {/* En PC: números y gráfica a la izquierda, lo accionable a la derecha — un tablero, no una columna.
+          Sin números todavía, no hay columnas: el contenido fluye y nada queda colgado en el vacío. */}
+      <div className={hayNumeros ? "grid gap-10 lg:grid-cols-[1fr_340px] lg:gap-x-14 items-start" : "flex flex-col gap-10"}>
       <div className="flex flex-col" style={{ gap: 40, minWidth: 0 }}>
       {/* Números: fila editorial entre líneas finas, sin cajitas */}
       {(t.kpis.venta || t.kpis.ganancia || t.kpis.deuda != null) && (
@@ -157,7 +159,7 @@ export default async function Portal() {
       </div>
 
       {/* Lo que más frena + biblioteca: aquí SÍ hay caja — son accionables */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 lg:self-start">
+      <div className={hayNumeros ? "grid gap-4 sm:grid-cols-2 lg:grid-cols-1 lg:self-start" : "grid gap-4 sm:grid-cols-2"}>
         {hoy.restriccion && (
           <section className="panel p-5" style={{ borderLeft: "4px solid var(--contradicho)" }}>
             <p className="t-etiqueta mb-2">Lo que más te está frenando</p>
