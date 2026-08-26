@@ -36,6 +36,19 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
   }
   const admision = c.admision as (Record<string, string> & { evaluacion?: { admisible: boolean; motivo: string; senales: string[] } }) | null;
 
+  // SALUD EMPRESARIAL: promedio de los pilares diagnosticados (madurez Base RENASER: sin evidencia no puntúa).
+  const PUNTAJE: Record<string, number> = { solido: 85, mejorable: 60, critico: 35 };
+  const puntuados = (diag ?? []).map((d) => PUNTAJE[d.estado]).filter((n): n is number => n != null);
+  const salud = puntuados.length ? Math.round(puntuados.reduce((a, b) => a + b, 0) / puntuados.length) : null;
+  const { data: restricciones } = await sb
+    .from("findings")
+    .select("id,titulo,impacto,pilar,patron")
+    .eq("company_id", id)
+    .neq("estado_revision", "rechazado")
+    .eq("impacto", "alto")
+    .order("created_at", { ascending: false })
+    .limit(3);
+
   return (
     <>
       <Encabezado
@@ -80,6 +93,50 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
           </section>
         );
       })()}
+
+      {/* Salud + restricciones principales + qué hacer hoy (maqueta aprobada) */}
+      <section className="grid gap-4 lg:grid-cols-[220px_1fr_1fr] mb-6">
+        <div className="panel p-5" style={{ textAlign: "center" }}>
+          <p className="t-etiqueta mb-2">Salud empresarial</p>
+          {salud != null ? (
+            <>
+              <svg viewBox="0 0 120 70" style={{ width: 120, margin: "0 auto", display: "block" }} role="img" aria-label={`Salud ${salud} de 100`}>
+                <path d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke="var(--linea)" strokeWidth="9" strokeLinecap="round" />
+                <path d={`M10 62 A50 50 0 ${salud > 50 ? 1 : 0} 1 ${(60 + 50 * Math.cos(Math.PI * (1 - salud / 100))).toFixed(1)} ${(62 - 50 * Math.sin(Math.PI * (1 - salud / 100))).toFixed(1)}`} fill="none" stroke={salud >= 70 ? "var(--confirmado)" : salud >= 50 ? "var(--caducado)" : "var(--contradicho)"} strokeWidth="9" strokeLinecap="round" />
+                <text x="60" y="56" textAnchor="middle" fontSize="19" fontWeight="700" fill="var(--tinta)">{salud}</text>
+              </svg>
+              <p className="t-dato" style={{ color: "var(--grafito)" }}>de 100 · con evidencia</p>
+            </>
+          ) : (
+            <p className="t-dato" style={{ color: "var(--grafito)", marginTop: 16 }}>Sin diagnóstico aún — la salud se calcula con evidencia, no con impresiones.</p>
+          )}
+        </div>
+        <div className="panel p-5">
+          <p className="t-etiqueta mb-3">Principales restricciones</p>
+          {(restricciones ?? []).length ? (
+            <ul className="flex flex-col gap-2">
+              {(restricciones ?? []).map((r) => (
+                <li key={r.id} className="t-dato">
+                  <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: "var(--contradicho)", marginRight: 8 }} aria-hidden="true" />
+                  <Link href={`/empresa/${id}/diagnostico?pilar=${r.pilar}`} style={{ fontWeight: 550 }}>{r.titulo}</Link>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="t-dato" style={{ color: "var(--grafito)" }}>Sin restricciones de impacto alto todavía.</p>
+          )}
+        </div>
+        <div className="panel p-5">
+          <p className="t-etiqueta mb-3">¿Qué quieres hacer hoy?</p>
+          <div className="flex flex-wrap gap-2">
+            <a href={`/api/consultor/ver-portal?empresa=${id}`} className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>Ver como el empresario</a>
+            <Link href={`/empresa/${id}/diagnostico`} className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>Diagnosticar</Link>
+            <Link href={`/empresa/${id}/afirmaciones?estado=contradicho`} className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>Resolver contradicciones</Link>
+            <Link href={`/empresa/${id}/procesos`} className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>Sistematizar procesos</Link>
+            <Link href={`/empresa/${id}/plan`} className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>Armar el plan</Link>
+          </div>
+        </div>
+      </section>
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-10">
         {["personas", "procesos", "producto", "marketing"].map((p) => {

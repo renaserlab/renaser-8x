@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { ETAPA } from "@/lib/textos";
+import { TabsEmpresa } from "@/components/consultor/TabsEmpresa";
 
 const TABS: [string, string][] = [
   ["", "Panorama"],
@@ -27,13 +28,7 @@ export default async function LayoutEmpresa({ children, params }: { children: Re
           <span className="t-etiqueta">{ETAPA[c.etapa] ?? c.etapa}</span>
           {c.estado_admision !== "admitida" && <span className="t-etiqueta" style={{ color: "var(--caducado)" }}>{c.estado_admision}</span>}
         </div>
-        <nav className="flex gap-1 mt-4 overflow-x-auto" style={{ borderBottom: "1px solid var(--linea)" }}>
-          {TABS.map(([h, n]) => (
-            <Link key={h} href={`/empresa/${id}${h}`} className="t-dato px-3 py-2" style={{ whiteSpace: "nowrap" }}>
-              {n}
-            </Link>
-          ))}
-        </nav>
+        <TabsEmpresa base={`/empresa/${id}`} tabs={TABS} />
       </div>
       {children}
     </>
