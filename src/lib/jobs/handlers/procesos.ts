@@ -133,7 +133,7 @@ export async function handleGenerarSop(job: Job) {
   await progreso(job.id, `Escribiendo cómo se hace "${proceso.nombre}"`);
   const padre = proceso.padre_id ?? pid;
   const { data: kh } = await sb.from("know_how").select("id,puesto,situacion,senal,decision,excepcion,estandar,error_frecuente,regla_practica,escalamiento,criterio_experto").eq("company_id", job.company_id).or(`process_id.eq.${pid},process_id.eq.${padre},process_id.is.null`);
-  const contexto = [`PROCESO: ${proceso.nombre} (${proceso.version})`, procesoComoJSON(nodos, edges), `KNOW-HOW:`, JSON.stringify((kh ?? []).map(({ id: _id, ...k }) => k), null, 1)].join("\n\n");
+  const contexto = [`PROCESO: ${proceso.nombre} (${proceso.version})`, procesoComoJSON(nodos, edges), `KNOW-HOW:`, JSON.stringify((kh ?? []).map((x) => ({ ...x, id: undefined })), null, 1)].join("\n\n");
   const r = await correrSop(contexto);
   await registrarLlamada(job.company_id, job.id, "sop", r);
   await sb.from("sops").delete().eq("process_id", pid);

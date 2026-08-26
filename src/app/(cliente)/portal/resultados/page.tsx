@@ -3,7 +3,7 @@ import { contextoPortal } from "@/lib/portal";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { hallazgosAprobadosConEvidencia } from "@/lib/db/queries";
 import { Hallazgo, type HallazgoRow } from "@/components/diagnostico/Hallazgo";
-import { ENTREGABLE, VACIO, fechaCorta } from "@/lib/textos";
+import { ENTREGABLE, fechaCorta } from "@/lib/textos";
 
 export const dynamic = "force-dynamic";
 

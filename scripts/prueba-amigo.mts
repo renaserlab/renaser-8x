@@ -87,7 +87,7 @@ async function main() {
   const resumen: Record<string, unknown> = { url: URL_PUB, email: EMAIL };
 
   // 0. Registro (como haría el amigo; creado por admin con correo confirmado, mismo resultado del formulario).
-  const { data: nuevo, error: e0 } = await admin.auth.admin.createUser({ email: EMAIL, password: PASS, email_confirm: true, user_metadata: { nombre: "Valeria" } });
+  const { error: e0 } = await admin.auth.admin.createUser({ email: EMAIL, password: PASS, email_confirm: true, user_metadata: { nombre: "Valeria" } });
   if (e0) throw e0;
   const anon = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { auth: { persistSession: false } });
   const { data: sesion, error: e1 } = await anon.auth.signInWithPassword({ email: EMAIL, password: PASS });

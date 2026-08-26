@@ -47,6 +47,30 @@ function Insight({ h }: { h: HallazgoHoy }) {
   );
 }
 
+/** Caja del árbol de la venta: número contado/verificado, o la invitación a contarlo. */
+function Caja({ titulo, dato, ancho }: { titulo: string; dato: { texto: string; estado: string } | null; ancho?: boolean }) {
+  return (
+    <div style={{ border: `1.5px solid ${dato ? "var(--marca)" : "var(--linea)"}`, borderRadius: "var(--radio)", padding: "8px 12px", textAlign: "center", background: dato ? "color-mix(in srgb, var(--marca) 6%, var(--papel))" : "var(--papel)", minWidth: 0, ...(ancho ? { maxWidth: 260, margin: "0 auto" } : {}) }}>
+      <p className="t-etiqueta" style={{ fontSize: 11 }}>{titulo}</p>
+      {dato ? (
+        <>
+          <p className="t-dato" style={{ fontWeight: 700, fontSize: 17 }}>{dato.texto}</p>
+          <p className="t-dato" style={{ fontSize: 11, color: "var(--grafito)" }}>{dato.estado === "verificado" ? "verificado" : "contado"}</p>
+        </>
+      ) : (
+        <Link href="/portal/conversacion" className="t-dato" style={{ fontSize: 12.5, color: "var(--marca)", textDecoration: "underline" }}>sin dato — cuéntanoslo</Link>
+      )}
+    </div>
+  );
+}
+function Conector({ d }: { d: string }) {
+  return (
+    <svg viewBox="0 0 100 20" preserveAspectRatio="none" style={{ width: "100%", height: 18, display: "block" }} aria-hidden="true">
+      <path d={d} fill="none" stroke="var(--linea)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+    </svg>
+  );
+}
+
 /** ÁRBOL DE TU VENTA: de dónde sale la plata, con lo contado — y "sin dato" como invitación, nunca inventado. */
 function ArbolVentas({ metricas }: { metricas: Metrica[] }) {
   const buscar = (re: RegExp) => {
@@ -64,24 +88,6 @@ function ArbolVentas({ metricas }: { metricas: Metrica[] }) {
   const ticket = buscar(/ticket|promedio/);
   const interesados = buscarNum(/lead|interesad|prospect|contact/);
   const compran = buscarNum(/conversi|cierr|compran/);
-  const Caja = ({ titulo, dato, ancho }: { titulo: string; dato: { texto: string; estado: string } | null; ancho?: boolean }) => (
-    <div style={{ border: `1.5px solid ${dato ? "var(--marca)" : "var(--linea)"}`, borderRadius: "var(--radio)", padding: "8px 12px", textAlign: "center", background: dato ? "color-mix(in srgb, var(--marca) 6%, var(--papel))" : "var(--papel)", minWidth: 0, ...(ancho ? { maxWidth: 260, margin: "0 auto" } : {}) }}>
-      <p className="t-etiqueta" style={{ fontSize: 11 }}>{titulo}</p>
-      {dato ? (
-        <>
-          <p className="t-dato" style={{ fontWeight: 700, fontSize: 17 }}>{dato.texto}</p>
-          <p className="t-dato" style={{ fontSize: 11, color: "var(--grafito)" }}>{dato.estado === "verificado" ? "verificado" : "contado"}</p>
-        </>
-      ) : (
-        <Link href="/portal/conversacion" className="t-dato" style={{ fontSize: 12.5, color: "var(--marca)", textDecoration: "underline" }}>sin dato — cuéntanoslo</Link>
-      )}
-    </div>
-  );
-  const Conector = ({ d }: { d: string }) => (
-    <svg viewBox="0 0 100 20" preserveAspectRatio="none" style={{ width: "100%", height: 18, display: "block" }} aria-hidden="true">
-      <path d={d} fill="none" stroke="var(--linea)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-    </svg>
-  );
   return (
     <section className="panel p-5">
       <p className="t-etiqueta mb-3">De dónde sale tu venta</p>
