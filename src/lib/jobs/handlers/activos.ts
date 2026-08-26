@@ -4,6 +4,7 @@ import { GUARDIA, comoDato } from "@/lib/rules/patrones";
 import { SalidaConstructor, SalidaSistematizador } from "@/lib/schemas";
 import { BLOQUES_ACTIVOS } from "@/lib/activos";
 import { ESTANDARES } from "@/lib/rules/estandares";
+import { baseSistematizacion } from "@/lib/rules/base-renaser";
 import { claimsDeEmpresa, registrarLlamada, etiquetaFuente } from "@/lib/db/queries";
 
 type Job = { id: string; company_id: string; payload: Record<string, unknown> };
@@ -109,6 +110,8 @@ Devuelve JSON { "propuesta": string | null, "cambios": [...], "nota": string | n
   ("el diagnostico encontro que 7 de 10 decisiones pasan por el dueno"). Un cambio sin ancla no se propone.
 - nota: si algo del declarado se conserva a proposito, dilo ("la estructura de X se queda como esta:
   funciona"); o si falta una pieza para trabajar bien, dila.
+
+${baseSistematizacion()}
 
 REGLAS ABSOLUTAS:
 - PROPORCIONALIDAD: la propuesta es del tamano de la empresa. A 5 personas no se le proponen comites,

@@ -2,6 +2,7 @@ import { ai } from "..";
 import { SalidaDiagnosticador, SalidaAuditor } from "@/lib/schemas";
 import { GUARDIA, LENTES, patronesComoTexto, DIMENSIONES } from "@/lib/rules/patrones";
 import { ESTANDARES } from "@/lib/rules/estandares";
+import { baseDiagnostico } from "@/lib/rules/base-renaser";
 
 const DIMS = Object.entries(DIMENSIONES).map(([p, d]) => `${p}: ${d.join(" · ")}`).join("\n");
 const VARAS = Object.entries(ESTANDARES).map(([p, l]) => `${p}:\n${l.map((e) => "  - " + e).join("\n")}`).join("\n");
@@ -63,6 +64,9 @@ parentesis si puede no entenderse. Ejemplos reales de lo que NO se acepta y su f
 - MAL: "¿Cual es la estructura de precios y que margen deja cada paquete?" -> son DOS preguntas: separalas
   y en oral: "¿Cuanto cobras por cada tipo de sesion o paquete?" y "De esos precios, ¿cual te deja mas
   ganancia despues de costos?"
+
+BASE MAESTRA RENASER (gobierna tu razonamiento):
+${baseDiagnostico()}
 
 LECTURA PROFUNDA (analisis de consultor especializado, no etiquetas):
 - ECUACION DE VALOR (Hormozi): al analizar producto y marketing, evalua la oferta con la ecuacion:

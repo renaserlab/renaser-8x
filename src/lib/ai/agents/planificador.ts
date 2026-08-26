@@ -1,8 +1,11 @@
 import { ai } from "..";
 import { SalidaPlanificador, SalidaRedactor, SalidaAdmision } from "@/lib/schemas";
+import { basePlan } from "@/lib/rules/base-renaser";
 import { GUARDIA, comoDato } from "@/lib/rules/patrones";
 
 export const PROMPT_PLANIFICADOR = `${GUARDIA}
+
+${basePlan()}
 
 Recibes los hallazgos aprobados de las cuatro P y los procesos TO-BE.
 

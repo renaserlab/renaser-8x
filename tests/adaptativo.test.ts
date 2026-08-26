@@ -168,6 +168,27 @@ describe("Proyección de pérdida y caminos (feedback de demo)", async () => {
   });
 });
 
+describe("Base Maestra RENASER integrada en los agentes", async () => {
+  it("el diagnosticador razona con el contrato, las prohibiciones y la madurez", async () => {
+    const { PROMPT_DIAGNOSTICADOR } = await import("@/lib/ai/agents/diagnosticador");
+    for (const marca of ["CONTRATO DE RAZONAMIENTO", "CONDUCTAS PROHIBIDAS", "ESCALA DE MADUREZ", "el máximo es 1", "PREGUNTAS RECTORAS"]) {
+      expect(PROMPT_DIAGNOSTICADOR.toLowerCase()).toContain(marca.toLowerCase());
+    }
+  });
+  it("el SOP y el sistematizador cargan el estándar mínimo de sistematización", async () => {
+    const { PROMPT_SOP } = await import("@/lib/ai/agents/arquitecto");
+    const { PROMPT_SISTEMATIZADOR } = await import("@/lib/jobs/handlers/activos");
+    expect(PROMPT_SOP).toContain("ESTÁNDAR MÍNIMO DE SISTEMATIZACIÓN");
+    expect(PROMPT_SISTEMATIZADOR).toContain("ESTÁNDAR MÍNIMO DE SISTEMATIZACIÓN");
+    expect(PROMPT_SISTEMATIZADOR).toContain("CONDUCTAS PROHIBIDAS");
+  });
+  it("el planificador exige priorización sobre la restricción y formato 30-60-90", async () => {
+    const { PROMPT_PLANIFICADOR } = await import("@/lib/ai/agents/planificador");
+    expect(PROMPT_PLANIFICADOR).toContain("EXPLOTA, SUBORDINA o ELEVA");
+    expect(PROMPT_PLANIFICADOR).toContain("30, 60 y 90");
+  });
+});
+
 describe("Sistema Adaptativo v2 · banco", () => {
   it("empresa_dueno incluye la época dorada con la secuencia completa", () => {
     const b = BLOQUES.empresa_dueno.find((x) => x.clave === "epoca_dorada");

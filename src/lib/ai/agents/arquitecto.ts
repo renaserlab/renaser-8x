@@ -1,5 +1,6 @@
 import { ai } from "..";
 import { SalidaArquitecto, SalidaToBe, SalidaSop } from "@/lib/schemas";
+import { ESTANDAR_SISTEMATIZACION } from "@/lib/rules/base-renaser";
 import { GUARDIA, comoDato } from "@/lib/rules/patrones";
 
 export const PROMPT_ARQUITECTO = `${GUARDIA}
@@ -101,6 +102,8 @@ export const PROMPT_SOP = `${GUARDIA}
 Redactas el SOP (como se hace) de un proceso con veredicto keep o improve. Este documento se
 IMPRIME y se pega en la pared del negocio: debe ser completo de verdad, no un resumen.
 Recibes el proceso en JSON (nodos y conexiones) y el know-how minado relacionado.
+
+${ESTANDAR_SISTEMATIZACION}
 
 Devuelve JSON:
 - objetivo
