@@ -1,9 +1,9 @@
 {
-  "fecha": "2026-08-23T22:18:25.695Z",
-  "empresa": "406afd2e-2359-41e9-9212-8528ba6dae02",
+  "fecha": "2026-08-26T07:13:06.765Z",
+  "empresa": "a3bde455-c9db-4b96-8573-25a048e476b6",
   "claims": {
-    "total": 31,
-    "confirmados": 27,
+    "total": 41,
+    "confirmados": 37,
     "caducados": 3,
     "contradichos": 1
   },
@@ -13,164 +13,169 @@
     "descuentos": true
   },
   "metricas_hallazgos": {
-    "cobertura": 1,
-    "precision": 0.6,
+    "cobertura": 0.833,
+    "precision": 0.5,
     "falsos_positivos": 0,
-    "causa_raiz": 0.833,
+    "causa_raiz": 1,
     "preservacion": 1,
     "contradicciones": 0,
     "preguntas": 0,
-    "omisiones": [],
+    "omisiones": [
+      "fruta_pasada_know_how"
+    ],
     "inventados": []
   },
   "know_how_rosa": true,
   "as_is": 1,
   "to_be": 1,
   "plan": {
-    "acciones": 7,
+    "acciones": 9,
     "max_frentes_por_semana": 3,
-    "primera": "Documentar el criterio técnico de selección y maduración de palta de Rosa en una ficha vis"
+    "primera": "Aprobar y publicar la matriz de autorizacion de descuentos para que el Jefe de Ventas apru"
   },
   "entregables": [
     "informe_realidad",
     "diagnostico_4p",
+    "mapa_automatizacion",
     "mapa_as_is",
     "mapa_to_be",
-    "plan_90",
-    "mapa_automatizacion",
-    "manual_procesos"
+    "manual_procesos",
+    "plan_90"
   ],
   "destruye_fortaleza": false,
-  "pass": true,
+  "pass": false,
   "hallazgos": [
     {
-      "titulo": "Visión estratégica desactualizada sobre alcance geográfico y metas de facturación",
-      "causa_raiz": "Falta de actualización formal de la estrategia corporativa: el documento 2022 declara expansión a provincias y meta de S/ 5 millones, mientras el dueño redefine el foco a Lima y USD 3 millones.",
-      "pilar": "producto",
-      "patron": "vision_obsoleta",
-      "impacto": "medio",
-      "preserva": false,
-      "claim_ids": [
-        "dccbc556-e628-4bf0-ad41-6ac0092999e6",
-        "aa238ac0-9f54-430f-8617-b9f1875e3a3c",
-        "80d6d656-be45-45ec-b682-adbda991dd8e",
-        "f8112edf-4006-472c-9da2-058f35b05c6e"
-      ]
-    },
-    {
-      "titulo": "Visión y mercado objetivo obsoletos frente al plan estratégico",
-      "causa_raiz": "El plan estratégico de 2022 no ha sido actualizado formalmente con las nuevas metas del dueño",
+      "titulo": "Desalineación entre el plan estratégico documentado y el segmento real de clientes atendidos",
+      "causa_raiz": "Inexistencia de un proceso de actualización del plan estratégico comercial y definición formal del perfil de cliente ideal (ICP), manteniendo documentos obsoletos (2022) que contradicen la realidad operativa",
       "pilar": "marketing",
       "patron": "vision_obsoleta",
-      "impacto": "medio",
+      "impacto": "alto",
       "preserva": false,
       "claim_ids": [
-        "afee6f4b-55c2-42e6-96d8-7ba4badcceb5",
-        "80d6d656-be45-45ec-b682-adbda991dd8e",
-        "dccbc556-e628-4bf0-ad41-6ac0092999e6"
+        "c605799e-cbf7-46e3-9d98-00e7732985a5",
+        "163d0ae1-5ead-4b8c-952d-0524a617efcd",
+        "cbb9ffd9-7073-4def-9dcf-49140dedd5ed",
+        "022d57aa-9023-47d0-bac1-87b4fe339f85",
+        "45d2744e-f214-4854-ba43-b7b6da07c720"
       ]
     },
     {
-      "titulo": "Canal único de adquisición dependiente del chef Ramos",
-      "causa_raiz": "Falta un proceso estructurado de captación y canales diversificados de marketing",
+      "titulo": "Vulnerabilidad crítica por dependencia en canal único de adquisición a través del chef Ramos",
+      "causa_raiz": "Falta de un sistema o proceso propio de captación de clientes y prospección sistemática, dependiendo en un 92% de las recomendaciones de un solo contacto externo (chef Ramos)",
       "pilar": "marketing",
       "patron": "canal_unico",
       "impacto": "alto",
       "preserva": false,
       "claim_ids": [
-        "fb1b7a4b-8e63-408c-ae28-95589a9ce187",
-        "351706ff-da71-4911-a8b1-0126ffde289e"
+        "985b82e6-40da-4337-ade8-528efd49f4e9",
+        "c605799e-cbf7-46e3-9d98-00e7732985a5"
       ]
     },
     {
-      "titulo": "Quiebre en la promesa de fruta en su punto con 38% de reclamos y devoluciones en puerta",
-      "causa_raiz": "Falta de criterio documentado y estándar de compra de palta transferible: cuando Rosa Quispe no compra, se compra por precio y el producto llega pasado.",
-      "pilar": "producto",
-      "patron": "know_how_en_una_persona",
-      "impacto": "alto",
-      "preserva": false,
-      "claim_ids": [
-        "3656c87a-b8e9-4234-a2fe-4b7dad78f152",
-        "4fd2f48f-ce45-40bc-b1da-23edd8fe3c04",
-        "afe2e173-8609-4f15-845f-43174c5b7b61",
-        "80f8418f-f957-4f41-a9ee-f089991481fa",
-        "fee39599-e7cd-4f1a-b1cc-751028e8abc4"
-      ]
-    },
-    {
-      "titulo": "Sobrecarga horaria del dueño trabajando 70 horas semanales frente al objetivo de 30 horas",
-      "causa_raiz": "Falta de esquema de delegación operativa en la estructura de 12 personas que absorba la carga de dirección.",
-      "pilar": "personas",
-      "patron": "sueno_vs_empresa",
-      "impacto": "medio",
-      "preserva": false,
-      "claim_ids": [
-        "d6204d94-900c-4bf0-b633-ccd95cdf6284",
-        "911a786f-ea7f-4cbb-a6f5-f8a533d40bfa"
-      ]
-    },
-    {
-      "titulo": "Know-how crítico de selección de fruta concentrado exclusivamente en Rosa tras 14 años",
-      "causa_raiz": "Criterio de selección de fruta y evaluación de maduración no documentado formalmente ni transferido al equipo",
-      "pilar": "personas",
-      "patron": "know_how_en_una_persona",
-      "impacto": "alto",
-      "preserva": false,
-      "claim_ids": [
-        "af596a3f-1cba-469f-8677-e14e30a58fa5",
-        "8678be61-6c84-4007-86cc-6554dc7bf099",
-        "80f8418f-f957-4f41-a9ee-f089991481fa",
-        "2d9c5984-9efa-450c-b628-07687061c517"
-      ]
-    },
-    {
-      "titulo": "Fortaleza: Criterio experto de compra de palta desarrollado por Rosa",
-      "causa_raiz": "Rosa Quispe evalúa una pequeña textura específica en la palta para predecir que estará en punto óptimo en dos días.",
-      "pilar": "personas",
+      "titulo": "El proceso comercial carece de registro formal de interesados y seguimiento",
+      "causa_raiz": "Ausencia de un registro mínimo (CRM o bitácora de prospección) con criterios de seguimiento y responsable designado",
+      "pilar": "marketing",
       "patron": null,
       "impacto": "medio",
-      "preserva": true,
+      "preserva": false,
       "claim_ids": [
-        "af596a3f-1cba-469f-8677-e14e30a58fa5",
-        "2d9c5984-9efa-450c-b628-07687061c517",
-        "80f8418f-f957-4f41-a9ee-f089991481fa"
+        "985b82e6-40da-4337-ade8-528efd49f4e9"
       ]
     },
     {
-      "titulo": "Cuello de botella en aprobacion de descuentos por ausencia de delegacion",
-      "causa_raiz": "La politica exige que cualquier descuento sea aprobado exclusivamente por el dueño (Julio), sin delegacion ni umbrales alternativos.",
+      "titulo": "Fortaleza: Know-how crítico de selección de fruta concentrado en Rosa Quispe",
+      "causa_raiz": "Criterios de calidad de compra de fruta (como la señal de textura en la palta) no documentados ni estandarizados en un manual de inducción o compras",
+      "pilar": "personas",
+      "patron": "know_how_en_una_persona",
+      "impacto": "alto",
+      "preserva": true,
+      "claim_ids": [
+        "28842e78-89ad-42e1-a097-f78759f7ad57",
+        "800d00f9-4a8b-4f26-88bf-283a57ca8c2d",
+        "319c8952-bf70-48e9-881b-fb480db475f6",
+        "ff9b1166-ae69-4ec5-ae34-6c9608d77cd2",
+        "3f232f81-b69f-4383-9215-d7ed0d759f55",
+        "eb38b1a9-fc64-4de6-84ed-eb6e3ee73332"
+      ]
+    },
+    {
+      "titulo": "Ausencia de perfiles de puesto y métricas de desempeño formalizadas",
+      "causa_raiz": "Falta de scorecards o fichas de puesto por escrito que definan entregables concretos e indicadores de éxito para los 12 colaboradores",
+      "pilar": "personas",
+      "patron": "brecha_estandar",
+      "impacto": "medio",
+      "preserva": false,
+      "claim_ids": [
+        "bc5e9b6a-e5f0-4108-ab21-6d69f0a17236",
+        "636f8d83-19bf-441e-8329-943d0205daa3",
+        "3215f7b0-2f45-4655-80c1-80a070e87445",
+        "040c5cdb-b16c-4c6c-971d-e377a1f4b148"
+      ]
+    },
+    {
+      "titulo": "Jornada excesiva del fundador y falta de delegación directiva",
+      "causa_raiz": "Ausencia de un mapa claro de autoridad, decisiones y responsabilidades delegadas en la estructura gerencial",
+      "pilar": "personas",
+      "patron": "sueno_vs_empresa",
+      "impacto": "alto",
+      "preserva": false,
+      "claim_ids": [
+        "f5e5708d-692e-4d74-b92f-8c71cb53e31f",
+        "04b14b25-bbb1-4f5c-984c-87c779f9ee58",
+        "f3e3d80d-a296-4582-8798-9109076fe6ae",
+        "25b80aa7-be00-44cc-8958-35a07aa2d9f3"
+      ]
+    },
+    {
+      "titulo": "Falta de control de calidad previo al despacho genera 38% de reclamos e interrupciones en reparto",
+      "causa_raiz": "Inexistencia de un estándar y punto de revisión de madurez de la fruta antes de ser cargada a los camiones de reparto",
+      "pilar": "procesos",
+      "patron": "brecha_estandar",
+      "impacto": "alto",
+      "preserva": false,
+      "claim_ids": [
+        "fa52f324-d5c1-4d26-b51e-6a9ca420acfb",
+        "f3ee4018-0b2c-448d-91a5-e79e98fd30c9",
+        "1b7bd545-cc16-469b-95e4-128fe9caeecc"
+      ]
+    },
+    {
+      "titulo": "Dependencia de Julio para aprobación de descuentos detiene pedidos entre 2 y 3 días",
+      "causa_raiz": "Inexistencia de una política escrita de descuentos con límites de autoridad delegados al Jefe de Ventas",
       "pilar": "procesos",
       "patron": "dependencia_fundador",
       "impacto": "alto",
       "preserva": false,
       "claim_ids": [
-        "3536b6b9-4841-4e5f-a859-56679ba0a27d",
-        "3c8f5824-4953-4169-9006-10f339f3e182"
+        "db9ebcd1-b844-4d7f-ac58-cf5b5a680563",
+        "aaf3e2ca-4d42-4383-a389-e6f36a0f4b1b"
       ]
     },
     {
-      "titulo": "Ausencia de estandares y manuales para la induccion de personal",
-      "causa_raiz": "Inexistencia de documentacion formal de procesos, delegando el aprendizaje unicamente a la observacion empirica.",
-      "pilar": "procesos",
-      "patron": "know_how_en_una_persona",
-      "impacto": "medio",
+      "titulo": "Las compras realizadas en ausencia de Rosa Quispe se guían por precio y entregan producto pasado",
+      "causa_raiz": "Criterio de compra basado únicamente en precio sin un estándar explícito de madurez o calidad de entrada",
+      "pilar": "producto",
+      "patron": "brecha_estandar",
+      "impacto": "alto",
       "preserva": false,
       "claim_ids": [
-        "9efd90b1-aeb7-4621-b5b4-5a76e93bb7e9",
-        "80f8418f-f957-4f41-a9ee-f089991481fa"
+        "3f232f81-b69f-4383-9215-d7ed0d759f55",
+        "24bfc217-13d5-4f99-821c-651ea8b8a5df"
       ]
     },
     {
-      "titulo": "Fortaleza: Criterio de selección de palta de Rosa Quispe por textura para maduración en dos días",
-      "causa_raiz": "Know-how crítico de evaluación sensorial desarrollado por Rosa Quispe: identificar una pequeña textura específica que asegura que la palta estará perfecta para su uso en dos días.",
+      "titulo": "Fortaleza: El know-how crítico de selección de palta depende exclusivamente de Rosa Quispe",
+      "causa_raiz": "Falta de criterio de aceptación documentado y estándar de selección visual/táctil para la compra de fruta cuando la compradora titular está ausente",
       "pilar": "producto",
-      "patron": null,
+      "patron": "know_how_en_una_persona",
       "impacto": "alto",
       "preserva": true,
       "claim_ids": [
-        "2d9c5984-9efa-450c-b628-07687061c517",
-        "80f8418f-f957-4f41-a9ee-f089991481fa",
-        "4fd2f48f-ce45-40bc-b1da-23edd8fe3c04"
+        "eb38b1a9-fc64-4de6-84ed-eb6e3ee73332",
+        "3f232f81-b69f-4383-9215-d7ed0d759f55",
+        "e0f4b97c-f98b-4f5e-8e4e-1b7be736a863",
+        "24bfc217-13d5-4f99-821c-651ea8b8a5df"
       ]
     }
   ]

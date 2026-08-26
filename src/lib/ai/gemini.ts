@@ -16,6 +16,8 @@ const TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS ?? 120_000);
 const THINKING_LEVEL = process.env.GEMINI_THINKING_LEVEL ?? "low";
 const THINKING_HEADROOM = Number(process.env.GEMINI_THINKING_HEADROOM ?? 6000);
 const MAX_REINTENTOS_503 = Number(process.env.GEMINI_REINTENTOS_503 ?? 5);
+// Respaldo ante tormenta sostenida del principal: mismo proveedor, modelo estable.
+const MODELO_RESPALDO = process.env.AI_MODEL_RESPALDO ?? "gemini-3.6-flash";
 const BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
 function extraerJSON(texto: string): string {
@@ -66,10 +68,11 @@ export class GeminiProvider implements AIProvider {
 
     const t0 = Date.now();
     let entrada = 0, salida = 0, ultimoRaw = "", modelo = MODEL, esperado429 = false, reintentos503 = 0, ultimoDetalle = "";
+    let modeloActivo = MODEL;
     for (let intento = 0; intento < 2; intento++) {
       let res: Response;
       try {
-        res = await fetch(`${BASE}/${MODEL}:generateContent`, {
+        res = await fetch(`${BASE}/${modeloActivo}:generateContent`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "x-goog-api-key": this.key },
           body: JSON.stringify(body),
@@ -94,6 +97,15 @@ export class GeminiProvider implements AIProvider {
         // "High demand" intermitente (verificado en gemini-3.7-flash): reintentos con espera creciente; el worker aplica su propio backoff después.
         reintentos503++;
         await new Promise((r) => setTimeout(r, Math.min(3000 * 2 ** (reintentos503 - 1), 40_000)));
+        intento--;
+        continue;
+      }
+      if (res.status === 503 && MODELO_RESPALDO && modeloActivo === MODEL && MODELO_RESPALDO !== MODEL) {
+        // Tormenta sostenida en el principal (2026-08-26: 3.7-flash caído todo el día): en vez de rendirse,
+        // se cambia al modelo de respaldo y se reintenta. Calidad validada del respaldo: estratega PASS 6/6.
+        await res.text();
+        modeloActivo = MODELO_RESPALDO;
+        reintentos503 = 0;
         intento--;
         continue;
       }
