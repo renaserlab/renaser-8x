@@ -1,11 +1,48 @@
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { correrPlanificador, correrRedactor, correrAdmision } from "@/lib/ai/agents/planificador";
+import { correrEstratega } from "@/lib/ai/agents/estratega";
 import { hallazgosAprobadosConEvidencia, procesoComoJSON, registrarLlamada, etiquetaFuente, claimsDeEmpresa } from "@/lib/db/queries";
+import { detectarAnomalias, tablaResultadosComoTexto, type Metrica } from "@/lib/rules/anomalias";
 import { progreso } from "../queue";
 import { programarFrentes } from "@/lib/rules/plan";
 import type { SalidaRedactor } from "@/lib/schemas";
 
 type Job = { id: string; company_id: string; payload: Record<string, unknown> };
+
+/** payload: {} → EL ESTRATEGA redacta el Plan Estratégico (15 secciones, estándar firma top) → deliverables. */
+export async function handlePlanEstrategico(job: Job) {
+  const sb = supabaseAdmin();
+  await progreso(job.id, "Reuniendo toda la evidencia de la empresa");
+  const [{ data: empresa }, { data: findings }, { data: metricasRaw }, { data: sueno }, { data: activos }, { data: participantes }] = await Promise.all([
+    sb.from("companies").select("nombre,sector,ficha,modelo_operativo,etapa_negocio").eq("id", job.company_id).single(),
+    sb.from("findings").select("titulo,causa_raiz,impacto,pilar,patron,recomendacion,filtros").eq("company_id", job.company_id).neq("estado_revision", "rechazado").limit(40),
+    sb.from("company_metricas").select("clave,periodo,valor,valor_texto,estado,nota").eq("company_id", job.company_id).limit(80),
+    sb.from("interview_responses").select("bloque,pregunta,respuesta, interview_sessions!inner(tipo,company_id)").eq("interview_sessions.company_id", job.company_id).not("respuesta", "is", null).limit(80),
+    sb.from("company_assets").select("clave,estado,borrador,propuesta").eq("company_id", job.company_id).not("borrador", "is", null),
+    sb.from("participants").select("nombre,puesto,rol").eq("company_id", job.company_id),
+  ]);
+  if (!findings?.length) throw new Error("Todavía no hay hallazgos: corre el diagnóstico antes de pedir el plan estratégico.");
+  const metricas = (metricasRaw ?? []) as Metrica[];
+  const senales = detectarAnomalias(metricas);
+  const ficha = (empresa?.ficha ?? {}) as Record<string, string>;
+
+  await progreso(job.id, "El estratega está redactando el plan");
+  const contexto = [
+    `EMPRESA: ${empresa?.nombre} · ${empresa?.sector ?? ""} · ${ficha.personas ?? "?"} personas · etapa ${empresa?.etapa_negocio ?? "?"} · modelo ${((empresa?.modelo_operativo as string[]) ?? []).join(",") || "?"}`,
+    `PERSONAS REALES (para responsables): ${(participantes ?? []).map((p) => `${p.nombre} (${p.puesto ?? p.rol})`).join(" · ") || "solo el dueño"}`,
+    `HALLAZGOS (${findings.length}):\n${findings.map((f) => `- [${f.impacto} · ${f.pilar}${(f.filtros as { preserva?: boolean })?.preserva ? " · FORTALEZA" : ""}] ${f.titulo}. Causa: ${f.causa_raiz ?? ""}${f.recomendacion ? `. Rec: ${f.recomendacion}` : ""}`).join("\n")}`,
+    `NÚMEROS CON ESTADO:\n${tablaResultadosComoTexto(metricas)}`,
+    senales.length ? `SEÑALES DEL MOTOR:\n${senales.map((s) => `- ${s.titulo}: ${s.detalle}`).join("\n")}` : "",
+    `LO QUE EL DUEÑO CONTÓ (sueño, historia, números):\n${(sueno ?? []).slice(0, 60).map((s) => `- ${s.pregunta} → ${String(s.respuesta).slice(0, 200)}`).join("\n")}`,
+    (activos ?? []).length ? `DOCUMENTOS YA CONSTRUIDOS:\n${(activos ?? []).map((a) => `## ${a.clave}\n${String(a.propuesta ?? a.borrador).slice(0, 1200)}`).join("\n\n")}` : "",
+  ].filter(Boolean).join("\n\n");
+
+  const r = await correrEstratega(contexto);
+  await registrarLlamada(job.company_id, job.id, "estratega", r);
+  const { data: prev } = await sb.from("deliverables").select("version").eq("company_id", job.company_id).eq("tipo", "plan_estrategico").order("version", { ascending: false }).limit(1);
+  await sb.from("deliverables").insert({ company_id: job.company_id, tipo: "plan_estrategico", contenido: r.data, version: (prev?.[0]?.version ?? 0) + 1 });
+  return { version: (prev?.[0]?.version ?? 0) + 1, prioridades: r.data.prioridades.length };
+}
 
 /** PLANIFICADOR → actions (45 días en 7 semanas, máx. 3 abiertos). */
 export async function handlePlanificar(job: Job) {

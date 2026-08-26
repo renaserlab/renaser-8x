@@ -12,6 +12,7 @@ const TABS: [string, string][] = [
   ["/entrevista", "Entrevista"],
   ["/procesos", "Procesos"],
   ["/diagnostico", "Diagnóstico"],
+  ["/plan-estrategico", "Plan estratégico"],
   ["/plan", "Plan"],
   ["/entrega", "Entrega"],
 ];
