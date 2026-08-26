@@ -180,7 +180,7 @@ export default async function Portal() {
       </div>
 
       <p className="t-dato medida" style={{ color: "var(--grafito)" }}>
-        Todo lo que ves sale de lo que tu empresa contó o mostró — nada es decorativo. Puedes parar cuando quieras y volver desde el celular.
+        Todo sale de lo que tu empresa contó o mostró.
       </p>
     </div>
   );

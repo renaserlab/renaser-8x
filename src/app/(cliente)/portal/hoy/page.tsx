@@ -75,9 +75,9 @@ export default async function Hoy() {
         <p className="t-etiqueta">Mi empresa hoy</p>
         <h1 className="t-titulo mt-2 medida">{c.empresa?.nombre}</h1>
         <p className="t-cuerpo mt-3 medida" style={{ color: "var(--grafito)" }}>
-          Esto es lo que entendimos hasta ahora, con su fuente. Se actualiza con cada cosa que nos cuentas o subes.
+          Lo que entendimos hasta ahora, con su fuente.
           {hoy.stats.porValidar > 0 && (
-            <> Hay <Link href="/portal/validar" style={{ textDecoration: "underline" }}>{hoy.stats.porValidar} punto(s) esperando tu confirmación</Link>: con eso la foto se afina.</>
+            <> <Link href="/portal/validar" style={{ textDecoration: "underline" }}>{hoy.stats.porValidar} punto(s) esperan tu confirmación</Link>.</>
           )}
         </p>
       </header>

@@ -14,9 +14,8 @@ export default async function LayoutConsultor({ children }: { children: React.Re
         <nav className="no-imprimir flex items-center justify-between px-6 h-14 lg:hidden" style={{ borderBottom: "1px solid var(--linea)" }}>
           <div className="flex items-center gap-6 overflow-x-auto">
             <Link href="/bandeja" className="t-etiqueta" style={{ color: "var(--tinta)" }}>8X</Link>
-            <Link href="/bandeja" className="t-dato">Bandeja</Link>
+            <Link href="/bandeja" className="t-dato">Inicio</Link>
             <Link href="/empresas" className="t-dato">Empresas</Link>
-            <Link href="/casos" className="t-dato">Casos</Link>
           </div>
           <form action="/api/auth/salir" method="post">
             <button className="t-dato" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--grafito)", font: "inherit" }}>Salir</button>

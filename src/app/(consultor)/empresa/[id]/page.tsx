@@ -1,28 +1,57 @@
 import Link from "next/link";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { Encabezado, Dato } from "@/components/base/Vacio";
+import { Encabezado } from "@/components/base/Vacio";
 import { Admision } from "@/components/consultor/Admision";
 import { Participantes } from "@/components/consultor/Participantes";
 import { Etapa } from "@/components/consultor/Etapa";
 import { PILAR, ESTADO_PILAR, ETAPA } from "@/lib/textos";
 import { tokensUsados } from "@/lib/db/queries";
 import { cumplimientoLegal } from "@/lib/biblioteca";
+import { tableroEmpresario } from "@/lib/tablero";
 
 export const dynamic = "force-dynamic";
 
 const COLOR_PILAR: Record<string, string> = { solido: "var(--confirmado)", mejorable: "var(--caducado)", critico: "var(--contradicho)", desconocido: "var(--grafito)" };
+const PUNTAJE: Record<string, number> = { solido: 85, mejorable: 60, critico: 35 };
+const soles = (n: number) => `S/${Math.round(n).toLocaleString("es-PE")}`;
 
-/** Panorama: 4 pilares + avance. */
+/** Tarjeta KPI del encabezado: un número que se entiende en un segundo. */
+function Kpi({ etiqueta, children, pie }: { etiqueta: string; children: React.ReactNode; pie?: React.ReactNode }) {
+  return (
+    <div className="panel p-5 flex flex-col" style={{ gap: 4, minWidth: 0 }}>
+      <p className="t-etiqueta">{etiqueta}</p>
+      {children}
+      {pie && <p className="t-dato" style={{ color: "var(--grafito)" }}>{pie}</p>}
+    </div>
+  );
+}
+
+function Sparkline({ serie }: { serie: { valor: number }[] }) {
+  if (serie.length < 2) return null;
+  const vals = serie.slice(-6).map((p) => p.valor);
+  const max = Math.max(...vals), min = Math.min(...vals);
+  const x = (i: number) => 4 + (112 * i) / (vals.length - 1);
+  const y = (v: number) => 30 - (24 * (v - min)) / (max - min || 1);
+  return (
+    <svg viewBox="0 0 120 34" style={{ width: 120, marginTop: 2 }} role="img" aria-label="Tendencia de ventas">
+      <polyline points={vals.map((v, i) => `${x(i)},${y(v).toFixed(1)}`).join(" ")} fill="none" stroke="var(--marca)" strokeWidth="2.5" strokeLinejoin="round" />
+      <circle cx={x(vals.length - 1)} cy={y(vals[vals.length - 1])} r="3.5" fill="var(--marca)" />
+    </svg>
+  );
+}
+
+/** Panorama: el tablero del consultor — números arriba, mapa con color, restricciones y acciones. */
 export default async function Panorama({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const sb = supabaseAdmin();
-  const [{ data: c }, { data: diag }, { data: parts }, { data: sesiones }, { data: stats }, usados] = await Promise.all([
+  const [{ data: c }, { data: diag }, { data: parts }, { data: sesiones }, { data: stats }, usados, t] = await Promise.all([
     sb.from("companies").select("*").eq("id", id).single(),
     sb.from("diagnoses").select("pilar,estado,resumen").eq("company_id", id),
     sb.from("participants").select("id,nombre,puesto,rol,token_expira_at,token_revocado_at,token_canjeado_at").eq("company_id", id).order("created_at"),
     sb.from("interview_sessions").select("id,tipo,estado,participant_id").eq("company_id", id),
     sb.from("company_stats").select("*").eq("company_id", id).maybeSingle(),
     tokensUsados(id),
+    tableroEmpresario(id),
   ]);
   if (!c) return null;
   const porPilar = Object.fromEntries((diag ?? []).map((d) => [d.pilar, d]));
@@ -36,11 +65,11 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
     if (cl.estado === "confirmado") conteo[k].confirmadas++;
   }
   const admision = c.admision as (Record<string, string> & { evaluacion?: { admisible: boolean; motivo: string; senales: string[] } }) | null;
+  const ficha = c.ficha as { personas?: string } | null;
 
-  // SALUD EMPRESARIAL: promedio de los pilares diagnosticados (madurez Base RENASER: sin evidencia no puntúa).
-  const PUNTAJE: Record<string, number> = { solido: 85, mejorable: 60, critico: 35 };
   const puntuados = (diag ?? []).map((d) => PUNTAJE[d.estado]).filter((n): n is number => n != null);
   const salud = puntuados.length ? Math.round(puntuados.reduce((a, b) => a + b, 0) / puntuados.length) : null;
+  const colorSalud = salud == null ? "var(--grafito)" : salud >= 70 ? "var(--confirmado)" : salud >= 50 ? "var(--caducado)" : "var(--contradicho)";
   const { data: restricciones } = await sb
     .from("findings")
     .select("id,titulo,impacto,pilar,patron")
@@ -49,6 +78,7 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
     .eq("impacto", "alto")
     .order("created_at", { ascending: false })
     .limit(3);
+  const porRevisar = stats?.hallazgos_por_revisar ?? 0;
 
   return (
     <>
@@ -65,7 +95,101 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
 
       <Admision companyId={id} estado={c.estado_admision} evaluacion={admision?.evaluacion} respuestas={admision} />
 
-      {/* Las 3 capas del método: dónde está esta empresa (maqueta aprobada). */}
+      {/* FILA 1 · Los números que importan, en tarjetas */}
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-4">
+        <Kpi etiqueta="Ventas del mes" pie={t.kpis.venta ? (t.kpis.venta.estado === "verificado" ? "verificado en registros" : "contado por el dueño") : "pedirlo en la conversación"}>
+          {t.kpis.venta ? (
+            <>
+              <p className="num-grande" style={{ fontSize: 30 }}>{soles(t.kpis.venta.valor)}</p>
+              <Sparkline serie={t.serieVentas} />
+            </>
+          ) : (
+            <p className="t-seccion" style={{ color: "var(--grafito)" }}>sin dato</p>
+          )}
+        </Kpi>
+        <Kpi etiqueta="Salud empresarial" pie={salud != null ? "calculada con evidencia" : "se calcula al diagnosticar"}>
+          {salud != null ? (
+            <p className="num-grande" style={{ fontSize: 30, color: colorSalud }}>
+              {salud}<span className="t-dato" style={{ color: "var(--grafito)" }}> /100</span>
+            </p>
+          ) : (
+            <p className="t-seccion" style={{ color: "var(--grafito)" }}>sin diagnóstico</p>
+          )}
+        </Kpi>
+        <Kpi etiqueta="Por revisar" pie={porRevisar > 0 ? "hallazgos esperando tu criterio" : "bandeja al día"}>
+          <p className="num-grande" style={{ fontSize: 30, color: porRevisar > 0 ? "var(--contradicho)" : "var(--tinta)" }}>{porRevisar}</p>
+        </Kpi>
+        <Kpi etiqueta="Equipo" pie={`${participantes.length} con acceso al aplicativo`}>
+          <p className="num-grande" style={{ fontSize: 30 }}>{ficha?.personas ?? "?"}<span className="t-dato" style={{ color: "var(--grafito)" }}> personas</span></p>
+        </Kpi>
+      </section>
+
+      {/* FILA 2 · Mapa de la empresa (4P con puntaje y color) + restricciones */}
+      <section className="grid gap-4 lg:grid-cols-2 mb-4">
+        <div className="panel p-5">
+          <p className="t-etiqueta mb-3">Mapa de tu empresa</p>
+          <div className="grid grid-cols-2 gap-3">
+            {["personas", "procesos", "producto", "marketing"].map((p) => {
+              const d = porPilar[p];
+              const color = d ? COLOR_PILAR[d.estado] : "var(--linea)";
+              const n = conteo[p] ?? { total: 0, confirmadas: 0 };
+              return (
+                <Link
+                  key={p}
+                  href={`/empresa/${id}/diagnostico?pilar=${p}`}
+                  className="aparece"
+                  style={{ borderRadius: "var(--radio)", border: `1.5px solid ${color}`, background: `color-mix(in srgb, ${color} 8%, var(--papel))`, padding: "14px 16px", textDecoration: "none", display: "block" }}
+                >
+                  <span className="t-etiqueta" style={{ display: "block" }}>{PILAR[p]}</span>
+                  <span className="num-grande" style={{ fontSize: 26, color: d ? color : "var(--grafito)" }}>{d ? PUNTAJE[d.estado] : "—"}</span>
+                  <span className="t-dato" style={{ display: "block", color: "var(--grafito)", fontSize: 13 }}>{d ? ESTADO_PILAR[d.estado] : "Sin diagnosticar"} · {n.confirmadas}/{n.total}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+        <div className="panel p-5">
+          <p className="t-etiqueta mb-3">Principales restricciones</p>
+          {(restricciones ?? []).length ? (
+            <ul className="flex flex-col gap-3">
+              {(restricciones ?? []).map((r) => (
+                <li key={r.id} className="flex items-start justify-between gap-3">
+                  <Link href={`/empresa/${id}/diagnostico?pilar=${r.pilar}`} className="t-dato" style={{ fontWeight: 550, minWidth: 0 }}>{r.titulo}</Link>
+                  <span className="t-dato" style={{ flex: "none", fontSize: 12, fontWeight: 700, color: "var(--contradicho)", border: "1px solid var(--contradicho)", borderRadius: "var(--radio)", padding: "2px 10px" }}>Crítico</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="t-dato" style={{ color: "var(--grafito)" }}>Sin restricciones de impacto alto todavía.</p>
+          )}
+          <details className="mt-4">
+            <summary className="t-etiqueta" style={{ cursor: "pointer" }}>Cumplimiento legal (Perú) · {ficha?.personas ?? "?"} trabajadores</summary>
+            <ul className="lista-editorial mt-2">
+              {cumplimientoLegal(Number(ficha?.personas)).map((o) => (
+                <li key={o.obligacion} style={{ padding: "8px 0" }}>
+                  <span style={{ fontWeight: 550, fontSize: 13.5 }}>{o.obligacion}</span>
+                  <span className="t-dato" style={{ color: "var(--grafito)", display: "block" }}>{o.detalle}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>La exigencia exacta depende del sector y régimen: verificar con asesoría laboral.</p>
+          </details>
+        </div>
+      </section>
+
+      {/* FILA 3 · Acciones */}
+      <section className="panel p-5 mb-4">
+        <p className="t-etiqueta mb-3">¿Qué quieres hacer hoy?</p>
+        <div className="flex flex-wrap gap-2">
+          <Link href={`/empresa/${id}/diagnostico`} className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>Diagnosticar</Link>
+          <Link href={`/empresa/${id}/afirmaciones?estado=contradicho`} className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>Resolver contradicciones</Link>
+          <Link href={`/empresa/${id}/procesos`} className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>Sistematizar procesos</Link>
+          <Link href={`/empresa/${id}/plan-estrategico`} className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>Plan estratégico</Link>
+          <Link href={`/empresa/${id}/plan`} className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>Armar el plan</Link>
+        </div>
+      </section>
+
+      {/* Dónde está en el método (3 capas) */}
       {await (async () => {
         const [{ count: propuestas }, { count: porValidar }] = await Promise.all([
           sb.from("company_assets").select("id", { count: "exact", head: true }).eq("company_id", id).not("propuesta_estado", "is", null),
@@ -95,88 +219,17 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
         );
       })()}
 
-      {/* Salud + restricciones principales + qué hacer hoy (maqueta aprobada) */}
-      <section className="grid gap-4 lg:grid-cols-[220px_1fr_1fr] mb-6">
-        <div className="panel p-5" style={{ textAlign: "center" }}>
-          <p className="t-etiqueta mb-2">Salud empresarial</p>
-          {salud != null ? (
-            <>
-              <svg viewBox="0 0 120 70" style={{ width: 120, margin: "0 auto", display: "block" }} role="img" aria-label={`Salud ${salud} de 100`}>
-                <path d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke="var(--linea)" strokeWidth="9" strokeLinecap="round" />
-                <path d={`M10 62 A50 50 0 ${salud > 50 ? 1 : 0} 1 ${(60 + 50 * Math.cos(Math.PI * (1 - salud / 100))).toFixed(1)} ${(62 - 50 * Math.sin(Math.PI * (1 - salud / 100))).toFixed(1)}`} fill="none" stroke={salud >= 70 ? "var(--confirmado)" : salud >= 50 ? "var(--caducado)" : "var(--contradicho)"} strokeWidth="9" strokeLinecap="round" />
-                <text x="60" y="56" textAnchor="middle" fontSize="19" fontWeight="700" fill="var(--tinta)">{salud}</text>
-              </svg>
-              <p className="t-dato" style={{ color: "var(--grafito)" }}>de 100 · con evidencia</p>
-            </>
-          ) : (
-            <p className="t-dato" style={{ color: "var(--grafito)", marginTop: 16 }}>Sin diagnóstico aún — la salud se calcula con evidencia, no con impresiones.</p>
-          )}
-        </div>
-        <div className="panel p-5">
-          <p className="t-etiqueta mb-3">Principales restricciones</p>
-          {(restricciones ?? []).length ? (
-            <ul className="flex flex-col gap-2">
-              {(restricciones ?? []).map((r) => (
-                <li key={r.id} className="t-dato">
-                  <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: "var(--contradicho)", marginRight: 8 }} aria-hidden="true" />
-                  <Link href={`/empresa/${id}/diagnostico?pilar=${r.pilar}`} style={{ fontWeight: 550 }}>{r.titulo}</Link>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="t-dato" style={{ color: "var(--grafito)" }}>Sin restricciones de impacto alto todavía.</p>
-          )}
-        </div>
-        <div className="panel p-5">
-          <p className="t-etiqueta mb-3">¿Qué quieres hacer hoy?</p>
-          <div className="flex flex-wrap gap-2">
-            <a href={`/api/consultor/ver-portal?empresa=${id}`} className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>Ver como el empresario</a>
-            <Link href={`/empresa/${id}/diagnostico`} className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>Diagnosticar</Link>
-            <Link href={`/empresa/${id}/afirmaciones?estado=contradicho`} className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>Resolver contradicciones</Link>
-            <Link href={`/empresa/${id}/procesos`} className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>Sistematizar procesos</Link>
-            <Link href={`/empresa/${id}/plan-estrategico`} className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>Plan estratégico</Link>
-            <Link href={`/empresa/${id}/plan`} className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>Armar el plan</Link>
-          </div>
-          <details className="mt-4">
-            <summary className="t-etiqueta" style={{ cursor: "pointer" }}>Cumplimiento legal (Perú) · {(c.ficha as { personas?: string } | null)?.personas ?? "?"} trabajadores</summary>
-            <ul className="lista-editorial mt-2">
-              {cumplimientoLegal(Number((c.ficha as { personas?: string } | null)?.personas)).map((o) => (
-                <li key={o.obligacion} style={{ padding: "8px 0" }}>
-                  <span style={{ fontWeight: 550, fontSize: 13.5 }}>{o.obligacion}</span>
-                  <span className="t-dato" style={{ color: "var(--grafito)", display: "block" }}>{o.detalle}</span>
-                </li>
-              ))}
-            </ul>
-            <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>La exigencia exacta depende del sector y régimen: verificar con asesoría laboral.</p>
-          </details>
-        </div>
-      </section>
-
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-10">
-        {["personas", "procesos", "producto", "marketing"].map((p) => {
-          const d = porPilar[p];
-          const n = conteo[p] ?? { total: 0, confirmadas: 0 };
-          return (
-            <Link key={p} href={`/empresa/${id}/diagnostico?pilar=${p}`} className="panel p-5 aparece" style={{ borderTop: `3px solid ${d ? COLOR_PILAR[d.estado] : "var(--linea)"}` }}>
-              <div className="t-etiqueta">{PILAR[p]}</div>
-              <div className="t-seccion mt-2" style={{ color: d ? COLOR_PILAR[d.estado] : "var(--grafito)" }}>{d ? ESTADO_PILAR[d.estado] : "Sin diagnosticar"}</div>
-              <div className="t-dato mt-3" style={{ color: "var(--grafito)" }}>
-                {n.confirmadas} confirmadas de {n.total}
-              </div>
-              {d?.resumen && <p className="t-dato mt-2">{d.resumen}</p>}
-            </Link>
-          );
-        })}
-      </section>
-
-      <section className="grid gap-6 sm:grid-cols-3 lg:grid-cols-6 mb-10">
-        <Dato etiqueta="Fuentes" valor={stats?.fuentes ?? 0} />
-        <Dato etiqueta="Definiciones" valor={stats?.afirmaciones ?? 0} />
-        <Dato etiqueta="Sin verificar" valor={stats?.sin_verificar ?? 0} />
-        <Dato etiqueta="Contradichas" valor={stats?.contradichas ?? 0} />
-        <Dato etiqueta="Por revisar" valor={stats?.hallazgos_por_revisar ?? 0} />
-        <Dato etiqueta="Tokens usados" valor={`${Math.round(usados / 1000)}k / ${Math.round((c.tope_tokens ?? 0) / 1000)}k`} />
-      </section>
+      <details className="mb-8">
+        <summary className="t-etiqueta" style={{ cursor: "pointer" }}>Datos del expediente</summary>
+        <section className="grid gap-6 sm:grid-cols-3 lg:grid-cols-6 mt-4">
+          {([["Fuentes", stats?.fuentes ?? 0], ["Definiciones", stats?.afirmaciones ?? 0], ["Sin verificar", stats?.sin_verificar ?? 0], ["Contradichas", stats?.contradichas ?? 0], ["Por revisar", porRevisar], ["Tokens", `${Math.round(usados / 1000)}k / ${Math.round((c.tope_tokens ?? 0) / 1000)}k`]] as [string, string | number][]).map(([e, v]) => (
+            <div key={e}>
+              <p className="t-etiqueta mb-1">{e}</p>
+              <p className="t-seccion">{v}</p>
+            </div>
+          ))}
+        </section>
+      </details>
 
       <Participantes companyId={id} participantes={participantes} />
     </>
