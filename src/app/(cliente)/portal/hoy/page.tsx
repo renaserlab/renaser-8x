@@ -70,7 +70,7 @@ export default async function Hoy() {
     );
 
   return (
-    <div className="flex flex-col gap-12 lienzo">
+    <div className="flex flex-col gap-12">
       <header>
         <p className="t-etiqueta">Mi empresa hoy</p>
         <h1 className="t-titulo mt-2 medida">{c.empresa?.nombre}</h1>

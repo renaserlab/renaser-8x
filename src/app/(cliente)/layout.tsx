@@ -34,14 +34,20 @@ export default async function LayoutCliente({ children }: { children: React.Reac
           <a href="/api/consultor/ver-portal?salir=1" className="t-dato" style={{ color: "var(--papel)", textDecoration: "underline" }}>Volver a mi bandeja</a>
         </div>
       )}
-      <header className="no-imprimir px-4 flex items-center justify-between gap-3" style={{ paddingTop: "max(env(safe-area-inset-top), 10px)", paddingBottom: 8 }}>
-        <span className="t-dato" style={{ fontWeight: 600 }}>{empresa?.nombre ?? "Tu empresa"}</span>
-        <form action="/api/auth/salir" method="post">
-          <button className="t-dato" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--grafito)", padding: "4px 0", font: "inherit" }}>Salir</button>
-        </form>
-      </header>
-      {companyId && <NavCliente enlaces={enlaces as [string, string][]} />}
-      <main className="flex-1 px-4 py-6 w-full" style={{ maxWidth: 760, margin: "0 auto" }}>{children}</main>
+      <div className="flex-1 flex" style={{ minHeight: 0 }}>
+        {companyId && <NavCliente enlaces={enlaces as [string, string][]} empresa={empresa?.nombre} />}
+        <div className="flex-1 flex flex-col" style={{ minWidth: 0 }}>
+          {/* Encabezado solo en celular/tablet: el escritorio ya tiene la lateral */}
+          <header className="no-imprimir lg:hidden px-4 flex items-center justify-between gap-3" style={{ paddingTop: "max(env(safe-area-inset-top), 10px)", paddingBottom: 8 }}>
+            <span className="t-dato" style={{ fontWeight: 600 }}>{empresa?.nombre ?? "Tu empresa"}</span>
+            <form action="/api/auth/salir" method="post">
+              <button className="t-dato" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--grafito)", padding: "4px 0", font: "inherit" }}>Salir</button>
+            </form>
+          </header>
+          {/* En celular la barra inferior necesita aire abajo (76px + safe area) */}
+          <main className="flex-1 px-4 py-6 w-full" style={{ maxWidth: 1100, margin: "0 auto", paddingBottom: "calc(88px + env(safe-area-inset-bottom))" }}>{children}</main>
+        </div>
+      </div>
     </div>
   );
 }

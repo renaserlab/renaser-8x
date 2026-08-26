@@ -89,63 +89,63 @@ export default async function Portal() {
   const hayNumeros = Boolean(t.kpis.venta || t.kpis.ganancia || t.kpis.deuda != null || t.serieVentas.length >= 2);
 
   return (
-    <div className="flex flex-col lienzo" style={{ gap: 40 }}>
-      {/* HERO: la siguiente pregunta como afirmación, sin caja. La caja se gana con acción. */}
-      <header className="flex flex-wrap items-end justify-between gap-6" style={{ paddingTop: 8 }}>
-        <div style={{ flex: "1 1 340px", minWidth: 0 }}>
-          <p className="t-etiqueta mb-3">Qué sigue ahora</p>
-          <p className="t-hero medida" style={{ marginBottom: 18 }}>{t.preguntaAbierta ?? c.queFalta}</p>
+    <div className="flex flex-col" style={{ gap: 24 }}>
+      {/* HERO: tarjeta de marca con la siguiente acción + medidor en su propia tarjeta (forma de app) */}
+      <section className="grid gap-4 lg:grid-cols-[1fr_240px]" style={{ paddingTop: 4 }}>
+        <div className="panel p-6" style={{ background: "var(--marca)", border: "none" }}>
+          <p className="t-etiqueta mb-2" style={{ color: "color-mix(in srgb, var(--papel) 70%, transparent)" }}>Qué sigue ahora</p>
+          <p className="t-hero" style={{ color: "var(--papel)", fontSize: "clamp(21px, 3vw, 28px)", marginBottom: 18, maxWidth: "34ch" }}>{t.preguntaAbierta ?? c.queFalta}</p>
           <div className="flex items-center gap-4 flex-wrap">
-            <Link href={t.preguntaAbierta ? "/portal/conversacion" : rutaContinuar} className="boton">Continuar</Link>
+            <Link href={t.preguntaAbierta ? "/portal/conversacion" : rutaContinuar} className="boton" style={{ background: "var(--papel)", color: "var(--marca)", borderColor: "var(--papel)" }}>Continuar</Link>
             {cosas > 0 && (
-              <Link href="/portal/hoy" className="t-dato" style={{ textDecoration: "underline", color: "var(--marca)" }}>
-                Ya encontramos {cosas} cosa{cosas === 1 ? "" : "s"} que vale la pena mirar
+              <Link href="/portal/hoy" className="t-dato" style={{ textDecoration: "underline", color: "var(--papel)" }}>
+                {cosas} hallazgo{cosas === 1 ? "" : "s"} para mirar
               </Link>
             )}
           </div>
         </div>
-        <div style={{ flex: "none" }}>
+        <div className="panel p-5 flex flex-col items-center justify-center" style={{ gap: 2 }}>
           <Medidor pct={t.comprension} />
           <p className="t-dato" style={{ color: "var(--grafito)" }}>entendido de tu empresa</p>
         </div>
-      </header>
+      </section>
 
       {/* En PC: números y gráfica a la izquierda, lo accionable a la derecha — un tablero, no una columna.
           Sin números todavía, no hay columnas: el contenido fluye y nada queda colgado en el vacío. */}
       <div className={hayNumeros ? "grid gap-10 lg:grid-cols-[1fr_340px] lg:gap-x-14 items-start" : "flex flex-col gap-10"}>
       <div className="flex flex-col" style={{ gap: 40, minWidth: 0 }}>
-      {/* Números: fila editorial entre líneas finas, sin cajitas */}
+      {/* Números en tarjetas: un número por tarjeta, se entiende en un segundo */}
       {(t.kpis.venta || t.kpis.ganancia || t.kpis.deuda != null) && (
-        <section className="fila-numeros">
+        <section className="grid gap-4 sm:grid-cols-3">
           {t.kpis.venta && (
-            <div>
+            <div className="panel p-5">
               <p className="t-etiqueta mb-1">Ventas de {mesCorto(t.kpis.venta.periodo)}</p>
-              <p className="num-grande">{soles(t.kpis.venta.valor)}</p>
+              <p className="num-grande" style={{ fontSize: 30 }}>{soles(t.kpis.venta.valor)}</p>
               <p className="t-dato" style={{ color: "var(--grafito)" }}>{t.kpis.venta.estado === "verificado" ? "verificado en tus registros" : "contado de memoria"}</p>
             </div>
           )}
           {t.kpis.ganancia && (
-            <div>
+            <div className="panel p-5">
               <p className="t-etiqueta mb-1">Lo que te quedó</p>
-              <p className="num-grande">{soles(t.kpis.ganancia.valor)}</p>
+              <p className="num-grande" style={{ fontSize: 30, color: "var(--confirmado)" }}>{soles(t.kpis.ganancia.valor)}</p>
               {t.kpis.venta && t.kpis.venta.periodo === t.kpis.ganancia.periodo && t.kpis.venta.valor > 0 && (
-                <p className="t-dato" style={{ color: "var(--grafito)" }}>{Math.round((t.kpis.ganancia.valor / t.kpis.venta.valor) * 100)} de cada 100 soles vendidos</p>
+                <p className="t-dato" style={{ color: "var(--grafito)" }}>{Math.round((t.kpis.ganancia.valor / t.kpis.venta.valor) * 100)} de cada 100 vendidos</p>
               )}
             </div>
           )}
           {t.kpis.deuda != null && (
-            <div>
+            <div className="panel p-5">
               <p className="t-etiqueta mb-1">Te deben tus clientes</p>
-              <p className="num-grande" style={{ color: "var(--caducado)" }}>{soles(t.kpis.deuda)}</p>
+              <p className="num-grande" style={{ fontSize: 30, color: "var(--caducado)" }}>{soles(t.kpis.deuda)}</p>
               <p className="t-dato" style={{ color: "var(--grafito)" }}>plata tuya que aún no entra</p>
             </div>
           )}
         </section>
       )}
 
-      {/* Ventas mes a mes vs mejor época — a página abierta, sin marco */}
+      {/* Ventas mes a mes vs mejor época */}
       {t.serieVentas.length >= 2 && (
-        <section>
+        <section className="panel p-5">
           <p className="t-etiqueta mb-3">Tus ventas, mes a mes</p>
           <GraficaVentas serie={t.serieVentas} dorada={t.epocaDorada} />
           {t.epocaDorada != null && t.serieVentas.length > 0 && t.epocaDorada > t.serieVentas[t.serieVentas.length - 1].valor * 1.25 && (

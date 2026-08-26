@@ -355,10 +355,10 @@ export function InventarioActivos({ companyId, guardados, prioridades = [] }: { 
                               <summary className="t-etiqueta" style={{ cursor: "pointer" }}>Lo que nos contaste — ver</summary>
                               <div className="mt-2"><DocMd texto={g.borrador ?? ""} /></div>
                             </details>
-                            <div className="p-4" style={{ border: "1.5px solid var(--marca)", borderRadius: "var(--radio)" }}>
-                              <p className="t-etiqueta mb-2" style={{ color: "var(--marca)" }}>La versión trabajada</p>
-                              <DocMd texto={g.propuesta} />
-                            </div>
+                            <details className="p-4" open style={{ border: "1.5px solid var(--marca)", borderRadius: "var(--radio)" }}>
+                              <summary className="t-etiqueta" style={{ cursor: "pointer", color: "var(--marca)" }}>La versión trabajada</summary>
+                              <div className="mt-2"><DocMd texto={g.propuesta} /></div>
+                            </details>
                           </div>
                           {(g.propuesta_cambios?.length ?? 0) > 0 && (
                             <div className="p-4" style={{ background: "var(--suave)", borderRadius: "var(--radio)" }}>
@@ -404,8 +404,8 @@ export function InventarioActivos({ companyId, guardados, prioridades = [] }: { 
                         </div>
                       )}
                       {g?.propuesta_estado === "confirmada" && g.propuesta && (
-                        <details className="mt-2" open>
-                          <summary className="t-dato" style={{ cursor: "pointer", color: "var(--confirmado)" }}>La versión trabajada — confirmada por ti</summary>
+                        <details className="mt-2">
+                          <summary className="t-dato" style={{ cursor: "pointer", color: "var(--confirmado)" }}>La versión trabajada — confirmada por ti · ver documento</summary>
                           <div className="mt-2"><DocMd texto={g.propuesta} /></div>
                         </details>
                       )}
