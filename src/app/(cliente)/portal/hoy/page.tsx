@@ -140,8 +140,7 @@ export default async function Hoy() {
   return (
     <div className="flex flex-col gap-12">
       <header>
-        <p className="t-etiqueta">Mi empresa hoy</p>
-        <h1 className="t-titulo mt-2 medida">{c.empresa?.nombre}</h1>
+        <h1 className="t-titulo medida">{c.empresa?.nombre}</h1>
         <p className="t-cuerpo mt-3 medida" style={{ color: "var(--grafito)" }}>
           Lo que entendimos hasta ahora, con su fuente.
           {hoy.stats.porValidar > 0 && (

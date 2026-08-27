@@ -8,23 +8,13 @@ import { PILAR, ESTADO_PILAR, ETAPA } from "@/lib/textos";
 import { tokensUsados } from "@/lib/db/queries";
 import { cumplimientoLegal } from "@/lib/biblioteca";
 import { tableroEmpresario } from "@/lib/tablero";
+import { Franja, Lectura } from "@/components/base/Franja";
 
 export const dynamic = "force-dynamic";
 
 const COLOR_PILAR: Record<string, string> = { solido: "var(--confirmado)", mejorable: "var(--caducado)", critico: "var(--contradicho)", desconocido: "var(--grafito)" };
 const PUNTAJE: Record<string, number> = { solido: 85, mejorable: 60, critico: 35 };
 const soles = (n: number) => `S/${Math.round(n).toLocaleString("es-PE")}`;
-
-/** Tarjeta KPI del encabezado: un número que se entiende en un segundo. */
-function Kpi({ etiqueta, children, pie }: { etiqueta: string; children: React.ReactNode; pie?: React.ReactNode }) {
-  return (
-    <div className="panel p-5 flex flex-col" style={{ gap: 4, minWidth: 0 }}>
-      <p className="t-etiqueta">{etiqueta}</p>
-      {children}
-      {pie && <p className="t-dato" style={{ color: "var(--grafito)" }}>{pie}</p>}
-    </div>
-  );
-}
 
 function Sparkline({ serie }: { serie: { valor: number }[] }) {
   if (serie.length < 2) return null;
@@ -98,34 +88,20 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
 
       <Admision companyId={id} estado={c.estado_admision} evaluacion={admision?.evaluacion} respuestas={admision} />
 
-      {/* FILA 1 · Los números que importan, en tarjetas */}
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-4">
-        <Kpi etiqueta="Ventas del mes" pie={t.kpis.venta ? (t.kpis.venta.estado === "verificado" ? "verificado en registros" : "contado por el dueño") : "pedirlo en la conversación"}>
-          {t.kpis.venta ? (
-            <>
-              <p className="num-grande" style={{ fontSize: 30 }}>{soles(t.kpis.venta.valor)}</p>
-              <Sparkline serie={t.serieVentas} />
-            </>
-          ) : (
-            <p className="t-seccion" style={{ color: "var(--grafito)" }}>sin dato</p>
-          )}
-        </Kpi>
-        <Kpi etiqueta="Salud empresarial" pie={salud != null ? "calculada con evidencia" : "se calcula al diagnosticar"}>
-          {salud != null ? (
-            <p className="num-grande" style={{ fontSize: 30, color: colorSalud }}>
-              {salud}<span className="t-dato" style={{ color: "var(--grafito)" }}> /100</span>
-            </p>
-          ) : (
-            <p className="t-seccion" style={{ color: "var(--grafito)" }}>sin diagnóstico</p>
-          )}
-        </Kpi>
-        <Kpi etiqueta="Por revisar" pie={porRevisar > 0 ? "hallazgos esperando tu criterio" : "bandeja al día"}>
-          <p className="num-grande" style={{ fontSize: 30, color: porRevisar > 0 ? "var(--contradicho)" : "var(--tinta)" }}>{porRevisar}</p>
-        </Kpi>
-        <Kpi etiqueta="Equipo" pie={`${participantes.length} con acceso al aplicativo`}>
-          <p className="num-grande" style={{ fontSize: 30 }}>{ficha?.personas ?? "?"}<span className="t-dato" style={{ color: "var(--grafito)" }}> personas</span></p>
-        </Kpi>
-      </section>
+      {/* INSTRUMENTOS de la empresa: la franja híbrida, no tarjetas */}
+      <div className="mb-5">
+        <Franja columnas={4}>
+          <Lectura
+            divisor={false}
+            valor={t.kpis.venta ? soles(t.kpis.venta.valor) : "—"}
+            etiqueta={t.kpis.venta ? `ventas · ${t.kpis.venta.estado === "verificado" ? "verificado" : "contado"}` : "ventas sin dato"}
+            extra={t.kpis.venta ? <Sparkline serie={t.serieVentas} /> : undefined}
+          />
+          <Lectura valor={salud != null ? String(salud) : "—"} unidad={salud != null ? "/100" : undefined} etiqueta={salud != null ? "salud con evidencia" : "salud sin diagnóstico"} color={colorSalud} />
+          <Lectura valor={String(porRevisar)} etiqueta={porRevisar > 0 ? "hallazgos por revisar" : "bandeja al día"} color={porRevisar > 0 ? "var(--contradicho)" : "var(--tinta)"} />
+          <Lectura valor={ficha?.personas ?? "?"} unidad="personas" etiqueta={`${participantes.length} con acceso`} />
+        </Franja>
+      </div>
 
       {/* FILA 2 · Mapa de la empresa (4P con puntaje y color) + restricciones */}
       <section className="grid gap-4 lg:grid-cols-2 mb-4">

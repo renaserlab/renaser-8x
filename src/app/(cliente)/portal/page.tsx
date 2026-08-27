@@ -7,6 +7,7 @@ import { proyeccionPerdida } from "@/lib/perdida";
 import { caminosDesdeHallazgos } from "@/lib/caminos";
 import type { Metrica } from "@/lib/rules/anomalias";
 import { CrearEmpresa } from "@/components/cliente/CrearEmpresa";
+import { Franja, Lectura } from "@/components/base/Franja";
 
 export const dynamic = "force-dynamic";
 
@@ -56,18 +57,6 @@ function GraficaVentas({ serie, dorada }: { serie: PuntoVenta[]; dorada: number 
   );
 }
 
-/** Una lectura de instrumento: número tabular grande, etiqueta debajo. Sin caja: la franja es el instrumento. */
-function Lectura({ valor, unidad, etiqueta, color }: { valor: string; unidad?: string; etiqueta: string; color?: string }) {
-  return (
-    <div style={{ padding: "14px 16px", minWidth: 0 }}>
-      <p style={{ fontSize: "clamp(22px, 4.5vw, 32px)", fontWeight: 700, fontVariantNumeric: "tabular-nums", letterSpacing: "-0.01em", color: color ?? "var(--tinta)", lineHeight: 1.1 }}>
-        {valor}
-        {unidad && <span style={{ fontSize: 13, fontWeight: 500, color: "var(--grafito)", marginLeft: 4 }}>{unidad}</span>}
-      </p>
-      <p className="t-dato" style={{ color: "var(--grafito)", fontSize: 13, marginTop: 2 }}>{etiqueta}</p>
-    </div>
-  );
-}
 
 /** INICIO DEL EMPRESARIO: el despacho — instrumentos, la voz del agente, una acción. */
 export default async function Portal() {
@@ -124,20 +113,17 @@ export default async function Portal() {
   return (
     <div className="flex flex-col" style={{ gap: 34, paddingTop: 6 }}>
       {/* INSTRUMENTOS: tres lecturas vitales en una franja entre líneas — no tarjetas */}
-      <section aria-label="Lecturas de tu empresa" className="grid grid-cols-3" style={{ borderTop: "2px solid var(--tinta)", borderBottom: "1px solid var(--linea)" }}>
+      <Franja columnas={3}>
         <Lectura
+          divisor={false}
           valor={perdida.totalMensual > 0 ? `~${soles(perdida.totalMensual)}` : "—"}
           unidad={perdida.totalMensual > 0 ? "al mes" : undefined}
           etiqueta={perdida.totalMensual > 0 ? "en riesgo, según tus números" : "riesgo aún por calcular"}
           color={perdida.totalMensual > 0 ? "var(--contradicho)" : "var(--grafito)"}
         />
-        <div style={{ borderLeft: "1px solid var(--linea)" }}>
-          <Lectura valor={`${t.comprension}%`} etiqueta="entendido de tu empresa" />
-        </div>
-        <div style={{ borderLeft: "1px solid var(--linea)" }}>
-          <Lectura valor={`${t.biblioteca.listos} de ${t.biblioteca.total}`} etiqueta="documentos en regla" color={t.biblioteca.listos === t.biblioteca.total && t.biblioteca.total > 0 ? "var(--confirmado)" : undefined} />
-        </div>
-      </section>
+        <Lectura valor={`${t.comprension}%`} etiqueta="entendido de tu empresa" />
+        <Lectura valor={`${t.biblioteca.listos} de ${t.biblioteca.total}`} etiqueta="documentos en regla" color={t.biblioteca.listos === t.biblioteca.total && t.biblioteca.total > 0 ? "var(--confirmado)" : undefined} />
+      </Franja>
 
       {/* LA VOZ DEL AGENTE: serif, con su fuente, y UNA acción */}
       <section>
