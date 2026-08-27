@@ -65,7 +65,7 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
     if (cl.estado === "confirmado") conteo[k].confirmadas++;
   }
   const admision = c.admision as (Record<string, string> & { evaluacion?: { admisible: boolean; motivo: string; senales: string[] } }) | null;
-  const ficha = c.ficha as { personas?: string } | null;
+  const ficha = c.ficha as { personas?: string; ciudad?: string; whatsapp?: string } | null;
 
   const puntuados = (diag ?? []).map((d) => PUNTAJE[d.estado]).filter((n): n is number => n != null);
   const salud = puntuados.length ? Math.round(puntuados.reduce((a, b) => a + b, 0) / puntuados.length) : null;
@@ -84,9 +84,12 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
     <>
       <Encabezado
         titulo={c.nombre}
-        sub={`${c.sector ?? "sector sin definir"} · ${ETAPA[c.etapa] ?? c.etapa}`}
+        sub={`${c.sector ?? "sector sin definir"}${ficha?.ciudad ? ` · ${ficha.ciudad}` : ""} · ${ETAPA[c.etapa] ?? c.etapa}`}
         acciones={
           <span className="flex items-center gap-3 flex-wrap">
+            {ficha?.whatsapp && (
+              <a href={`https://wa.me/${ficha.whatsapp.replace(/\D/g, "").replace(/^9/, "519")}`} target="_blank" rel="noreferrer" className="boton boton--secundario" style={{ minHeight: 40 }}>WhatsApp del dueño</a>
+            )}
             <a href={`/api/consultor/ver-portal?empresa=${id}`} className="boton boton--secundario" style={{ minHeight: 40 }}>Ver como el empresario</a>
             <Etapa companyId={id} etapa={c.etapa} />
           </span>

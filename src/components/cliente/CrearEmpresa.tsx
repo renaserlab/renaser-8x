@@ -54,6 +54,14 @@ export function CrearEmpresa() {
       </p>
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="flex flex-col gap-2">
+          <span className="t-etiqueta">¿En qué ciudad está tu negocio?</span>
+          <input className="campo" value={f.ciudad ?? ""} onChange={pon("ciudad")} placeholder="p. ej. Lima, Arequipa, Trujillo" />
+        </label>
+        <label className="flex flex-col gap-2">
+          <span className="t-etiqueta">Tu WhatsApp</span>
+          <input className="campo" inputMode="tel" value={f.whatsapp ?? ""} onChange={pon("whatsapp")} placeholder="para avisarte cuando haya avances" />
+        </label>
+        <label className="flex flex-col gap-2">
           <span className="t-etiqueta">¿Hace cuántos años existe?</span>
           <input className="campo" inputMode="decimal" value={f.antiguedad ?? ""} onChange={pon("antiguedad")} placeholder="p. ej. 5" />
         </label>

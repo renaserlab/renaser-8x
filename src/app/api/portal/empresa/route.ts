@@ -3,12 +3,14 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { empresaDelCliente } from "@/lib/auth";
 import { clasificarModelo, etapaDe } from "@/lib/rules/matrices";
 
-type Ficha = { actividad?: string; antiguedad?: string; personas?: string; locales?: string; cliente_tipo?: string; venta_mensual?: string; documentacion?: string; productos?: string; canales?: string };
+type Ficha = { actividad?: string; antiguedad?: string; personas?: string; locales?: string; cliente_tipo?: string; venta_mensual?: string; documentacion?: string; productos?: string; canales?: string; ciudad?: string; whatsapp?: string };
 
 const limpiarFicha = (f: Ficha | undefined): Record<string, string> | null => {
   if (!f) return null;
   const out: Record<string, string> = {};
-  for (const k of ["actividad", "antiguedad", "personas", "locales", "cliente_tipo", "venta_mensual", "documentacion", "productos", "canales"] as const) {
+  // ciudad y whatsapp: la información BASE de la persona (contacto y territorio) — sin esto el
+  // diagnóstico flota sin dueño ni lugar, y RENASER no puede escribirle.
+  for (const k of ["actividad", "antiguedad", "personas", "locales", "cliente_tipo", "venta_mensual", "documentacion", "productos", "canales", "ciudad", "whatsapp"] as const) {
     const v = (f[k] ?? "").toString().trim().slice(0, 300);
     if (v) out[k] = v;
   }
