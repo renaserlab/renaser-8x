@@ -1,29 +1,30 @@
 import Link from "next/link";
 import { contextoPortal } from "@/lib/portal";
-import { empresaHoy } from "@/lib/hoy";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+import { empresaHoy, type HallazgoHoy } from "@/lib/hoy";
 import { tableroEmpresario, type PuntoVenta } from "@/lib/tablero";
+import { proyeccionPerdida } from "@/lib/perdida";
+import { caminosDesdeHallazgos } from "@/lib/caminos";
+import type { Metrica } from "@/lib/rules/anomalias";
 import { CrearEmpresa } from "@/components/cliente/CrearEmpresa";
 
 export const dynamic = "force-dynamic";
 
+/*
+CONTRATO DE DIRECCIÓN — híbrido (elegido por la dueña del producto, 2026-08-27)
+THESIS: el despacho matinal del consultor — tres lecturas de instrumento y UNA voz que dice lo que
+  el dueño no está viendo, con su número. Rechaza el inicio-catálogo de tarjetas equivalentes.
+OWN-WORLD: tokens 8X — fondo gris frío, hairlines, numerales tabulares, serif solo para la voz del
+  agente, un único elemento de acción en color de marca. Sin gauges, sin barras, sin tarjetas por dato.
+STORY: entiendo en 10 segundos qué me está costando, decido si le dedico 10 minutos ahora.
+FIRST VIEWPORT: franja de instrumentos (en riesgo · entendido · sistematizado) → lectura del agente
+  en serif con su fuente → un botón. Debajo, las 3 fases del método y la gráfica real si existe.
+FINISH: nada inventado; "sin dato" invita a contarlo.
+*/
+
 const soles = (n: number) => `S/${Math.round(n).toLocaleString("es-PE")}`;
 const MES = ["", "ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "set", "oct", "nov", "dic"];
 const mesCorto = (p: string) => MES[Number(p.slice(5, 7))] ?? p;
-
-/** Medidor semicircular (comprensión). Solo SVG: sin librerías, ambos temas. */
-function Medidor({ pct }: { pct: number }) {
-  const a = Math.PI * (1 - pct / 100);
-  const x = 60 + 50 * Math.cos(a);
-  const y = 62 - 50 * Math.sin(a);
-  const grande = pct > 50 ? 1 : 0;
-  return (
-    <svg viewBox="0 0 120 70" style={{ width: 128 }} role="img" aria-label={`Entendido ${pct} por ciento`}>
-      <path d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke="var(--linea)" strokeWidth="9" strokeLinecap="round" />
-      {pct > 2 && <path d={`M10 62 A50 50 0 ${grande} 1 ${x.toFixed(1)} ${y.toFixed(1)}`} fill="none" stroke="var(--marca)" strokeWidth="9" strokeLinecap="round" />}
-      <text x="60" y="58" textAnchor="middle" fontSize="20" fontWeight="700" fill="var(--tinta)">{pct}%</text>
-    </svg>
-  );
-}
 
 /** Línea de ventas mes a mes + la referencia de la mejor época. Solo datos contados: nada decorativo. */
 function GraficaVentas({ serie, dorada }: { serie: PuntoVenta[]; dorada: number | null }) {
@@ -55,10 +56,20 @@ function GraficaVentas({ serie, dorada }: { serie: PuntoVenta[]; dorada: number 
   );
 }
 
-/**
- * Inicio del portal = el tablero del empresario (maqueta aprobada): qué sigue, cuánto entendemos,
- * sus números con estado, sus ventas frente a su mejor época, lo que más lo frena y su biblioteca.
- */
+/** Una lectura de instrumento: número tabular grande, etiqueta debajo. Sin caja: la franja es el instrumento. */
+function Lectura({ valor, unidad, etiqueta, color }: { valor: string; unidad?: string; etiqueta: string; color?: string }) {
+  return (
+    <div style={{ padding: "14px 16px", minWidth: 0 }}>
+      <p style={{ fontSize: "clamp(22px, 4.5vw, 32px)", fontWeight: 700, fontVariantNumeric: "tabular-nums", letterSpacing: "-0.01em", color: color ?? "var(--tinta)", lineHeight: 1.1 }}>
+        {valor}
+        {unidad && <span style={{ fontSize: 13, fontWeight: 500, color: "var(--grafito)", marginLeft: 4 }}>{unidad}</span>}
+      </p>
+      <p className="t-dato" style={{ color: "var(--grafito)", fontSize: 13, marginTop: 2 }}>{etiqueta}</p>
+    </div>
+  );
+}
+
+/** INICIO DEL EMPRESARIO: el despacho — instrumentos, la voz del agente, una acción. */
 export default async function Portal() {
   const c = await contextoPortal();
   if (!c.companyId)
@@ -69,7 +80,11 @@ export default async function Portal() {
       </>
     );
 
-  const [hoy, t] = await Promise.all([empresaHoy(c.companyId), tableroEmpresario(c.companyId)]);
+  const [hoy, t, { data: metricasRaw }] = await Promise.all([
+    empresaHoy(c.companyId),
+    tableroEmpresario(c.companyId),
+    supabaseAdmin().from("company_metricas").select("clave,periodo,valor,estado").eq("company_id", c.companyId).limit(80),
+  ]);
 
   if (hoy.nivel === 0)
     return (
@@ -84,69 +99,78 @@ export default async function Portal() {
       </>
     );
 
+  const perdida = proyeccionPerdida((metricasRaw ?? []) as Metrica[]);
   const rutaContinuar = ({ 2: "/portal/activos", 3: "/portal/conversacion", 4: "/portal/validar", 5: "/portal/procesos", 6: "/portal/activos", 7: "/portal/resultados", 8: "/portal/plan" } as Record<number, string>)[c.paso] ?? "/portal/hoy";
   const cosas = hoy.espejo.length + hoy.noVes.length + hoy.fortalezas.length;
-  const hayNumeros = Boolean(t.kpis.venta || t.kpis.ganancia || t.kpis.deuda != null || t.serieVentas.length >= 2);
+
+  // LA LECTURA DEL AGENTE: lo más valioso que sabe hoy, con su fuente — la restricción manda; si no, la conversación.
+  const caminos = caminosDesdeHallazgos([hoy.restriccion, ...hoy.noVes, ...hoy.secundarias].filter(Boolean) as HallazgoHoy[]);
+  const lectura = hoy.restriccion
+    ? {
+        texto: hoy.restriccion.titulo,
+        linea: hoy.restriccion.costo_posible ?? hoy.restriccion.causa ?? null,
+        fuente: "Visto en tu propia información — nada es inventado.",
+        href: caminos[0]?.href ?? "/portal/hoy",
+        accion: "Resolver esto ahora",
+      }
+    : t.preguntaAbierta
+      ? { texto: t.preguntaAbierta, linea: null, fuente: "Tu conversación está a mitad — cada respuesta afina el diagnóstico.", href: "/portal/conversacion", accion: "Responder ahora" }
+      : { texto: c.queFalta, linea: null, fuente: null, href: rutaContinuar, accion: "Continuar" };
+
+  // Las tres fases del método: dónde está parada la empresa.
+  const fase = t.biblioteca.listos > 0 ? 3 : cosas > 0 || (c.porValidar ?? 0) > 0 ? 2 : 1;
+  const FASES = ["Diagnóstico", "Auditoría profunda", "Sistematización"];
 
   return (
-    <div className="flex flex-col" style={{ gap: 24 }}>
-      {/* HERO: tarjeta de marca con la siguiente acción + medidor en su propia tarjeta (forma de app) */}
-      <section className="grid gap-4 lg:grid-cols-[1fr_240px]" style={{ paddingTop: 4 }}>
-        <div className="panel p-6" style={{ background: "var(--marca)", border: "none" }}>
-          <p className="t-etiqueta mb-2" style={{ color: "color-mix(in srgb, var(--papel) 70%, transparent)" }}>Qué sigue ahora</p>
-          <p className="t-hero" style={{ color: "var(--papel)", fontSize: "clamp(21px, 3vw, 28px)", marginBottom: 18, maxWidth: "34ch" }}>{t.preguntaAbierta ?? c.queFalta}</p>
-          <div className="flex items-center gap-4 flex-wrap">
-            <Link href={t.preguntaAbierta ? "/portal/conversacion" : rutaContinuar} className="boton" style={{ background: "var(--papel)", color: "var(--marca)", borderColor: "var(--papel)" }}>Continuar</Link>
-            {cosas > 0 && (
-              <Link href="/portal/hoy" className="t-dato" style={{ textDecoration: "underline", color: "var(--papel)" }}>
-                {cosas} hallazgo{cosas === 1 ? "" : "s"} para mirar
-              </Link>
-            )}
-          </div>
+    <div className="flex flex-col" style={{ gap: 34, paddingTop: 6 }}>
+      {/* INSTRUMENTOS: tres lecturas vitales en una franja entre líneas — no tarjetas */}
+      <section aria-label="Lecturas de tu empresa" className="grid grid-cols-3" style={{ borderTop: "2px solid var(--tinta)", borderBottom: "1px solid var(--linea)" }}>
+        <Lectura
+          valor={perdida.totalMensual > 0 ? `~${soles(perdida.totalMensual)}` : "—"}
+          unidad={perdida.totalMensual > 0 ? "al mes" : undefined}
+          etiqueta={perdida.totalMensual > 0 ? "en riesgo, según tus números" : "riesgo aún por calcular"}
+          color={perdida.totalMensual > 0 ? "var(--contradicho)" : "var(--grafito)"}
+        />
+        <div style={{ borderLeft: "1px solid var(--linea)" }}>
+          <Lectura valor={`${t.comprension}%`} etiqueta="entendido de tu empresa" />
         </div>
-        <div className="panel p-5 flex flex-col items-center justify-center" style={{ gap: 2 }}>
-          <Medidor pct={t.comprension} />
-          <p className="t-dato" style={{ color: "var(--grafito)" }}>entendido de tu empresa</p>
+        <div style={{ borderLeft: "1px solid var(--linea)" }}>
+          <Lectura valor={`${t.biblioteca.listos} de ${t.biblioteca.total}`} etiqueta="documentos en regla" color={t.biblioteca.listos === t.biblioteca.total && t.biblioteca.total > 0 ? "var(--confirmado)" : undefined} />
         </div>
       </section>
 
-      {/* En PC: números y gráfica a la izquierda, lo accionable a la derecha — un tablero, no una columna.
-          Sin números todavía, no hay columnas: el contenido fluye y nada queda colgado en el vacío. */}
-      <div className={hayNumeros ? "grid gap-10 lg:grid-cols-[1fr_340px] lg:gap-x-14 items-start" : "flex flex-col gap-10"}>
-      <div className="flex flex-col" style={{ gap: 40, minWidth: 0 }}>
-      {/* Números en tarjetas: un número por tarjeta, se entiende en un segundo */}
-      {(t.kpis.venta || t.kpis.ganancia || t.kpis.deuda != null) && (
-        <section className="grid gap-4 sm:grid-cols-3">
-          {t.kpis.venta && (
-            <div className="panel p-5">
-              <p className="t-etiqueta mb-1">Ventas de {mesCorto(t.kpis.venta.periodo)}</p>
-              <p className="num-grande" style={{ fontSize: 30 }}>{soles(t.kpis.venta.valor)}</p>
-              <p className="t-dato" style={{ color: "var(--grafito)" }}>{t.kpis.venta.estado === "verificado" ? "verificado en tus registros" : "contado de memoria"}</p>
-            </div>
+      {/* LA VOZ DEL AGENTE: serif, con su fuente, y UNA acción */}
+      <section>
+        <p className="t-hero" style={{ fontSize: "clamp(24px, 4.5vw, 34px)", maxWidth: "26ch" }}>{lectura.texto}</p>
+        {lectura.linea && <p className="t-cuerpo mt-3 medida" style={{ color: "var(--grafito)" }}>{lectura.linea}</p>}
+        {lectura.fuente && <p className="t-dato mt-2" style={{ color: "var(--grafito)", fontSize: 13.5 }}>{lectura.fuente}</p>}
+        <div className="flex items-center gap-5 flex-wrap mt-5">
+          <Link href={lectura.href} className="boton boton--grande">{lectura.accion}</Link>
+          {cosas > 0 && (
+            <Link href="/portal/hoy" className="t-dato" style={{ textDecoration: "underline", color: "var(--marca)" }}>
+              Ver {cosas} hallazgo{cosas === 1 ? "" : "s"} más
+            </Link>
           )}
-          {t.kpis.ganancia && (
-            <div className="panel p-5">
-              <p className="t-etiqueta mb-1">Lo que te quedó</p>
-              <p className="num-grande" style={{ fontSize: 30, color: "var(--confirmado)" }}>{soles(t.kpis.ganancia.valor)}</p>
-              {t.kpis.venta && t.kpis.venta.periodo === t.kpis.ganancia.periodo && t.kpis.venta.valor > 0 && (
-                <p className="t-dato" style={{ color: "var(--grafito)" }}>{Math.round((t.kpis.ganancia.valor / t.kpis.venta.valor) * 100)} de cada 100 vendidos</p>
-              )}
-            </div>
-          )}
-          {t.kpis.deuda != null && (
-            <div className="panel p-5">
-              <p className="t-etiqueta mb-1">Te deben tus clientes</p>
-              <p className="num-grande" style={{ fontSize: 30, color: "var(--caducado)" }}>{soles(t.kpis.deuda)}</p>
-              <p className="t-dato" style={{ color: "var(--grafito)" }}>plata tuya que aún no entra</p>
-            </div>
-          )}
-        </section>
-      )}
+        </div>
+      </section>
 
-      {/* Ventas mes a mes vs mejor época */}
+      {/* LAS TRES FASES DEL MÉTODO: dónde estás parado — texto, no adorno */}
+      <section aria-label="Fase del método" className="flex items-center flex-wrap" style={{ gap: 10, borderTop: "1px solid var(--linea)", paddingTop: 14 }}>
+        {FASES.map((f, i) => (
+          <span key={f} className="flex items-center" style={{ gap: 10 }}>
+            {i > 0 && <span aria-hidden="true" style={{ width: 22, height: 1, background: "var(--linea)", display: "inline-block" }} />}
+            <span className="t-dato" style={{ fontWeight: i + 1 === fase ? 700 : 500, color: i + 1 === fase ? "var(--marca)" : i + 1 < fase ? "var(--confirmado)" : "var(--grafito)" }}>
+              {f}
+              {i + 1 < fase && <span style={{ marginLeft: 5, fontSize: 12 }}>hecha</span>}
+              {i + 1 === fase && <span style={{ marginLeft: 5, fontSize: 12 }}>· aquí estás</span>}
+            </span>
+          </span>
+        ))}
+      </section>
+
+      {/* La gráfica real, si hay meses contados */}
       {t.serieVentas.length >= 2 && (
-        <section className="panel p-5">
-          <p className="t-etiqueta mb-3">Tus ventas, mes a mes</p>
+        <section>
           <GraficaVentas serie={t.serieVentas} dorada={t.epocaDorada} />
           {t.epocaDorada != null && t.serieVentas.length > 0 && t.epocaDorada > t.serieVentas[t.serieVentas.length - 1].valor * 1.25 && (
             <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>
@@ -156,31 +180,8 @@ export default async function Portal() {
         </section>
       )}
 
-      </div>
-
-      {/* Lo que más frena + biblioteca: aquí SÍ hay caja — son accionables */}
-      <div className={hayNumeros ? "grid gap-4 sm:grid-cols-2 lg:grid-cols-1 lg:self-start" : "grid gap-4 sm:grid-cols-2"}>
-        {hoy.restriccion && (
-          <section className="panel p-5" style={{ borderLeft: "4px solid var(--contradicho)" }}>
-            <p className="t-etiqueta mb-2">Lo que más te está frenando</p>
-            <p className="t-cuerpo" style={{ fontWeight: 550, marginBottom: 8 }}>{hoy.restriccion.titulo}</p>
-            <Link href="/portal/hoy" className="t-dato" style={{ textDecoration: "underline", color: "var(--marca)" }}>Ver el análisis completo</Link>
-          </section>
-        )}
-        <section className="panel p-5">
-          <p className="t-etiqueta mb-2">Los documentos que te tocan{t.biblioteca.personas ? ` · empresa de ${t.biblioteca.personas} persona${t.biblioteca.personas === 1 ? "" : "s"}` : ""}</p>
-          <div style={{ height: 6, borderRadius: 4, background: "var(--linea)", overflow: "hidden", marginBottom: 10 }}>
-            <div style={{ width: `${t.biblioteca.total ? Math.round((t.biblioteca.listos / t.biblioteca.total) * 100) : 0}%`, height: "100%", background: "var(--marca)" }} />
-          </div>
-          <p className="t-cuerpo" style={{ marginBottom: 6 }}>{t.biblioteca.listos} de {t.biblioteca.total}</p>
-          <p className="t-dato" style={{ color: "var(--grafito)", marginBottom: 10 }}>A tu tamaño no te pedimos más — la vara crece con tu empresa.</p>
-          <Link href="/portal/activos" className="t-dato" style={{ textDecoration: "underline", color: "var(--marca)" }}>Ir a Tu información</Link>
-        </section>
-      </div>
-      </div>
-
-      <p className="t-dato medida" style={{ color: "var(--grafito)" }}>
-        Todo sale de lo que tu empresa contó o mostró.
+      <p className="t-dato" style={{ color: "var(--grafito)" }}>
+        Todo sale de lo que tu empresa contó o mostró. <Link href="/portal/hoy" style={{ textDecoration: "underline" }}>Mi empresa completa</Link> · <Link href="/portal/activos" style={{ textDecoration: "underline" }}>Tus documentos</Link>
       </p>
     </div>
   );
