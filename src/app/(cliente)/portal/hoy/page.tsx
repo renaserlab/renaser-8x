@@ -72,7 +72,7 @@ function Conector({ d }: { d: string }) {
   );
 }
 
-/** ÁRBOL DE TU VENTA: de dónde sale la plata, con lo contado — y "sin dato" como invitación, nunca inventado. */
+/** ÁRBOL DE TU VENTA: de dónde sale el dinero, con lo contado — y "sin dato" como invitación, nunca inventado. */
 function ArbolVentas({ metricas }: { metricas: Metrica[] }) {
   const buscar = (re: RegExp) => {
     const m = [...metricas].filter((x) => re.test(x.clave.toLowerCase())).sort((a, b) => (b.periodo ?? "").localeCompare(a.periodo ?? ""))[0];
@@ -151,7 +151,7 @@ export default async function Hoy() {
         </p>
       </header>
 
-      {/* LA PLATA COMO HÉROE: una afirmación en grande, no una cajita más. */}
+      {/* EL DINERO COMO HÉROE: una afirmación en grande, no una cajita más. */}
       {perdida.fugas.length > 0 && (
         <section>
           <p className="t-etiqueta mb-2">Lo que tus números dicen que podrías estar perdiendo</p>

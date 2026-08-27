@@ -30,9 +30,9 @@ export function proyeccionPerdida(metricas: Metrica[]): { fugas: Fuga[]; totalMe
     if (c) break;
   }
 
-  // 2. Lo que te deben los clientes (plata parada, no mensual).
+  // 2. Lo que te deben los clientes (dinero parado, no mensual).
   const deuda = metricas.find((m) => m.clave === "deuda_clientes" && m.valor != null);
-  if (deuda) fugas.push({ concepto: "Te deben tus clientes", monto: Number(deuda.valor), base: "según lo que contaste, plata tuya que aún no entra", mensual: false });
+  if (deuda) fugas.push({ concepto: "Te deben tus clientes", monto: Number(deuda.valor), base: "según lo que contaste, dinero tuyo que aún no entra", mensual: false });
 
   // 3. La brecha con la mejor época (si vendía bastante más).
   const dorada = metricas.find((m) => (m.clave === "venta_epoca_dorada" || (m.clave === "venta_mes" && m.periodo === "epoca_dorada")) && m.valor != null);

@@ -246,7 +246,7 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         clave: "plan_empresarial",
         nombre: "El plan de la empresa",
         ayuda: "El documento que resume el negocio completo: qué es, cómo gana dinero, sus metas y su plan.",
-        preguntas: ["En una frase: ¿qué es tu negocio y para quién?", "¿Cómo entra el dinero: qué vendes, a cuánto, y qué te cuesta?", "¿Cuál es tu meta de este año en plata y en clientes?", "¿Qué necesitas (gente, equipo, plata) para llegar a esa meta?"],
+        preguntas: ["En una frase: ¿qué es tu negocio y para quién?", "¿Cómo entra el dinero: qué vendes, a cuánto, y qué te cuesta?", "¿Cuál es tu meta de este año en dinero y en clientes?", "¿Qué necesitas (gente, equipo, dinero) para llegar a esa meta?"],
         estructura: "resumen del negocio (qué es, para quién, con qué gana), cómo entra el dinero (productos, precios, costos y ganancia según lo contado), la foto de hoy (números con estado), las metas del año (las del dueño, no inventadas), el plan por frentes con responsable y primer paso, y los riesgos que el diagnóstico encontró",
       },
     ],

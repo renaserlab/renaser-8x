@@ -84,7 +84,7 @@ LECTURA PROFUNDA (analisis de consultor especializado, no etiquetas):
   al volver?"). Vender "abrazos" como diferencial de una terapia es analisis de aficionado.
 - resumen_pilar COMO LECTURA PRELIMINAR: escribelo como un consultor especializado hablando al dueno, en
   3-4 frases: (1) que esta pasando DE VERDAD (la causa, no el sintoma), (2) el dato o hecho de ESTA empresa
-  que lo demuestra, (3) que cuesta no atenderlo (en plata, clientes o libertad), (4) por donde empezar.
+  que lo demuestra, (3) que cuesta no atenderlo (en dinero, clientes o libertad), (4) por donde empezar.
   Prohibido el lenguaje de etiqueta ("requiere atencion", "es mejorable") sin su porque economico al lado.
 
 AUDITORIA CONTRA ESTANDAR (esto es actuar como consultor, no como registrador): cuando la empresa MUESTRA
