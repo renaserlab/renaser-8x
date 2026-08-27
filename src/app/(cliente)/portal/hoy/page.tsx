@@ -6,6 +6,7 @@ import { proyeccionPerdida } from "@/lib/perdida";
 import { caminosDesdeHallazgos } from "@/lib/caminos";
 import type { Metrica } from "@/lib/rules/anomalias";
 import { ESTADO_PILAR, PILAR_CLIENTE, fechaMes } from "@/lib/textos";
+import { TarjetaHallazgo } from "@/components/cliente/TarjetaHallazgo";
 
 const soles = (n: number) => `S/${Math.round(n).toLocaleString("es-PE")}`;
 
@@ -15,38 +16,6 @@ const ESTADO_COLOR: Record<string, string> = { solido: "var(--confirmado)", mejo
 const ESTADO_CLIENTE_PILAR: Record<string, string> = { solido: "Fortaleza", mejorable: "Requiere atención", critico: "Crítico", desconocido: "Información insuficiente" };
 const CLASE_NOMBRE: Record<string, string> = { documento: "Tus documentos", equipo: "Tu equipo", datos: "Tus datos", dueno: "Tú" };
 
-/**
- * Tarjeta para el EMPRESARIO: el titular y UNA línea (lo que cuesta, o la causa en corto).
- * El expediente completo — causa, recomendación, fuentes — vive en "Ver más".
- * Feedback real: "yo como empresario no necesito tanto detalle; tú como consultor sí".
- */
-function Insight({ h }: { h: HallazgoHoy }) {
-  const linea = h.costo_posible ?? h.causa ?? null;
-  const acento = h.preserva ? "var(--confirmado)" : h.impacto === "alto" ? "var(--contradicho)" : "var(--caducado)";
-  const chip = h.preserva ? "Fortaleza" : h.impacto === "alto" ? "Crítico" : "Atención";
-  return (
-    // Tarjeta con chip de severidad: titular + UNA línea; el expediente vive en "Ver más".
-    // (El chip carga la severidad; nada de borde lateral grueso — regla del piso de calidad.)
-    <article className="panel p-5">
-      <div className="flex items-start justify-between gap-3">
-        <h3 className="t-hero" style={{ fontSize: 18, minWidth: 0 }}>{h.titulo}</h3>
-        <span className="t-dato" style={{ flex: "none", fontSize: 12, fontWeight: 700, color: acento, border: `1px solid ${acento}`, borderRadius: "var(--radio)", padding: "2px 10px" }}>{chip}</span>
-      </div>
-      {linea && <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>{linea}</p>}
-      <details className="mt-1">
-        <summary className="t-dato" style={{ cursor: "pointer", color: "var(--marca)" }}>Ver más</summary>
-        <div className="mt-2 flex flex-col gap-2">
-          {h.causa && h.causa !== linea && <p className="t-cuerpo medida"><span style={{ color: "var(--grafito)" }}>Qué vemos: </span>{h.causa}</p>}
-          {h.costo_posible && h.costo_posible !== linea && <p className="t-cuerpo medida"><span style={{ color: "var(--grafito)" }}>Qué puede estar costando: </span>{h.costo_posible}</p>}
-          {h.recomendacion && <p className="t-cuerpo medida"><span style={{ color: "var(--grafito)" }}>{h.preserva ? "Cómo protegerla: " : "Por dónde tomarlo: "}</span>{h.recomendacion}</p>}
-          {h.evidencia.length > 0 && (
-            <p className="t-dato" style={{ color: "var(--grafito)" }}>Según {h.evidencia.map((e) => e.fuente).filter((v, i, a) => a.indexOf(v) === i).join(" · ")}</p>
-          )}
-        </div>
-      </details>
-    </article>
-  );
-}
 
 /** Caja del árbol de la venta: número contado/verificado, o la invitación a contarlo. */
 function Caja({ titulo, dato, ancho }: { titulo: string; dato: { texto: string; estado: string } | null; ancho?: boolean }) {
@@ -176,7 +145,7 @@ export default async function Hoy() {
         <section>
           <h2 className="t-seccion mb-1">Lo que más está frenando el siguiente nivel</h2>
           <p className="t-dato mb-4 medida" style={{ color: "var(--grafito)" }}>Con lo visto hasta ahora. Puede cambiar si aparece nueva información.</p>
-          <Insight h={hoy.restriccion} />
+          <TarjetaHallazgo h={hoy.restriccion} />
           {hoy.secundarias.length > 0 && (
             <p className="t-dato mt-3 medida" style={{ color: "var(--grafito)" }}>
               También pesan: {hoy.secundarias.map((s) => s.titulo).join(" · ")}
@@ -237,7 +206,7 @@ export default async function Hoy() {
           <p className="t-dato mb-4 medida" style={{ color: "var(--grafito)" }}>Cada punto sale de tu propia información. Nada está inventado.</p>
           <div className="grid gap-4 lg:grid-cols-2">
             {altos.map((h) => (
-              <Insight key={h.id} h={h} />
+              <TarjetaHallazgo key={h.id} h={h} />
             ))}
           </div>
         </section>
@@ -247,7 +216,7 @@ export default async function Hoy() {
           <summary className="t-seccion" style={{ cursor: "pointer", fontSize: 18 }}>Ver {resto.length} hallazgo{resto.length === 1 ? "" : "s"} más</summary>
           <div className="grid gap-4 lg:grid-cols-2 mt-4">
             {resto.map((h) => (
-              <Insight key={h.id} h={h} />
+              <TarjetaHallazgo key={h.id} h={h} />
             ))}
           </div>
         </details>
@@ -258,7 +227,7 @@ export default async function Hoy() {
           <summary className="t-seccion" style={{ cursor: "pointer", fontSize: 18 }}>Lo que no debes romper · {hoy.fortalezas.length} fortaleza{hoy.fortalezas.length === 1 ? "" : "s"}</summary>
           <div className="grid gap-4 lg:grid-cols-2 mt-4">
             {hoy.fortalezas.map((h) => (
-              <Insight key={h.id} h={h} />
+              <TarjetaHallazgo key={h.id} h={h} />
             ))}
           </div>
         </details>

@@ -57,6 +57,27 @@ body {
   }
 }
 
+/* PANEL DE DETALLE: se despliega AL COSTADO (PC) o desde abajo (celular) — nunca empuja el contenido. */
+.telon { position: fixed; inset: 0; background: color-mix(in srgb, var(--tinta) 32%, transparent); z-index: 60; border: none; padding: 0; margin: 0; width: 100%; }
+.panel-lateral {
+  position: fixed; z-index: 61; background: var(--papel); overflow-y: auto;
+  right: 0; top: 0; bottom: 0; width: min(440px, 92vw);
+  border-left: 1px solid var(--linea); padding: 24px;
+  animation: entra-lado var(--dur) ease-out;
+}
+@media (max-width: 1023px) {
+  .panel-lateral {
+    top: auto; left: 0; right: 0; bottom: 0; width: auto; max-height: 82dvh;
+    border-left: none; border-top: 1px solid var(--linea);
+    border-radius: var(--radio) var(--radio) 0 0;
+    animation: entra-abajo var(--dur) ease-out;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
+  }
+}
+@keyframes entra-lado { from { transform: translateX(24px); opacity: 0; } }
+@keyframes entra-abajo { from { transform: translateY(24px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .panel-lateral { animation: none; } }
+
 /* foco visible siempre */
 :focus-visible { outline: 2px solid var(--marca); outline-offset: 2px; }
 
