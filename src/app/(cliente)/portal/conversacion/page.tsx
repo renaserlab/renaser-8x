@@ -16,9 +16,7 @@ export default async function Conversacion() {
   const { data: sesiones } = await q;
   return (
     <>
-      <p className="t-etiqueta">Conversar</p>
-      <h1 className="t-titulo mt-2 mb-2">Una pregunta a la vez</h1>
-      <p className="t-cuerpo mb-8 medida" style={{ color: "var(--grafito)" }}>Puedes responder hablando. Vas a ver lo que entendimos antes de guardarlo.</p>
+      <h1 className="t-titulo mb-6">Una pregunta a la vez</h1>
       <ConversacionCliente companyId={c.companyId} sesiones={(sesiones ?? []).map((s) => ({ id: s.id, tipo: s.tipo, estado: s.estado }))} transcriptor={hayTranscriptor()} />
     </>
   );

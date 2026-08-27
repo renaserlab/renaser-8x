@@ -105,10 +105,38 @@ export function Entrevista({ cargar, responder, transcribir, titulo, transcripto
           {cob && <span className="t-dato" style={{ color: "var(--grafito)" }}>{cob.porcentaje >= 100 ? "Comprendido" : cob.porcentaje >= 70 ? "Ya comprendimos casi todo" : `Comprendido ${cob.porcentaje}%`}</span>}
         </div>
         {cob && cob.areas.length > 0 && (
-          <div aria-hidden="true" style={{ display: "flex", gap: 3 }}>
-            {cob.areas.map((a) => (
-              <span key={a.clave} title={a.nombre} style={{ flex: 1, height: 3, borderRadius: 2, background: a.cubierta ? "var(--marca)" : "var(--linea)", transition: "background var(--dur)" }} />
-            ))}
+          // LA RUTA DE LA CONVERSACIÓN como diagrama (pedido de Kelin): estaciones que se llenan
+          // al avanzar — verde lo comprendido, azul donde estás. El gráfico ES el avance.
+          <div aria-label="Ruta de la conversación">
+            <div className="flex items-center" style={{ paddingTop: 4 }}>
+              {cob.areas.map((a, i) => {
+                const idxActual = cob.areas.findIndex((x) => !x.cubierta);
+                const actual = i === idxActual;
+                return (
+                  <span key={a.clave} className="flex items-center" style={{ flex: i === cob.areas.length - 1 ? "none" : 1, minWidth: 0 }}>
+                    <span
+                      title={a.nombre}
+                      style={{
+                        width: actual ? 16 : 13, height: actual ? 16 : 13, borderRadius: "50%", flex: "none",
+                        background: a.cubierta ? "var(--confirmado)" : actual ? "var(--marca)" : "var(--papel)",
+                        border: `2px solid ${a.cubierta ? "var(--confirmado)" : actual ? "var(--marca)" : "var(--linea)"}`,
+                        transition: "all var(--dur)",
+                      }}
+                    />
+                    {i < cob.areas.length - 1 && (
+                      <span style={{ height: 2, flex: 1, background: a.cubierta ? "var(--confirmado)" : "var(--linea)", transition: "background var(--dur)" }} />
+                    )}
+                  </span>
+                );
+              })}
+            </div>
+            <p className="t-dato" style={{ color: "var(--grafito)", fontSize: 12, marginTop: 6 }}>
+              {(() => {
+                const actual = cob.areas.find((a) => !a.cubierta);
+                const hechas = cob.areas.filter((a) => a.cubierta).length;
+                return actual ? `${hechas} de ${cob.areas.length} · ahora: ${actual.nombre}` : "Ruta completa";
+              })()}
+            </p>
           </div>
         )}
       </div>
@@ -152,10 +180,8 @@ export function Entrevista({ cargar, responder, transcribir, titulo, transcripto
             <span className="t-etiqueta">O escribe tu respuesta</span>
             <textarea className="campo" value={texto} onChange={(e) => setTexto(e.target.value)} rows={4} placeholder="" aria-label="Tu respuesta" />
           </label>
-          {texto.trim() && (
-            <p className="t-dato" style={{ color: "var(--grafito)" }}>
-              {audioListo ? "Esto fue lo que entendimos de tu audio. Corrige lo que quieras y guarda." : "Esto es lo que vamos a guardar. Si quieres cambiar algo, edítalo arriba."}
-            </p>
+          {texto.trim() && audioListo && (
+            <p className="t-dato" style={{ color: "var(--grafito)" }}>Esto entendimos de tu audio — corrige lo que quieras y guarda.</p>
           )}
           {error && <p className="t-cuerpo" style={{ color: "var(--contradicho)" }} role="alert">{error}</p>}
           {audioListo && !texto.trim() ? (
