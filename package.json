@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:supabase": "node --env-file=.env.local --import=tsx node_modules/vitest/vitest.mjs run tests/supabase",
     "benchmark": "node --env-file=.env.local --import=tsx scripts/benchmark-ia.ts",
+    "qa": "node --env-file=.env.local --import=tsx scripts/qa.mts",
     "verificar": "npm run typecheck && npm run lint && npm run test && npm run build"
   },
   "dependencies": {
