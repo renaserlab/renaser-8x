@@ -76,10 +76,10 @@ export function NavCliente({ enlaces, empresa }: { enlaces: [string, string][]; 
       {/* ESCRITORIO: barra lateral oscura (misma familia que el consultor) */}
       <aside
         className="no-imprimir hidden lg:flex"
-        style={{ width: 232, flexDirection: "column", gap: 4, padding: "18px 12px", background: "var(--marca)", position: "sticky", top: 0, height: "100vh", overflowY: "auto", flex: "none" }}
+        style={{ width: 232, flexDirection: "column", gap: 4, padding: "18px 12px", background: "var(--papel)", borderRight: "1px solid var(--linea)", position: "sticky", top: 0, height: "100vh", overflowY: "auto", flex: "none" }}
       >
-        <Link href="/portal" style={{ color: "var(--papel)", fontWeight: 700, fontSize: 18, padding: "4px 14px 2px", textDecoration: "none", letterSpacing: "0.04em" }}>8X</Link>
-        {empresa && <p className="t-dato" style={{ color: "color-mix(in srgb, var(--papel) 65%, transparent)", padding: "0 14px 12px" }}>{empresa}</p>}
+        <Link href="/portal" style={{ color: "var(--tinta)", fontWeight: 700, fontSize: 17, padding: "4px 14px 2px", textDecoration: "none", letterSpacing: "0.04em" }}>8X</Link>
+        {empresa && <p className="t-dato" style={{ color: "var(--grafito)", padding: "0 14px 12px" }}>{empresa}</p>}
         {enlaces.map(([href, nombre]) => {
           const a = href === "/portal" ? ruta === "/portal" : ruta.startsWith(href);
           return (
@@ -90,8 +90,8 @@ export function NavCliente({ enlaces, empresa }: { enlaces: [string, string][]; 
               className="t-dato"
               style={{
                 display: "block", padding: "9px 14px", borderRadius: "var(--radio)",
-                color: a ? "var(--papel)" : "color-mix(in srgb, var(--papel) 72%, transparent)",
-                background: a ? "color-mix(in srgb, var(--papel) 14%, transparent)" : "transparent",
+                color: a ? "var(--tinta)" : "var(--grafito)",
+                background: a ? "var(--suave)" : "transparent",
                 fontWeight: a ? 600 : 500, textDecoration: "none",
               }}
             >
@@ -101,7 +101,7 @@ export function NavCliente({ enlaces, empresa }: { enlaces: [string, string][]; 
         })}
         <div style={{ marginTop: "auto", padding: "12px 14px" }}>
           <form action="/api/auth/salir" method="post">
-            <button className="t-dato" style={{ background: "none", border: "none", cursor: "pointer", color: "color-mix(in srgb, var(--papel) 72%, transparent)", padding: 0, font: "inherit", textDecoration: "underline" }}>Salir</button>
+            <button className="t-dato" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--grafito)", padding: 0, font: "inherit", textDecoration: "underline" }}>Salir</button>
           </form>
         </div>
       </aside>

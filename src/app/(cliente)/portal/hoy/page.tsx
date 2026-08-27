@@ -126,7 +126,7 @@ export default async function Hoy() {
         <section>
           <p className="t-etiqueta mb-2">Lo que tus números dicen que podrías estar perdiendo</p>
           {perdida.totalMensual > 0 && (
-            <p className="num-grande" style={{ color: "var(--contradicho)", fontSize: "clamp(38px, 8vw, 56px)" }}>
+            <p className="num-grande" style={{ color: "var(--contradicho)", fontSize: "clamp(30px, 6vw, 40px)" }}>
               ~{soles(perdida.totalMensual)} <span className="t-cuerpo" style={{ color: "var(--grafito)", fontFamily: "var(--font-ui)" }}>al mes</span>
             </p>
           )}

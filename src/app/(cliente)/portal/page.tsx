@@ -127,7 +127,7 @@ export default async function Portal() {
 
       {/* LA VOZ DEL AGENTE: serif, con su fuente, y UNA acción */}
       <section>
-        <p className="t-hero" style={{ fontSize: "clamp(24px, 4.5vw, 34px)", maxWidth: "26ch" }}>{lectura.texto}</p>
+        <p className="t-hero" style={{ fontSize: "clamp(20px, 3.2vw, 26px)", maxWidth: "26ch" }}>{lectura.texto}</p>
         {lectura.linea && <p className="t-cuerpo mt-3 medida" style={{ color: "var(--grafito)" }}>{lectura.linea}</p>}
         {lectura.fuente && <p className="t-dato mt-2" style={{ color: "var(--grafito)", fontSize: 13.5 }}>{lectura.fuente}</p>}
         <div className="flex items-center gap-5 flex-wrap mt-5">

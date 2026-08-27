@@ -34,7 +34,7 @@ export default async function Bandeja() {
       {/* LA VOZ: lo más urgente del día, con una sola acción */}
       {primero ? (
         <section className="mt-8 mb-10">
-          <p className="t-hero" style={{ fontSize: "clamp(22px, 3.6vw, 30px)", maxWidth: "30ch" }}>
+          <p className="t-hero" style={{ fontSize: "clamp(19px, 3vw, 24px)", maxWidth: "30ch" }}>
             {primero.empresa}: {primero.titulo.toLowerCase()}
           </p>
           {primero.detalle && <p className="t-cuerpo mt-2 medida" style={{ color: "var(--grafito)" }}>{primero.detalle}</p>}

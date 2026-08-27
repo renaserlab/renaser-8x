@@ -22,8 +22,8 @@ export function NavConsultor({ empresas, usuario }: { empresas: EmpresaMini[]; u
           display: "block",
           padding: "9px 14px",
           borderRadius: "var(--radio)",
-          color: activo ? "var(--papel)" : "color-mix(in srgb, var(--papel) 72%, transparent)",
-          background: activo ? "color-mix(in srgb, var(--papel) 14%, transparent)" : "transparent",
+          color: activo ? "var(--tinta)" : "var(--grafito)",
+          background: activo ? "var(--suave)" : "transparent",
           fontWeight: activo ? 600 : 500,
           textDecoration: "none",
         }}
@@ -60,20 +60,20 @@ export function NavConsultor({ empresas, usuario }: { empresas: EmpresaMini[]; u
       </nav>
     <aside
       className="no-imprimir hidden lg:flex"
-      style={{ width: 232, flexDirection: "column", gap: 4, padding: "18px 12px", background: "var(--marca)", position: "sticky", top: 0, height: "100vh", overflowY: "auto", flex: "none" }}
+      style={{ width: 232, flexDirection: "column", gap: 4, padding: "18px 12px", background: "var(--papel)", borderRight: "1px solid var(--linea)", position: "sticky", top: 0, height: "100vh", overflowY: "auto", flex: "none" }}
     >
-      <Link href="/bandeja" style={{ color: "var(--papel)", fontWeight: 700, fontSize: 18, padding: "4px 14px 14px", textDecoration: "none", letterSpacing: "0.04em" }}>
+      <Link href="/bandeja" style={{ color: "var(--tinta)", fontWeight: 700, fontSize: 17, padding: "4px 14px 14px", textDecoration: "none", letterSpacing: "0.04em" }}>
         8X <span style={{ fontWeight: 500, fontSize: 12, opacity: 0.7 }}>RENASER</span>
       </Link>
       {item("/bandeja", "Inicio", true)}
       {item("/empresas", "Todas las empresas", true)}
-      <p className="t-etiqueta" style={{ color: "color-mix(in srgb, var(--papel) 55%, transparent)", padding: "16px 14px 6px" }}>Empresas recientes</p>
+      <p className="t-etiqueta" style={{ color: "var(--grafito)", padding: "16px 14px 6px" }}>Empresas recientes</p>
       {empresas.map((e) => item(`/empresa/${e.id}`, e.nombre.length > 24 ? e.nombre.slice(0, 23) + "…" : e.nombre))}
       <div style={{ marginTop: "auto", padding: "12px 14px" }}>
-        <Link href="/casos" className="t-dato" style={{ display: "block", color: "color-mix(in srgb, var(--papel) 60%, transparent)", marginBottom: 10, textDecoration: "none" }}>Aprendizaje del sistema</Link>
-        <p className="t-dato" style={{ color: "color-mix(in srgb, var(--papel) 60%, transparent)", marginBottom: 8 }}>{usuario}</p>
+        <Link href="/casos" className="t-dato" style={{ display: "block", color: "var(--grafito)", marginBottom: 10, textDecoration: "none" }}>Aprendizaje del sistema</Link>
+        <p className="t-dato" style={{ color: "var(--grafito)", marginBottom: 8 }}>{usuario}</p>
         <form action="/api/auth/salir" method="post">
-          <button className="t-dato" style={{ background: "none", border: "none", cursor: "pointer", color: "color-mix(in srgb, var(--papel) 72%, transparent)", padding: 0, font: "inherit", textDecoration: "underline" }}>Salir</button>
+          <button className="t-dato" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--grafito)", padding: 0, font: "inherit", textDecoration: "underline" }}>Salir</button>
         </form>
       </div>
     </aside>
