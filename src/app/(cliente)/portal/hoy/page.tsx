@@ -253,10 +253,21 @@ export default async function Hoy() {
         </details>
       )}
 
-      {/* EL MAPA DE TU EMPRESA: mapa mental descargable para la pared (pedido de Kelin) */}
+      {/* EL MAPA DE TU EMPRESA: plan de acción visual — cada área con su POR QUÉ y su HAZ ESTO */}
       <MapaMental
         empresa={c.empresa?.nombre ?? "Tu empresa"}
-        pilares={hoy.pilares.map((p) => ({ pilar: p.pilar, nombre: PILAR_CLIENTE[p.pilar] ?? p.pilar, estado: p.estado }))}
+        pilares={hoy.pilares.map((p) => {
+          // El hallazgo más pesado de cada área da el porqué; su recomendación, el primer movimiento.
+          const todos = [hoy.restriccion, ...hoy.noVes, ...hoy.secundarias].filter(Boolean) as HallazgoHoy[];
+          const principal = todos.find((h) => h.pilar === p.pilar && h.impacto === "alto") ?? todos.find((h) => h.pilar === p.pilar);
+          return {
+            pilar: p.pilar,
+            nombre: PILAR_CLIENTE[p.pilar] ?? p.pilar,
+            estado: p.estado,
+            problema: principal?.titulo ?? null,
+            accion: principal?.recomendacion ?? null,
+          };
+        })}
         restriccion={hoy.restriccion?.titulo ?? null}
       />
 
