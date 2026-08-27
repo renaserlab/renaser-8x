@@ -26,7 +26,8 @@ function Insight({ h }: { h: HallazgoHoy }) {
   const chip = h.preserva ? "Fortaleza" : h.impacto === "alto" ? "Crítico" : "Atención";
   return (
     // Tarjeta con chip de severidad: titular + UNA línea; el expediente vive en "Ver más".
-    <article className="panel p-5" style={{ borderLeft: `4px solid ${acento}` }}>
+    // (El chip carga la severidad; nada de borde lateral grueso — regla del piso de calidad.)
+    <article className="panel p-5">
       <div className="flex items-start justify-between gap-3">
         <h3 className="t-hero" style={{ fontSize: 18, minWidth: 0 }}>{h.titulo}</h3>
         <span className="t-dato" style={{ flex: "none", fontSize: 12, fontWeight: 700, color: acento, border: `1px solid ${acento}`, borderRadius: "var(--radio)", padding: "2px 10px" }}>{chip}</span>

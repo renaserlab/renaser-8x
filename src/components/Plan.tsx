@@ -58,7 +58,7 @@ export function Plan({ companyId, acciones, cortes, modo }: { companyId: string;
         {acciones.map((a) => {
           const vencido = a.vence_at && a.vence_at < hoy && a.estado !== "hecho" && a.estado !== "descartado";
           return (
-            <article key={a.id} className="panel p-4 grid gap-3 md:grid-cols-[80px_1fr_220px]" style={{ borderLeft: `4px solid ${a.estado === "hecho" ? "var(--confirmado)" : vencido ? "var(--contradicho)" : "var(--linea)"}` }}>
+            <article key={a.id} className="panel p-4 grid gap-3 md:grid-cols-[80px_1fr_220px]" style={vencido ? { borderColor: "var(--contradicho)" } : a.estado === "hecho" ? { borderColor: "var(--confirmado)" } : undefined}>
               <div>
                 <div className="t-etiqueta">Semana</div>
                 <div className="t-seccion">{a.semana_inicio}–{a.semana_cierre}</div>

@@ -46,7 +46,8 @@ export function Hallazgo({ h, modo }: { h: HallazgoRow; modo: "consultor" | "cli
   const necesitaValidacion = !!h.requiere_validacion;
 
   return (
-    <article className="panel p-5 aparece" style={{ borderLeft: `4px solid ${preserva ? "var(--confirmado)" : COLOR_IMPACTO[h.impacto ?? "bajo"]}` }}>
+    {/* La severidad ya vive en la etiqueta coloreada — sin borde lateral (piso de calidad). */}
+    <article className="panel p-5 aparece">
       <div className="flex flex-wrap items-baseline gap-3 mb-2">
         {preserva ? <span className="t-etiqueta" style={{ color: "var(--confirmado)" }}>fortaleza · se conserva</span> : <span className="t-etiqueta" style={{ color: COLOR_IMPACTO[h.impacto ?? "bajo"] }}>impacto {h.impacto}</span>}
         {!esCliente && <span className="t-etiqueta">{PILAR[h.pilar]}{h.filtros?.dimension ? ` · ${h.filtros.dimension}` : ""}</span>}
