@@ -8,6 +8,7 @@ import type { Metrica } from "@/lib/rules/anomalias";
 import { ESTADO_PILAR, PILAR_CLIENTE, fechaMes } from "@/lib/textos";
 import { TarjetaHallazgo } from "@/components/cliente/TarjetaHallazgo";
 import { VerMasLateral } from "@/components/base/VerMasLateral";
+import { MapaMental } from "@/components/cliente/MapaMental";
 
 const soles = (n: number) => `S/${Math.round(n).toLocaleString("es-PE")}`;
 
@@ -167,7 +168,10 @@ export default async function Hoy() {
               <Link key={k.pregunta} href={k.href} className="panel p-5 flex flex-col gap-2" style={{ borderColor: "var(--marca)" }}>
                 <span className="t-seccion" style={{ fontSize: 17 }}>{k.pregunta}</span>
                 <span className="t-dato" style={{ color: "var(--grafito)" }}>{k.detalle}</span>
-                <span className="t-dato" style={{ color: "var(--marca)", fontWeight: 600, marginTop: "auto" }}>Empezar →</span>
+                <span className="t-dato flex items-center" style={{ color: "var(--marca)", fontWeight: 600, marginTop: "auto", gap: 4 }}>
+                  Empezar
+                  <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                </span>
               </Link>
             ))}
           </div>
@@ -248,6 +252,13 @@ export default async function Hoy() {
           </ul>
         </details>
       )}
+
+      {/* EL MAPA DE TU EMPRESA: mapa mental descargable para la pared (pedido de Kelin) */}
+      <MapaMental
+        empresa={c.empresa?.nombre ?? "Tu empresa"}
+        pilares={hoy.pilares.map((p) => ({ pilar: p.pilar, nombre: PILAR_CLIENTE[p.pilar] ?? p.pilar, estado: p.estado }))}
+        restriccion={hoy.restriccion?.titulo ?? null}
+      />
 
       <section>
         <h2 className="t-seccion mb-3">Tu empresa, por áreas</h2>

@@ -140,18 +140,34 @@ export default async function Portal() {
         </div>
       </section>
 
-      {/* LAS TRES FASES DEL MÉTODO: dónde estás parado — texto, no adorno */}
-      <section aria-label="Fase del método" className="flex items-center flex-wrap" style={{ gap: 10, borderTop: "1px solid var(--linea)", paddingTop: 14 }}>
-        {FASES.map((f, i) => (
-          <span key={f} className="flex items-center" style={{ gap: 10 }}>
-            {i > 0 && <span aria-hidden="true" style={{ width: 22, height: 1, background: "var(--linea)", display: "inline-block" }} />}
-            <span className="t-dato" style={{ fontWeight: i + 1 === fase ? 700 : 500, color: i + 1 === fase ? "var(--marca)" : i + 1 < fase ? "var(--confirmado)" : "var(--grafito)" }}>
-              {f}
-              {i + 1 < fase && <span style={{ marginLeft: 5, fontSize: 12 }}>hecha</span>}
-              {i + 1 === fase && <span style={{ marginLeft: 5, fontSize: 12 }}>· aquí estás</span>}
-            </span>
-          </span>
-        ))}
+      {/* BARRA DE AVANCE: las tres fases del método con sus flechitas — se ve dónde estás y cuánto falta */}
+      <section aria-label="Avance del método" style={{ borderTop: "1px solid var(--linea)", paddingTop: 16 }}>
+        <div className="flex items-center" style={{ gap: 6 }}>
+          {FASES.map((f, i) => {
+            const hecha = i + 1 < fase;
+            const actual = i + 1 === fase;
+            return (
+              <span key={f} className="flex items-center" style={{ gap: 6, flex: 1, minWidth: 0 }}>
+                <span
+                  style={{
+                    flex: 1, minWidth: 0, textAlign: "center", padding: "8px 6px", borderRadius: "var(--radio)",
+                    background: hecha ? "var(--confirmado)" : actual ? "var(--marca)" : "var(--suave)",
+                    color: hecha || actual ? "var(--papel)" : "var(--grafito)",
+                    fontSize: 12.5, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                  }}
+                >
+                  {f}
+                </span>
+                {i < FASES.length - 1 && (
+                  <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" style={{ flex: "none" }}>
+                    <path d="M9 5l7 7-7 7" fill="none" stroke="var(--grafito)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </span>
+            );
+          })}
+        </div>
+        <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>Aquí estás: <strong style={{ color: "var(--tinta)" }}>{FASES[fase - 1]}</strong>{fase < 3 ? ` · sigue ${FASES[fase]}` : " · la última fase"}</p>
       </section>
 
       {/* La gráfica real, si hay meses contados */}
