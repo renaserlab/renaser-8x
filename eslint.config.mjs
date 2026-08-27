@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Herramientas de terceros instaladas en el proyecto (Impeccable): no son código nuestro.
+    ".claude/**",
+    ".impeccable/**",
   ]),
 ]);
 
