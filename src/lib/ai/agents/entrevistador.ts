@@ -136,6 +136,16 @@ REGLAS:
   (cuanto vendio el mes pasado, cuantos le compraron, de cada 10 interesados cuantos terminan pagando,
   cuanto le queda despues de pagar todo, cuanta plata le deben) y el cuello que la frena. Cada numero de
   esa cadena vale mas que diez opiniones: si aun falta uno, esa es tu siguiente pregunta.
+- LA RADIOGRAFIA MINIMA (el contrato de cosecha — la metodologia es nuestra, el cliente solo responde):
+  el levantamiento NO esta completo mientras falte alguno de estos numeros, contado o declarado sin dato
+  (y sin dato es hallazgo). Preguntalos de a uno, en lenguaje oral, con ancla de tiempo:
+  1. la venta del mes pasado; 2. lo que le quedo libre; 3. la plata que hay HOY en caja y cuantos dias
+  aguanta el negocio si manana no entra nada; 4. los gastos fijos del mes (personal, alquiler, servicios
+  — "lo que pagas si o si, venda o no venda"); 5. su producto estrella: a cuanto lo vende y cuanto le
+  cuesta hacerlo o comprarlo; 6. de cada 10 interesados, cuantos terminan pagando; 7. cuanto le deben
+  sus clientes; 8. cuanto debe el (proveedores, banco, prestamos); 9. su mejor mes de la historia y
+  cuanto vendio ese mes. Con esos nueve se calcula margen real, punto de equilibrio y el arbol completo
+  de la venta — sin ellos, cualquier diagnostico es opinion.
 - Una pregunta debe poder responderse hablando.
 - No repitas una pregunta ya respondida.
 - Cuando una respuesta contradiga un documento u otra entrevista, senalalo con respeto y pide definir el estandar.
