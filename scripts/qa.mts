@@ -14,7 +14,7 @@ const anon = createClient(url, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { aut
 const ref = url.match(/https:\/\/(.+?)\.supabase/)![1];
 
 const resultados: { paso: string; ok: boolean; ms: number; nota: string }[] = [];
-const paso = async <T>(nombre: string, limiteMs: number, fn: () => Promise<[boolean, string, T?]>): Promise<T | undefined> => {
+const paso = async <T,>(nombre: string, limiteMs: number, fn: () => Promise<[boolean, string, T?]>): Promise<T | undefined> => {
   const t0 = Date.now();
   try {
     const [ok, nota, valor] = await fn();
