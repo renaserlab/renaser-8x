@@ -7,6 +7,7 @@ import { caminosDesdeHallazgos } from "@/lib/caminos";
 import type { Metrica } from "@/lib/rules/anomalias";
 import { ESTADO_PILAR, PILAR_CLIENTE, fechaMes } from "@/lib/textos";
 import { TarjetaHallazgo } from "@/components/cliente/TarjetaHallazgo";
+import { VerMasLateral } from "@/components/base/VerMasLateral";
 
 const soles = (n: number) => `S/${Math.round(n).toLocaleString("es-PE")}`;
 
@@ -294,11 +295,13 @@ export default async function Hoy() {
                   <h3 className="t-hero" style={{ fontSize: 18 }}>{p.problema}</h3>
                   <p className="t-dato mt-1" style={{ color: "var(--grafito)" }}>Primer movimiento: {p.primerMovimiento}</p>
                   {(p.porQue || p.indicador) && (
-                    <details className="mt-1">
-                      <summary className="t-dato" style={{ cursor: "pointer", color: "var(--marca)" }}>Ver más</summary>
-                      {p.porQue && <p className="t-cuerpo mt-2 medida"><span style={{ color: "var(--grafito)" }}>Por qué importa: </span>{p.porQue}</p>}
-                      {p.indicador && <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>Para saber que funciona: {p.indicador}</p>}
-                    </details>
+                    <div className="mt-1">
+                      <VerMasLateral titulo={p.problema}>
+                        <p className="t-dato mb-3" style={{ color: "var(--grafito)" }}>Primer movimiento: {p.primerMovimiento}</p>
+                        {p.porQue && <p className="t-cuerpo mb-2"><span style={{ color: "var(--grafito)" }}>Por qué importa: </span>{p.porQue}</p>}
+                        {p.indicador && <p className="t-dato" style={{ color: "var(--grafito)" }}>Para saber que funciona: {p.indicador}</p>}
+                      </VerMasLateral>
+                    </div>
                   )}
                 </div>
               </article>
