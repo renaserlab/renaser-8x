@@ -3,6 +3,7 @@ import { contextoPortal } from "@/lib/portal";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { InventarioActivos } from "@/components/cliente/InventarioActivos";
 import { bibliotecaRecomendada, type FindingLite } from "@/lib/biblioteca";
+import { EditarMiEmpresa } from "@/components/cliente/EditarMiEmpresa";
 
 export const dynamic = "force-dynamic";
 
@@ -11,10 +12,11 @@ export default async function Activos() {
   const c = await contextoPortal();
   if (!c.companyId) return <p className="t-cuerpo medida">{c.queFalta}</p>;
   const sb = supabaseAdmin();
-  const [{ data }, { data: findings }, { data: emp }] = await Promise.all([
+  const [{ data }, { data: findings }, { data: emp }, { data: emp2 }] = await Promise.all([
     sb.from("company_assets").select("clave,estado,nota,borrador,faltantes,implementacion,propuesta,propuesta_cambios,propuesta_estado").eq("company_id", c.companyId),
     sb.from("findings").select("patron,pilar,titulo,impacto,estado_revision").eq("company_id", c.companyId).neq("estado_revision", "rechazado").eq("requiere_validacion", false).limit(40),
     sb.from("companies").select("etapa_negocio").eq("id", c.companyId).single(),
+    sb.from("companies").select("nombre,ficha").eq("id", c.companyId).single(),
   ]);
   const recomendados = (findings ?? []).length ? bibliotecaRecomendada((findings ?? []) as FindingLite[], emp?.etapa_negocio) : [];
   return (
@@ -27,6 +29,7 @@ export default async function Activos() {
       </p>
       {/* Todo lo tuyo, a un toque: los procesos dibujados y lo subido viven aquí dentro. */}
       <div className="flex flex-wrap gap-2 mb-8">
+        <EditarMiEmpresa nombre={emp2?.nombre ?? ""} ficha={(emp2?.ficha as Record<string, string>) ?? {}} />
         <Link href="/portal/procesos" className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>Tus procesos dibujados</Link>
         <Link href="/portal/documentos" className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>Todo lo que subiste</Link>
         <Link href="/portal/validar" className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>Puntos por confirmar</Link>

@@ -9,6 +9,7 @@ import { tokensUsados } from "@/lib/db/queries";
 import { cumplimientoLegal } from "@/lib/biblioteca";
 import { tableroEmpresario } from "@/lib/tablero";
 import { Franja, Lectura } from "@/components/base/Franja";
+import { AdministrarEmpresa } from "@/components/consultor/AdministrarEmpresa";
 
 export const dynamic = "force-dynamic";
 
@@ -197,6 +198,10 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
           </section>
         );
       })()}
+
+      <div className="mb-4">
+        <AdministrarEmpresa companyId={id} nombre={c.nombre} sector={c.sector} />
+      </div>
 
       <details className="mb-8">
         <summary className="t-etiqueta" style={{ cursor: "pointer" }}>Datos del expediente</summary>

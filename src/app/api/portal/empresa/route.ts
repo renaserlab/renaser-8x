@@ -56,3 +56,26 @@ export const POST = protegido({}, async (perfil, req) => {
   }
   return ok({ company_id: c!.id }, 201);
 });
+
+/**
+ * CORREGIR MIS DATOS (pedido de Kelin: "imagina que me equivoqué al poner nombres — todo debe ser
+ * fácil de corregir"): el dueño edita el nombre y su ficha; el sector y la clasificación se recalculan.
+ */
+export const PATCH = protegido({}, async (perfil, req) => {
+  const companyId = await empresaDelCliente(perfil.id);
+  if (!companyId) return fallo("Todavía no tienes empresa.", 404);
+  const b = await leerJSON<{ nombre?: string; ficha?: Ficha }>(req);
+  const sb = supabaseAdmin();
+  const { data: actual } = await sb.from("companies").select("ficha,nombre").eq("id", companyId).single();
+  const fichaNueva = { ...((actual?.ficha as Record<string, string>) ?? {}), ...(limpiarFicha(b.ficha) ?? {}) };
+  const nombre = (b.nombre ?? "").trim();
+  const cambios: Record<string, unknown> = { ficha: fichaNueva };
+  if (nombre.length >= 2) cambios.nombre = nombre.slice(0, 120);
+  if (fichaNueva.actividad) cambios.sector = fichaNueva.actividad.slice(0, 120);
+  const modelos = clasificarModelo([fichaNueva.actividad, fichaNueva.productos, fichaNueva.canales]);
+  if (modelos.length) cambios.modelo_operativo = modelos;
+  if (fichaNueva.antiguedad) cambios.etapa_negocio = etapaDe(parseFloat(fichaNueva.antiguedad.replace(",", ".")));
+  const { error } = await sb.from("companies").update(cambios).eq("id", companyId);
+  if (error) return fallo(error.message, 500);
+  return ok({ company_id: companyId, actualizada: true });
+});
