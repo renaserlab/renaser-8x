@@ -8,7 +8,8 @@ import { EditarMiEmpresa } from "@/components/cliente/EditarMiEmpresa";
 export const dynamic = "force-dynamic";
 
 /** Datos empresariales guiados: qué existe hoy, por bloques. El diagnóstico dicta qué construir primero. */
-export default async function Activos() {
+export default async function Activos({ searchParams }: { searchParams: Promise<{ doc?: string }> }) {
+  const { doc } = await searchParams;
   const c = await contextoPortal();
   if (!c.companyId) return <p className="t-cuerpo medida">{c.queFalta}</p>;
   const sb = supabaseAdmin();
@@ -41,6 +42,7 @@ export default async function Activos() {
           return { clave: d.clave, estado: d.estado, nota: d.nota, borrador: x.borrador ?? null, faltantes: x.faltantes ?? null, implementacion: x.implementacion ?? null, propuesta: x.propuesta ?? null, propuesta_cambios: x.propuesta_cambios ?? null, propuesta_estado: x.propuesta_estado ?? null };
         })}
         prioridades={recomendados}
+        docDestacado={doc}
       />
     </>
   );

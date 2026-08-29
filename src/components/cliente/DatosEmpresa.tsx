@@ -29,7 +29,10 @@ export function DatosEmpresa({ nombre, ficha, bloques, faltaLevantar }: { nombre
           <h2 className="t-seccion">{nombre}</h2>
           <p className="t-dato" style={{ color: "var(--grafito)" }}>{ficha.actividad ?? "Cuéntanos a qué se dedica"}{ficha.ciudad ? ` · ${ficha.ciudad}` : ""}</p>
         </div>
-        <EditarMiEmpresa nombre={nombre} ficha={ficha} />
+        <div className="flex items-center gap-2 flex-wrap" style={{ flex: "none" }}>
+          <Link href="/portal/informe" className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>Ver mi informe</Link>
+          <EditarMiEmpresa nombre={nombre} ficha={ficha} />
+        </div>
       </div>
 
       <div className="grid gap-x-6 gap-y-2 sm:grid-cols-2" style={{ borderTop: "1px solid var(--linea)", paddingTop: 12 }}>

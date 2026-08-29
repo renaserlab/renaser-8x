@@ -17,16 +17,23 @@ const LISTOS = ["lo_tengo", "incompleto", "contado", "construido", "borrador_gen
  * escrito, se pregunta CÓMO FUNCIONA HOY (respondible hablando). Nada se pide dos veces.
  * Construirlo por escrito es un paso posterior, ofrecido solo cuando ya contaron cómo funciona.
  */
-export function InventarioActivos({ companyId, guardados, prioridades = [] }: { companyId: string; guardados: EstadoGuardado[]; prioridades?: { clave: string; razon: string }[] }) {
+export function InventarioActivos({ companyId, guardados, prioridades = [], docDestacado }: { companyId: string; guardados: EstadoGuardado[]; prioridades?: { clave: string; razon: string }[]; docDestacado?: string }) {
   const router = useRouter();
   const [estados, setEstados] = useState<Record<string, EstadoGuardado>>(Object.fromEntries(guardados.map((g) => [g.clave, g])));
-  const [bloqueAbierto, setBloqueAbierto] = useState(BLOQUES_ACTIVOS[0].clave);
+  // Si llegó desde un hallazgo ("Construirlo ahora"), se abre su bloque y el documento se resalta.
+  const bloqueDeDestacado = docDestacado?.split(".")[0];
+  const [bloqueAbierto, setBloqueAbierto] = useState(bloqueDeDestacado ?? BLOQUES_ACTIVOS[0].clave);
   const [respuestas, setRespuestas] = useState<Record<string, Record<number, string>>>({});
   const [editando, setEditando] = useState<Record<string, string>>({});
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [gracias, setGracias] = useState<string | null>(null);
   const inputs = useRef<Record<string, HTMLInputElement | null>>({});
+  useEffect(() => {
+    if (!docDestacado) return;
+    const el = document.getElementById(`doc-${docDestacado}`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [docDestacado]);
   const sondeo = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const hayConstruyendo = Object.values(estados).some((e) => e.estado === "construyendo" || e.propuesta_estado === "trabajando");
@@ -247,8 +254,18 @@ export function InventarioActivos({ companyId, guardados, prioridades = [] }: { 
                   const clave = `${b.clave}.${a.clave}`;
                   const g = estados[clave];
                   const estado = g?.estado;
+                  const esDestacado = clave === docDestacado;
                   return (
-                    <div key={a.clave} style={{ borderTop: "1px solid var(--linea)", paddingTop: 18 }}>
+                    <div
+                      key={a.clave}
+                      id={`doc-${clave}`}
+                      style={
+                        esDestacado
+                          ? { borderTop: "1px solid var(--linea)", paddingTop: 18, marginLeft: -12, marginRight: -12, paddingLeft: 12, paddingRight: 12, paddingBottom: 12, borderRadius: "var(--radio)", background: "color-mix(in srgb, var(--marca) 5%, transparent)" }
+                          : { borderTop: "1px solid var(--linea)", paddingTop: 18 }
+                      }
+                    >
+                      {esDestacado && <p className="t-etiqueta mb-1" style={{ color: "var(--marca)" }}>Este es el que resuelve tu hallazgo</p>}
                       <div className="flex items-baseline justify-between gap-3 flex-wrap">
                         <p className="t-cuerpo" style={{ fontWeight: 550, fontSize: 18 }}>{a.nombre}</p>
                         <span className="flex items-baseline gap-3">

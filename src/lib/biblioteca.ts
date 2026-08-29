@@ -19,6 +19,12 @@ const POR_PATRON: [RegExp, string[]][] = [
   [/rotacion|contratacion|personal|equipo/, ["personas.seleccion", "personas.plan_personal", "personas.reglamento"]],
   [/cultura|valores|conflicto|clima/, ["personas.cultura", "personas.reglamento"]],
   [/precio|margen|rentabilidad/, ["marketing.oferta", "resultados.margen"]],
+  [/caja|cierre|cuadre|arqueo|efectivo|robo|faltante|descuadre|control/, ["procesos.controles", "procesos.procedimientos"]],
+  [/repit|recurrente|error|falla|incidencia|reproceso|devoluci/, ["procesos.incidencias", "procesos.procedimientos"]],
+  [/falta|tardanza|indisciplina|sancion|amonest|incumpl/, ["personas.disciplina", "personas.reglamento"]],
+  [/capacit|entrena|habilidad|aprend|competencia/, ["personas.habilidades", "personas.onboarding"]],
+  [/reconoc|merito|motivacion|salario|sueldo|favoritismo/, ["personas.meritos", "personas.evaluacion"]],
+  [/registro|apunta|memoria|documenta|escrito/, ["procesos.procedimientos", "procesos.sistemas"]],
 ];
 
 const POR_PILAR: Record<string, string[]> = {
@@ -27,6 +33,23 @@ const POR_PILAR: Record<string, string[]> = {
   producto: ["producto.calidad"],
   marketing: ["marketing.proceso_comercial"],
 };
+
+/** Nombre legible de cada documento, para hablarle al dueño con el nombre que ve en pantalla. */
+const NOMBRES: Record<string, string> = Object.fromEntries(
+  BLOQUES_ACTIVOS.flatMap((b) => b.activos.map((a) => [`${b.clave}.${a.clave}`, a.nombre]))
+);
+
+/**
+ * EL PUENTE DEL "¿CÓMO?" (pedido de Kelin: el diagnóstico decía "implementa un sistema de cierre
+ * de caja" y ahí moría). Dado UN hallazgo, devuelve el documento que lo resuelve — con su nombre
+ * tal como el dueño lo ve. Sin esto, una recomendación es una frase; con esto, es un botón.
+ */
+export function documentoQueResuelve(f: { patron?: string | null; titulo: string; pilar: string }): { clave: string; nombre: string } | null {
+  const texto = `${f.patron ?? ""} ${f.titulo}`.toLowerCase();
+  const regla = POR_PATRON.find(([re]) => re.test(texto));
+  const clave = (regla?.[1] ?? POR_PILAR[f.pilar] ?? []).find((c) => CLAVES_VALIDAS.has(c));
+  return clave ? { clave, nombre: NOMBRES[clave] ?? clave } : null;
+}
 
 /**
  * PROPORCIONALIDAD: los documentos que le tocan a una empresa según su tamaño.

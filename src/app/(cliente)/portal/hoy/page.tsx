@@ -12,6 +12,7 @@ import { MapaMental } from "@/components/cliente/MapaMental";
 import { DatosEmpresa } from "@/components/cliente/DatosEmpresa";
 import { BLOQUES_ACTIVOS } from "@/lib/activos";
 import { bloquesSinCubrir } from "@/lib/rules/cobertura";
+import { documentoQueResuelve } from "@/lib/biblioteca";
 
 const soles = (n: number) => `S/${Math.round(n).toLocaleString("es-PE")}`;
 
@@ -175,7 +176,7 @@ export default async function Hoy() {
         <section>
           <h2 className="t-seccion mb-1">Lo que más está frenando el siguiente nivel</h2>
           <p className="t-dato mb-4 medida" style={{ color: "var(--grafito)" }}>Con lo visto hasta ahora. Puede cambiar si aparece nueva información.</p>
-          <TarjetaHallazgo h={hoy.restriccion} />
+          <TarjetaHallazgo h={hoy.restriccion} documento={documentoQueResuelve(hoy.restriccion)} />
           {hoy.secundarias.length > 0 && (
             <p className="t-dato mt-3 medida" style={{ color: "var(--grafito)" }}>
               También pesan: {hoy.secundarias.map((s) => s.titulo).join(" · ")}
@@ -239,7 +240,7 @@ export default async function Hoy() {
           <p className="t-dato mb-4 medida" style={{ color: "var(--grafito)" }}>Cada punto sale de tu propia información. Nada está inventado.</p>
           <div className="grid gap-4 lg:grid-cols-2">
             {altos.map((h) => (
-              <TarjetaHallazgo key={h.id} h={h} />
+              <TarjetaHallazgo key={h.id} h={h} documento={documentoQueResuelve(h)} />
             ))}
           </div>
         </section>
@@ -249,7 +250,7 @@ export default async function Hoy() {
           <summary className="t-seccion" style={{ cursor: "pointer", fontSize: 18 }}>Ver {resto.length} hallazgo{resto.length === 1 ? "" : "s"} más</summary>
           <div className="grid gap-4 lg:grid-cols-2 mt-4">
             {resto.map((h) => (
-              <TarjetaHallazgo key={h.id} h={h} />
+              <TarjetaHallazgo key={h.id} h={h} documento={documentoQueResuelve(h)} />
             ))}
           </div>
         </details>
@@ -260,7 +261,7 @@ export default async function Hoy() {
           <summary className="t-seccion" style={{ cursor: "pointer", fontSize: 18 }}>Lo que no debes romper · {hoy.fortalezas.length} fortaleza{hoy.fortalezas.length === 1 ? "" : "s"}</summary>
           <div className="grid gap-4 lg:grid-cols-2 mt-4">
             {hoy.fortalezas.map((h) => (
-              <TarjetaHallazgo key={h.id} h={h} />
+              <TarjetaHallazgo key={h.id} h={h} documento={documentoQueResuelve(h)} />
             ))}
           </div>
         </details>

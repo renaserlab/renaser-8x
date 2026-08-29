@@ -13,6 +13,7 @@ export function EditarMiEmpresa({ nombre, ficha }: { nombre: string; ficha: Fich
   const [n, setN] = useState(nombre);
   const [f, setF] = useState<Ficha>(ficha);
   const [guardando, setGuardando] = useState(false);
+  const [subiendo, setSubiendo] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const pon = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF((x) => ({ ...x, [k]: e.target.value }));
 
@@ -36,6 +37,24 @@ export function EditarMiEmpresa({ nombre, ficha }: { nombre: string; ficha: Fich
     } catch (e) {
       setError(e instanceof Error ? e.message : "No pudimos guardar. Intenta de nuevo.");
       setGuardando(false);
+    }
+  };
+
+  const subirLogo = async (file: File | null) => {
+    if (!file) return;
+    setSubiendo(true);
+    setError(null);
+    try {
+      const form = new FormData();
+      form.set("archivo", file);
+      const r = await fetch("/api/portal/logo", { method: "POST", body: form });
+      const j = (await r.json()) as { url?: string; error?: string };
+      if (!r.ok || !j.url) throw new Error(j.error ?? "No pudimos subir el logo.");
+      setF((x) => ({ ...x, logo_url: j.url! }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No pudimos subir el logo.");
+    } finally {
+      setSubiendo(false);
     }
   };
 
@@ -64,6 +83,21 @@ export function EditarMiEmpresa({ nombre, ficha }: { nombre: string; ficha: Fich
                 <span className="t-etiqueta">Nombre de tu empresa</span>
                 <input className="campo" value={n} onChange={(e) => setN(e.target.value)} />
               </label>
+              {/* EL LOGO: aparece en los documentos que descargas (pedido de Kelin). */}
+              <div className="flex flex-col gap-2">
+                <span className="t-etiqueta">Logo de tu empresa</span>
+                <div className="flex items-center gap-3 flex-wrap">
+                  {f.logo_url && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={f.logo_url} alt="Logo de tu empresa" style={{ maxHeight: 44, border: "1px solid var(--linea)", borderRadius: "var(--radio)", padding: 4 }} />
+                  )}
+                  <label className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14, cursor: "pointer" }}>
+                    {subiendo ? "Subiendo" : f.logo_url ? "Cambiar logo" : "Subir logo"}
+                    <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden onChange={(e) => subirLogo(e.target.files?.[0] ?? null)} />
+                  </label>
+                </div>
+                <span className="t-dato" style={{ color: "var(--grafito)" }}>Sale en tu informe y en los documentos que descargues.</span>
+              </div>
               {campo("¿Qué hace tu negocio?", "actividad", "restaurante, ferretería, terapias…")}
               <div className="grid grid-cols-2 gap-3">
                 {campo("Años del negocio", "antiguedad", "p. ej. 5")}

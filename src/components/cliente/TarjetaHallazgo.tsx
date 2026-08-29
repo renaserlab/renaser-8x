@@ -7,7 +7,7 @@ import type { HallazgoHoy } from "@/lib/hoy";
  * "Ver más" despliega el expediente AL COSTADO (PC) o desde abajo (celular) — pedido de Kelin:
  * el contenido de la página nunca se empuja; el detalle llega y se va sin mover nada.
  */
-export function TarjetaHallazgo({ h }: { h: HallazgoHoy }) {
+export function TarjetaHallazgo({ h, documento }: { h: HallazgoHoy; documento?: { clave: string; nombre: string } | null }) {
   const [abierto, setAbierto] = useState(false);
   const linea = h.costo_posible ?? h.causa ?? null;
   const acento = h.preserva ? "var(--confirmado)" : h.impacto === "alto" ? "var(--contradicho)" : "var(--caducado)";
@@ -54,6 +54,16 @@ export function TarjetaHallazgo({ h }: { h: HallazgoHoy }) {
                 <p className="t-dato" style={{ color: "var(--grafito)" }}>Según {h.evidencia.map((e) => e.fuente).filter((v, i, a) => a.indexOf(v) === i).join(" · ")}</p>
               )}
             </div>
+            {/* EL PUENTE DEL "¿CÓMO?": la recomendación deja de ser una frase y se vuelve un botón. */}
+            {documento && !h.preserva && (
+              <div className="mt-5" style={{ borderTop: "1px solid var(--linea)", paddingTop: 16 }}>
+                <p className="t-etiqueta mb-2">¿Cómo se resuelve?</p>
+                <p className="t-cuerpo mb-3">Construyendo tu documento <strong>{documento.nombre}</strong>. Lo armamos contigo: tú cuentas cómo funciona hoy y nosotros lo dejamos por escrito.</p>
+                <a href={`/portal/activos?doc=${documento.clave}`} className="boton" style={{ width: "100%", justifyContent: "center" }}>
+                  Construirlo ahora
+                </a>
+              </div>
+            )}
           </aside>
         </>
       )}
