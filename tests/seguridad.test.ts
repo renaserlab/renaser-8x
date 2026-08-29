@@ -171,3 +171,10 @@ describe("gobierno · lo que la auditoría del 29-08-2026 exigió", () => {
     expect(pagina, "sin saber si consintió no se monta la entrevista").toContain("consintio === null");
   });
 });
+
+describe("la politica de privacidad es publica (Ley 29733)", () => {
+  it("se puede leer sin cuenta: la enlazan el registro y el consentimiento del entrevistado", () => {
+    const proxy = readFileSync(path.join(process.cwd(), "src/proxy.ts"), "utf8");
+    expect(proxy, "sin esto, quien va a registrarse no puede leer lo que acepta").toContain('"/privacidad"');
+  });
+});

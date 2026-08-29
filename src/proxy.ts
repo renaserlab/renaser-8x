@@ -1,7 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-const PUBLICAS = ["/entrar", "/registro", "/auth", "/participar", "/api/participar", "/api/auth", "/api/worker"];
+// /privacidad tiene que ser publica: se enlaza desde el registro (antes de tener cuenta) y desde
+// la pantalla de consentimiento del entrevistado, que no tiene cuenta nunca. Ademas la Ley 29733
+// exige que la politica sea accesible sin condiciones.
+const PUBLICAS = ["/entrar", "/registro", "/privacidad", "/auth", "/participar", "/api/participar", "/api/auth", "/api/worker"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
