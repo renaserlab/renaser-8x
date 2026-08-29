@@ -62,7 +62,7 @@ export class AnthropicProvider implements AIProvider {
     return !!process.env.OPENAI_API_KEY;
   }
 
-  async transcribe(audio: Blob, mime: string): Promise<Transcripcion> {
+  async transcribe(audio: Blob, mime: string, _segundos?: number): Promise<Transcripcion> {
     // Anthropic no transcribe audio. Se usa OpenAI Whisper (verbose_json → segmentos con tiempos) si hay llave.
     const key = process.env.OPENAI_API_KEY;
     if (!key) throw new Error("No hay servicio de transcripción configurado (OPENAI_API_KEY). Pide la respuesta escrita o usa el micrófono del navegador.");

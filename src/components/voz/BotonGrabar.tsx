@@ -15,7 +15,7 @@ function obtenerReconocimiento(): (new () => SR) | null {
  * Usa el reconocimiento del navegador (sin llave) y muestra lo entendido para que la persona confirme.
  * Si el navegador no lo soporta, graba audio (MediaRecorder) y lo entrega como Blob para transcribir en el servidor.
  */
-export function BotonGrabar({ alTexto, alAudio, grande = true }: { alTexto: (t: string) => void; alAudio?: (b: Blob) => void; grande?: boolean }) {
+export function BotonGrabar({ alTexto, alAudio, grande = true }: { alTexto: (t: string) => void; alAudio?: (b: Blob, segundos?: number) => void; grande?: boolean }) {
   const [grabando, setGrabando] = useState(false);
   const [parcial, setParcial] = useState("");
   const esCliente = useEsCliente();
@@ -62,13 +62,14 @@ export function BotonGrabar({ alTexto, alAudio, grande = true }: { alTexto: (t: 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const m = new MediaRecorder(stream);
+      const t0 = Date.now();
       trozos.current = [];
       m.ondataavailable = (e) => trozos.current.push(e.data);
       m.onstop = () => {
         stream.getTracks().forEach((t) => t.stop());
         const blob = new Blob(trozos.current, { type: m.mimeType || "audio/webm" });
         setGrabando(false);
-        alAudio?.(blob);
+        alAudio?.(blob, (Date.now() - t0) / 1000);
       };
       mr.current = m;
       m.start();

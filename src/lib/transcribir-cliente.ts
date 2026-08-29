@@ -1,7 +1,8 @@
 /** Transcripción desde el navegador (sesión iniciada): audio real → texto que la persona confirma. */
-export async function transcribirAudio(b: Blob): Promise<string> {
+export async function transcribirAudio(b: Blob, segundos?: number): Promise<string> {
   const form = new FormData();
   form.set("audio", b, "respuesta.webm");
+  if (segundos) form.set("segundos", String(Math.round(segundos)));
   const r = await fetch("/api/transcribir", { method: "POST", body: form });
   // Un timeout del servidor devuelve texto plano, no JSON: jamás reventar por eso.
   let j: { texto?: string; error?: string } = {};

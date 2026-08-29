@@ -21,7 +21,7 @@ export type EstadoEntrevista = {
  * Una pregunta por pantalla. Hablando o escribiendo. Nunca se guarda lo dicho sin que la persona lo vea.
  * Capítulo 19. Se usa en el portal, en el enlace de participante y en el panel del consultor.
  */
-export function Entrevista({ cargar, responder, transcribir, titulo, transcriptor = false }: { cargar: () => Promise<EstadoEntrevista>; responder: (datos: { response_id: string; session_id: string; texto?: string; audio?: Blob }) => Promise<void>; transcribir?: (audio: Blob) => Promise<string>; titulo?: string; transcriptor?: boolean }) {
+export function Entrevista({ cargar, responder, transcribir, titulo, transcriptor = false }: { cargar: () => Promise<EstadoEntrevista>; responder: (datos: { response_id: string; session_id: string; texto?: string; audio?: Blob }) => Promise<void>; transcribir?: (audio: Blob, segundos?: number) => Promise<string>; titulo?: string; transcriptor?: boolean }) {
   const [estado, setEstado] = useState<EstadoEntrevista | null>(null);
   const [texto, setTexto] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -152,12 +152,12 @@ export function Entrevista({ cargar, responder, transcribir, titulo, transcripto
             alTexto={(t) => setTexto((prev) => (prev ? prev + " " + t : t))}
             alAudio={
               transcriptor && transcribir
-                ? async (b) => {
+                ? async (b, segundos) => {
                     // Audio real → transcripción → la persona LEE el texto y confirma antes de guardar.
                     setTranscribiendo(true);
                     setError(null);
                     try {
-                      const t = await transcribir(b);
+                      const t = await transcribir(b, segundos);
                       setTexto(t);
                       setAudioListo(b);
                     } catch {

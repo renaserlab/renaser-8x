@@ -30,7 +30,7 @@ export interface AIProvider {
   /** Salida estructurada obligatoria. Valida contra Zod; reintenta una vez; luego lanza. */
   complete<T>(params: CompleteParams<T>): Promise<CompleteResult<T>>;
   /** Transcripción con marcas de tiempo cuando el servicio las da (1.10). */
-  transcribe(audio: Blob, mime: string): Promise<Transcripcion>;
+  transcribe(audio: Blob, mime: string, segundos?: number): Promise<Transcripcion>;
   /** ¿Hay transcriptor configurado? Sin él, el navegador no debe ofrecer grabar audio (P1-11). */
   puedeTranscribir(): boolean;
 }

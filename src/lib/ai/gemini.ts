@@ -152,10 +152,11 @@ export class GeminiProvider implements AIProvider {
    * (el 3.7-flash sufre tormentas de "high demand" que con backoff largo tardaban minutos) y
    * reintentos cortos: si Gemini está saturado, mejor fallar rápido y que la persona escriba.
    */
-  async transcribe(audio: Blob, mime: string): Promise<Transcripcion> {
-    // Audios LARGOS (2+ min): el modelo ligero recorta o parafrasea la cola — caso real: "no traduce
-    // todo lo que digo" en una respuesta de 5 minutos. Para esos entra el modelo grande con más presupuesto.
-    const largo = audio.size > 1_200_000;
+  async transcribe(audio: Blob, mime: string, segundos?: number): Promise<Transcripcion> {
+    // Audios LARGOS (2.5+ min): el modelo ligero recorta o parafrasea la cola. La decisión va por
+    // DURACIÓN real cuando el cliente la manda (el tamaño engañaba: 1–2 min de webm ya pasaban
+    // 1.2MB y se iban al modelo lento sin necesidad — "está tardando", caso Qori Home).
+    const largo = segundos != null && segundos > 0 ? segundos > 150 : audio.size > 3_000_000;
     const modelo = largo
       ? (process.env.GEMINI_TRANSCRIBE_MODEL_LARGO ?? "gemini-3.6-flash").trim()
       : (process.env.GEMINI_TRANSCRIBE_MODEL ?? "gemini-3.5-flash-lite").trim();

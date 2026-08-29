@@ -14,6 +14,7 @@ export const POST = protegido({}, async (_perfil, req) => {
   const audio = form.get("audio");
   if (!(audio instanceof File)) return fallo("Falta el audio.");
   if (audio.size > 25 * 1024 * 1024) return fallo("El audio es muy largo. Graba en partes más cortas.");
-  const t = await ai().transcribe(audio, audio.type || "audio/webm");
+  const segundos = Number(form.get("segundos") ?? 0) || undefined;
+  const t = await ai().transcribe(audio, audio.type || "audio/webm", segundos);
   return ok({ texto: t.texto });
 });
