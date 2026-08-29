@@ -2,6 +2,7 @@ import { protegido, ok, fallo, leerJSON } from "@/lib/api";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { empresaDelCliente } from "@/lib/auth";
 import { clasificarModelo, etapaDe } from "@/lib/rules/matrices";
+import { encolar, PRIORIDAD, claveIdempotente } from "@/lib/jobs/queue";
 
 type Ficha = { actividad?: string; antiguedad?: string; personas?: string; locales?: string; cliente_tipo?: string; venta_mensual?: string; documentacion?: string; productos?: string; canales?: string; ciudad?: string; whatsapp?: string };
 
@@ -49,10 +50,19 @@ export const POST = protegido({}, async (perfil, req) => {
   await sb.from("memberships").upsert({ user_id: perfil.id, company_id: c!.id, nivel: "dueno" });
   const { data: dueno } = await sb.from("participants").insert({ company_id: c!.id, nombre: perfil.nombre ?? "Dueño", puesto: "Dueño", rol: "dueno", user_id: perfil.id }).select("id").single();
   if (dueno) {
-    await sb.from("interview_sessions").insert([
-      { company_id: c!.id, participant_id: dueno.id, tipo: "sueno_dueno" },
-      { company_id: c!.id, participant_id: dueno.id, tipo: "empresa_dueno" },
-    ]);
+    const { data: sesiones } = await sb
+      .from("interview_sessions")
+      .insert([
+        { company_id: c!.id, participant_id: dueno.id, tipo: "sueno_dueno" },
+        { company_id: c!.id, participant_id: dueno.id, tipo: "empresa_dueno" },
+      ])
+      .select("id,tipo");
+    // ARRANQUE EN CALIENTE: la primera pregunta se genera AHORA, mientras la persona todavía está
+    // mirando su portal recién creado — al abrir Conversar la espera lista, no un spinner.
+    const primera = (sesiones ?? []).find((s) => s.tipo === "sueno_dueno");
+    if (primera) {
+      await encolar({ company_id: c!.id, tipo: "entrevista_siguiente", payload: { session_id: primera.id }, prioridad: PRIORIDAD.entrevista, idempotency_key: claveIdempotente(["siguiente", primera.id, "arranque"]) });
+    }
   }
   return ok({ company_id: c!.id }, 201);
 });
