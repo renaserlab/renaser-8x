@@ -22,6 +22,30 @@ const MAX_REINTENTOS_503 = Number(process.env.GEMINI_REINTENTOS_503 ?? 5);
 const MODELO_RESPALDO = (process.env.AI_MODEL_RESPALDO ?? "gemini-3.6-flash").trim();
 const BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
+/**
+ * CORTACIRCUITOS DEL MODELO PRINCIPAL (2026-08-30: 3.7-flash devolviendo 503 sostenido durante horas).
+ * Cuando el principal falla varias veces seguidas, se deja de intentar por unos minutos y todo va
+ * directo al respaldo: sin esto, CADA trabajo paga la espera del modelo caído antes de rendirse.
+ * Vive en memoria del proceso: en una ráfaga del worker, el primer trabajo abre el circuito y los
+ * demás salen directos. Se cierra solo al vencer la ventana, así el principal vuelve cuando sana.
+ */
+const FALLOS_PARA_ABRIR = 3;
+const VENTANA_CORTE_MS = Number(process.env.GEMINI_CORTE_MS ?? 300_000);
+let fallosSeguidos = 0;
+let cortadoHasta = 0;
+const principalCaido = () => Date.now() < cortadoHasta;
+function anotarFallo() {
+  fallosSeguidos++;
+  if (fallosSeguidos >= FALLOS_PARA_ABRIR) {
+    cortadoHasta = Date.now() + VENTANA_CORTE_MS;
+    fallosSeguidos = 0;
+  }
+}
+const anotarExito = () => {
+  fallosSeguidos = 0;
+  cortadoHasta = 0;
+};
+
 function extraerJSON(texto: string): string {
   const fence = texto.match(/```(?:json)?\s*([\s\S]*?)```/);
   return (fence ? fence[1] : texto).trim();
@@ -70,7 +94,8 @@ export class GeminiProvider implements AIProvider {
 
     const t0 = Date.now();
     let entrada = 0, salida = 0, ultimoRaw = "", modelo = MODEL, esperado429 = false, reintentos503 = 0, ultimoDetalle = "";
-    let modeloActivo = MODEL;
+    // Si el principal está cortado por fallos recientes, se arranca directo en el respaldo.
+    let modeloActivo = principalCaido() && MODELO_RESPALDO ? MODELO_RESPALDO : MODEL;
     for (let intento = 0; intento < 2; intento++) {
       let res: Response;
       try {
@@ -106,6 +131,7 @@ export class GeminiProvider implements AIProvider {
         // Tormenta sostenida en el principal (2026-08-26: 3.7-flash caído todo el día): en vez de rendirse,
         // se cambia al modelo de respaldo y se reintenta. Calidad validada del respaldo: estratega PASS 6/6.
         await res.text();
+        anotarFallo();
         modeloActivo = MODELO_RESPALDO;
         reintentos503 = 0;
         intento--;
@@ -133,7 +159,10 @@ export class GeminiProvider implements AIProvider {
       try {
         const parsed = JSON.parse(extraerJSON(raw));
         const r = p.schema.safeParse(parsed);
-        if (r.success) return { data: r.data, tokens_entrada: entrada, tokens_salida: salida, modelo, latencia_ms: Date.now() - t0, intentos: intento + 1 };
+        if (r.success) {
+          if (modeloActivo === MODEL) anotarExito();
+          return { data: r.data, tokens_entrada: entrada, tokens_salida: salida, modelo, latencia_ms: Date.now() - t0, intentos: intento + 1 };
+        }
         ultimoDetalle = r.error.issues.slice(0, 8).map((i) => `${i.path.join(".")}: ${i.message}`).join(" | ");
       } catch (e) {
         ultimoDetalle = `JSON inválido: ${String((e as Error).message).slice(0, 120)}`;
