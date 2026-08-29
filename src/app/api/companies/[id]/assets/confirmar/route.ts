@@ -12,7 +12,7 @@ const DEFS = new Map(BLOQUES_ACTIVOS.flatMap((b) => b.activos.map((a) => [`${b.c
  * body: { clave, borrador } → el activo pasa a "construido" y se vuelve FUENTE válida
  * (documento construido con el dueño → extracción → evidencia como cualquier otra).
  */
-export const POST = protegido<Ctx>({}, async (perfil, req, ctx) => {
+export const POST = protegido<Ctx>({ cupo: "ia" }, async (perfil, req, ctx) => {
   const { id } = await ctx.params;
   await exigirAcceso(perfil, id);
   const b = await leerJSON<{ clave?: string; borrador?: string }>(req);

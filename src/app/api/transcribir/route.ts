@@ -8,7 +8,7 @@ import { ai, hayTranscriptor } from "@/lib/ai";
 // Audios largos (5+ minutos reales de un dueño contando) necesitan aire: el corte a 120s perdía la grabación.
 export const maxDuration = 300;
 
-export const POST = protegido({}, async (_perfil, req) => {
+export const POST = protegido({ cupo: "subida" }, async (_perfil, req) => {
   if (!hayTranscriptor()) return fallo("Por ahora no podemos escuchar audios.", 400);
   const form = await req.formData();
   const audio = form.get("audio");

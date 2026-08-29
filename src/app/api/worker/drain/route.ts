@@ -24,6 +24,9 @@ async function drenar(req: NextRequest) {
     // Continuación: si el presupuesto se agotó con trabajo pendiente, la siguiente ráfaga se dispara sola
     // (sin esperar al cron). El bucle es finito: solo se re-dispara cuando hay pendientes reales.
     const { supabaseAdmin } = await import("@/lib/supabase/admin");
+    // Higiene: las ventanas del límite de peticiones que ya vencieron se borran aquí, colgadas del
+    // drenaje que ya corre cada 5 minutos, en vez de gastar uno de los cron del plan.
+    void supabaseAdmin().rpc("limpiar_rate_limits");
     const { count } = await supabaseAdmin().from("jobs").select("id", { count: "exact", head: true }).eq("estado", "pendiente");
     if ((count ?? 0) > 0 && secreto && process.env.NEXT_PUBLIC_APP_URL) {
       fetch(process.env.NEXT_PUBLIC_APP_URL + "/api/worker/drain", { method: "POST", headers: { "x-worker-secret": secreto } }).catch(() => {});

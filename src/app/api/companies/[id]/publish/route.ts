@@ -7,7 +7,7 @@ import { diagnosticoListo } from "@/lib/rules/suficiencia";
 type Ctx = { params: Promise<{ id: string }> };
 
 /** body: { generar: true } → REDACTOR; body: { publicar: [ids] } → congela (P1-18) y publica; { despublicar: [ids] }. */
-export const POST = protegido<Ctx>({ consultor: true }, async (perfil, req, ctx) => {
+export const POST = protegido<Ctx>({ consultor: true, cupo: "ia" }, async (perfil, req, ctx) => {
   const { id } = await ctx.params;
   const b = await leerJSON<{ generar?: boolean; publicar?: string[]; despublicar?: string[] }>(req);
   const sb = supabaseAdmin();

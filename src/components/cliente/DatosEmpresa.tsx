@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { EditarMiEmpresa } from "@/components/cliente/EditarMiEmpresa";
+import { Historial } from "@/components/cliente/Historial";
+import type { Rastro } from "@/lib/auditoria";
 
 type Bloque = { nombre: string; listos: number; total: number; href: string };
 
@@ -19,7 +21,7 @@ const CAMPOS: [string, string][] = [
  * (pedido de Kelin: corregir donde está la información, no en otra parte). Debajo, plegado,
  * lo que ya se levantó y lo que falta — sin repetir lo que vive en otras pantallas.
  */
-export function DatosEmpresa({ nombre, ficha, bloques, faltaLevantar }: { nombre: string; ficha: Record<string, string>; bloques: Bloque[]; faltaLevantar: string[] }) {
+export function DatosEmpresa({ nombre, ficha, bloques, faltaLevantar, rastro = [] }: { nombre: string; ficha: Record<string, string>; bloques: Bloque[]; faltaLevantar: string[]; rastro?: Rastro[] }) {
   const puestos = CAMPOS.filter(([k]) => ficha[k]);
   const sinLlenar = CAMPOS.filter(([k]) => !ficha[k]);
   return (
@@ -78,6 +80,12 @@ export function DatosEmpresa({ nombre, ficha, bloques, faltaLevantar }: { nombre
           <Link href="/portal/conversacion" className="boton boton--secundario mt-3" style={{ minHeight: 38, fontSize: 14, display: "inline-flex" }}>Seguir contando</Link>
         </details>
       )}
+
+      {/* HISTORIAL: nada pasa a espaldas del dueño. Auditoría del 29-08-2026 / ISO 27001 A.8.15. */}
+      <details className="mt-2">
+        <summary className="t-dato" style={{ cursor: "pointer", color: "var(--marca)" }}>Historial: quién tocó qué y cuándo</summary>
+        <Historial rastro={rastro} />
+      </details>
     </section>
   );
 }

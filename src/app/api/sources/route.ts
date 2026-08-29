@@ -7,7 +7,7 @@ import { hayTranscriptor } from "@/lib/ai";
 const TIPOS_TEXTO = new Set(["documento", "observacion", "dato"]);
 
 /** multipart: company_id, archivo (File) | texto, nombre?, fecha_origen?, tipo?  ·  14.2: MIME, extensión, tamaño, nombre y ruta validados en código. */
-export const POST = protegido({}, async (perfil, req) => {
+export const POST = protegido({ cupo: "subida" }, async (perfil, req) => {
   const form = await req.formData();
   const companyId = String(form.get("company_id") ?? "");
   if (!companyId) return fallo("Falta la empresa.");

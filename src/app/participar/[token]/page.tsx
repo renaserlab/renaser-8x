@@ -3,7 +3,7 @@ import { use, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Entrevista, type EstadoEntrevista } from "@/components/Entrevista";
 
-type Info = { participante: { nombre: string; puesto: string | null; empresa: string }; transcriptor: boolean } & EstadoEntrevista;
+type Info = { participante: { nombre: string; puesto: string | null; empresa: string }; transcriptor: boolean; consintio: boolean } & EstadoEntrevista;
 
 const CLAVE = "8x_participante_sesion";
 
@@ -36,6 +36,7 @@ export default function Participar({ params }: { params: Promise<{ token: string
   const [invalido, setInvalido] = useState<null | "enlace" | "sesion">(null);
   const [token, setToken] = useState<string>("");
   const [listo, setListo] = useState(false);
+  const [consintio, setConsintio] = useState<boolean | null>(null);
 
   // Arranque: canjear el enlace (una sola vez) o recuperar la sesión del dispositivo.
   useEffect(() => {
@@ -66,6 +67,22 @@ export default function Participar({ params }: { params: Promise<{ token: string
 
   const cabeceras = useCallback(() => ({ "x-participante-token": token }), [token]);
 
+  // Se pregunta por el consentimiento ANTES de montar la entrevista: si no, la primera pregunta
+  // alcanzaría a dibujarse un instante antes de que la persona haya aceptado nada (Ley 29733).
+  useEffect(() => {
+    if (!token || consintio !== null) return;
+    let vivo = true;
+    (async () => {
+      const r = await fetch("/api/participar", { headers: { "x-participante-token": token }, cache: "no-store" });
+      if (!r.ok) { if (vivo) setInvalido("sesion"); return; }
+      const j = (await r.json()) as Info;
+      if (!vivo) return;
+      setInfo(j);
+      setConsintio(j.consintio);
+    })();
+    return () => { vivo = false; };
+  }, [token, consintio]);
+
   const cargar = useCallback(async (): Promise<EstadoEntrevista> => {
     const r = await fetch("/api/participar", { headers: cabeceras(), cache: "no-store" });
     if (!r.ok) {
@@ -74,6 +91,7 @@ export default function Participar({ params }: { params: Promise<{ token: string
     }
     const j = (await r.json()) as Info;
     setInfo(j);
+    setConsintio(j.consintio);
     return { ...j, terminado: !j.activa };
   }, [cabeceras]);
 
@@ -99,7 +117,41 @@ export default function Participar({ params }: { params: Promise<{ token: string
         <p className="t-cuerpo medida">No encontramos tu conversación en este celular. Abre el enlace que te enviaron o pide uno nuevo.</p>
       </main>
     );
-  if (!listo || !token) return <main className="min-h-screen p-6"><p className="t-dato" style={{ color: "var(--grafito)" }}>Abriendo tu conversación</p></main>;
+  if (!listo || !token || consintio === null)
+    return <main className="min-h-screen p-6"><p className="t-dato" style={{ color: "var(--grafito)" }}>Abriendo tu conversación</p></main>;
+
+  // LEY 29733: nada se pregunta antes de que la persona sepa qué se guarda y lo acepte.
+  if (info && consintio === false)
+    return (
+      <main className="min-h-screen px-4 py-8" style={{ maxWidth: 620, margin: "0 auto" }}>
+        <p className="t-etiqueta">{info.participante.empresa}</p>
+        <h1 className="t-titulo mt-2">Antes de empezar</h1>
+        <p className="t-cuerpo mt-4 medida">
+          Hola, {info.participante.nombre.split(" ")[0]}. Vamos a hacerte unas preguntas sobre tu trabajo.
+          Queremos que sepas exactamente qué pasa con lo que digas.
+        </p>
+        <ul className="lista-editorial mt-5">
+          <li><span className="t-cuerpo"><strong>Qué se guarda:</strong> tu nombre, tu puesto y tus respuestas (escritas o habladas).</span></li>
+          <li><span className="t-cuerpo"><strong>Para qué:</strong> para entender cómo funciona la empresa de verdad y mejorarla.</span></li>
+          <li><span className="t-cuerpo"><strong>Quién lo ve:</strong> el dueño de la empresa y el consultor de RENASER.</span></li>
+          <li><span className="t-cuerpo"><strong>Lo que NO pasa:</strong> tus respuestas no se usan para sancionarte. No hay respuestas buenas ni malas.</span></li>
+          <li><span className="t-cuerpo"><strong>Tus derechos:</strong> puedes parar cuando quieras y pedir que borremos lo tuyo. Está en la{" "}
+            <a href="/privacidad" target="_blank" className="underline" style={{ color: "var(--marca)" }}>política de privacidad</a>.</span></li>
+        </ul>
+        <button
+          type="button"
+          className="boton boton--grande mt-6"
+          style={{ width: "100%", justifyContent: "center" }}
+          onClick={async () => {
+            await fetch("/api/participar/consentimiento", { method: "POST", headers: cabeceras() });
+            setConsintio(true);
+          }}
+        >
+          Entiendo y acepto — empezar
+        </button>
+        <p className="t-dato mt-3" style={{ color: "var(--grafito)" }}>Si prefieres no participar, simplemente cierra esta página.</p>
+      </main>
+    );
 
   return (
     <main className="min-h-screen px-4 py-6" style={{ maxWidth: 720, margin: "0 auto" }}>

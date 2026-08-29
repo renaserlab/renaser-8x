@@ -6,7 +6,7 @@ import { suficienciaDeEmpresa } from "@/lib/bandeja";
 type Ctx = { params: Promise<{ id: string }> };
 
 /** body: { pilar?: string, forzar?: boolean } → un job por pilar (o el indicado). */
-export const POST = protegido<Ctx>({ consultor: true }, async (_p, req, ctx) => {
+export const POST = protegido<Ctx>({ consultor: true, cupo: "ia" }, async (_p, req, ctx) => {
   const { id } = await ctx.params;
   const b = await leerJSON<{ pilar?: string; forzar?: boolean }>(req);
   // Condiciones de suficiencia (P1-04): se avisa; el consultor puede forzar.

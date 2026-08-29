@@ -6,7 +6,7 @@ import { registrarRespuesta } from "@/lib/entrevista";
 type Ctx = { params: Promise<{ sesion: string }> };
 
 /** multipart: texto | audio (File), response_id?  ·  P0-05: solo la sesión propia, o consultor. */
-export const POST = protegido<Ctx>({}, async (perfil, req, ctx) => {
+export const POST = protegido<Ctx>({ cupo: "subida" }, async (perfil, req, ctx) => {
   const { sesion } = await ctx.params;
   const { decision, sesion: ses } = await autorizarSesion(perfil, sesion, (c) => puedeAcceder(perfil, c));
   if (!decision.permitido) return fallo(decision.motivo, decision.status);

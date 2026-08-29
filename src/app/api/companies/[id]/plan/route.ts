@@ -4,13 +4,13 @@ import { encolar, PRIORIDAD } from "@/lib/jobs/queue";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-export const POST = protegido<Ctx>({ consultor: true }, async (_p, _req, ctx) => {
+export const POST = protegido<Ctx>({ consultor: true, cupo: "ia" }, async (_p, _req, ctx) => {
   const { id } = await ctx.params;
   const job = await encolar({ company_id: id, tipo: "planificar", payload: {}, prioridad: PRIORIDAD.diagnosticar });
   return ok({ job_id: job.id });
 });
 
-export const GET = protegido<Ctx>({}, async (perfil, _req, ctx) => {
+export const GET = protegido<Ctx>({ cupo: "ia" }, async (perfil, _req, ctx) => {
   const { id } = await ctx.params;
   await exigirAcceso(perfil, id);
   const sb = supabaseAdmin();

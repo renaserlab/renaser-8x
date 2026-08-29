@@ -78,7 +78,7 @@ describe("superficie de API: toda ruta protegida usa `protegido` o el token de p
     for (const f of leer(dir)) {
       const s = readFileSync(f, "utf8");
       const publica = /api[\\/](participar|auth|worker)[\\/]/.test(f);
-      if (publica) expect(s, f).toMatch(/participantePorToken|estadoParticipante|canjearParticipante|signOut|exchangeCodeForSession|WORKER_DRAIN_SECRET/);
+      if (publica) expect(s, f).toMatch(/participantePorToken|estadoParticipante|consentirParticipante|canjearParticipante|signOut|exchangeCodeForSession|WORKER_DRAIN_SECRET/);
       else expect(s, f).toMatch(/protegido[<(]/);
     }
   });
@@ -89,5 +89,85 @@ describe("superficie de API: toda ruta protegida usa `protegido` o el token de p
       const s = readFileSync(f, "utf8");
       expect(s, f).toMatch(/exigirAcceso\(perfil, id\)|consultor: true/);
     }
+  });
+});
+
+/**
+ * Controles que la auditoría del 29-08-2026 encontró faltando. Estas pruebas existen para que no
+ * vuelvan a faltar: si alguien crea una ruta sin proteger o quita una cabecera, aquí se cae.
+ */
+describe("gobierno · lo que la auditoría del 29-08-2026 exigió", () => {
+  const raiz = path.join(process.cwd(), "src/app/api");
+  const rutas: string[] = [];
+  (function recorrer(d: string) {
+    for (const e of readdirSync(d, { withFileTypes: true })) {
+      const p = path.join(d, e.name);
+      if (e.isDirectory()) recorrer(p);
+      else if (e.name === "route.ts") rutas.push(p);
+    }
+  })(raiz);
+
+  // Las que se autorizan por su cuenta: token de participante o secreto del worker.
+  const PROPIA = ["participar", "worker", "auth"];
+
+  it("toda ruta de API pasa por protegido() o se autoriza por su cuenta", () => {
+    const huecos = rutas.filter((f) => {
+      const rel = path.relative(raiz, f).split(path.sep).join("/");
+      if (PROPIA.some((p) => rel.startsWith(p + "/"))) return false;
+      return !readFileSync(f, "utf8").includes("protegido");
+    });
+    expect(huecos, `rutas sin proteger: ${huecos.join(", ")}`).toEqual([]);
+  });
+
+  it("las rutas que se autorizan solas verifican de verdad un token o secreto", () => {
+    for (const f of rutas.filter((f) => PROPIA.some((p) => path.relative(raiz, f).split(path.sep).join("/").startsWith(p + "/")))) {
+      const src = readFileSync(f, "utf8");
+      const revisa = /x-participante-token|WORKER_DRAIN_SECRET|CRON_SECRET|signOut/.test(src);
+      expect(revisa, path.relative(raiz, f)).toBe(true);
+    }
+  });
+
+  it("ninguna ruta recibe un company_id del navegador sin comprobar el acceso", () => {
+    const huecos = rutas.filter((f) => {
+      const src = readFileSync(f, "utf8");
+      const recibeDelCuerpo = /leerValidado|leerJSON/.test(src) && /company_id\??:/.test(src);
+      if (!recibeDelCuerpo) return false;
+      return !/exigirAcceso|consultor: true|empresaDelCliente/.test(src);
+    });
+    expect(huecos, `posible acceso indirecto: ${huecos.join(", ")}`).toEqual([]);
+  });
+
+  it("las rutas caras (IA y subidas) declaran su cupo, no el de escritura", () => {
+    const caras = rutas.filter((f) => /encolar\(|formData\(\)/.test(readFileSync(f, "utf8")));
+    const sinCupo = caras.filter((f) => {
+      const rel = path.relative(raiz, f).split(path.sep).join("/");
+      if (PROPIA.some((p) => rel.startsWith(p + "/"))) return false;
+      return !/cupo: "(ia|subida)"/.test(readFileSync(f, "utf8"));
+    });
+    expect(sinCupo, `sin cupo propio: ${sinCupo.join(", ")}`).toEqual([]);
+  });
+
+  it("las cabeceras de seguridad están declaradas y cierran el marco ajeno", () => {
+    const cfg = readFileSync(path.join(process.cwd(), "next.config.ts"), "utf8");
+    for (const c of ["Content-Security-Policy", "Strict-Transport-Security", "X-Frame-Options", "X-Content-Type-Options", "Referrer-Policy", "Permissions-Policy"])
+      expect(cfg, c).toContain(c);
+    expect(cfg).toContain("frame-ancestors 'none'");
+    expect(cfg).toContain("object-src 'none'");
+    expect(cfg, "las respuestas de API no deben quedar en caché").toContain("no-store");
+  });
+
+  it("el logo se valida por los bytes del archivo, no por lo que dice el navegador", () => {
+    const src = readFileSync(path.join(process.cwd(), "src/app/api/portal/logo/route.ts"), "utf8");
+    expect(src, "no debe confiarse del tipo que declara el navegador").not.toContain("archivo.type");
+    expect(src).toContain("FIRMAS");
+    expect(src, "el SVG puede llevar script: no entra").not.toContain("svg+xml");
+  });
+
+  it("la persona entrevistada consiente antes de la primera pregunta (Ley 29733)", () => {
+    const lib = readFileSync(path.join(process.cwd(), "src/lib/participar.ts"), "utf8");
+    expect(lib).toContain("TEXTO_CONSENTIMIENTO");
+    expect(lib, "el texto aceptado se guarda literal, no solo un booleano").toMatch(/consentimiento_texto/);
+    const pagina = readFileSync(path.join(process.cwd(), "src/app/participar/[token]/page.tsx"), "utf8");
+    expect(pagina, "sin saber si consintió no se monta la entrevista").toContain("consintio === null");
   });
 });

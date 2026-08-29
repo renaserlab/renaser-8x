@@ -7,6 +7,9 @@ import type { Metrica } from "@/lib/rules/anomalias";
 import { PILAR_CLIENTE, ESTADO_PILAR } from "@/lib/textos";
 import { documentoQueResuelve } from "@/lib/biblioteca";
 import { BotonImprimir } from "@/components/base/BotonImprimir";
+import { urlDeLogo } from "@/lib/logo";
+import { registrar } from "@/lib/auditoria";
+import { usuarioActual } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +33,9 @@ export default async function Informe() {
   ]);
   const perdida = proyeccionPerdida((metricasRaw ?? []) as Metrica[]);
   const ficha = (empresa?.ficha ?? {}) as Record<string, string>;
+  const logo = await urlDeLogo(ficha);
+  // RASTRO: quién abrió el informe de esta empresa y cuándo (auditoría del 29-08-2026).
+  void registrar({ companyId: c.companyId, actor: await usuarioActual(), accion: "ver", entidad: "informe_diagnostico", ruta: "/portal/informe" });
   const fecha = new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" });
   const todos = [hoy.restriccion, ...hoy.noVes, ...hoy.secundarias].filter(Boolean) as HallazgoHoy[];
   const criticos = todos.filter((h) => h.impacto === "alto" && !h.preserva);
@@ -85,9 +91,9 @@ export default async function Informe() {
 
       <article className="panel p-6" style={{ maxWidth: 820 }}>
         <header style={{ borderBottom: "2px solid var(--tinta)", paddingBottom: 18, marginBottom: 20 }}>
-          {ficha.logo_url && (
+          {logo && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={ficha.logo_url} alt={`Logo de ${empresa?.nombre}`} style={{ maxHeight: 56, marginBottom: 12 }} />
+            <img src={logo} alt={`Logo de ${empresa?.nombre}`} style={{ maxHeight: 56, marginBottom: 12 }} />
           )}
           <p className="t-etiqueta" style={{ letterSpacing: "0.14em" }}>INFORME DE DIAGNÓSTICO EMPRESARIAL</p>
           <h2 className="t-hero mt-2" style={{ fontSize: "clamp(24px, 4vw, 32px)" }}>{empresa?.nombre}</h2>

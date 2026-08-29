@@ -12,7 +12,7 @@ const CLAVES = new Set(BLOQUES_ACTIVOS.flatMap((b) => b.activos.map((a) => `${b.
  * body: { clave, respuestas?: [{pregunta, respuesta}] } → encola el CONSTRUCTOR (usa todo lo ya sabido,
  * pregunta solo huecos, genera borrador). El dueño luego confirma en /assets/confirmar.
  */
-export const POST = protegido<Ctx>({}, async (perfil, req, ctx) => {
+export const POST = protegido<Ctx>({ cupo: "ia" }, async (perfil, req, ctx) => {
   const { id } = await ctx.params;
   await exigirAcceso(perfil, id);
   const b = await leerJSON<{ clave?: string; respuestas?: { pregunta: string; respuesta: string }[] }>(req);

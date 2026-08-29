@@ -7,7 +7,7 @@ import { encolar, PRIORIDAD, claveIdempotente } from "@/lib/jobs/queue";
 type Ctx = { params: Promise<{ id: string }> };
 
 /** body: { respuesta: 'si' | 'ya_no' | 'nunca', seguimiento?: string } — los tres botones. P1-21: el cliente solo valida lo que puede ver. */
-export const POST = protegido<Ctx>({}, async (perfil, req, ctx) => {
+export const POST = protegido<Ctx>({ cupo: "ia" }, async (perfil, req, ctx) => {
   const { id } = await ctx.params;
   const b = await leerJSON<{ respuesta?: "si" | "ya_no" | "nunca"; seguimiento?: string; estado?: string }>(req);
   const sb = supabaseAdmin();

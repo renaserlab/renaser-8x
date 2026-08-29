@@ -16,7 +16,7 @@ export const INVALIDO = () => NextResponse.json({ error: "Este enlace no es vál
 export async function participantePorToken(token: string) {
   if (!formatoValido(token)) return null;
   const sb = supabaseAdmin();
-  const { data: p } = await sb.from("participants").select("id,company_id,nombre,puesto,rol,token_hash,token_expira_at,token_revocado_at,token_usos,token_max_usos,token_canjeado_at, companies(nombre)").eq("token_hash", hashToken(token)).maybeSingle();
+  const { data: p } = await sb.from("participants").select("id,company_id,nombre,puesto,rol,token_hash,token_expira_at,token_revocado_at,token_usos,token_max_usos,token_canjeado_at,consentimiento_at, companies(nombre)").eq("token_hash", hashToken(token)).maybeSingle();
   if (!p) return null;
   if (!p.token_canjeado_at) return null; // un enlace sin canjear no da acceso: primero /canjear
   if (!tokenValido(token, p).ok) return null;
@@ -53,6 +53,7 @@ export async function estadoParticipante(token: string) {
   }
   return NextResponse.json({
     participante: { nombre: p.nombre, puesto: p.puesto, rol: p.rol, empresa: (p.companies as unknown as { nombre: string } | null)?.nombre },
+    consintio: !!p.consentimiento_at,
     sesiones: sesiones ?? [],
     activa,
     abierta: estado?.abierta ?? null,
@@ -80,4 +81,23 @@ export async function responderParticipante(token: string, form: FormData) {
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "No pudimos guardar tu respuesta." }, { status: 400 });
   }
+}
+
+/** TEXTO del consentimiento que acepta la persona entrevistada (Ley 29733). Se guarda literal. */
+export const TEXTO_CONSENTIMIENTO =
+  "Acepto que se guarden mi nombre, mi puesto y mis respuestas para entender cómo funciona la empresa. " +
+  "Sé que mis respuestas no se usan para sancionarme, que puedo parar cuando quiera y que puedo pedir " +
+  "que se borren escribiendo a RENASER. Versión 1.0.";
+
+/** LEY 29733: sin consentimiento registrado no empieza la entrevista. Queda con fecha y texto literal. */
+export async function consentirParticipante(token: string) {
+  const p = await participantePorToken(token);
+  if (!p) return INVALIDO();
+  if (!p.consentimiento_at) {
+    await supabaseAdmin()
+      .from("participants")
+      .update({ consentimiento_at: new Date().toISOString(), consentimiento_texto: TEXTO_CONSENTIMIENTO })
+      .eq("id", p.id);
+  }
+  return NextResponse.json({ consintio: true });
 }

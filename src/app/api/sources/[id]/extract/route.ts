@@ -5,7 +5,7 @@ import { encolar, PRIORIDAD } from "@/lib/jobs/queue";
 type Ctx = { params: Promise<{ id: string }> };
 
 /** Re-encola la extracción de una fuente (por ejemplo, tras un fallo). */
-export const POST = protegido<Ctx>({}, async (perfil, _req, ctx) => {
+export const POST = protegido<Ctx>({ cupo: "subida" }, async (perfil, _req, ctx) => {
   const { id } = await ctx.params;
   const sb = supabaseAdmin();
   const { data: s } = await sb.from("sources").select("id,company_id,tipo,origen").eq("id", id).single();
@@ -20,7 +20,7 @@ export const POST = protegido<Ctx>({}, async (perfil, _req, ctx) => {
 });
 
 /** P1-22: el cliente solo borra fuentes propias (origen cliente) que no sean entrevistas. El consultor, cualquiera. */
-export const DELETE = protegido<Ctx>({}, async (perfil, _req, ctx) => {
+export const DELETE = protegido<Ctx>({ cupo: "subida" }, async (perfil, _req, ctx) => {
   const { id } = await ctx.params;
   const sb = supabaseAdmin();
   const { data: s } = await sb.from("sources").select("id,company_id,storage_path,tipo,origen").eq("id", id).single();

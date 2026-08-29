@@ -24,7 +24,7 @@ const limpiarFicha = (f: Ficha | undefined): Record<string, string> | null => {
  * + membresía de dueño + participante dueño + sesiones de conversación.
  * Solo para usuarios cliente sin empresa (una empresa por cuenta en V1).
  */
-export const POST = protegido({}, async (perfil, req) => {
+export const POST = protegido({ cupo: "ia" }, async (perfil, req) => {
   if (perfil.rol === "consultor") return fallo("Como consultor, crea empresas desde tu bandeja.");
   const existente = await empresaDelCliente(perfil.id);
   if (existente) return fallo("Ya tienes una empresa en 8X.");
@@ -71,7 +71,7 @@ export const POST = protegido({}, async (perfil, req) => {
  * CORREGIR MIS DATOS (pedido de Kelin: "imagina que me equivoqué al poner nombres — todo debe ser
  * fácil de corregir"): el dueño edita el nombre y su ficha; el sector y la clasificación se recalculan.
  */
-export const PATCH = protegido({}, async (perfil, req) => {
+export const PATCH = protegido({ cupo: "ia" }, async (perfil, req) => {
   const companyId = await empresaDelCliente(perfil.id);
   if (!companyId) return fallo("Todavía no tienes empresa.", 404);
   const b = await leerJSON<{ nombre?: string; ficha?: Ficha }>(req);

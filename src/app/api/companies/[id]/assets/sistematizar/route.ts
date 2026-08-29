@@ -12,7 +12,7 @@ const CLAVES = new Set(BLOQUES_ACTIVOS.flatMap((b) => b.activos.map((a) => `${b.
  * POST { clave, comentario? } → encola el SISTEMATIZADOR (cada cambio con su porqué anclado en estándar o hallazgo).
  * POST { clave, accion: "confirmar" } → el dueño acepta la propuesta ("así lo queremos"); el declarado se conserva.
  */
-export const POST = protegido<Ctx>({}, async (perfil, req, ctx) => {
+export const POST = protegido<Ctx>({ cupo: "ia" }, async (perfil, req, ctx) => {
   const { id } = await ctx.params;
   await exigirAcceso(perfil, id);
   const b = await leerJSON<{ clave?: string; comentario?: string; accion?: string }>(req);

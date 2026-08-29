@@ -4,7 +4,7 @@ import { encolar, PRIORIDAD } from "@/lib/jobs/queue";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-export const POST = protegido<Ctx>({ consultor: true }, async (_p, _req, ctx) => {
+export const POST = protegido<Ctx>({ consultor: true, cupo: "ia" }, async (_p, _req, ctx) => {
   const { id } = await ctx.params;
   const { data: p } = await supabaseAdmin().from("processes").select("id,company_id,version").eq("id", id).single();
   if (!p) return fallo("Proceso no encontrado", 404);

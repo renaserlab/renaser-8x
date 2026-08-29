@@ -4,7 +4,7 @@ import { encolar } from "@/lib/jobs/queue";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-export const GET = protegido<Ctx>({}, async (perfil, _req, ctx) => {
+export const GET = protegido<Ctx>({ cupo: "ia" }, async (perfil, _req, ctx) => {
   const { id } = await ctx.params;
   const { data: j } = await supabaseAdmin().from("jobs").select("id,company_id,tipo,estado,progreso,error,resultado,created_at,terminado_at").eq("id", id).single();
   if (!j) return fallo("Trabajo no encontrado", 404);
@@ -15,7 +15,7 @@ export const GET = protegido<Ctx>({}, async (perfil, _req, ctx) => {
 });
 
 /** Reintentar un trabajo fallido (consultor). */
-export const POST = protegido<Ctx>({ consultor: true }, async (_p, _req, ctx) => {
+export const POST = protegido<Ctx>({ consultor: true, cupo: "ia" }, async (_p, _req, ctx) => {
   const { id } = await ctx.params;
   const sb = supabaseAdmin();
   const { data: j } = await sb.from("jobs").select("*").eq("id", id).single();

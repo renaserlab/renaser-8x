@@ -4,7 +4,7 @@ import { encolar, PRIORIDAD } from "@/lib/jobs/queue";
 
 type Ctx = { params: Promise<{ sesion: string }> };
 
-export const POST = protegido<Ctx>({ consultor: true }, async (_p, _req, ctx) => {
+export const POST = protegido<Ctx>({ consultor: true, cupo: "ia" }, async (_p, _req, ctx) => {
   const { sesion } = await ctx.params;
   const { data: ses } = await supabaseAdmin().from("interview_sessions").select("id,company_id").eq("id", sesion).single();
   if (!ses) return fallo("Sesión no encontrada", 404);

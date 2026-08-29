@@ -5,7 +5,7 @@ import { encolar, PRIORIDAD } from "@/lib/jobs/queue";
 type Ctx = { params: Promise<{ id: string }> };
 
 /** body: { respuestas?: {...}, decision?: 'admitida'|'rechazada', motivo_rechazo? } */
-export const POST = protegido<Ctx>({ consultor: true }, async (_p, req, ctx) => {
+export const POST = protegido<Ctx>({ consultor: true, cupo: "ia" }, async (_p, req, ctx) => {
   const { id } = await ctx.params;
   const b = await leerJSON<{ respuestas?: Record<string, string>; decision?: "admitida" | "rechazada"; motivo_rechazo?: string }>(req);
   const sb = supabaseAdmin();

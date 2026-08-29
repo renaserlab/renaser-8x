@@ -1,4 +1,5 @@
-import { protegido, ok, fallo, leerJSON, exigirAcceso } from "@/lib/api";
+import { protegido, ok, fallo, leerJSON, leerValidado, exigirAcceso, uuid, texto } from "@/lib/api";
+import { z } from "zod";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { generarToken, hashToken, expiracionPorDefecto, MAX_USOS_TOKEN } from "@/lib/tokens";
 
@@ -7,15 +8,21 @@ import { generarToken, hashToken, expiracionPorDefecto, MAX_USOS_TOKEN } from "@
  * P0-04: el token plano se devuelve UNA vez aquí; en la base solo queda su hash, con expiración y tope de usos.
  */
 export const POST = protegido({}, async (perfil, req) => {
-  const b = await leerJSON<{ company_id?: string; nombre?: string; puesto?: string; rol?: string; antiguedad?: string; sesiones?: string[] }>(req);
-  if (!b.company_id || !b.nombre?.trim()) return fallo("Falta el nombre de la persona.");
+  const b = await leerValidado(req, z.object({
+    company_id: uuid,
+    nombre: texto(120),
+    puesto: texto(80).optional(),
+    rol: z.enum(["dueno", "socio", "lider", "empleado"]).optional(),
+    antiguedad: texto(40).optional(),
+    sesiones: z.array(texto(40)).max(8).optional(),
+  }));
   await exigirAcceso(perfil, b.company_id);
   const sb = supabaseAdmin();
   const rol = b.rol ?? "empleado";
   const token = generarToken();
   const { data: p, error } = await sb
     .from("participants")
-    .insert({ company_id: b.company_id, nombre: b.nombre.trim(), puesto: b.puesto ?? null, rol, antiguedad: b.antiguedad ?? null, token_hash: hashToken(token), token_expira_at: expiracionPorDefecto(), token_usos: 0, token_max_usos: MAX_USOS_TOKEN, token_canjeado_at: null })
+    .insert({ company_id: b.company_id, nombre: b.nombre, puesto: b.puesto ?? null, rol, antiguedad: b.antiguedad ?? null, token_hash: hashToken(token), token_expira_at: expiracionPorDefecto(), token_usos: 0, token_max_usos: MAX_USOS_TOKEN, token_canjeado_at: null })
     .select("id,company_id,nombre,puesto,rol,antiguedad,token_expira_at")
     .single();
   if (error) return fallo(error.message, 500);

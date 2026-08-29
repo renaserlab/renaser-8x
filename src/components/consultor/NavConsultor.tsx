@@ -70,7 +70,8 @@ export function NavConsultor({ empresas, usuario }: { empresas: EmpresaMini[]; u
       <p className="t-etiqueta" style={{ color: "var(--grafito)", padding: "16px 14px 6px" }}>Empresas recientes</p>
       {empresas.map((e) => item(`/empresa/${e.id}`, e.nombre.length > 24 ? e.nombre.slice(0, 23) + "…" : e.nombre))}
       <div style={{ marginTop: "auto", padding: "12px 14px" }}>
-        <Link href="/casos" className="t-dato" style={{ display: "block", color: "var(--grafito)", marginBottom: 10, textDecoration: "none" }}>Aprendizaje del sistema</Link>
+        <Link href="/casos" className="t-dato" style={{ display: "block", color: "var(--grafito)", marginBottom: 6, textDecoration: "none" }}>Aprendizaje del sistema</Link>
+        <Link href="/salud" className="t-dato" style={{ display: "block", color: "var(--grafito)", marginBottom: 10, textDecoration: "none" }}>Salud del sistema</Link>
         <p className="t-dato" style={{ color: "var(--grafito)", marginBottom: 8 }}>{usuario}</p>
         <form action="/api/auth/salir" method="post">
           <button className="t-dato" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--grafito)", padding: 0, font: "inherit", textDecoration: "underline" }}>Salir</button>

@@ -12,7 +12,7 @@ type Ctx = { params: Promise<{ id: string }> };
  * - deseo: lo que le gustaría que funcionara diferente. NO se convierte en TO-BE directo:
  *   se guarda como fuente (observación) para que entre al contraste como cualquier evidencia.
  */
-export const POST = protegido<Ctx>({}, async (perfil, req, ctx) => {
+export const POST = protegido<Ctx>({ cupo: "ia" }, async (perfil, req, ctx) => {
   const { id } = await ctx.params;
   const sb = supabaseAdmin();
   const { data: p } = await sb.from("processes").select("id,company_id,nombre,version").eq("id", id).single();
