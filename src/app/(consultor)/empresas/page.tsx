@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { Encabezado, Vacio } from "@/components/base/Vacio";
+import { AdministrarEmpresa } from "@/components/consultor/AdministrarEmpresa";
 import { ETAPA, fechaCorta } from "@/lib/textos";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +22,7 @@ export default async function Empresas() {
               <th>Admisión</th>
               <th>Etapa</th>
               <th>Creada</th>
+              <th aria-label="Acciones" />
             </tr>
           </thead>
           <tbody>
@@ -33,6 +35,9 @@ export default async function Empresas() {
                 <td>{c.estado_admision}</td>
                 <td>{ETAPA[c.etapa] ?? c.etapa}</td>
                 <td className="t-dato">{fechaCorta(c.created_at)}</td>
+                <td>
+                  <AdministrarEmpresa companyId={c.id} nombre={c.nombre} sector={c.sector} />
+                </td>
               </tr>
             ))}
           </tbody>

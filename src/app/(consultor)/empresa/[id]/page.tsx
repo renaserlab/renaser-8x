@@ -78,6 +78,7 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
         sub={`${c.sector ?? "sector sin definir"}${ficha?.ciudad ? ` · ${ficha.ciudad}` : ""} · ${ETAPA[c.etapa] ?? c.etapa}`}
         acciones={
           <span className="flex items-center gap-3 flex-wrap">
+            <AdministrarEmpresa companyId={id} nombre={c.nombre} sector={c.sector} />
             {ficha?.whatsapp && (
               <a href={`https://wa.me/${ficha.whatsapp.replace(/\D/g, "").replace(/^9/, "519")}`} target="_blank" rel="noreferrer" className="boton boton--secundario" style={{ minHeight: 40 }}>WhatsApp del dueño</a>
             )}
@@ -198,10 +199,6 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
           </section>
         );
       })()}
-
-      <div className="mb-4">
-        <AdministrarEmpresa companyId={id} nombre={c.nombre} sector={c.sector} />
-      </div>
 
       <details className="mb-8">
         <summary className="t-etiqueta" style={{ cursor: "pointer" }}>Datos del expediente</summary>

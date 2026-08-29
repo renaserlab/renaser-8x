@@ -51,8 +51,8 @@ export function AdministrarEmpresa({ companyId, nombre, sector }: { companyId: s
 
   return (
     <>
-      <button type="button" onClick={() => setAbierto(true)} className="t-dato" style={{ background: "none", border: "none", cursor: "pointer", padding: 0, font: "inherit", color: "var(--grafito)", textDecoration: "underline" }}>
-        Administrar empresa
+      <button type="button" onClick={() => setAbierto(true)} className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>
+        Administrar
       </button>
       {abierto && (
         <>

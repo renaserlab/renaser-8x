@@ -21,10 +21,16 @@ for (;;) {
       if (j.estado === "fallido") {
         vistos.add(clave);
         console.log(`FALLIDO · ${emp} · ${j.tipo} · ${String(j.error).slice(0, 140).replace(/\n/g, " ")}`);
-      } else if (j.estado === "pendiente" && edad > 90) {
-        vistos.add(clave);
-        console.log(`ATASCADO pendiente ${edad}s · ${emp} · ${j.tipo} (el worker no lo toma)`);
-      } else if (j.estado === "corriendo" && edad > 300) {
+      } else if (j.estado === "pendiente") {
+        // Umbral por tipo: lo que el USUARIO espera mirando la pantalla grita rápido;
+        // el trabajo pesado de fondo (diagnóstico, planes) se turna y eso es normal.
+        const interactivo = ["entrevista_siguiente", "transcribir_respuesta", "extraer"].includes(j.tipo);
+        const limite = interactivo ? 90 : 300;
+        if (edad > limite) {
+          vistos.add(clave);
+          console.log(`ATASCADO pendiente ${edad}s · ${emp} · ${j.tipo} (el worker no lo toma)`);
+        }
+      } else if (j.estado === "corriendo" && edad > 420) {
         vistos.add(clave);
         console.log(`LENTO corriendo ${edad}s · ${emp} · ${j.tipo}`);
       }
