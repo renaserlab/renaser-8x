@@ -75,6 +75,56 @@ Cada punto lleva su **porqué**: aquí no se avanzó por avanzar; cada decisión
 
 ---
 
+### 13 · Auditoría técnica del 29-08-2026 y sus nueve correcciones
+
+Se auditó el aplicativo contra **ISO/IEC 27001** (seguridad de la información), **ISO 9001 7.5**
+(control documental), **ISO/IEC 25010** (calidad de producto) y la **Ley 29733** de Protección de
+Datos Personales del Perú. Aclaración que ahorra dinero: **ISO no certifica software, certifica
+organizaciones** — no existe "el ISO de un aplicativo". Lo que se puede certificar es a RENASER
+bajo 27001 o 9001; 25010 es un modelo de evaluación, no un sello.
+
+**Lo que ya pasaba la inspección:** 46 de 47 rutas bajo `protegido()` y la 47ª con secreto propio;
+todas las que reciben `company_id` llaman `exigirAcceso()`; las del portal derivan la empresa de la
+sesión y no del cuerpo del pedido (sin acceso indirecto por ID); RLS en las 29 tablas con vistas
+separadas para que el cliente no vea campos internos; credenciales de participante hasheadas, con
+expiración y tope de usos, viajando en cabecera y no en la URL; secretos fuera del repositorio;
+0 vulnerabilidades en dependencias; cola con arriendo, recuperación de zombis y cortacircuitos.
+
+**Los nueve hallazgos, y qué se hizo con cada uno:**
+
+| # | Hallazgo | Corrección | Norma |
+|---|---|---|---|
+| 1 | **Crítico.** No había registro de auditoría: nadie podía responder "quién vio o cambió los datos de mi empresa" | `audit_log` inmutable (revocados insert/update/delete a `authenticated`), enganchada en `protegido()` para que las 46 rutas la hereden; registro explícito al abrir el informe, aprobar un documento, subir el logo y entrar o salir, con IP. Visible para el dueño en *Mi empresa → Historial* y para el consultor en *Salud del sistema* | 27001 A.8.15 |
+| 2 | **Alto.** Sin límite de peticiones: cualquiera con cuenta podía disparar IA en bucle y quemar la cuota de Google | `consumir_cupo()` atómica en Postgres —no en memoria, porque en serverless cada instancia olvida lo suyo—. Cuatro cupos: IA 20/5 min, subidas 12/5 min, escritura 120/min, sesión 10/15 min. 21 rutas caras etiquetadas. Si el contador falla se deja pasar: un límite roto no puede dejar sin servicio al dueño | 27001 A.8.6 / A.8.20 |
+| 3 | **Alto.** Sin cabeceras de seguridad: se podía embeber en una página ajena | CSP con `frame-ancestors 'none'` y `object-src 'none'`, HSTS, X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy, COOP, y `no-store` en todo `/api` | 27001 A.8.9 |
+| 4 | **Medio.** Los errores morían en la consola: te enterabas porque el cliente llamaba | `error_log` con token redactado y la página `/salud` con errores de 24 h, movimientos y rastro reciente | 27001 A.8.16 |
+| 5 | **Medio.** Sin integración continua: las pruebas corrían solo si alguien se acordaba | `.github/workflows/ci.yml` con tipos, lint, pruebas, build y `npm audit` en cada push y cada PR | ISO 12207 / 9001 |
+| 6 | **Medio.** Ley 29733 sin cubrir, con datos personales de trabajadores de empresas terceras | Página `/privacidad` completa (responsable, qué se guarda, encargados y flujo transfronterizo, plazo de 5 años, derechos ARCO, vía de reclamo ante la ANPD); consentimiento explícito al registrarse con versión y fecha; y **la persona entrevistada consiente antes de la primera pregunta**, con el texto guardado literal e incluyendo que sus respuestas no se usan para sancionarla | Ley 29733 |
+| 7 | **Medio.** Validación a mano; Zod solo validaba salidas de la IA | `leerValidado()` con `EntradaInvalida` → 400 en castellano en vez de 500 con el volcado de Zod. Aplicado donde entran datos personales y texto libre que se paga por carácter | 25010 |
+| 8 | **Bajo.** El logo se aceptaba por lo que *decía* el navegador, SVG incluido (puede llevar script) | Lista cerrada PNG/JPG/WebP verificada por los bytes del archivo. Se guarda la ruta junto a la URL firmada y se vuelve a firmar al vuelo: el logo del informe ya no se rompe solo dentro de un año | 27001 A.8.9 |
+| 9 | **Bajo.** `version` era un entero suelto: sin historial, sin quién aprobó, sin obsoletos | Estados borrador/vigente/obsoleto, `aprobado_por`, `aprobado_at`, `motivo_cambio`, `reemplaza_a`, y `aprobar_documento()` que en una transacción sube versión, pone vigente y deja obsoleta la anterior. El dueño aprueba diciendo qué cambió y conserva las versiones anteriores | ISO 9001 7.5 |
+
+**Además, la plataforma de autenticación estaba floja** y se endureció por API: clave mínima de 6 → 8,
+comprobación contra claves ya filtradas (HIBP) activada, aviso al correo si te cambian la clave, y
+límite de verificación bajado de 30 a 20 por hora (27001 A.5.17).
+
+**Dos bugs cazados durante el propio trabajo, antes de que los viera nadie:** las pruebas de
+seguridad que ya existían detectaron tres rutas nuevas mías mal etiquetadas; y `aprobar_documento()`
+fallaba con *"column reference estado is ambiguous"* porque los nombres de salida chocaban con las
+columnas de la tabla — se detectó ejecutándola contra la base real, no leyéndola.
+
+**Pruebas: 272 → 290.** Las nuevas son barreras de regresión, no adorno: si alguien crea una ruta sin
+proteger, recibe un `company_id` sin comprobar acceso, olvida el cupo en una ruta cara, quita una
+cabecera, vuelve a confiar en el tipo declarado del archivo o rompe el consentimiento previo, la
+prueba se cae.
+
+**Dónde queda 8X frente a una certificación 27001:** controles técnicos ~70 %; sistema de gestión
+(políticas, análisis de riesgos, continuidad, gestión de proveedores) ~10 %, y esa parte pesa más de
+la mitad. Camino real a certificar: ~35 %. Pero para *vender* casi nunca piden el certificado: piden
+un cuestionario de seguridad, y con estas nueve correcciones ese cuestionario se responde sin mentir
+en una sola línea.
+
+
 ## Qué hay (mapa del código)
 
 | Capa | Dónde |

@@ -57,5 +57,9 @@ export async function aprobarDocumento(id: string, porId: string, nombre: string
     p_id: id, p_por: porId, p_nombre: nombre, p_motivo: motivo || "Primera aprobación",
   });
   if (error) throw new Error(error.message);
-  return (Array.isArray(data) ? data[0] : data) as { id: string; version: number; estado: string };
+  // Las columnas de salida llevan prefijo r_ porque `estado`/`version`/`id` chocaban con las
+  // columnas de la tabla dentro del cuerpo de la función (Postgres no sabía a cuál se refería).
+  const f = (Array.isArray(data) ? data[0] : data) as { r_id: string; r_version: number; r_estado: string } | undefined;
+  if (!f) throw new Error("No pudimos aprobar el documento.");
+  return { id: f.r_id, version: f.r_version, estado: f.r_estado };
 }

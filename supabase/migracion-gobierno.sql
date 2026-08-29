@@ -103,28 +103,30 @@ exception when duplicate_object then null; end $$;
 create index if not exists deliverables_vigente_idx on deliverables (company_id, tipo, estado);
 
 -- Un solo documento VIGENTE por empresa y tipo: al aprobar uno, el anterior queda obsoleto.
-create or replace function aprobar_documento(p_id uuid, p_por uuid, p_nombre text, p_motivo text)
-returns table (id uuid, version int, estado text)
+drop function if exists aprobar_documento(uuid, uuid, text, text);
+create function aprobar_documento(p_id uuid, p_por uuid, p_nombre text, p_motivo text)
+returns table (r_id uuid, r_version int, r_estado text)
 language plpgsql security definer set search_path = public as $$
 declare v_company uuid; v_tipo text; v_ver int;
 begin
-  select company_id, tipo into v_company, v_tipo from deliverables where deliverables.id = p_id;
+  select d.company_id, d.tipo into v_company, v_tipo from deliverables d where d.id = p_id;
   if v_company is null then raise exception 'documento no encontrado'; end if;
 
-  update deliverables set estado = 'obsoleto'
-   where company_id = v_company and tipo = v_tipo and estado = 'vigente' and deliverables.id <> p_id;
+  -- La versión anterior no se borra: queda marcada como reemplazada (ISO 9001 7.5).
+  update deliverables d set estado = 'obsoleto'
+   where d.company_id = v_company and d.tipo = v_tipo and d.estado = 'vigente' and d.id <> p_id;
 
-  select coalesce(max(deliverables.version), 0) + 1 into v_ver
-    from deliverables where company_id = v_company and tipo = v_tipo and estado = 'obsoleto';
+  select coalesce(max(d.version), 0) + 1 into v_ver
+    from deliverables d where d.company_id = v_company and d.tipo = v_tipo and d.estado = 'obsoleto';
 
   return query
-    update deliverables
+    update deliverables d
        set estado = 'vigente', aprobado_por = p_por, aprobado_nombre = p_nombre,
            aprobado_at = now(), motivo_cambio = p_motivo,
-           version = greatest(coalesce(deliverables.version, 1), v_ver),
-           publicado = true, publicado_at = coalesce(publicado_at, now())
-     where deliverables.id = p_id
-    returning deliverables.id, deliverables.version, deliverables.estado;
+           version = greatest(coalesce(d.version, 1), v_ver),
+           publicado = true, publicado_at = coalesce(d.publicado_at, now())
+     where d.id = p_id
+    returning d.id, d.version, d.estado;
 end $$;
 revoke execute on function aprobar_documento(uuid, uuid, text, text) from public, anon, authenticated;
 grant execute on function aprobar_documento(uuid, uuid, text, text) to service_role;
