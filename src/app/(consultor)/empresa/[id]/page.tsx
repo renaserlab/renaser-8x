@@ -10,6 +10,8 @@ import { cumplimientoLegal } from "@/lib/biblioteca";
 import { tableroEmpresario } from "@/lib/tablero";
 import { Franja, Lectura } from "@/components/base/Franja";
 import { AdministrarEmpresa } from "@/components/consultor/AdministrarEmpresa";
+import { coberturaSesion } from "@/lib/rules/cobertura";
+import { TIPO_SESION } from "@/lib/textos";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +41,7 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
     sb.from("companies").select("*").eq("id", id).single(),
     sb.from("diagnoses").select("pilar,estado,resumen").eq("company_id", id),
     sb.from("participants").select("id,nombre,puesto,rol,token_expira_at,token_revocado_at,token_canjeado_at").eq("company_id", id).order("created_at"),
-    sb.from("interview_sessions").select("id,tipo,estado,participant_id").eq("company_id", id),
+    sb.from("interview_sessions").select("id,tipo,estado,participant_id,bloques_cubiertos").eq("company_id", id),
     sb.from("company_stats").select("*").eq("company_id", id).maybeSingle(),
     tokensUsados(id),
     tableroEmpresario(id),
@@ -157,6 +159,77 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
           </details>
         </div>
       </section>
+
+      {/* SEGUIMIENTO DE LA CONVERSACIÓN: cómo va el cliente, qué falta y DÓNDE PROFUNDIZAR */}
+      {await (async () => {
+        const [{ data: respuestas }, { data: abiertas }] = await Promise.all([
+          sb.from("interview_responses").select("session_id,bloque,pregunta,respuesta").in("session_id", (sesiones ?? []).map((s) => s.id)),
+          sb.from("interview_responses").select("session_id,pregunta").in("session_id", (sesiones ?? []).map((s) => s.id)).is("respuesta", null),
+        ]);
+        const porSesion = new Map<string, { bloque: string | null; respuesta: string | null }[]>();
+        for (const r of respuestas ?? []) {
+          if (!porSesion.has(r.session_id)) porSesion.set(r.session_id, []);
+          porSesion.get(r.session_id)!.push(r);
+        }
+        const abiertaPor = new Map((abiertas ?? []).map((a) => [a.session_id, a.pregunta]));
+        const SUFICIENCIA = 5;
+        const flacos = ["personas", "procesos", "producto", "marketing"]
+          .map((p) => ({ pilar: p, confirmadas: conteo[p]?.confirmadas ?? 0 }))
+          .filter((x) => x.confirmadas < SUFICIENCIA);
+        const conSesiones = (sesiones ?? []).length > 0;
+        if (!conSesiones) return null;
+        return (
+          <section className="panel p-5 mb-4">
+            <p className="t-etiqueta mb-3">Seguimiento de la conversación</p>
+            <div className="flex flex-col gap-4">
+              {(sesiones ?? []).map((s) => {
+                const resp = porSesion.get(s.id) ?? [];
+                const contestadas = resp.filter((r) => r.respuesta !== null);
+                const cob = coberturaSesion(s.tipo, contestadas, ((s as unknown as { bloques_cubiertos?: string[] }).bloques_cubiertos ?? []) as string[]);
+                const abierta = abiertaPor.get(s.id);
+                const faltan = cob.areas.filter((a) => !a.cubierta);
+                return (
+                  <div key={s.id} style={{ borderTop: "1px solid var(--linea)", paddingTop: 12 }}>
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                      <span className="t-dato" style={{ fontWeight: 600 }}>{TIPO_SESION[s.tipo] ?? s.tipo}</span>
+                      <span className="t-dato" style={{ color: "var(--grafito)" }}>{contestadas.length} respondidas · {cob.areas.length ? `${cob.areas.filter((a) => a.cubierta).length} de ${cob.areas.length} áreas` : s.estado}</span>
+                    </div>
+                    {cob.areas.length > 0 && (
+                      <div className="flex items-center mt-2" aria-hidden="true">
+                        {cob.areas.map((a, i) => (
+                          <span key={a.clave} className="flex items-center" style={{ flex: i === cob.areas.length - 1 ? "none" : 1, minWidth: 0 }}>
+                            <span title={a.nombre} style={{ width: 11, height: 11, borderRadius: "50%", flex: "none", background: a.cubierta ? "var(--confirmado)" : "var(--papel)", border: `2px solid ${a.cubierta ? "var(--confirmado)" : "var(--linea)"}` }} />
+                            {i < cob.areas.length - 1 && <span style={{ height: 2, flex: 1, background: a.cubierta ? "var(--confirmado)" : "var(--linea)" }} />}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {abierta && <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>Parado en: «{abierta.slice(0, 90)}{abierta.length > 90 ? "…" : ""}»</p>}
+                    {faltan.length > 0 && (
+                      <p className="t-dato mt-1" style={{ color: "var(--grafito)" }}>
+                        Falta cubrir: <span style={{ color: "var(--tinta)", fontWeight: 550 }}>{faltan.map((f) => f.nombre).join(" · ")}</span>
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            {/* DÓNDE PROFUNDIZAR: la evidencia manda — pilares bajo el piso de suficiencia */}
+            {flacos.length > 0 && (
+              <div className="mt-4 p-4" style={{ background: "var(--suave)", borderRadius: "var(--radio)" }}>
+                <p className="t-etiqueta mb-2">Dónde profundizar</p>
+                {flacos.map((f) => (
+                  <p key={f.pilar} className="t-dato" style={{ marginBottom: 4 }}>
+                    <Link href={`/empresa/${id}/entrevista`} style={{ fontWeight: 600, textDecoration: "underline" }}>{PILAR[f.pilar]}</Link>
+                    <span style={{ color: "var(--grafito)" }}> — {f.confirmadas} de {SUFICIENCIA} afirmaciones confirmadas: el diagnóstico de esta área pisa débil.</span>
+                  </p>
+                ))}
+                <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>Entra a Entrevista y pregunta ahí, o pide al dueño completar esa área en su portal.</p>
+              </div>
+            )}
+          </section>
+        );
+      })()}
 
       {/* FILA 3 · Acciones */}
       <section className="panel p-5 mb-4">

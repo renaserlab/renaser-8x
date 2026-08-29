@@ -7,7 +7,7 @@ for (;;) {
   try {
     const { data: malos } = await sb
       .from("jobs")
-      .select("id,tipo,estado,error,created_at,company_id, companies(nombre)")
+      .select("id,tipo,estado,error,created_at,lease_expira_at,company_id, companies(nombre)")
       .or("estado.eq.fallido,estado.eq.pendiente,estado.eq.corriendo")
       .gte("created_at", inicio)
       .order("created_at", { ascending: false })
@@ -30,9 +30,14 @@ for (;;) {
           vistos.add(clave);
           console.log(`ATASCADO pendiente ${edad}s · ${emp} · ${j.tipo} (el worker no lo toma)`);
         }
-      } else if (j.estado === "corriendo" && edad > 420) {
-        vistos.add(clave);
-        console.log(`LENTO corriendo ${edad}s · ${emp} · ${j.tipo}`);
+      } else if (j.estado === "corriendo") {
+        // ZOMBIE REAL = lease vencido hace >60s (el latido murió y el segador aún no pasó).
+        // Un trabajo con lease vivo está latiendo: edad total NO es señal (reintentos suman).
+        const leaseVencidoHace = j.lease_expira_at ? Math.round((ahora - new Date(j.lease_expira_at).getTime()) / 1000) : null;
+        if (leaseVencidoHace != null && leaseVencidoHace > 60) {
+          vistos.add(clave);
+          console.log(`ZOMBIE · ${emp} · ${j.tipo} · lease vencido hace ${leaseVencidoHace}s (sin latido)`);
+        }
       }
     }
   } catch (e) {
