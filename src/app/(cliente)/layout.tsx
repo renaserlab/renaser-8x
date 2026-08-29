@@ -16,14 +16,14 @@ export default async function LayoutCliente({ children }: { children: React.Reac
     companyId = await empresaDelCliente(u.id);
   }
   const empresa = companyId ? (await supabaseAdmin().from("companies").select("nombre").eq("id", companyId).single()).data : null;
+  // CINCO DESTINOS, NO OCHO (pedido de Kelin: "que no salga lo mismo en todos lados").
+  // Conversar sale de la barra: es la ACCIÓN principal (el botón de Inicio), no un lugar.
+  // Confirmar y Resultados viven dentro de Mi empresa; Procesos entra como destino propio.
   const enlaces = [
     ["/portal", "Inicio"],
     ["/portal/hoy", "Mi empresa"],
-    ["/portal/activos", "Tu información"],
-    ["/portal/conversacion", "Conversar"],
-    ["/portal/validar", "Confirmar"],
     ["/portal/procesos", "Procesos"],
-    ["/portal/resultados", "Resultados"],
+    ["/portal/activos", "Tus documentos"],
     ["/portal/plan", "Plan"],
   ];
   return (

@@ -33,9 +33,11 @@ const POR_PILAR: Record<string, string[]> = {
  * A 2 trabajadores no se le piden 100 procesos: la vara crece con la empresa.
  */
 export function bibliotecaEsperada(personas: number | null | undefined): string[] {
-  const chicas = ["personas.funciones", "personas.plan_personal", "procesos.politicas", "procesos.mapa_procesos"];
-  const medianas = [...chicas, "personas.organigrama", "personas.cultura", "personas.onboarding", "producto.calidad", "marketing.proceso_comercial", "direccion.estrategia"];
-  const grandes = [...medianas, "personas.reglamento", "personas.evaluacion", "procesos.indicadores", "personas.seleccion", "direccion.plan_empresarial"];
+  // Proporcionalidad: incidencias entra temprano (todo negocio tiene problemas repetidos y de ahí
+  // salen sus KPIs); disciplina, habilidades, controles y mérito entran cuando hay equipo que dirigir.
+  const chicas = ["personas.funciones", "personas.plan_personal", "procesos.politicas", "procesos.mapa_procesos", "procesos.incidencias"];
+  const medianas = [...chicas, "personas.organigrama", "personas.cultura", "personas.onboarding", "personas.disciplina", "personas.habilidades", "producto.calidad", "marketing.proceso_comercial", "direccion.estrategia"];
+  const grandes = [...medianas, "personas.reglamento", "personas.evaluacion", "personas.meritos", "procesos.indicadores", "procesos.controles", "personas.seleccion", "direccion.plan_empresarial"];
   const n = personas == null || Number.isNaN(personas) ? null : personas;
   const lista = n == null ? medianas : n <= 3 ? chicas : n <= 10 ? medianas : grandes;
   return lista.filter((c) => CLAVES_VALIDAS.has(c));

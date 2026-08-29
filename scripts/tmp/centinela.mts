@@ -25,7 +25,7 @@ for (;;) {
         // Umbral por tipo: lo que el USUARIO espera mirando la pantalla grita rápido;
         // el trabajo pesado de fondo (diagnóstico, planes) se turna y eso es normal.
         const interactivo = ["entrevista_siguiente", "transcribir_respuesta", "extraer"].includes(j.tipo);
-        const limite = interactivo ? 90 : 300;
+        const limite = interactivo ? 90 : 600; // pesados: con conversación activa, esperar turno 5-10 min es el reparto justo trabajando
         if (edad > limite) {
           vistos.add(clave);
           console.log(`ATASCADO pendiente ${edad}s · ${emp} · ${j.tipo} (el worker no lo toma)`);

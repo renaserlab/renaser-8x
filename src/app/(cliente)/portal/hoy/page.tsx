@@ -9,6 +9,9 @@ import { ESTADO_PILAR, PILAR_CLIENTE, fechaMes } from "@/lib/textos";
 import { TarjetaHallazgo } from "@/components/cliente/TarjetaHallazgo";
 import { VerMasLateral } from "@/components/base/VerMasLateral";
 import { MapaMental } from "@/components/cliente/MapaMental";
+import { DatosEmpresa } from "@/components/cliente/DatosEmpresa";
+import { BLOQUES_ACTIVOS } from "@/lib/activos";
+import { bloquesSinCubrir } from "@/lib/rules/cobertura";
 
 const soles = (n: number) => `S/${Math.round(n).toLocaleString("es-PE")}`;
 
@@ -88,10 +91,37 @@ function ArbolVentas({ metricas }: { metricas: Metrica[] }) {
 export default async function Hoy() {
   const c = await contextoPortal();
   if (!c.companyId) return <p className="t-cuerpo medida">{c.queFalta}</p>;
-  const [hoy, { data: metricasRaw }] = await Promise.all([
+  const sbHoy = supabaseAdmin();
+  const [hoy, { data: metricasRaw }, { data: empresaFila }, { data: assets }, { data: sesiones }] = await Promise.all([
     empresaHoy(c.companyId),
-    supabaseAdmin().from("company_metricas").select("clave,periodo,valor,estado").eq("company_id", c.companyId).limit(80),
+    sbHoy.from("company_metricas").select("clave,periodo,valor,estado").eq("company_id", c.companyId).limit(80),
+    sbHoy.from("companies").select("nombre,ficha").eq("id", c.companyId).single(),
+    sbHoy.from("company_assets").select("clave,estado").eq("company_id", c.companyId),
+    sbHoy.from("interview_sessions").select("id,tipo,bloques_cubiertos").eq("company_id", c.companyId),
   ]);
+  const fichaEmpresa = ((empresaFila?.ficha ?? {}) as Record<string, string>);
+  // Avance por bloque de la biblioteca: cuántos documentos de cada área ya tienen material.
+  const LISTOS = new Set(["lo_tengo", "incompleto", "contado", "construido", "borrador_generado", "construyendo", "en_uso"]);
+  const estadoPorClave = new Map((assets ?? []).map((a) => [a.clave, a.estado ?? ""]));
+  const bloquesActivos = BLOQUES_ACTIVOS.map((b) => ({
+    nombre: b.nombre,
+    total: b.activos.length,
+    listos: b.activos.filter((a) => LISTOS.has(estadoPorClave.get(`${b.clave}.${a.clave}`) ?? "")).length,
+    href: "/portal/activos",
+  }));
+  // Lo que falta levantar en la conversación: bloques del banco aún sin cubrir, por su nombre.
+  const respondidasTodas = await sbHoy
+    .from("interview_responses")
+    .select("bloque,session_id")
+    .in("session_id", (sesiones ?? []).map((s) => s.id))
+    .not("respuesta", "is", null);
+  const faltaLevantar = (sesiones ?? []).flatMap((s) =>
+    bloquesSinCubrir(
+      s.tipo,
+      (respondidasTodas.data ?? []).filter((r) => r.session_id === s.id),
+      ((s as { bloques_cubiertos?: string[] }).bloques_cubiertos ?? []) as string[]
+    ).map((b) => b.nombre)
+  ).filter((v, i, a) => a.indexOf(v) === i);
   const perdida = proyeccionPerdida((metricasRaw ?? []) as Metrica[]);
   const caminos = caminosDesdeHallazgos([hoy.restriccion, ...hoy.noVes, ...hoy.secundarias].filter(Boolean) as HallazgoHoy[]);
   const altos = hoy.noVes.filter((h) => h.impacto === "alto" && h.id !== hoy.restriccion?.id);
@@ -111,16 +141,14 @@ export default async function Hoy() {
 
   return (
     <div className="flex flex-col gap-12">
-      <header>
-        <h1 className="t-titulo medida">{c.empresa?.nombre}</h1>
-        <p className="t-cuerpo mt-3 medida" style={{ color: "var(--grafito)" }}>
-          Lo que entendimos hasta ahora, con su fuente.
-          {hoy.stats.porValidar > 0 && (
-            <> <Link href="/portal/validar" style={{ textDecoration: "underline" }}>{hoy.stats.porValidar} punto(s) esperan tu confirmación</Link>.</>
-          )}
-          {" "}<Link href="/portal/resultados" style={{ textDecoration: "underline" }}>Ver el informe completo</Link>.
+      {/* LOS DATOS DE TU EMPRESA con su botón de editar al lado, y plegado lo levantado y lo que falta */}
+      <DatosEmpresa nombre={c.empresa?.nombre ?? "Tu empresa"} ficha={fichaEmpresa} bloques={bloquesActivos} faltaLevantar={faltaLevantar} />
+
+      {hoy.stats.porValidar > 0 && (
+        <p className="t-dato" style={{ color: "var(--grafito)", marginTop: -28 }}>
+          <Link href="/portal/validar" style={{ textDecoration: "underline", color: "var(--marca)" }}>{hoy.stats.porValidar} punto(s) esperan tu confirmación</Link> — con eso la foto se afina.
         </p>
-      </header>
+      )}
 
       {/* EL DINERO COMO HÉROE: una afirmación en grande, no una cajita más. */}
       {perdida.fugas.length > 0 && (

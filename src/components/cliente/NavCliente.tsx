@@ -11,25 +11,26 @@ import { usePathname } from "next/navigation";
 
 const ICONOS: Record<string, React.ReactNode> = {
   inicio: <path d="M3 10.5 12 3l9 7.5M5.5 9.5V21h13V9.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />,
-  conversar: <path d="M4 5h16v11H9l-5 4V5Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />,
   empresa: <path d="M4 21V9l8-5 8 5v12M9 21v-6h6v6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />,
-  informacion: <path d="M4 6h7l2 2h7v12H4V6Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />,
+  procesos: <path d="M4 6h6M14 6h6M4 18h6M14 18h6M7 6v12M17 6v12M10 12h4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />,
+  documentos: <path d="M6 3h8l4 4v14H6V3ZM14 3v4h4M9 12h6M9 16h6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />,
   plan: <path d="M6 3v18M6 4h12l-2.5 3.5L18 11H6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />,
 };
 
+// Cinco destinos: cada uno es un LUGAR distinto, ninguno repite lo del otro.
 const PRINCIPALES: [string, string, string][] = [
   ["/portal", "Inicio", "inicio"],
-  ["/portal/conversacion", "Conversar", "conversar"],
   ["/portal/hoy", "Mi empresa", "empresa"],
-  ["/portal/activos", "Tu información", "informacion"],
+  ["/portal/procesos", "Procesos", "procesos"],
+  ["/portal/activos", "Tus documentos", "documentos"],
   ["/portal/plan", "Plan", "plan"],
 ];
 
 /** A qué destino principal pertenece cada ruta secundaria (para marcar el activo). */
 const GRUPO: [string, string][] = [
-  ["/portal/validar", "/portal/conversacion"],
+  ["/portal/conversacion", "/portal/hoy"],
+  ["/portal/validar", "/portal/hoy"],
   ["/portal/resultados", "/portal/hoy"],
-  ["/portal/procesos", "/portal/activos"],
   ["/portal/documentos", "/portal/activos"],
 ];
 
