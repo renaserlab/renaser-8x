@@ -213,6 +213,54 @@ al terminar pase lo que pase. Verifica lo que las pruebas en memoria no alcanzan
 `congelar_medicion()` numera y reemplaza como debe **en Postgres**. Pruebas: **323 → 348**.
 
 
+### 16 · La prueba de que se hizo, y los números que salen de lo que falla (30-08-2026)
+
+Puntos 5 y 6: los que cierran el ciclo.
+
+**Evidencia de implementación.** Las acciones del plan traían escrito qué evidencia haría falta
+(*«listas de chequeo firmadas por lote despachado»*) y **no guardaban nada**: las nueve que existían
+estaban todas en pendiente y ningún documento tenía implementación registrada. Ahora una acción se
+cierra con foto, PDF o al menos una nota, y queda con quién la verificó y cuándo. La ruta **rechaza**
+darla por verificada sin ninguna prueba — no es un aviso de la interfaz que se pueda saltar llamando
+a la API. Una foto del celular basta: es lo que un dueño puede dar de verdad.
+
+Los archivos se verifican **por sus bytes**, no por lo que declara el navegador — el mismo
+endurecimiento del logo, añadido a `lib/archivos.ts` en vez de duplicado. Entra HEIC porque el
+celular peruano lo manda sin avisar; el SVG no entra porque puede llevar script.
+
+**Incidencias → números.** El agente **medidor** lee lo que sale mal seguido, los hallazgos críticos
+y los indicadores que el plan ya nombró, y propone como máximo **seis**. Reglas que lo hacen útil y
+no un generador de tableros: solo sale de lo que la empresa **contó** (sin material devuelve lista
+vacía, no los típicos del rubro); el dueño tiene que poder contarlo **con lo que ya tiene** —si
+medirlo exige un sistema que no tiene, es una tarea más, no una medición—; nada de vanidad; contar
+hechos antes que estimar porcentajes; y prohibido inventar una meta redonda porque suena bien.
+
+Nacen **propuestos**: un número que el dueño no eligió no lo va a contar, y un indicador que nadie
+cuenta es peor que ninguno — aparenta control sin darlo. Al adoptarlo, sus valores viven en
+`company_metricas` con su clave, así que se congelan en los cortes junto a los nueve vitales.
+
+Probado contra datos reales (`npm run prueba:indicadores`): cuatro indicadores con instrucciones
+ejecutables mañana — *«contando en el cuaderno de recepción de almacén»*, *«por WhatsApp o guía de
+remisión»*.
+
+**El bug de fondo que apareció en el camino.** Google dejó de devolver 503 y pasó a algo peor:
+**200 tras 111 segundos** en una petición trivial, mientras el respaldo contestaba en 3. El
+cortacircuitos solo contaba los 503, así que un modelo lentísimo **nunca lo disparaba** — no fallaba,
+solo era inservible. Tres cambios: agotar el tiempo cuenta como caída y salta al respaldo (una sola
+vez, sin consumir el intento); el principal tiene su propio plazo (`AI_TIMEOUT_PRINCIPAL_MS`, 15 s)
+y solo cuando hay respaldo al que saltar; y el respaldo conserva el plazo completo, porque después
+de él no hay a quién saltar. **Primera pregunta: 34 s → 8,4 s.**
+
+El registro de errores construido el día anterior se ganó su sitio: dijo sin adivinar que el HTTP 500
+del control de calidad era *«No hay pregunta abierta en esta sesión»* — consecuencia de la lentitud,
+no un bug nuevo. Y el propio control de calidad tenía un **falso negativo**: daba por genérica una
+pregunta que decía *«el día que decidiste abrir Doña Prueba»* porque buscaba una lista fija de
+palabras sin el nombre de la empresa. Un falso negativo cuesta tanto como un fallo real: hace dudar
+de lo que sí funciona.
+
+Pruebas: **348 → 377**.
+
+
 ## Qué hay (mapa del código)
 
 | Capa | Dónde |
