@@ -170,6 +170,49 @@ cortes con números en vez de texto libre, cierre de acciones con evidencia real
 convertidas en KPIs.
 
 
+### 15 · La línea base y los cortes: «¿funcionó?» deja de ser incontestable (30-08-2026)
+
+Hasta hoy la pregunta **no tenía respuesta posible**: los diagnósticos eran una foto única (4 por
+empresa, todos del mismo día, nunca repetidos) y los cortes de control guardaban sus indicadores como
+**texto libre**, sin conexión con los números. Aunque se hiciera un corte, nada podía calcular si el
+indicador se movió. Y nunca se hizo ninguno: 0 registros.
+
+**Mediciones.** Una medición es una foto **congelada** de los nueve vitales con su fecha. La primera
+es la línea base —el «antes»—; cada corte posterior es un «después» que se compara contra ella. Se
+congelan también los derivados para que la historia siga siendo honesta aunque cambie la fórmula.
+Índice único: **una sola línea base por empresa** (si hubiera dos, el «antes» dejaría de significar
+algo). `congelar_medicion()` numera los cortes dentro de la función, así dos cortes en paralelo no
+pueden salir con el mismo número.
+
+**Dirección de mejora.** Cada vital sabe hacia dónde es mejorar: sin eso, bajar la deuda se leería
+como retroceso y subir el gasto fijo como avance. El precio del producto estrella queda **neutro** a
+propósito — subirlo puede ser sanear el margen o espantar clientes, y eso no lo decide una flecha.
+
+**Lo que no se finge.** Un vital que nunca se midió no aparece: es un vacío, no un retroceso. Si el
+corte no midió algo que la base sí, se dice «esta vez no se midió» en lugar de contarlo como caída a
+cero. De un punto de partida en cero no se calcula porcentaje. Y el titular dice *«el negocio deja
+S/3,800 más al mes que cuando empezamos»*, nunca *«gracias a nosotros»*: no se promete una
+causalidad que no se puede probar.
+
+**Para el dueño** (`/portal/numeros`): con menos de 5 de 9 números ni siquiera se ofrece fijar la
+línea base, porque con dos números no sirve de punto de partida. Con línea base y un corte, arriba de
+todo: el titular en soles, cuántos mejoraron y empeoraron, y qué se movió en cada uno — **lo que
+necesita atención primero**.
+
+**Para la consultora:** bloque «¿Mejoró?» en el panorama de cada empresa con los tres números que
+empeoraron, y dos avisos nuevos en la bandeja — «ya se puede fijar el punto de partida» al llegar a
+5 de 9, y «toca medir: N días sin corte» pasado un mes.
+
+**El corte cualitativo no se tira.** Lo que ya existía —qué se hizo, qué se trabó, qué regresó— se
+queda; le faltaban los números. Ahora `/close` congela además una medición y las enlaza por
+`medicion_id`.
+
+**Prueba del ciclo completo contra la base real** (`npm run prueba:medicion`): crea su empresa, pone
+números, fija la base, simula tres meses de trabajo, corta y verifica el veredicto — y la borra
+al terminar pase lo que pase. Verifica lo que las pruebas en memoria no alcanzan: que
+`congelar_medicion()` numera y reemplaza como debe **en Postgres**. Pruebas: **323 → 348**.
+
+
 ## Qué hay (mapa del código)
 
 | Capa | Dónde |
