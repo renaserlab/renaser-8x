@@ -131,3 +131,18 @@ describe("agotar el tiempo también es caer (30-08-2026)", () => {
     expect(src, "si el respaldo también agota el tiempo hay que lanzar, no seguir girando").toContain("throw new AIProviderDownError(mensaje)");
   });
 });
+
+describe("paciencia acotada con el modelo principal", () => {
+  it("al principal se le da menos cuerda que al respaldo cuando hay a quién saltar", async () => {
+    const { readFileSync } = await import("fs");
+    const src = readFileSync("src/lib/ai/gemini.ts", "utf8");
+    expect(src).toContain("TIMEOUT_PRINCIPAL_MS");
+    expect(src, "el plazo corto solo aplica si hay respaldo").toMatch(/modeloActivo === MODEL && MODELO_RESPALDO/);
+  });
+
+  it("el plazo corto nunca supera al general: subir uno no puede alargar el otro sin querer", async () => {
+    const { readFileSync } = await import("fs");
+    const src = readFileSync("src/lib/ai/gemini.ts", "utf8");
+    expect(src).toContain("Math.min(TIMEOUT_PRINCIPAL_MS, TIMEOUT_MS)");
+  });
+});

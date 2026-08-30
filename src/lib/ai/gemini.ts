@@ -12,6 +12,14 @@ import { AIProviderDownError, AIRateLimitError, AIValidationError, type AIProvid
 const MODEL = (process.env.AI_MODEL ?? "gemini-3.7-flash").trim();
 const TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS ?? 120_000);
 /**
+ * PACIENCIA CON EL PRINCIPAL, cuando hay respaldo. El 30-08-2026 Google dejó de fallar y pasó a
+ * algo peor: responder 200 tras 111 SEGUNDOS en una petición trivial, mientras el respaldo
+ * contestaba en 3. Esperar dos minutos a un modelo que el respaldo va a ganar por goleada no tiene
+ * sentido: si el principal no contesta en este plazo, se salta. Sin respaldo configurado se usa el
+ * plazo completo, porque ahí esperar es la única opción.
+ */
+const TIMEOUT_PRINCIPAL_MS = Number(process.env.AI_TIMEOUT_PRINCIPAL_MS ?? 25_000);
+/**
  * Gemini 3.x descuenta los tokens de razonamiento de maxOutputTokens. `maxTokens` del contrato es presupuesto
  * de RESPUESTA, así que se suma un margen para el razonamiento y se acota su nivel (verificado: con 600 tokens
  * y nivel por defecto el contrastador gastaba 572 pensando y el JSON salía truncado).
@@ -127,7 +135,13 @@ export class GeminiProvider implements AIProvider {
           method: "POST",
           headers: { "Content-Type": "application/json", "x-goog-api-key": this.key },
           body: JSON.stringify(body),
-          signal: AbortSignal.timeout(TIMEOUT_MS),
+          // Al principal se le da menos cuerda que al respaldo: si tarda más, el respaldo ya habría
+          // contestado. El respaldo sí se espera hasta el final — no hay a quién saltar después.
+          signal: AbortSignal.timeout(
+            modeloActivo === MODEL && MODELO_RESPALDO && MODELO_RESPALDO !== MODEL && !saltoPorTiempo
+              ? Math.min(TIMEOUT_PRINCIPAL_MS, TIMEOUT_MS)
+              : TIMEOUT_MS
+          ),
         });
       } catch (e: unknown) {
         // AGOTAR EL TIEMPO TAMBIÉN ES CAER (30-08-2026). El cortacircuitos solo contaba los 503, y
