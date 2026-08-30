@@ -80,7 +80,11 @@ const primeraPregunta = await paso("Primera pregunta en <30s", 30000, async () =
 });
 await paso("Calidad: personalizada, sin jerga, con ancla", 100, async () => {
   const p = String(primeraPregunta ?? "");
-  const personalizada = /poller|brasa|negocio|QA/i.test(p);
+  // Se comprueba contra el nombre REAL de la empresa, no contra una lista fija de palabras: el
+  // 30-08-2026 la pregunta decía "el día que decidiste abrir Doña Prueba" —perfectamente
+  // personalizada— y el chequeo la daba por genérica porque no contenía "pollería". Un falso
+  // negativo en el control de calidad es tan caro como un fallo real: hace dudar de lo que funciona.
+  const personalizada = /doña prueba|poller|brasa|negocio/i.test(p);
   const sinJerga = !/benchmark|kpi|okr|stakeholder|matriz|evaluaci[oó]n comparativa|mecanismos/i.test(p);
   return [personalizada && sinJerga, personalizada ? (sinJerga ? "habla del negocio, sin tecnicismos" : "TIENE JERGA") : "genérica, no menciona el negocio"];
 });
