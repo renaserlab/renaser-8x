@@ -39,8 +39,16 @@ REGLAS:
 
 METRICAS (clave "metricas", opcional): ademas de las afirmaciones, extrae los NUMEROS del negocio que
 el texto realmente contiene, para el arbol de resultados:
-- claves estandar: venta_mes, cobrado_mes, ganancia_mes, deuda_clientes, clientes_activos,
-  venta_epoca_dorada; otras en snake_case si el numero es claramente otro (merma_semana, citas_perdidas_10).
+- CLAVES OBLIGATORIAS (los nueve signos vitales). Si el numero es uno de estos, usa EXACTAMENTE
+  esta clave y ninguna variante propia: venta_mes (lo que vendio en total), ganancia_mes (lo que le
+  quedo libre), caja_hoy (efectivo mas banco hoy), gasto_fijo_mes (lo que paga si o si),
+  precio_producto_estrella, costo_producto_estrella, conversion_de_cada_10 (de cada 10 interesados
+  cuantos pagan), deuda_clientes (lo que le deben), deuda_propia (lo que el debe).
+  NO inventes variantes como utilidad_mes, ganancia_neta_mes ni ganancia_mes_western_union: si el
+  numero corresponde a uno de los nueve, va con su clave exacta aunque el negocio lo llame distinto.
+  Si el dueno desglosa por linea o local (por ejemplo la ganancia de un servicio suelto), esa cifra
+  parcial va en su propia clave descriptiva y NO en la del vital: el vital es siempre el total.
+- otras claves en snake_case si el numero es claramente otro (merma_semana, citas_perdidas_10).
 - periodo: "YYYY-MM" si se sabe el mes ("el mes pasado" respecto a la fecha del contexto), "actual"
   si es un dato vigente sin mes, "epoca_dorada" si habla de su mejor epoca pasada.
 - valor: el numero en soles o unidades tal como lo dijo ("unos 8 mil" -> 8000). "De cada 10, 3" en una

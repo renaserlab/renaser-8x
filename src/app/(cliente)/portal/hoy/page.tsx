@@ -10,6 +10,8 @@ import { TarjetaHallazgo } from "@/components/cliente/TarjetaHallazgo";
 import { VerMasLateral } from "@/components/base/VerMasLateral";
 import { MapaMental } from "@/components/cliente/MapaMental";
 import { DatosEmpresa } from "@/components/cliente/DatosEmpresa";
+import { TarjetaNumeros } from "@/components/cliente/TarjetaNumeros";
+import { radiografia, derivados, type Metrica as MetricaVital } from "@/lib/metricas";
 import { rastroDeEmpresa } from "@/lib/auditoria";
 import { BLOQUES_ACTIVOS } from "@/lib/activos";
 import { bloquesSinCubrir } from "@/lib/rules/cobertura";
@@ -125,6 +127,9 @@ export default async function Hoy() {
     ).map((b) => b.nombre)
   ).filter((v, i, a) => a.indexOf(v) === i);
   const perdida = proyeccionPerdida((metricasRaw ?? []) as Metrica[]);
+  // LOS NUEVE NÚMEROS: sin ellos el diagnóstico es opinión, así que se dice cuántos faltan.
+  const radio = radiografia((metricasRaw ?? []) as MetricaVital[]);
+  const deriv = derivados((metricasRaw ?? []) as MetricaVital[]);
   const caminos = caminosDesdeHallazgos([hoy.restriccion, ...hoy.noVes, ...hoy.secundarias].filter(Boolean) as HallazgoHoy[]);
   const altos = hoy.noVes.filter((h) => h.impacto === "alto" && h.id !== hoy.restriccion?.id);
   const resto = hoy.noVes.filter((h) => h.impacto !== "alto" && h.id !== hoy.restriccion?.id);
@@ -144,6 +149,8 @@ export default async function Hoy() {
   return (
     <div className="flex flex-col gap-12">
       {/* LOS DATOS DE TU EMPRESA con su botón de editar al lado, y plegado lo levantado y lo que falta */}
+      <TarjetaNumeros radiografia={radio} margen={deriv.margen} diasAguante={deriv.diasAguante} />
+
       <DatosEmpresa nombre={c.empresa?.nombre ?? "Tu empresa"} ficha={fichaEmpresa} bloques={bloquesActivos} faltaLevantar={faltaLevantar} rastro={await rastroDeEmpresa(c.companyId, 40)} />
 
       {hoy.stats.porValidar > 0 && (

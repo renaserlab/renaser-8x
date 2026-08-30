@@ -84,6 +84,7 @@ export default async function Bandeja() {
           <tr>
             <th>Empresa</th>
             <th>Etapa</th>
+            <th>Números</th>
             <th>Fuentes</th>
             <th>Definiciones</th>
             <th>Confirmadas</th>
@@ -100,6 +101,13 @@ export default async function Bandeja() {
                   <Link href={`/empresa/${e.id}`}>{e.nombre}</Link>
                 </td>
                 <td>{ETAPA[e.etapa] ?? e.etapa}</td>
+                {/* Los nueve vitales: sin ellos el diagnóstico es opinión. */}
+                <td className="t-dato" style={{ whiteSpace: "nowrap", color: !e.radiografia ? "var(--grafito)" : e.radiografia.completa ? "var(--confirmado)" : e.radiografia.faltan.length >= 5 ? "var(--contradicho)" : "var(--caducado)" }}>
+                  {e.radiografia ? `${e.radiografia.listos}/9` : "—"}
+                  {e.radiografia && e.radiografia.mesesConVenta > 0 && (
+                    <span style={{ color: "var(--grafito)" }}> · {e.radiografia.mesesConVenta} mes{e.radiografia.mesesConVenta === 1 ? "" : "es"}</span>
+                  )}
+                </td>
                 <td className="t-dato">{s?.fuentes ?? 0}</td>
                 <td className="t-dato">{s?.afirmaciones ?? 0}</td>
                 <td className="t-dato">{s?.confirmadas ?? 0}</td>

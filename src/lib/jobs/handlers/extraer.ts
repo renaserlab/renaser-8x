@@ -1,4 +1,5 @@
 import { PDFDocument } from "pdf-lib";
+import { normalizarMetrica } from "@/lib/metricas";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { correrExtractor } from "@/lib/ai/agents/extractor";
 import type { Adjunto, Segmento } from "@/lib/ai/provider";
@@ -51,8 +52,11 @@ type MetricaExtraida = { clave: string; periodo: string; valor: number | null; v
  *  Un dato verificado nunca se degrada a contado; uno contado sí se mejora a verificado. */
 async function guardarMetricas(sb: ReturnType<typeof supabaseAdmin>, companyId: string, metricas: MetricaExtraida[] | undefined, ref: { response_id?: string; source_id?: string; minEstado?: "verificado" }) {
   for (const m of metricas ?? []) {
-    const clave = m.clave.toLowerCase().replace(/[^a-z0-9_]/g, "_").slice(0, 60);
-    const periodo = /^\d{4}-\d{2}$/.test(m.periodo) ? m.periodo : m.periodo === "epoca_dorada" ? "epoca_dorada" : "actual";
+    // NORMALIZACIÓN (30-08-2026): la IA inventaba una clave distinta cada vez para el mismo número
+    // (`utilidad_mes`, `ganancia_neta_mes`, `ganancia_mes_western_union`), así que la radiografía
+    // nunca se cerraba: Qori tenía 18 números y solo 3 de los nueve vitales. Aquí se lleva a la
+    // clave canónica antes de guardar, y `venta_epoca_dorada` cae en venta_mes/epoca_dorada.
+    const { clave, periodo } = normalizarMetrica(m.clave, m.periodo);
     const estado = ref.minEstado === "verificado" && m.estado !== "sin_dato" ? "verificado" : m.estado;
     const { data: prev } = await sb.from("company_metricas").select("id,estado").eq("company_id", companyId).eq("clave", clave).eq("periodo", periodo).maybeSingle();
     if (prev?.estado === "verificado" && estado !== "verificado") continue;

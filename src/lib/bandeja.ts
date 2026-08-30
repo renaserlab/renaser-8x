@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "./supabase/admin";
 import { levantamientoCompleto, diagnosticoListo, type Suficiencia } from "./rules/suficiencia";
+import { radiografia, type Metrica as MetricaVital, type Radiografia } from "./metricas";
 
 export type ItemBandeja = { tipo: string; titulo: string; detalle: string; company_id: string; empresa: string; href: string; urgencia: 1 | 2 | 3 };
 
@@ -19,10 +20,19 @@ export async function suficienciaDeEmpresa(companyId: string): Promise<Suficienc
 /** Qué requiere atención hoy. Lee de company_stats (refrescada cada minuto) y, si está vacía, cuenta directo. Capítulo 33 y 37. */
 export async function bandeja() {
   const sb = supabaseAdmin();
-  const [{ data: empresas }, { data: statsRows }] = await Promise.all([
+  const [{ data: empresas }, { data: statsRows }, { data: metricasRows }] = await Promise.all([
     sb.from("companies").select("id,nombre,etapa,estado_admision,created_at").order("created_at", { ascending: false }),
     sb.from("company_stats").select("*"),
+    // Los nueve números de TODAS las empresas de una sola vez: una consulta, no una por empresa.
+    sb.from("company_metricas").select("company_id,clave,periodo,valor,estado").limit(4000),
   ]);
+  const metricasPor = new Map<string, MetricaVital[]>();
+  for (const m of metricasRows ?? []) {
+    const lista = metricasPor.get(m.company_id as string) ?? [];
+    lista.push(m as unknown as MetricaVital);
+    metricasPor.set(m.company_id as string, lista);
+  }
+  const radiografiaPor = new Map<string, Radiografia>();
   const statsPor = new Map((statsRows ?? []).map((s) => [s.company_id as string, s as Record<string, number | string>]));
   const items: ItemBandeja[] = [];
   const hoy = Date.now();
@@ -39,6 +49,18 @@ export async function bandeja() {
     if (Number(s.hallazgos_por_revisar) > 0) items.push({ tipo: "revisar", titulo: `${s.hallazgos_por_revisar} hallazgo(s) por revisar`, detalle: "Ningún hallazgo llega al cliente sin pasar por ti.", company_id: e.id, empresa: e.nombre, href: `${base}/diagnostico`, urgencia: 1 });
     if (Number(s.contradichas) > 0) items.push({ tipo: "contradicciones", titulo: `${s.contradichas} contradicción(es) sin resolver`, detalle: "El dueño las resuelve con tres botones.", company_id: e.id, empresa: e.nombre, href: `${base}/realidad?estado=contradicho`, urgencia: 2 });
     if (Number(s.frentes_vencidos) > 0) items.push({ tipo: "vencidos", titulo: `${s.frentes_vencidos} frente(s) vencido(s)`, detalle: "Lo que se traba dos semanas seguidas escala aquí.", company_id: e.id, empresa: e.nombre, href: `${base}/plan`, urgencia: 1 });
+
+    // LOS NUEVE NÚMEROS: pedido de Kelin — "como consultora debería ver cuánto le falta a mi cliente".
+    const radio = radiografia(metricasPor.get(e.id) ?? []);
+    radiografiaPor.set(e.id, radio);
+    if (radio.faltan.length > 0 && !["cerrada", "monitoreo"].includes(e.etapa)) {
+      items.push({
+        tipo: "numeros",
+        titulo: `Le faltan ${radio.faltan.length} de los 9 números`,
+        detalle: `Sin ellos el diagnóstico es opinión. Falta: ${radio.faltan.slice(0, 3).map((v) => v.nombre.toLowerCase()).join(", ")}${radio.faltan.length > 3 ? "…" : ""}`,
+        company_id: e.id, empresa: e.nombre, href: `${base}/realidad`, urgencia: radio.faltan.length >= 5 ? 2 : 3,
+      });
+    }
 
     if (["levantamiento", "contraste"].includes(e.etapa)) {
       const suf = await suficienciaDeEmpresa(e.id);
@@ -67,5 +89,12 @@ export async function bandeja() {
     if (["levantamiento", "contraste"].includes(e.etapa) && dias >= DIAS_TRABADA) items.push({ tipo: "trabada", titulo: `Sin actividad hace ${dias} días`, detalle: "Riesgo 1: el cliente no llena nada. Llámalo o llena por él.", company_id: e.id, empresa: e.nombre, href: `${base}/fuentes`, urgencia: 2 });
   }
   items.sort((a, b) => a.urgencia - b.urgencia);
-  return { items, empresas: (empresas ?? []).map((e) => ({ id: e.id, nombre: e.nombre, etapa: e.etapa, estado_admision: e.estado_admision, stats: statsPor.get(e.id) ?? null })) };
+  return {
+    items,
+    empresas: (empresas ?? []).map((e) => ({
+      id: e.id, nombre: e.nombre, etapa: e.etapa, estado_admision: e.estado_admision,
+      stats: statsPor.get(e.id) ?? null,
+      radiografia: radiografiaPor.get(e.id) ?? null,
+    })),
+  };
 }

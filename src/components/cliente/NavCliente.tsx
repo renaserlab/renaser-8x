@@ -30,6 +30,7 @@ const PRINCIPALES: [string, string, string][] = [
 const GRUPO: [string, string][] = [
   ["/portal/conversacion", "/portal/hoy"],
   ["/portal/validar", "/portal/hoy"],
+  ["/portal/numeros", "/portal/hoy"],
   ["/portal/resultados", "/portal/hoy"],
   ["/portal/documentos", "/portal/activos"],
 ];
