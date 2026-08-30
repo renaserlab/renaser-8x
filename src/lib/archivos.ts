@@ -64,3 +64,30 @@ export function rutaStorage(companyId: string, nombre: string, ahora = Date.now(
   if (!/^[0-9a-f-]{36}$/i.test(companyId)) throw new Error("company_id inválido");
   return `${companyId}/${ahora}-${nombreSeguro(nombre)}`;
 }
+
+/**
+ * QUÉ ES DE VERDAD EL ARCHIVO. `validarArchivo` confía en lo que declara el navegador, que sirve
+ * para dar mensajes claros pero no para decidir. Esto lee los primeros bytes, que no se pueden
+ * falsear. Sale de endurecer la subida del logo (auditoría del 29-08-2026) y lo usan las evidencias
+ * de implementación. El SVG NO entra: puede llevar script dentro.
+ */
+export type FirmaArchivo = { mime: string; ext: string; familia: "foto" | "documento" };
+
+const FIRMAS: (FirmaArchivo & { prueba: (b: Uint8Array) => boolean })[] = [
+  { mime: "image/png", ext: "png", familia: "foto", prueba: (b) => b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47 },
+  { mime: "image/jpeg", ext: "jpg", familia: "foto", prueba: (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff },
+  { mime: "image/webp", ext: "webp", familia: "foto", prueba: (b) => b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50 },
+  // El celular de un dueño peruano suele mandar HEIC sin avisar: se acepta como foto.
+  { mime: "image/heic", ext: "heic", familia: "foto", prueba: (b) => b[4] === 0x66 && b[5] === 0x74 && b[6] === 0x79 && b[7] === 0x70 && b[8] === 0x68 && b[9] === 0x65 && b[10] === 0x69 && b[11] === 0x63 },
+  { mime: "application/pdf", ext: "pdf", familia: "documento", prueba: (b) => b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46 },
+];
+
+/** Devuelve qué es el archivo, o null si no es un tipo que aceptemos como evidencia. */
+export function reconocerPorBytes(bytes: Uint8Array): FirmaArchivo | null {
+  if (bytes.length < 12) return null;
+  const f = FIRMAS.find((x) => x.prueba(bytes));
+  return f ? { mime: f.mime, ext: f.ext, familia: f.familia } : null;
+}
+
+/** Una evidencia es una foto del celular o un reporte: 8 MB alcanza de sobra y protege la cuota. */
+export const MAX_EVIDENCIA_BYTES = 8 * 1024 * 1024;

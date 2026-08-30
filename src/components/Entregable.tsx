@@ -75,7 +75,7 @@ export function Sop({ sop, titulo }: { sop: SopRow; titulo?: string }) {
   );
 }
 
-export type Accion = { id: string; accion: string; responsable: string | null; kpi: string | null; evidencia: string | null; impacto: string | null; semana_inicio: number | null; semana_cierre: number | null; estado: string; nota: string | null; vence_at: string | null; fase: string; findings?: { titulo: string } | null };
+export type Accion = { id: string; accion: string; responsable: string | null; kpi: string | null; evidencia: string | null; impacto: string | null; semana_inicio: number | null; semana_cierre: number | null; estado: string; nota: string | null; vence_at: string | null; fase: string; verificado_at?: string | null; findings?: { titulo: string } | null };
 
 export function PlanTabla({ acciones, paraCliente = false }: { acciones: Accion[]; paraCliente?: boolean }) {
   const ESTADO: Record<string, string> = { pendiente: "Pendiente", en_curso: "En curso", hecho: "Hecho", descartado: "Descartado" };

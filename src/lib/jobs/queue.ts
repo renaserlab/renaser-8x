@@ -18,6 +18,7 @@ export type TipoJob =
   | "entrevista_siguiente"
   | "transcribir_respuesta"
   | "minar_know_how"
+  | "proponer_indicadores"
   | "generar_proceso"
   | "generar_tobe"
   | "generar_sop"

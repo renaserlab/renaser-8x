@@ -117,7 +117,7 @@ export class GeminiProvider implements AIProvider {
     };
 
     const t0 = Date.now();
-    let entrada = 0, salida = 0, ultimoRaw = "", modelo = MODEL, esperado429 = false, reintentos503 = 0, ultimoDetalle = "";
+    let entrada = 0, salida = 0, ultimoRaw = "", modelo = MODEL, esperado429 = false, reintentos503 = 0, ultimoDetalle = "", saltoPorTiempo = false;
     // Si el principal está cortado por fallos recientes, se arranca directo en el respaldo.
     let modeloActivo = MODELO_RESPALDO && (await principalCaido()) ? MODELO_RESPALDO : MODEL;
     for (let intento = 0; intento < 2; intento++) {
@@ -130,7 +130,22 @@ export class GeminiProvider implements AIProvider {
           signal: AbortSignal.timeout(TIMEOUT_MS),
         });
       } catch (e: unknown) {
-        throw new AIProviderDownError(String((e as Error).message ?? e));
+        // AGOTAR EL TIEMPO TAMBIÉN ES CAER (30-08-2026). El cortacircuitos solo contaba los 503, y
+        // ese día Google dejó de devolver 503 y pasó a responder 200 tras 111 SEGUNDOS en una
+        // petición trivial: el modelo nunca "fallaba", solo era inservible, así que el circuito no
+        // se abría nunca y cada trabajo pagaba la espera completa antes de rendirse. Ahora un
+        // tiempo agotado en el principal cuenta como fallo y salta al respaldo, igual que un 503.
+        const mensaje = String((e as Error).message ?? e);
+        if (modeloActivo === MODEL && MODELO_RESPALDO && MODELO_RESPALDO !== MODEL && !saltoPorTiempo) {
+          await anotarFallo();
+          saltoPorTiempo = true;
+          modeloActivo = MODELO_RESPALDO;
+          reintentos503 = 0;
+          // No consume el intento: el salto al respaldo es la reacción al fallo, no un reintento.
+          intento--;
+          continue;
+        }
+        throw new AIProviderDownError(mensaje);
       }
       if (res.status === 429) {
         // Cuota por ventana (free tier: 20 solicitudes/ventana). Si el proveedor indica cuánto esperar (≤ 90 s), se espera una vez.

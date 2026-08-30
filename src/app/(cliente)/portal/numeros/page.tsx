@@ -5,6 +5,8 @@ import { mesesRecientes } from "@/lib/temporadas";
 import { MisNumeros } from "@/components/cliente/MisNumeros";
 import { Avance } from "@/components/cliente/Avance";
 import { comparar, veredicto, type Medicion } from "@/lib/medicion";
+import { Indicadores, type Indicador, type ValorIndicador } from "@/components/cliente/Indicadores";
+import { mesCerradoMasReciente } from "@/lib/temporadas";
 import { Franja, Lectura } from "@/components/base/Franja";
 
 export const dynamic = "force-dynamic";
@@ -22,10 +24,11 @@ export default async function Numeros() {
   if (!c.companyId) return <p className="t-cuerpo medida">{c.queFalta}</p>;
 
   const sb = supabaseAdmin();
-  const [{ data: metricasRaw }, { data: empresa }, { data: medicionesRaw }] = await Promise.all([
+  const [{ data: metricasRaw }, { data: empresa }, { data: medicionesRaw }, { data: indicadoresRaw }] = await Promise.all([
     sb.from("company_metricas").select("clave,periodo,valor,estado").eq("company_id", c.companyId).limit(200),
     sb.from("companies").select("ficha").eq("id", c.companyId).single(),
     sb.from("mediciones").select("id,tipo,numero,fecha,valores,derivados,nota").eq("company_id", c.companyId).order("numero", { ascending: false }),
+    sb.from("indicadores").select("id,clave,nombre,como_se_mide,unidad,mejor_si,meta_valor,meta_texto,frecuencia,origen_texto,estado").eq("company_id", c.companyId).neq("estado", "archivado").order("created_at"),
   ]);
 
   const metricas = (metricasRaw ?? []) as Metrica[];
@@ -48,6 +51,13 @@ export default async function Numeros() {
   const ultimoCorte = cortes[0] ?? null;
   const movimientos = comparar(base, ultimoCorte);
   const v = veredicto(base, ultimoCorte, movimientos);
+
+  // LO QUE SE REPITE SE MIDE: los indicadores que salieron de las incidencias, con sus valores.
+  const indicadores = (indicadoresRaw ?? []) as Indicador[];
+  const clavesInd = new Set(indicadores.map((i) => i.clave));
+  const valoresInd: ValorIndicador[] = metricas
+    .filter((m) => clavesInd.has(m.clave) && m.valor != null && /^[0-9]{4}-[0-9]{2}$/.test(m.periodo))
+    .map((m) => ({ clave: m.clave, periodo: m.periodo, valor: Number(m.valor) }));
 
   return (
     <>
@@ -107,6 +117,10 @@ export default async function Numeros() {
         temporadasAltas={altas}
         mesesDisponibles={mesesRecientes(14)}
       />
+
+      <div className="mt-9">
+        <Indicadores companyId={c.companyId} indicadores={indicadores} valores={valoresInd} periodoActual={mesCerradoMasReciente()} />
+      </div>
 
       {/* Sin comparación todavía: el punto de partida va abajo, después de que ponga sus números. */}
       {!(base && ultimoCorte) && (

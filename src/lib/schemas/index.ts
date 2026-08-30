@@ -318,3 +318,25 @@ export const SalidaAdmision = z.object({
   motivo: z.string(),
   senales: z.array(z.string()).default([]),
 });
+
+/**
+ * EL MEDIDOR: incidencias → números que se vigilan. Máximo seis a propósito — un tablero de veinte
+ * indicadores no se mira, y lo que no se mira no existe.
+ */
+export const SalidaMedidor = z.object({
+  indicadores: z
+    .array(
+      z.object({
+        clave: z.string().min(2).max(60),
+        nombre: z.string().min(3).max(120),
+        como_se_mide: z.string().min(10).max(400),
+        unidad: z.enum(["soles", "de_cada_10", "dias", "personas", "numero", "porcentaje"]).catch("numero"),
+        mejor_si: z.enum(["sube", "baja", "neutro"]).catch("baja"),
+        meta_valor: z.number().finite().nullable().catch(null),
+        meta_texto: z.string().max(200).nullable().catch(null),
+        frecuencia: z.enum(["diaria", "semanal", "mensual"]).catch("mensual"),
+        origen_texto: z.string().max(400).nullable().catch(null),
+      })
+    )
+    .max(6),
+});

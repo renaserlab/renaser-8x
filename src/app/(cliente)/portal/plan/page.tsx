@@ -69,16 +69,23 @@ export default async function PlanCliente() {
         <BrechaAfuera personas={personas} assets={assets ?? []} />
       </>
     );
-  const [{ data: acciones }, { data: cortes }] = await Promise.all([
+  const [{ data: acciones }, { data: cortes }, { data: pruebas }] = await Promise.all([
     sb.from("actions").select("*").eq("company_id", c.companyId).order("semana_inicio").order("prioridad"),
     sb.from("checkpoints").select("*").eq("company_id", c.companyId).order("numero"),
+    // LAS PRUEBAS de cada frente: sin ellas "hecho" es una casilla marcada.
+    sb.from("evidencias").select("id,action_id,tipo,nombre,nota,created_at").eq("company_id", c.companyId).not("action_id", "is", null).order("created_at"),
   ]);
+  const pruebasPorAccion: Record<string, { id: string; tipo: string; nombre: string | null; nota: string | null; created_at: string }[]> = {};
+  for (const p of pruebas ?? []) {
+    const k = p.action_id as string;
+    (pruebasPorAccion[k] ??= []).push(p);
+  }
   return (
     <>
       <p className="t-etiqueta">Tu implementación</p>
       <h1 className="t-titulo mt-2 mb-2">45 días, frente por frente</h1>
       <p className="t-cuerpo mb-8 medida" style={{ color: "var(--grafito)" }}>Máximo tres frentes abiertos a la vez. Marca cada uno cuando lo cierres.</p>
-      <Plan companyId={c.companyId} acciones={acciones ?? []} cortes={cortes ?? []} modo="cliente" />
+      <Plan companyId={c.companyId} acciones={acciones ?? []} cortes={cortes ?? []} modo="cliente" pruebasPorAccion={pruebasPorAccion} />
       <BrechaAfuera personas={personas} assets={assets ?? []} />
     </>
   );

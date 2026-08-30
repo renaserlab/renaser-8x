@@ -10,11 +10,18 @@ export const dynamic = "force-dynamic";
 export default async function PlanPag({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const sb = supabaseAdmin();
-  const [{ data: acciones }, { data: cortes }, { data: c }] = await Promise.all([
+  const [{ data: acciones }, { data: cortes }, { data: c }, { data: pruebas }] = await Promise.all([
     sb.from("actions").select("*, findings(titulo)").eq("company_id", id).order("semana_inicio").order("prioridad"),
     sb.from("checkpoints").select("*").eq("company_id", id).order("numero"),
     sb.from("companies").select("etapa").eq("id", id).single(),
+    // LAS PRUEBAS de cada frente: es lo que convierte "hecho" en verificado.
+    sb.from("evidencias").select("id,action_id,tipo,nombre,nota,created_at").eq("company_id", id).not("action_id", "is", null).order("created_at"),
   ]);
+  const pruebasPorAccion: Record<string, { id: string; tipo: string; nombre: string | null; nota: string | null; created_at: string }[]> = {};
+  for (const p of pruebas ?? []) {
+    const k = p.action_id as string;
+    (pruebasPorAccion[k] ??= []).push(p);
+  }
   return (
     <>
       <Encabezado
@@ -27,7 +34,7 @@ export default async function PlanPag({ params }: { params: Promise<{ id: string
           </>
         }
       />
-      {!acciones?.length ? <Vacio texto={VACIO.plan} accion="Ir al diagnóstico" href={`/empresa/${id}/diagnostico`} /> : <Plan companyId={id} acciones={acciones} cortes={cortes ?? []} modo="consultor" />}
+      {!acciones?.length ? <Vacio texto={VACIO.plan} accion="Ir al diagnóstico" href={`/empresa/${id}/diagnostico`} /> : <Plan companyId={id} acciones={acciones} cortes={cortes ?? []} modo="consultor" pruebasPorAccion={pruebasPorAccion} />}
     </>
   );
 }

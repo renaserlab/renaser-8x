@@ -114,3 +114,20 @@ describe("cortacircuitos del modelo", () => {
     expect(src).toContain("await anotarFallo()");
   });
 });
+
+describe("agotar el tiempo también es caer (30-08-2026)", () => {
+  it("un tiempo agotado en el principal salta al respaldo y anota el fallo", async () => {
+    const { readFileSync } = await import("fs");
+    const src = readFileSync("src/lib/ai/gemini.ts", "utf8");
+    const bloque = src.slice(src.indexOf("} catch (e: unknown) {"), src.indexOf("if (res.status === 429)"));
+    expect(bloque, "el cortacircuitos contaba solo los 503").toContain("anotarFallo()");
+    expect(bloque).toContain("MODELO_RESPALDO");
+  });
+
+  it("el salto por tiempo ocurre UNA sola vez: si el respaldo también cae, se rinde", async () => {
+    const { readFileSync } = await import("fs");
+    const src = readFileSync("src/lib/ai/gemini.ts", "utf8");
+    expect(src).toContain("saltoPorTiempo");
+    expect(src, "si el respaldo también agota el tiempo hay que lanzar, no seguir girando").toContain("throw new AIProviderDownError(mensaje)");
+  });
+});

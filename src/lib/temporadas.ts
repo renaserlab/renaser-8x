@@ -45,3 +45,8 @@ export function nombreDePeriodo(periodo: string): string {
   const mes = MESES.find((x) => x.clave === m[2]);
   return mes ? `${mes.nombre} ${m[1]}` : periodo;
 }
+
+/** El último mes cerrado: es el periodo que se le ofrece anotar al dueño, nunca el mes en curso. */
+export function mesCerradoMasReciente(): string {
+  return mesesRecientes(1)[0]!.periodo;
+}

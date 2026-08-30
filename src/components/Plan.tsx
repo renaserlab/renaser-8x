@@ -4,13 +4,14 @@ import { useRouter } from "next/navigation";
 import { pedir } from "@/lib/cliente";
 import { fechaCorta } from "@/lib/textos";
 import type { Accion } from "./Entregable";
+import { Evidencia, type EvidenciaFila } from "./cliente/Evidencia";
 
 export type Corte = { id: string; numero: number; fecha: string; que_se_hizo: string | null; que_se_trabo: string | null; indicadores: unknown; regresiones: unknown };
 
 const ESTADOS = [["pendiente", "Pendiente"], ["en_curso", "En curso"], ["hecho", "Hecho"], ["descartado", "Descartado"]];
 
 /** El plan vive en línea: cada frente con responsable, indicador, semana de cierre y estado. Máx. 3 abiertos por semana. Capítulo 37. */
-export function Plan({ companyId, acciones, cortes, modo }: { companyId: string; acciones: Accion[]; cortes: Corte[]; modo: "consultor" | "cliente" }) {
+export function Plan({ companyId, acciones, cortes, modo, pruebasPorAccion = {} }: { companyId: string; acciones: Accion[]; cortes: Corte[]; modo: "consultor" | "cliente"; pruebasPorAccion?: Record<string, EvidenciaFila[]> }) {
   const router = useRouter();
   const [corte, setCorte] = useState({ que_se_hizo: "", que_se_trabo: "", indicadores: "" });
   const [error, setError] = useState<string | null>(null);
@@ -70,6 +71,16 @@ export function Plan({ companyId, acciones, cortes, modo }: { companyId: string;
                 </p>
                 {modo === "consultor" && a.findings?.titulo && <p className="t-dato" style={{ color: "var(--grafito)" }}>Hallazgo: {a.findings.titulo}</p>}
                 <textarea className="campo mt-2" rows={1} placeholder={modo === "cliente" ? "Cómo va (opcional)" : "Nota"} defaultValue={a.nota ?? ""} onBlur={(e) => e.target.value !== (a.nota ?? "") && cambiar(a, { nota: e.target.value })} aria-label="Nota" />
+                {/* LA PRUEBA: sin ella "hecho" es una casilla marcada, no un hecho verificado. */}
+                {a.estado !== "descartado" && (
+                  <Evidencia
+                    companyId={companyId}
+                    actionId={a.id}
+                    pruebas={pruebasPorAccion[a.id] ?? []}
+                    verificada={!!a.verificado_at}
+                    verificadaEl={a.verificado_at ?? null}
+                  />
+                )}
               </div>
               <div className="flex flex-col gap-2">
                 <select className="campo" value={a.estado} onChange={(e) => cambiar(a, { estado: e.target.value })} aria-label="Estado">
