@@ -84,3 +84,33 @@ describe("control documental (ISO 9001 7.5)", () => {
     }
   });
 });
+
+/**
+ * El cortacircuitos compartido (30-08-2026). Vivía en la memoria del proceso, y en serverless cada
+ * instancia arrancaba con el contador en cero: la primera petición de cada una volvía a pagar la
+ * espera del modelo caído. Mismo error que ya se había corregido en el límite de peticiones.
+ */
+describe("cortacircuitos del modelo", () => {
+  it("el estado se consulta a la base, no a una variable del proceso", async () => {
+    const { readFileSync } = await import("fs");
+    const src = readFileSync("src/lib/ai/gemini.ts", "utf8");
+    expect(src, "el estado tiene que ser común a todas las instancias").toContain("circuito_abierto");
+    expect(src).toContain("circuito_fallo");
+    expect(src).toContain("circuito_exito");
+    expect(src, "ya no puede quedar un contador suelto en memoria").not.toMatch(/let fallosSeguidos/);
+    expect(src, "ni una ventana guardada solo en el proceso").not.toMatch(/let cortadoHasta/);
+  });
+
+  it("un circuito roto no puede dejar sin IA al cliente: ante error, se asume sano", async () => {
+    const { readFileSync } = await import("fs");
+    const src = readFileSync("src/lib/ai/gemini.ts", "utf8");
+    const bloque = src.slice(src.indexOf("async function principalCaido"), src.indexOf("async function anotarFallo"));
+    expect(bloque).toContain("return false");
+  });
+
+  it("el fallo se espera antes de seguir: de él depende que el siguiente trabajo no pague la espera", async () => {
+    const { readFileSync } = await import("fs");
+    const src = readFileSync("src/lib/ai/gemini.ts", "utf8");
+    expect(src).toContain("await anotarFallo()");
+  });
+});
