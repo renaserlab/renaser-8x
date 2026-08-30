@@ -178,10 +178,13 @@ export function InventarioActivos({ companyId, guardados, prioridades = [], docD
       {a.preguntas.map((p, i) => (
         <div key={i} className="flex flex-col gap-2 p-4" style={{ background: "var(--papel)", border: "1px solid var(--linea)", borderRadius: "var(--radio)" }}>
           <label className="t-cuerpo" style={{ fontWeight: 500 }} htmlFor={`${clave}-p${i}`}>{p}</label>
-          {EJEMPLOS[p] && <p className="t-dato" style={{ color: "var(--grafito)" }}>Por ejemplo: {EJEMPLOS[p]}</p>}
           <div className="flex flex-col gap-2">
             <BotonGrabar grande={false} alTexto={(t) => setRespuestas((r) => ({ ...r, [clave]: { ...(r[clave] ?? {}), [i]: (((r[clave]?.[i] ?? "") + " " + t)).trim() } }))} />
-            <textarea id={`${clave}-p${i}`} aria-label={p} className="campo" rows={2} value={respuestas[clave]?.[i] ?? ""} onChange={(e) => setRespuestas((r) => ({ ...r, [clave]: { ...(r[clave] ?? {}), [i]: e.target.value } }))} placeholder="Con tus palabras — no hay respuestas malas" />
+            {/* EL EJEMPLO VA COMO PLACEHOLDER, NUNCA COMO CONTENIDO (30-08-2026). La dueña de Qori
+                creyó que el ejemplo eran datos suyos —de otro rubro— metidos en su caja, y tuvo que
+                borrarlos letra por letra. En tenue y dentro de la caja se entiende que es una guía, y
+                se va solo al escribir o al dictar. Regla del producto: un ejemplo jamás es `value`. */}
+            <textarea id={`${clave}-p${i}`} aria-label={p} className="campo" rows={2} value={respuestas[clave]?.[i] ?? ""} onChange={(e) => setRespuestas((r) => ({ ...r, [clave]: { ...(r[clave] ?? {}), [i]: e.target.value } }))} placeholder={EJEMPLOS[p] ? `Por ejemplo: ${EJEMPLOS[p]}` : "Con tus palabras — no hay respuestas malas"} />
           </div>
         </div>
       ))}

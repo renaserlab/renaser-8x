@@ -106,6 +106,11 @@ body {
 }
 .campo:focus { border-color: var(--marca); outline: none; }
 textarea.campo { min-height: 120px; resize: vertical; }
+/* EL EJEMPLO NO SE PUEDE CONFUNDIR CON LO ESCRITO (30-08-2026). No había estilo de placeholder: salía
+   con el gris por defecto del navegador y la dueña de Qori lo leyó como datos suyos metidos en su
+   caja. Tenue y en cursiva se lee como guía, y desaparece sola al escribir o al dictar. */
+.campo::placeholder { color: var(--grafito); opacity: 0.6; font-style: italic; }
+.campo:focus::placeholder { opacity: 0.38; }
 
 /* tablas que respiran */
 .tabla { width: 100%; border-collapse: collapse; }
