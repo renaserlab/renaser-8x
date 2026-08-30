@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { pedir } from "@/lib/cliente";
+import { confirmacionValida } from "@/lib/confirmacion";
 
 /**
  * ADMINISTRAR EMPRESA (consultor): corregir nombre y sector, y eliminarla con la confirmación
@@ -79,14 +80,15 @@ export function AdministrarEmpresa({ companyId, nombre, sector }: { companyId: s
                 <p className="t-etiqueta mb-1" style={{ color: "var(--contradicho)" }}>Eliminar esta empresa</p>
                 <p className="t-dato mb-3" style={{ color: "var(--grafito)" }}>
                   Se borra TODO: conversaciones, hallazgos, documentos y archivos. No hay vuelta atrás.
-                  Para confirmar, escribe el nombre exacto: <strong style={{ color: "var(--tinta)" }}>{nombre}</strong>
+                  Para confirmar, escribe el nombre: <strong style={{ color: "var(--tinta)" }}>{nombre}</strong>
+                  <br />No importan tildes, mayúsculas ni signos.
                 </p>
-                <input className="campo" value={confirmacion} onChange={(e) => setConfirmacion(e.target.value)} placeholder="Escribe el nombre exacto" aria-label="Confirmación del nombre" style={{ width: "100%" }} />
+                <input className="campo" value={confirmacion} onChange={(e) => setConfirmacion(e.target.value)} placeholder="Escribe el nombre" aria-label="Confirmación del nombre" style={{ width: "100%" }} />
                 <button
                   type="button"
                   className="boton mt-3"
-                  style={{ background: confirmacion === nombre ? "var(--contradicho)" : "var(--suave)", borderColor: confirmacion === nombre ? "var(--contradicho)" : "var(--linea)", color: confirmacion === nombre ? "var(--papel)" : "var(--grafito)", width: "100%" }}
-                  disabled={ocupado || confirmacion !== nombre}
+                  style={{ background: confirmacionValida(confirmacion, nombre) ? "var(--contradicho)" : "var(--suave)", borderColor: confirmacionValida(confirmacion, nombre) ? "var(--contradicho)" : "var(--linea)", color: confirmacionValida(confirmacion, nombre) ? "var(--papel)" : "var(--grafito)", width: "100%" }}
+                  disabled={ocupado || !confirmacionValida(confirmacion, nombre)}
                   onClick={eliminar}
                 >
                   {ocupado ? "Eliminando" : "Eliminar definitivamente"}
