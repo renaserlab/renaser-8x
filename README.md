@@ -125,6 +125,51 @@ un cuestionario de seguridad, y con estas nueve correcciones ese cuestionario se
 en una sola línea.
 
 
+### 14 · Los nueve números dejan de ser una intención (30-08-2026)
+
+Revisión de si 8X podía ya sistematizar una empresa de punta a punta. El veredicto fue que **sabe
+fotografiar pero todavía no pesar**: Qori tenía 18 números y solo 3 de los nueve vitales, y
+prácticamente todo vivía en un único periodo `actual`. La Radiografía Mínima existía escrita dentro
+del prompt, pero **nada en el código la verificaba**.
+
+**Vocabulario canónico** (`src/lib/metricas.ts`). Los nueve vitales con clave exacta, pregunta
+hablada y sinónimos. `normalizarMetrica()` se aplica **al escribir**, en el handler de extracción:
+`utilidad_mes`, `ganancia_neta_mes` y `facturacion_mes` dejan de ser números distintos. Regla que
+importa: si el dueño desglosa por línea o local, esa cifra parcial va en su propia clave y **no** en
+la del vital — el vital es siempre el total. `radiografia()` dice cuántos faltan y distingue *nadie
+lo preguntó* de *el dueño no lo sabe* (lo segundo es hallazgo, no vacío). `derivados()` calcula
+margen real, margen unitario, punto de equilibrio y días de aguante, y devuelve `null` en vez de
+inventar cuando falta un insumo.
+
+**Levantamiento por meses** (`/portal/numeros`). El dueño ve *X de 9* con su barra, contesta de
+memoria lo que falta —o marca «No lo sé»— y responde **su año en tres preguntas**: mes pasado, mejor
+mes y peor mes. Con esos tres puntos ya hay curva. Encima, el **calendario comercial peruano** (julio
+y diciembre con gratificación, agosto de bajón, mayo Día de la Madre) para que marcar temporadas no
+sea hacer memoria en frío: sin eso, un agosto bajo se lee como problema cuando es estacionalidad.
+Arriba de todo se muestra lo que ya se puede calcular — cuánto le queda de cada 100 soles, cuántos
+días aguanta si mañana no entra nada, cuánto tiene que vender para no perder.
+
+**Dónde vive.** Sin sexto botón en la barra: la tarjeta «Tus números» abre Mi empresa y
+`/portal/numeros` se agrupa bajo ella.
+
+**Para la consultora.** La bandeja trae el ítem «Le faltan N de los 9 números» nombrando los tres
+primeros, y la tabla de empresas una columna *Números* (X/9 y meses de venta). Todas las métricas se
+leen en **una** consulta, no una por empresa.
+
+**Datos existentes.** `scripts/normalizar-metricas.mts` corre el mismo mapeo que la aplicación —una
+sola fuente de verdad—, con informe por defecto y `--aplicar` para escribir. Ejecutado: 5 claves
+normalizadas, 0 duplicados. La mejora es pequeña **a propósito**: normalizar recupera lo que existe,
+y lo que faltaba de verdad es que esos números nunca se preguntaron.
+
+**Dos bugs cazados por las propias pruebas antes de desplegar:** `"2026-13"` pasaba como mes válido,
+y un vital declarado «no lo sé» y después respondido con número se contaba dos veces (la radiografía
+llegaba a decir 10 de 9). Pruebas: **294 → 323**.
+
+**Lo que sigue faltando para cerrar el ciclo:** línea base congelada al terminar el diagnóstico,
+cortes con números en vez de texto libre, cierre de acciones con evidencia real, e incidencias
+convertidas en KPIs.
+
+
 ## Qué hay (mapa del código)
 
 | Capa | Dónde |
