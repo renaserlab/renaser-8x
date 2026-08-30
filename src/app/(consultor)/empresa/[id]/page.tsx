@@ -4,11 +4,13 @@ import { Encabezado } from "@/components/base/Vacio";
 import { Admision } from "@/components/consultor/Admision";
 import { Participantes } from "@/components/consultor/Participantes";
 import { Etapa } from "@/components/consultor/Etapa";
-import { PILAR, ESTADO_PILAR, ETAPA } from "@/lib/textos";
+import { PILAR, ESTADO_PILAR, ETAPA, fechaCorta } from "@/lib/textos";
 import { tokensUsados } from "@/lib/db/queries";
 import { cumplimientoLegal } from "@/lib/biblioteca";
 import { tableroEmpresario } from "@/lib/tablero";
 import { Franja, Lectura } from "@/components/base/Franja";
+import { comparar, veredicto, nombreMedicion, type Medicion } from "@/lib/medicion";
+import { radiografia, type Metrica as MetricaVital } from "@/lib/metricas";
 import { AdministrarEmpresa } from "@/components/consultor/AdministrarEmpresa";
 import { coberturaSesion } from "@/lib/rules/cobertura";
 import { TIPO_SESION } from "@/lib/textos";
@@ -106,6 +108,63 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
           <Lectura valor={ficha?.personas ?? "?"} unidad="personas" etiqueta={`${participantes.length} con acceso`} />
         </Franja>
       </div>
+
+      {/* ¿MEJORÓ? La pregunta que el cliente paga por responder. Sin línea base no se puede
+          contestar, así que se dice qué falta para poder contestarla. */}
+      {await (async () => {
+        const sbM = supabaseAdmin();
+        const [{ data: medRaw }, { data: metRaw }] = await Promise.all([
+          sbM.from("mediciones").select("id,tipo,numero,fecha,valores,derivados,nota").eq("company_id", id).order("numero", { ascending: false }),
+          sbM.from("company_metricas").select("clave,periodo,valor,estado").eq("company_id", id).limit(300),
+        ]);
+        const meds = (medRaw ?? []) as Medicion[];
+        const base = meds.find((m) => m.tipo === "linea_base") ?? null;
+        const cortes = meds.filter((m) => m.tipo === "corte");
+        const radio = radiografia((metRaw ?? []) as MetricaVital[]);
+        const movs = comparar(base, cortes[0] ?? null);
+        const v = veredicto(base, cortes[0] ?? null, movs);
+
+        return (
+          <section className="panel p-5 mb-4">
+            <div className="flex items-baseline justify-between gap-3 flex-wrap mb-2">
+              <h2 className="t-seccion">¿Mejoró?</h2>
+              <span className="t-dato" style={{ color: "var(--grafito)" }}>
+                {radio.listos}/9 números · {cortes.length} corte{cortes.length === 1 ? "" : "s"}
+              </span>
+            </div>
+            {!base ? (
+              <p className="t-cuerpo medida" style={{ color: "var(--grafito)" }}>
+                Sin punto de partida no hay contra qué comparar. {radio.listos < 5
+                  ? `Le faltan ${9 - radio.listos} números: hasta llegar a 5 no se puede fijar.`
+                  : "Ya tiene números suficientes: el dueño puede fijarlo desde Tus números."}
+              </p>
+            ) : cortes.length === 0 ? (
+              <p className="t-cuerpo medida" style={{ color: "var(--grafito)" }}>
+                Punto de partida fijado el {fechaCorta(base.fecha)} con {Object.keys(base.valores).length} números.
+                Falta el primer corte para saber si algo se movió.
+              </p>
+            ) : (
+              <>
+                <p className="t-cuerpo" style={{ fontWeight: 550 }}>{v.titular}</p>
+                <p className="t-dato mt-1" style={{ color: "var(--grafito)" }}>
+                  {nombreMedicion(cortes[0]!)} del {fechaCorta(cortes[0]!.fecha)} contra el punto de partida del {fechaCorta(base.fecha)}
+                  {v.dias != null && v.dias > 0 ? ` · ${v.dias} días` : ""} · {v.mejoraron} mejoraron, {v.empeoraron} empeoraron
+                </p>
+                {movs.filter((m) => m.mejoro === false).slice(0, 3).length > 0 && (
+                  <ul className="lista-editorial mt-3">
+                    {movs.filter((m) => m.mejoro === false).slice(0, 3).map((m) => (
+                      <li key={m.vital.clave} style={{ padding: "5px 0" }}>
+                        <span className="t-dato" style={{ color: "var(--contradicho)" }}>{m.vital.nombre}: </span>
+                        <span className="t-dato" style={{ color: "var(--grafito)" }}>{m.frase}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            )}
+          </section>
+        );
+      })()}
 
       {/* FILA 2 · Mapa de la empresa (4P con puntaje y color) + restricciones */}
       <section className="grid gap-4 lg:grid-cols-2 mb-4">

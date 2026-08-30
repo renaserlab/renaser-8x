@@ -3,6 +3,8 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { radiografia, derivados, PERIODO_DORADA, type Metrica } from "@/lib/metricas";
 import { mesesRecientes } from "@/lib/temporadas";
 import { MisNumeros } from "@/components/cliente/MisNumeros";
+import { Avance } from "@/components/cliente/Avance";
+import { comparar, veredicto, type Medicion } from "@/lib/medicion";
 import { Franja, Lectura } from "@/components/base/Franja";
 
 export const dynamic = "force-dynamic";
@@ -20,9 +22,10 @@ export default async function Numeros() {
   if (!c.companyId) return <p className="t-cuerpo medida">{c.queFalta}</p>;
 
   const sb = supabaseAdmin();
-  const [{ data: metricasRaw }, { data: empresa }] = await Promise.all([
+  const [{ data: metricasRaw }, { data: empresa }, { data: medicionesRaw }] = await Promise.all([
     sb.from("company_metricas").select("clave,periodo,valor,estado").eq("company_id", c.companyId).limit(200),
     sb.from("companies").select("ficha").eq("id", c.companyId).single(),
+    sb.from("mediciones").select("id,tipo,numero,fecha,valores,derivados,nota").eq("company_id", c.companyId).order("numero", { ascending: false }),
   ]);
 
   const metricas = (metricasRaw ?? []) as Metrica[];
@@ -37,6 +40,14 @@ export default async function Numeros() {
     .sort((a, b) => b.periodo.localeCompare(a.periodo));
 
   const dorada = metricas.find((m) => m.clave === "venta_mes" && m.periodo === PERIODO_DORADA && m.valor != null);
+
+  // EL ANTES Y EL DESPUÉS: sin línea base congelada, "¿funcionó?" no tiene respuesta posible.
+  const mediciones = (medicionesRaw ?? []) as Medicion[];
+  const base = mediciones.find((m) => m.tipo === "linea_base") ?? null;
+  const cortes = mediciones.filter((m) => m.tipo === "corte");
+  const ultimoCorte = cortes[0] ?? null;
+  const movimientos = comparar(base, ultimoCorte);
+  const v = veredicto(base, ultimoCorte, movimientos);
 
   return (
     <>
@@ -83,12 +94,26 @@ export default async function Numeros() {
         </div>
       )}
 
+      {/* ¿FUNCIONÓ? Va arriba de todo cuando ya hay con qué responder. */}
+      {base && ultimoCorte && (
+        <div className="mb-9">
+          <Avance companyId={c.companyId} base={base} ultimoCorte={ultimoCorte} movimientos={movimientos} veredicto={v} cortes={cortes} numerosListos={r.listos} />
+        </div>
+      )}
+
       <MisNumeros
         radiografia={r}
         serieVenta={serieVenta}
         temporadasAltas={altas}
         mesesDisponibles={mesesRecientes(14)}
       />
+
+      {/* Sin comparación todavía: el punto de partida va abajo, después de que ponga sus números. */}
+      {!(base && ultimoCorte) && (
+        <div className="mt-9">
+          <Avance companyId={c.companyId} base={base} ultimoCorte={ultimoCorte} movimientos={movimientos} veredicto={v} cortes={cortes} numerosListos={r.listos} />
+        </div>
+      )}
     </>
   );
 }

@@ -1,5 +1,7 @@
 import { protegido, ok, fallo, leerJSON } from "@/lib/api";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { valoresActuales, derivadosActuales } from "@/lib/medicion";
+import type { Metrica } from "@/lib/metricas";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -13,7 +15,24 @@ export const POST = protegido<Ctx>({ consultor: true }, async (perfil, req, ctx)
   if (b.corte) {
     const { data: prev } = await sb.from("checkpoints").select("numero").eq("company_id", id).order("numero", { ascending: false }).limit(1);
     const numero = (prev?.[0]?.numero ?? 0) + 1;
-    const { data } = await sb.from("checkpoints").insert({ company_id: id, numero, que_se_hizo: b.corte.que_se_hizo ?? null, que_se_trabo: b.corte.que_se_trabo ?? null, indicadores: b.corte.indicadores ?? null, regresiones: b.corte.regresiones ?? null }).select("*").single();
+
+    // LOS NÚMEROS DEL CORTE (30-08-2026): el corte guardaba sus indicadores como texto libre, así que
+    // aunque se hiciera, nada podía calcular si el indicador se movió. Ahora se congela también una
+    // medición con los nueve vitales de hoy, y las dos historias —lo que se hizo y lo que se movió—
+    // quedan enlazadas. Si la empresa todavía no tiene números, el corte cualitativo se guarda igual.
+    const { data: metricasRaw } = await sb.from("company_metricas").select("clave,periodo,valor,estado").eq("company_id", id).limit(300);
+    const metricas = (metricasRaw ?? []) as Metrica[];
+    const valores = valoresActuales(metricas);
+    let medicionId: string | null = null;
+    if (Object.keys(valores).length > 0) {
+      const { data: med } = await sb.rpc("congelar_medicion", {
+        p_company: id, p_tipo: "corte", p_valores: valores,
+        p_derivados: derivadosActuales(metricas), p_nota: b.corte.que_se_hizo ?? null, p_por: perfil.id,
+      });
+      medicionId = ((Array.isArray(med) ? med[0] : med) as { id?: string } | null)?.id ?? null;
+    }
+
+    const { data } = await sb.from("checkpoints").insert({ company_id: id, numero, que_se_hizo: b.corte.que_se_hizo ?? null, que_se_trabo: b.corte.que_se_trabo ?? null, indicadores: b.corte.indicadores ?? null, regresiones: b.corte.regresiones ?? null, medicion_id: medicionId }).select("*").single();
     // P1-17: cada regresión detectada es un hallazgo nuevo con su evidencia (una observación directa del consultor = fuente fuerte).
     let creados = 0;
     for (const r of b.corte.regresiones ?? []) {

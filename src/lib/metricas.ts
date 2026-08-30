@@ -19,53 +19,59 @@ export type Vital = {
   unidad: "soles" | "dias" | "personas" | "de_cada_10" | "numero";
   /** Si cambia mes a mes, se guarda con periodo YYYY-MM y forma serie. */
   mensual: boolean;
+  /**
+   * Hacia dónde es mejorar. Sin esto, bajar la deuda se leería como un retroceso y subir el gasto
+   * fijo como un avance. "neutro" es para los que dependen del contexto: subir el precio puede ser
+   * sanear el margen o espantar clientes, y eso no lo decide una flecha.
+   */
+  mejorSi: "sube" | "baja" | "neutro";
   /** Claves que la IA suele inventar para esto mismo. */
   sinonimos: string[];
 };
 
 export const VITALES: Vital[] = [
   {
-    n: 1, clave: "venta_mes", nombre: "Ventas del mes", unidad: "soles", mensual: true,
+    n: 1, clave: "venta_mes", nombre: "Ventas del mes", unidad: "soles", mensual: true, mejorSi: "sube",
     pregunta: "¿Cuánto vendió tu negocio el mes pasado, en total?",
     sinonimos: ["ventas_mes", "facturacion_mes", "ingresos_mes", "venta_mensual", "ventas_totales", "facturacion_mensual", "ingreso_mes", "venta_total_mes"],
   },
   {
-    n: 2, clave: "ganancia_mes", nombre: "Lo que te quedó libre", unidad: "soles", mensual: true,
+    n: 2, clave: "ganancia_mes", nombre: "Lo que te quedó libre", unidad: "soles", mensual: true, mejorSi: "sube",
     pregunta: "De todo eso que vendiste, ¿cuánto te quedó libre después de pagar todo?",
     sinonimos: ["utilidad_mes", "margen_mes", "ganancia_neta_mes", "queda_libre_mes", "utilidad_mensual", "ganancia_mensual", "beneficio_mes"],
   },
   {
-    n: 3, clave: "caja_hoy", nombre: "Dinero en caja hoy", unidad: "soles", mensual: false,
+    n: 3, clave: "caja_hoy", nombre: "Dinero en caja hoy", unidad: "soles", mensual: false, mejorSi: "sube",
     pregunta: "Si abres la caja hoy y sumas lo que hay en efectivo y en el banco, ¿cuánto es?",
     sinonimos: ["efectivo_hoy", "caja_actual", "dinero_caja", "saldo_caja", "liquidez_hoy", "caja_banco", "efectivo_caja"],
   },
   {
-    n: 4, clave: "gasto_fijo_mes", nombre: "Gastos fijos del mes", unidad: "soles", mensual: true,
+    n: 4, clave: "gasto_fijo_mes", nombre: "Gastos fijos del mes", unidad: "soles", mensual: true, mejorSi: "baja",
     pregunta: "¿Cuánto pagas al mes sí o sí, vendas o no vendas? Sueldos, alquiler y servicios juntos.",
     sinonimos: ["gasto_mes", "costo_fijo_mes", "gastos_fijos", "planilla_mes", "egresos_fijos", "gastos_mensuales", "costos_fijos_mes", "gasto_fijo"],
   },
   {
-    n: 5, clave: "precio_producto_estrella", nombre: "Precio de lo que más vendes", unidad: "soles", mensual: false,
+    n: 5, clave: "precio_producto_estrella", nombre: "Precio de lo que más vendes", unidad: "soles", mensual: false, mejorSi: "neutro",
     pregunta: "Lo que más vendes, ¿a cuánto lo vendes?",
     sinonimos: ["precio_estrella", "precio_venta_principal", "precio_producto_principal", "precio_principal", "precio_venta"],
   },
   {
-    n: 6, clave: "costo_producto_estrella", nombre: "Lo que te cuesta", unidad: "soles", mensual: false,
+    n: 6, clave: "costo_producto_estrella", nombre: "Lo que te cuesta", unidad: "soles", mensual: false, mejorSi: "baja",
     pregunta: "Y eso mismo, ¿cuánto te cuesta hacerlo o comprarlo?",
     sinonimos: ["costo_estrella", "costo_producto_principal", "costo_unitario", "costo_principal", "costo_compra"],
   },
   {
-    n: 7, clave: "conversion_de_cada_10", nombre: "De cada 10 interesados, cuántos compran", unidad: "de_cada_10", mensual: false,
+    n: 7, clave: "conversion_de_cada_10", nombre: "De cada 10 interesados, cuántos compran", unidad: "de_cada_10", mensual: false, mejorSi: "sube",
     pregunta: "De cada 10 personas que preguntan por tu producto, ¿cuántas terminan pagando?",
     sinonimos: ["conversion_10", "cierre_de_cada_10", "compran_de_cada_10", "tasa_cierre", "conversion", "clientes_de_cada_10", "cierran_de_cada_10"],
   },
   {
-    n: 8, clave: "deuda_clientes", nombre: "Lo que te deben", unidad: "soles", mensual: false,
+    n: 8, clave: "deuda_clientes", nombre: "Lo que te deben", unidad: "soles", mensual: false, mejorSi: "baja",
     pregunta: "¿Cuánto dinero te deben tus clientes ahora mismo?",
     sinonimos: ["cuentas_por_cobrar", "por_cobrar", "deben_clientes", "cobranza_pendiente", "cxc", "cobrar_clientes"],
   },
   {
-    n: 9, clave: "deuda_propia", nombre: "Lo que tú debes", unidad: "soles", mensual: false,
+    n: 9, clave: "deuda_propia", nombre: "Lo que tú debes", unidad: "soles", mensual: false, mejorSi: "baja",
     pregunta: "¿Y cuánto debes tú? Proveedores, banco o préstamos, todo junto.",
     sinonimos: ["deuda_proveedores", "cuentas_por_pagar", "prestamos", "deuda_banco", "por_pagar", "cxp", "deuda_total"],
   },

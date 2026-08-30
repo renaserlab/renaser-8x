@@ -6,6 +6,8 @@ export type ItemBandeja = { tipo: string; titulo: string; detalle: string; compa
 
 const DIAS_TRABADA = Number(process.env.BANDEJA_DIAS_TRABADA ?? 5);
 const DIAS_SIN_CORTE = 16;
+/** Un mes es el ciclo natural: los números del negocio se cierran por mes. */
+const DIAS_ENTRE_CORTES = Number(process.env.DIAS_ENTRE_CORTES ?? 30);
 
 /** Condiciones de suficiencia de una empresa (P1-04). Consulta, no IA. */
 export async function suficienciaDeEmpresa(companyId: string): Promise<Suficiencia> {
@@ -20,12 +22,20 @@ export async function suficienciaDeEmpresa(companyId: string): Promise<Suficienc
 /** Qué requiere atención hoy. Lee de company_stats (refrescada cada minuto) y, si está vacía, cuenta directo. Capítulo 33 y 37. */
 export async function bandeja() {
   const sb = supabaseAdmin();
-  const [{ data: empresas }, { data: statsRows }, { data: metricasRows }] = await Promise.all([
+  const [{ data: empresas }, { data: statsRows }, { data: metricasRows }, { data: medicionesRows }] = await Promise.all([
     sb.from("companies").select("id,nombre,etapa,estado_admision,created_at").order("created_at", { ascending: false }),
     sb.from("company_stats").select("*"),
     // Los nueve números de TODAS las empresas de una sola vez: una consulta, no una por empresa.
     sb.from("company_metricas").select("company_id,clave,periodo,valor,estado").limit(4000),
+    // Las mediciones de todas las empresas de una sola vez, igual que las métricas.
+    sb.from("mediciones").select("company_id,tipo,numero,fecha").order("fecha", { ascending: false }).limit(2000),
   ]);
+  const medicionesPor = new Map<string, { tipo: string; fecha: string }[]>();
+  for (const m of medicionesRows ?? []) {
+    const l = medicionesPor.get(m.company_id as string) ?? [];
+    l.push({ tipo: m.tipo as string, fecha: m.fecha as string });
+    medicionesPor.set(m.company_id as string, l);
+  }
   const metricasPor = new Map<string, MetricaVital[]>();
   for (const m of metricasRows ?? []) {
     const lista = metricasPor.get(m.company_id as string) ?? [];
@@ -60,6 +70,29 @@ export async function bandeja() {
         detalle: `Sin ellos el diagnóstico es opinión. Falta: ${radio.faltan.slice(0, 3).map((v) => v.nombre.toLowerCase()).join(", ")}${radio.faltan.length > 3 ? "…" : ""}`,
         company_id: e.id, empresa: e.nombre, href: `${base}/realidad`, urgencia: radio.faltan.length >= 5 ? 2 : 3,
       });
+    }
+
+    // ¿MEJORÓ? Sin línea base la pregunta no tiene respuesta; con línea base pero sin corte hace
+    // meses, tampoco. Las dos cosas se avisan aquí, que es donde la consultora mira.
+    const meds = medicionesPor.get(e.id) ?? [];
+    const tieneBase = meds.some((m) => m.tipo === "linea_base");
+    const cortesDe = meds.filter((m) => m.tipo === "corte");
+    if (!tieneBase && radio.listos >= 5 && !["candidata"].includes(e.estado_admision ?? "")) {
+      items.push({
+        tipo: "linea_base", titulo: "Ya se puede fijar el punto de partida",
+        detalle: `Tiene ${radio.listos} de 9 números. Sin punto de partida no habrá con qué comparar después.`,
+        company_id: e.id, empresa: e.nombre, href: `${base}/realidad`, urgencia: 2,
+      });
+    } else if (tieneBase) {
+      const ultima = cortesDe[0]?.fecha ?? meds.find((m) => m.tipo === "linea_base")!.fecha;
+      const diasSin = Math.floor((hoy - new Date(ultima).getTime()) / 86_400_000);
+      if (diasSin >= DIAS_ENTRE_CORTES) {
+        items.push({
+          tipo: "medir", titulo: `Toca medir: ${diasSin} días sin corte`,
+          detalle: cortesDe.length ? "Actualiza sus números y registra un corte para ver qué se movió." : "Nunca se ha medido contra el punto de partida.",
+          company_id: e.id, empresa: e.nombre, href: `${base}/plan`, urgencia: 2,
+        });
+      }
     }
 
     if (["levantamiento", "contraste"].includes(e.etapa)) {
