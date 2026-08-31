@@ -70,9 +70,17 @@ export async function handleGenerarProceso(job: Job) {
   const sbP = supabaseAdmin();
   if (job.payload.process_id) {
     const ficha = r.data.ficha ?? null;
+    // EL NOMBRE QUE PUSO EL ARQUITECTO SE PERDÍA. El proceso se crea antes de llamar a la IA con el
+    // marcador "Proceso nuevo", y esta actualización nunca tocaba el nombre: la dueña de Qori Home
+    // acabó con DOS procesos llamados igual, sin forma de saber cuál era cuál. Si ella escribió un
+    // nombre, ese manda siempre; el de la IA solo rellena cuando quedó el marcador.
+    const { data: actual } = await sbP.from("processes").select("nombre").eq("id", String(job.payload.process_id)).maybeSingle();
+    const sinNombre = !actual?.nombre?.trim() || actual.nombre.trim() === "Proceso nuevo";
+    const nombreIA = r.data.nombre?.trim();
     await sbP.from("processes").update({
       confirmacion: "por_confirmar",
       descripcion_original: descripcion,
+      ...(sinNombre && nombreIA ? { nombre: nombreIA.slice(0, 120) } : {}),
       objetivo: ficha?.objetivo ?? null,
       inicio: ficha?.inicio ?? null,
       resultado: ficha?.resultado ?? null,

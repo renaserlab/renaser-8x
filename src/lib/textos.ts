@@ -122,6 +122,9 @@ export const VACIO = {
   afirmaciones: "Todavía no hay definiciones. Aparecen solas cuando se lee una fuente.",
   hallazgos: "Sin hallazgos todavía. Corre el diagnóstico cuando el levantamiento esté completo.",
   procesos: "Ningún proceso dibujado. Describe uno en voz alta o dibújalo a mano.",
+  // El cliente no tiene el botón de dibujar a mano —es solo del consultor—: prometerle algo que no
+  // puede hacer es una confusión gratuita en la pantalla donde más perdido está.
+  procesosCliente: "Todavía no hay ninguno. Cuéntanos cómo funciona algo de tu negocio —hablando es más fácil— y nosotros lo dibujamos.",
   plan: "El plan se genera cuando los hallazgos estén aprobados.",
   bandeja: "Nada requiere atención hoy.",
   resultados: "Tu consultor está revisando los resultados. Te avisamos cuando estén listos.",

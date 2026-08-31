@@ -22,6 +22,19 @@ export function ProcesosLista({ companyId, procesos, base, paraCliente = false }
   // REVISAR EN GRANDE: al dictar, el texto no cabía en la caja de cinco líneas y quedaba cortado a
   // media frase. Sin poder releer lo que dijo, nadie corrige nada antes de mandarlo a dibujar.
   const [revisando, setRevisando] = useState(false);
+  const [borrando, setBorrando] = useState<string | null>(null);
+
+  const quitar = async (id: string) => {
+    setError(null);
+    try {
+      await pedir(`/api/processes/${id}`, { method: "DELETE" });
+      setBorrando(null);
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No pudimos quitarlo.");
+      setBorrando(null);
+    }
+  };
 
   useEffect(() => {
     if (!revisando) return;
@@ -184,20 +197,51 @@ export function ProcesosLista({ companyId, procesos, base, paraCliente = false }
       <section>
         <h2 className="t-seccion mb-4">{paraCliente ? "Tus procesos" : "Procesos"}</h2>
         {asis.length === 0 ? (
-          <p className="t-cuerpo" style={{ color: "var(--grafito)" }}>{VACIO.procesos}</p>
+          <p className="t-cuerpo medida" style={{ color: "var(--grafito)" }}>{paraCliente ? VACIO.procesosCliente : VACIO.procesos}</p>
         ) : paraCliente ? (
           <div className="flex flex-col gap-3">
-            {asis.map((p) => (
-              <Link key={p.id} href={`${base}/${p.id}`} className="panel p-4 flex items-center justify-between gap-3">
-                <span style={{ minWidth: 0 }}>
-                  <span className="t-seccion" style={{ fontSize: 17 }}>{p.nombre}</span>
-                  <span className="block t-dato mt-1" style={{ color: "var(--grafito)" }}>
-                    {p.nodos} paso{p.nodos === 1 ? "" : "s"} · {p.origen === "generado_ia" ? "lo dibujamos con lo que contaste" : "dibujado a mano"}
-                  </span>
-                </span>
-                <span className="t-dato" style={{ color: "var(--marca)", flex: "none", fontWeight: 600 }}>Verlo y comentarlo →</span>
-              </Link>
-            ))}
+            {asis.map((p) => {
+              // Un proceso de dos pasos salido de un audio que no se entendió no es un proceso: es
+              // basura que se queda ahí para siempre. Se dice lo que es y se ofrece quitarlo.
+              const vacio = p.nodos <= 2;
+              return (
+                <div key={p.id} className="panel p-4">
+                  <Link href={`${base}/${p.id}`} className="flex items-center justify-between gap-3" style={{ textDecoration: "none" }}>
+                    <span style={{ minWidth: 0 }}>
+                      <span className="t-seccion" style={{ fontSize: 17 }}>{p.nombre}</span>
+                      <span className="block t-dato mt-1" style={{ color: vacio ? "var(--caducado)" : "var(--grafito)" }}>
+                        {vacio
+                          ? "Quedó vacío: no llegamos a entender lo que contaste"
+                          : `${p.nodos} pasos · ${p.origen === "generado_ia" ? "lo dibujamos con lo que contaste" : "dibujado a mano"}`}
+                      </span>
+                    </span>
+                    <span className="t-dato" style={{ color: "var(--marca)", flex: "none", fontWeight: 600 }}>
+                      {vacio ? "Verlo →" : "Verlo y comentarlo →"}
+                    </span>
+                  </Link>
+                  {borrando === p.id ? (
+                    <div className="flex gap-3 items-center flex-wrap mt-3" style={{ borderTop: "1px solid var(--linea)", paddingTop: 10 }}>
+                      <span className="t-dato">¿Quitar «{p.nombre}»? No se puede deshacer.</span>
+                      <button type="button" className="boton" style={{ minHeight: 34, fontSize: 13, background: "var(--contradicho)", borderColor: "var(--contradicho)" }} onClick={() => quitar(p.id)}>
+                        Sí, quitarlo
+                      </button>
+                      <button type="button" className="t-dato" style={{ background: "none", border: "none", cursor: "pointer", font: "inherit", color: "var(--grafito)" }} onClick={() => setBorrando(null)}>
+                        No
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className="t-dato mt-2"
+                      style={{ background: "none", border: "none", cursor: "pointer", font: "inherit", textDecoration: "underline", color: "var(--grafito)", padding: 0 }}
+                      onClick={() => setBorrando(p.id)}
+                    >
+                      Quitar este proceso
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
         ) : (
           <table className="tabla">

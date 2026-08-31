@@ -217,3 +217,41 @@ describe("lo dictado se puede leer y corregir antes de mandarlo", () => {
     expect(procesos).toMatch(/document\.body\.style\.overflow = ""/);
   });
 });
+
+/**
+ * NADIE DEBERÍA CONFUNDIRSE USANDO ESTO. Cosas que la dueña de Qori Home vivió en su pantalla y que
+ * no eran fallos técnicos, sino cosas que el aplicativo no explicaba o no dejaba arreglar.
+ */
+describe("nada en pantalla queda sin nombre, sin salida ni sin explicación", () => {
+  const lista = readFileSync(path.join(raiz, "components/ProcesosLista.tsx"), "utf8");
+  const handler = readFileSync(path.join(raiz, "lib/jobs/handlers/procesos.ts"), "utf8");
+
+  it("el proceso toma el nombre que le puso el arquitecto: dos «Proceso nuevo» son indistinguibles", () => {
+    expect(handler, "el nombre que devolvía la IA se estaba descartando").toContain("nombreIA");
+    expect(handler, "si la persona escribió un nombre, ese manda").toContain("sinNombre");
+  });
+
+  it("lo que el sistema no entendió se marca como tal, no con un símbolo suelto", () => {
+    const prompt = readFileSync(path.join(raiz, "lib/ai/agents/arquitecto.ts"), "utf8");
+    expect(prompt).toContain("Falta confirmar: ");
+    expect(prompt, "un «?» delante no significa nada para el dueño").toMatch(/Nunca uses solo "\?" delante/);
+  });
+
+  it("un proceso que salió vacío lo dice, en vez de fingir que se dibujó algo", () => {
+    expect(lista).toContain("no llegamos a entender lo que contaste");
+  });
+
+  it("el cliente puede quitar un proceso que salió mal", () => {
+    expect(lista, "la ruta existía pero no había botón: la basura se quedaba para siempre").toContain("Quitar este proceso");
+    expect(lista, "borrar sin vuelta atrás se confirma").toContain("No se puede deshacer");
+  });
+
+  it("la pantalla vacía no le ofrece al cliente algo que no puede hacer", () => {
+    const textos = readFileSync(path.join(raiz, "lib/textos.ts"), "utf8");
+    expect(textos).toContain("procesosCliente");
+    expect(lista, "el texto del vacío depende de quién mira").toMatch(/paraCliente \? VACIO\.procesosCliente/);
+    // "Empezar en blanco" es solo del consultor: el vacío del cliente no puede mencionarlo.
+    const vacioCliente = textos.slice(textos.indexOf("procesosCliente:"), textos.indexOf("procesosCliente:") + 200);
+    expect(vacioCliente).not.toMatch(/dibújalo a mano/);
+  });
+});

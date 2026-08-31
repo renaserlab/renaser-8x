@@ -38,8 +38,10 @@ REGLAS:
 - Todo camino termina en un nodo fin, incluidos los malos
   ("lead perdido", "cliente se va", "fruta devuelta"). No los omitas por incomodos.
 - Toda decision tiene al menos dos salidas con etiqueta.
-- No inventes pasos que la persona no menciono. Si falta algo
-  evidente, agregalo como nodo con etiqueta que empiece por "?".
+- No inventes pasos que la persona no menciono. Si falta algo evidente, agregalo como nodo cuya
+  etiqueta empiece EXACTAMENTE por "Falta confirmar: " y siga con lo que haria falta saber, en sus
+  palabras ("Falta confirmar: que pasa cuando venden dolares"). Nunca uses solo "?" delante: al dueno
+  le aparece un simbolo suelto que no significa nada y no sabe si es un paso suyo o un error nuestro.
 - Si la persona menciona una espera ("se queda parado hasta que…"), usa un nodo espera con su duracion.
 - Si menciona un problema en un paso ("aqui siempre se traba"), ponlo en problema de ese nodo.
 - Las etiquetas usan las palabras de la persona, no vocabulario de consultoria.

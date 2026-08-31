@@ -255,7 +255,7 @@ export default async function Hoy() {
       )}
       {resto.length > 0 && (
         <details>
-          <summary className="t-seccion" style={{ cursor: "pointer", fontSize: 18 }}>Ver {resto.length} hallazgo{resto.length === 1 ? "" : "s"} más</summary>
+          <summary className="t-seccion" style={{ cursor: "pointer", fontSize: 18 }}>Ver {resto.length} cosa{resto.length === 1 ? "" : "s"} más que encontramos</summary>
           <div className="grid gap-4 lg:grid-cols-2 mt-4">
             {resto.map((h) => (
               <TarjetaHallazgo key={h.id} h={h} documento={documentoQueResuelve(h)} />
