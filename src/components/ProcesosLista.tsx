@@ -73,7 +73,26 @@ export function ProcesosLista({ companyId, procesos, base, paraCliente = false }
         />
         {transcribiendo && <p className="t-dato aparece" aria-live="polite" style={{ color: "var(--grafito)" }}>Escuchando tu audio…</p>}
         <textarea className="campo" rows={5} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} aria-label="Describe el proceso" placeholder={paraCliente ? "Un cliente escribe por WhatsApp, alguien le responde, se le pasa el precio…" : "El lead entra por WhatsApp, un asesor lo contacta…"} />
-        {error && <p className="t-dato" style={{ color: "var(--contradicho)" }}>{error}</p>}
+        {/* BORRAR EN UN TOQUE. En el celular, vaciar una caja larga es borrar letra por letra: la
+            dueña de Qori Home se quedó atascada con un texto que no era suyo y no pudo seguir. */}
+        {descripcion.trim() && (
+          <div className="flex flex-wrap gap-3 items-center">
+            <button
+              type="button"
+              className="t-dato"
+              style={{ background: "none", border: "none", cursor: "pointer", font: "inherit", textDecoration: "underline", color: "var(--grafito)", padding: 0 }}
+              onClick={() => { setDescripcion(""); setAudioOriginal(null); setError(null); }}
+            >
+              Borrar y empezar de nuevo
+            </button>
+            <span className="t-dato" style={{ color: "var(--grafito)" }}>Si grabas otra vez, se agrega a lo que ya hay.</span>
+          </div>
+        )}
+        {error && (
+          <p className="t-cuerpo" role="alert" style={{ color: "var(--contradicho)", border: "1px solid var(--contradicho)", borderRadius: "var(--radio)", padding: "10px 12px" }}>
+            {error}
+          </p>
+        )}
         <div className="flex flex-wrap gap-3 items-center">
           <button className="boton" onClick={generar} disabled={!descripcion.trim()}>Dibujarlo</button>
           {!paraCliente && <button className="boton boton--secundario" onClick={enBlanco}>Empezar en blanco</button>}

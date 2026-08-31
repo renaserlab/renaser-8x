@@ -72,3 +72,43 @@ describe("un ejemplo jamás va dentro de la caja de respuesta", () => {
     }
   });
 });
+
+/**
+ * LA TRANSCRIPCIÓN NO PUEDE INVENTAR (30-08-2026). A la dueña de Qori Home le apareció en su caja
+ * "empezamos con un capital inicial de 25 mil soles" — el ejemplo que estaba escrito en NUESTRO
+ * prompt de transcripción. Con el audio inaudible, el modelo no tenía qué transcribir y rellenó el
+ * hueco con lo que la instrucción le sugería. Creyó que le metíamos datos de otra empresa.
+ */
+describe("la instrucción de transcribir no puede insinuar qué se dijo", () => {
+  const gemini = readFileSync(path.join(raiz, "lib/ai/gemini.ts"), "utf8");
+  // La instrucción de transcribir: desde donde arranca hasta el cierre de su bloque.
+  const desde = gemini.indexOf("Transcribe el audio en español");
+  const instruccion = desde >= 0 ? gemini.slice(desde, gemini.indexOf("contents:", desde)) : "";
+
+  it("no le dice al modelo de qué habla la persona", () => {
+    expect(instruccion, "decir 'describiendo su empresa' es darle el tema para inventar").not.toMatch(/describiendo su empresa|persona de negocios/i);
+  });
+
+  it("no trae ejemplos con cifras ni contenido de negocio", () => {
+    expect(instruccion, "los ejemplos con contenido reaparecen como transcripción inventada").not.toMatch(/25 mil|de cada 10, unos/i);
+  });
+
+  it("ordena devolver vacío antes que inventar", () => {
+    expect(instruccion).toMatch(/\[sin audio\]/);
+    expect(instruccion).toMatch(/antes que escribir algo que no se oyó/i);
+  });
+
+  it("hay barrera en el código: un audio mudo no vuelve como párrafo", () => {
+    expect(gemini, "debe rechazar la transcripción vacía o de puro silencio").toMatch(/NADA\s*=\s*\/\^/);
+    expect(gemini, "y rechazar más palabras de las que caben en el audio").toMatch(/palabras > Math\.max/);
+  });
+});
+
+describe("siempre hay cómo borrar en un toque", () => {
+  it("las cajas grandes que se llenan dictando ofrecen borrar todo", () => {
+    for (const f of ["components/ProcesosLista.tsx", "components/Entrevista.tsx"]) {
+      const src = readFileSync(path.join(raiz, f), "utf8");
+      expect(src, `${f}: en el celular, vaciar a mano es borrar letra por letra`).toContain("Borrar y empezar de nuevo");
+    }
+  });
+});

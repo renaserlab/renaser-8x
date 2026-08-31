@@ -250,7 +250,14 @@ export class GeminiProvider implements AIProvider {
     const thinking = modelo.startsWith("gemini-2.5") ? { thinkingBudget: 0 } : { thinkingLevel: "low" };
     const buf = Buffer.from(await audio.arrayBuffer());
     const body = {
-      systemInstruction: { parts: [{ text: "Quien habla es una persona de negocios en Perú describiendo su empresa, en español. Transcribe FIELMENTE lo dicho: no resumas, no cambies palabras, no añadas nada. Corrige SOLO la puntuación y la separación de frases para que se lea natural. Conserva los montos y números tal como se dijeron ('25 mil soles', 'de cada 10, unos 3'). Si una palabra no se entiende, escribe [inaudible] en su lugar — nunca la adivines. Si hay silencios, simplemente continúa. Devuelve SOLO el texto transcrito." }] },
+      // LA INSTRUCCIÓN NO PUEDE INSINUAR QUÉ SE DIJO (30-08-2026). La versión anterior decía que
+      // quien habla "describe su empresa" y daba ejemplos con contenido ("25 mil soles"). Con un
+      // audio inaudible el modelo no tenía nada que transcribir y rellenó el hueco con eso mismo:
+      // a la dueña de Qori Home le apareció "empezamos con un capital inicial de 25 mil soles" —
+      // el ejemplo de este prompt— y creyó que el sistema le metía datos de otra empresa.
+      // Ahora: español peruano y nada más sobre el tema, ejemplos de FORMATO sin contenido de
+      // negocio, y orden explícita de devolver vacío antes que inventar.
+      systemInstruction: { parts: [{ text: "Transcribe el audio en español (Perú). Escribe EXACTAMENTE lo que se oye: no resumas, no completes, no añadas una sola palabra que no se haya dicho. Corrige solo la puntuación. Escribe los números tal como se pronunciaron, en palabras si así se dijeron. Si una palabra no se entiende, escribe [inaudible]; nunca la adivines. Si el audio está en silencio, no se entiende nada, o dura menos de lo necesario para una frase, devuelve EXACTAMENTE: [sin audio]. Prefiere devolver [sin audio] antes que escribir algo que no se oyó. Devuelve solo la transcripción, sin comentarios." }] },
       contents: [{ role: "user", parts: [{ inlineData: { mimeType: mime || "audio/webm", data: buf.toString("base64") } }, { text: "Transcribe este audio." }] }],
       generationConfig: { temperature: 0, maxOutputTokens: largo ? 16000 : 8000, thinkingConfig: thinking },
     };
@@ -268,6 +275,16 @@ export class GeminiProvider implements AIProvider {
       const j = (await res.json()) as Respuesta;
       const texto = (j.candidates?.[0]?.content?.parts ?? []).map((x) => x.text ?? "").join("").trim();
       if (!texto) throw new Error("No pudimos entender el audio. Intenta de nuevo o escribe la respuesta.");
+
+      // BARRERA CONTRA LO INVENTADO. Un audio mudo o ininteligible no puede volver como un párrafo:
+      // así fue como a la dueña de Qori Home le apareció una historia de otro negocio en su caja.
+      const NADA = /^\[?\s*(sin audio|inaudible|silencio|vacío|vacio)\s*\]?[.\s]*$/i;
+      if (NADA.test(texto)) throw new Error("No se escuchó nada en la grabación. Acerca el micrófono y grábalo de nuevo, o escríbelo.");
+      // Regla de sensatez: nadie dice más de ~25 palabras por segundo hablado. Si el texto excede
+      // largamente lo que cabe en el audio, el modelo rellenó — y es preferible pedir que repita.
+      const palabras = texto.split(/\s+/).filter(Boolean).length;
+      if (segundos != null && segundos > 0 && palabras > Math.max(20, segundos * 25))
+        throw new Error("La grabación salió confusa y no queremos escribir algo que no dijiste. Vuelve a grabarla, por favor.");
       // Si el modelo se quedó sin presupuesto a mitad del audio, mejor decirlo que entregar la mitad en silencio.
       if (j.candidates?.[0]?.finishReason === "MAX_TOKENS") throw new Error("El audio es muy largo para convertirlo de una vez. Guárdalo como audio y nosotros lo escuchamos completo.");
       return { texto, segmentos: [] };

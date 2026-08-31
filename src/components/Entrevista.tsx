@@ -178,7 +178,18 @@ export function Entrevista({ cargar, responder, transcribir, titulo, transcripto
           )}
           <label className="flex flex-col gap-2">
             <span className="t-etiqueta">O escribe tu respuesta</span>
-            <textarea className="campo" value={texto} onChange={(e) => setTexto(e.target.value)} rows={4} placeholder="" aria-label="Tu respuesta" />
+            <textarea className="campo" value={texto} onChange={(e) => setTexto(e.target.value)} rows={4} placeholder="Con tus palabras, como se lo contarías a alguien" aria-label="Tu respuesta" />
+            {/* BORRAR EN UN TOQUE: en el celular vaciar una caja larga es borrar letra por letra. */}
+            {texto.trim() && (
+              <button
+                type="button"
+                className="t-dato"
+                style={{ background: "none", border: "none", cursor: "pointer", font: "inherit", textDecoration: "underline", color: "var(--grafito)", padding: 0, alignSelf: "flex-start" }}
+                onClick={() => { setTexto(""); setAudioListo(null); setError(null); }}
+              >
+                Borrar y empezar de nuevo
+              </button>
+            )}
           </label>
           {texto.trim() && audioListo && (
             <p className="t-dato" style={{ color: "var(--grafito)" }}>Esto entendimos de tu audio — corrige lo que quieras y guarda.</p>
