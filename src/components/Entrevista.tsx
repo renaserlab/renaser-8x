@@ -178,7 +178,9 @@ export function Entrevista({ cargar, responder, transcribir, titulo, transcripto
           )}
           <label className="flex flex-col gap-2">
             <span className="t-etiqueta">O escribe tu respuesta</span>
-            <textarea className="campo" value={texto} onChange={(e) => setTexto(e.target.value)} rows={4} placeholder="Con tus palabras, como se lo contarías a alguien" aria-label="Tu respuesta" />
+            {/* La caja crece con lo dictado: con cuatro filas fijas la respuesta quedaba cortada y
+                no se podía releer antes de guardarla. */}
+            <textarea className="campo" value={texto} onChange={(e) => setTexto(e.target.value)} rows={Math.min(14, Math.max(4, Math.ceil(texto.length / 42)))} placeholder="Con tus palabras, como se lo contarías a alguien" aria-label="Tu respuesta" />
             {/* BORRAR EN UN TOQUE: en el celular vaciar una caja larga es borrar letra por letra. */}
             {texto.trim() && (
               <button

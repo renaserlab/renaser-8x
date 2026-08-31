@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { pedir } from "@/lib/cliente";
@@ -19,6 +19,24 @@ export function ProcesosLista({ companyId, procesos, base, paraCliente = false }
   const [nombre, setNombre] = useState("");
   const [job, setJob] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // REVISAR EN GRANDE: al dictar, el texto no cabía en la caja de cinco líneas y quedaba cortado a
+  // media frase. Sin poder releer lo que dijo, nadie corrige nada antes de mandarlo a dibujar.
+  const [revisando, setRevisando] = useState(false);
+
+  useEffect(() => {
+    if (!revisando) return;
+    const alTeclear = (e: KeyboardEvent) => e.key === "Escape" && setRevisando(false);
+    document.addEventListener("keydown", alTeclear);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", alTeclear);
+      document.body.style.overflow = "";
+    };
+  }, [revisando]);
+
+  // La caja crece con lo dictado en vez de quedarse en cinco líneas fijas, con tope para no
+  // empujar el botón fuera de la pantalla del celular.
+  const filas = Math.min(14, Math.max(5, Math.ceil(descripcion.length / 42)));
 
   const generar = async () => {
     setError(null);
@@ -35,6 +53,8 @@ export function ProcesosLista({ companyId, procesos, base, paraCliente = false }
       setJob(r.job_id);
       setDescripcion("");
       setAudioOriginal(null);
+      // Al mandarlo a dibujar se vuelve a la vista normal: la ventana grande ya cumplió su función.
+      setRevisando(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo.");
     }
@@ -64,6 +84,9 @@ export function ProcesosLista({ companyId, procesos, base, paraCliente = false }
               const t = await transcribirAudio(b);
               setDescripcion((p) => (p ? p + " " + t : t));
               setAudioOriginal(b); // el audio original se conserva junto al proceso
+              // Al terminar de dictar se abre en grande: es el momento exacto de releer y corregir,
+              // y en la caja pequeña la frase quedaba cortada a media palabra.
+              setRevisando(true);
             } catch (e) {
               setError(e instanceof Error ? e.message : "No pudimos entender el audio.");
             } finally {
@@ -72,11 +95,19 @@ export function ProcesosLista({ companyId, procesos, base, paraCliente = false }
           }}
         />
         {transcribiendo && <p className="t-dato aparece" aria-live="polite" style={{ color: "var(--grafito)" }}>Escuchando tu audio…</p>}
-        <textarea className="campo" rows={5} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} aria-label="Describe el proceso" placeholder={paraCliente ? "Un cliente escribe por WhatsApp, alguien le responde, se le pasa el precio…" : "El lead entra por WhatsApp, un asesor lo contacta…"} />
+        <textarea className="campo" rows={filas} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} aria-label="Describe el proceso" placeholder={paraCliente ? "Un cliente escribe por WhatsApp, alguien le responde, se le pasa el precio…" : "El lead entra por WhatsApp, un asesor lo contacta…"} />
         {/* BORRAR EN UN TOQUE. En el celular, vaciar una caja larga es borrar letra por letra: la
             dueña de Qori Home se quedó atascada con un texto que no era suyo y no pudo seguir. */}
         {descripcion.trim() && (
           <div className="flex flex-wrap gap-3 items-center">
+            <button
+              type="button"
+              className="boton boton--secundario"
+              style={{ minHeight: 38, fontSize: 14 }}
+              onClick={() => setRevisando(true)}
+            >
+              Leerlo en grande
+            </button>
             <button
               type="button"
               className="t-dato"
@@ -99,6 +130,55 @@ export function ProcesosLista({ companyId, procesos, base, paraCliente = false }
         </div>
         {!descripcion.trim() && <p className="t-dato" style={{ color: "var(--grafito)" }}>Primero cuéntanos el proceso — hablando o escribiendo — y nosotros lo dibujamos.</p>}
         <Progreso jobId={job} paraCliente={paraCliente} alTerminar={() => router.refresh()} />
+
+        {/* LEERLO EN GRANDE. En el celular, revisar lo dictado dentro de una caja de cinco líneas es
+            imposible: la frase queda cortada y nadie corrige lo que no puede leer. Se abre en el
+            mismo panel que ya usa el resto del portal —hoja inferior, 82dvh, respetando la barra de
+            inicio del iPhone— y al mandarlo a dibujar se cierra solo y vuelve la vista normal. */}
+        {revisando && (
+          <>
+            <button type="button" className="telon" aria-label="Cerrar" onClick={() => setRevisando(false)} />
+            <aside className="panel-lateral" role="dialog" aria-modal="true" aria-label="Revisa lo que contaste">
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <h3 className="t-seccion">Revisa lo que contaste</h3>
+                <button
+                  type="button"
+                  onClick={() => setRevisando(false)}
+                  className="t-dato"
+                  style={{ background: "none", border: "none", cursor: "pointer", padding: "2px 4px", font: "inherit", color: "var(--grafito)" }}
+                >
+                  Cerrar
+                </button>
+              </div>
+              <p className="t-dato mb-3" style={{ color: "var(--grafito)" }}>
+                Corrige lo que haga falta — nombres, números, lo que se entendió mal. Con esto dibujamos tu proceso.
+              </p>
+              <textarea
+                className="campo"
+                value={descripcion}
+                onChange={(e) => setDescripcion(e.target.value)}
+                aria-label="Lo que contaste"
+                style={{ minHeight: "min(46dvh, 380px)", lineHeight: 1.55 }}
+              />
+              {error && (
+                <p className="t-cuerpo mt-3" role="alert" style={{ color: "var(--contradicho)", border: "1px solid var(--contradicho)", borderRadius: "var(--radio)", padding: "10px 12px" }}>
+                  {error}
+                </p>
+              )}
+              <div className="flex flex-wrap gap-3 items-center mt-4">
+                <button className="boton" onClick={generar} disabled={!descripcion.trim()}>Dibujarlo</button>
+                <button
+                  type="button"
+                  className="t-dato"
+                  style={{ background: "none", border: "none", cursor: "pointer", font: "inherit", textDecoration: "underline", color: "var(--grafito)", padding: 0 }}
+                  onClick={() => { setDescripcion(""); setAudioOriginal(null); setError(null); setRevisando(false); }}
+                >
+                  Borrar y empezar de nuevo
+                </button>
+              </div>
+            </aside>
+          </>
+        )}
       </section>
 
       <section>

@@ -178,3 +178,42 @@ describe("un audio largo no se pierde", () => {
     expect(en15min, "15 minutos hablados son ~2.500 palabras: debe caber de sobra").toBeGreaterThan(20000);
   });
 });
+
+describe("lo dictado se puede leer y corregir antes de mandarlo", () => {
+  const procesos = readFileSync(path.join(raiz, "components/ProcesosLista.tsx"), "utf8");
+
+  it("la caja crece con lo dictado en vez de cortar la frase", () => {
+    expect(procesos, "cinco filas fijas cortaban el texto a media palabra").toMatch(/rows=\{filas\}/);
+    expect(procesos).toMatch(/Math\.min\(14, Math\.max\(5/);
+    const entrevista = readFileSync(path.join(raiz, "components/Entrevista.tsx"), "utf8");
+    expect(entrevista, "la respuesta de la entrevista también quedaba cortada").toMatch(/rows=\{Math\.min\(14/);
+  });
+
+  it("al terminar de dictar se abre en grande para releer", () => {
+    const desde = procesos.indexOf("const t = await transcribirAudio");
+    expect(desde, "debe existir el paso de transcribir").toBeGreaterThan(-1);
+    const bloque = procesos.slice(desde, desde + 600);
+    expect(bloque, "es el momento exacto de corregir lo que se entendió mal").toContain("setRevisando(true)");
+  });
+
+  it("la ventana grande usa el panel del portal, que ya respeta el iPhone", () => {
+    // .panel-lateral: hoja inferior con 82dvh y env(safe-area-inset-bottom). Inventar otro overlay
+    // con 100vh se rompe en Safari por la barra de direcciones.
+    expect(procesos).toContain("panel-lateral");
+    expect(procesos).toContain("telon");
+    const css = readFileSync(path.join(raiz, "design/tokens.css"), "utf8");
+    expect(css).toMatch(/max-height:\s*82dvh/);
+    expect(css).toMatch(/env\(safe-area-inset-bottom\)/);
+  });
+
+  it("se puede dibujar desde la ventana grande y vuelve sola a la vista normal", () => {
+    const panel = procesos.slice(procesos.indexOf("Revisa lo que contaste"));
+    expect(panel, "el botón tiene que estar dentro del panel").toContain("Dibujarlo");
+    expect(procesos, "al mandarlo a dibujar el panel se cierra").toMatch(/setRevisando\(false\);\s*\n\s*\} catch/);
+  });
+
+  it("se puede cerrar con Escape y no se queda la página bloqueada", () => {
+    expect(procesos).toContain('e.key === "Escape"');
+    expect(procesos).toMatch(/document\.body\.style\.overflow = ""/);
+  });
+});
