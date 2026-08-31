@@ -25,6 +25,13 @@ const TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS ?? 120_000);
  */
 const TIMEOUT_PRINCIPAL_MS = Number(process.env.AI_TIMEOUT_PRINCIPAL_MS ?? 15_000);
 /**
+ * TRANSCRIBIR NO ES RESPONDER. Un audio se transcribe a ~0,25x del tiempo real: 91 s medidos
+ * tardaron 21 s, así que 15 minutos hablados necesitan unos 200 s. Con el plazo general de 120 s,
+ * una grabación larga —justo la que más cuesta repetir— moría por tiempo agotado. La ruta permite
+ * hasta 300 s, así que la transcripción usa ese margen completo menos un respiro para responder.
+ */
+const TIMEOUT_TRANSCRIBIR_MS = Number(process.env.AI_TIMEOUT_TRANSCRIBIR_MS ?? 280_000);
+/**
  * Gemini 3.x descuenta los tokens de razonamiento de maxOutputTokens. `maxTokens` del contrato es presupuesto
  * de RESPUESTA, así que se suma un margen para el razonamiento y se acota su nivel (verificado: con 600 tokens
  * y nivel por defecto el contrastador gastaba 572 pensando y el JSON salía truncado).
@@ -259,12 +266,18 @@ export class GeminiProvider implements AIProvider {
       // negocio, y orden explícita de devolver vacío antes que inventar.
       systemInstruction: { parts: [{ text: "Transcribe el audio en español (Perú). Escribe EXACTAMENTE lo que se oye: no resumas, no completes, no añadas una sola palabra que no se haya dicho. Corrige solo la puntuación. Escribe los números tal como se pronunciaron, en palabras si así se dijeron. Si una palabra no se entiende, escribe [inaudible]; nunca la adivines. Si el audio está en silencio, no se entiende nada, o dura menos de lo necesario para una frase, devuelve EXACTAMENTE: [sin audio]. Prefiere devolver [sin audio] antes que escribir algo que no se oyó. Devuelve solo la transcripción, sin comentarios." }] },
       contents: [{ role: "user", parts: [{ inlineData: { mimeType: mime || "audio/webm", data: buf.toString("base64") } }, { text: "Transcribe este audio." }] }],
-      generationConfig: { temperature: 0, maxOutputTokens: largo ? 16000 : 8000, thinkingConfig: thinking },
+      // El presupuesto de salida crece con el audio: ~3 palabras/s habladas y ~1,6 tokens/palabra, con
+      // holgura. Un tope fijo cortaba la cola de las grabaciones largas justo donde más duele.
+      generationConfig: {
+        temperature: 0,
+        maxOutputTokens: segundos != null && segundos > 0 ? Math.min(60_000, Math.max(8_000, Math.ceil(segundos * 8))) : largo ? 16_000 : 8_000,
+        thinkingConfig: thinking,
+      },
     };
     const MAX_REINTENTOS_INTERACTIVOS = 2;
     let reintentos = 0;
     for (;;) {
-      const res = await fetch(`${BASE}/${modelo}:generateContent`, { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": this.key }, body: JSON.stringify(body), signal: AbortSignal.timeout(TIMEOUT_MS) });
+      const res = await fetch(`${BASE}/${modelo}:generateContent`, { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": this.key }, body: JSON.stringify(body), signal: AbortSignal.timeout(TIMEOUT_TRANSCRIBIR_MS) });
       if (res.status === 503 && reintentos < MAX_REINTENTOS_INTERACTIVOS) {
         reintentos++;
         await new Promise((r) => setTimeout(r, 2000 * reintentos));

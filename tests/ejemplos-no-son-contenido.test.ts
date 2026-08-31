@@ -112,3 +112,69 @@ describe("siempre hay cómo borrar en un toque", () => {
     }
   });
 });
+
+describe("el micrófono nunca falla en silencio", () => {
+  const src = readFileSync(path.join(raiz, "components/voz/BotonGrabar.tsx"), "utf8");
+
+  it("un fallo al abrir el micrófono se le dice a la persona", () => {
+    // Antes el catch solo hacía setGrabando(false): el botón quedaba muerto sin explicación.
+    expect(src).toContain("setFalloMicro");
+    expect(src, "el permiso denegado es el caso más común en el iPhone").toContain("NotAllowedError");
+  });
+
+  it("una grabación vacía se avisa aquí, sin mandarla al servidor", () => {
+    expect(src).toMatch(/blob\.size < \d+/);
+  });
+
+  it("no se fuerza un formato de audio: Safari en iPhone no soporta webm", () => {
+    expect(src, "pasar mimeType a MediaRecorder lo hace fallar en el iPhone").not.toMatch(/new MediaRecorder\(stream,/);
+  });
+});
+
+describe("un proceso se captura con detalle y sin inventar", () => {
+  const prompt = readFileSync(path.join(raiz, "lib/ai/agents/arquitecto.ts"), "utf8");
+
+  it("pide tiempo, responsable y herramienta de cada paso", () => {
+    for (const campo of ["responsable", "herramienta", "tiempo", "entrada/salida", "estandar", "evidencia"])
+      expect(prompt, `falta pedir ${campo}`).toContain(campo);
+  });
+
+  it("pide cómo se mide el proceso, que la base guardaba vacío", () => {
+    for (const campo of ["indicador", "meta", "medicion_donde", "sale_mal", "como_bien"])
+      expect(prompt, `la ficha debe recoger ${campo}`).toContain(campo);
+  });
+
+  it("prohíbe deducir responsables, tiempos o herramientas", () => {
+    expect(prompt).toMatch(/NADA SE INVENTA/);
+    expect(prompt).toMatch(/Jamas deduzcas un responsable/);
+    expect(prompt, "un hueco honesto se pregunta; lo inventado se cree").toMatch(/huecos se preguntan, lo inventado se cree/);
+  });
+
+  it("lo que el arquitecto recoge se guarda de verdad", () => {
+    const handler = readFileSync(path.join(raiz, "lib/jobs/handlers/procesos.ts"), "utf8");
+    for (const campo of ["indicador", "meta", "medicion_donde", "sale_mal", "como_bien"])
+      expect(handler, `${campo} se pide pero no se guarda`).toContain(`${campo}: ficha?.${campo}`);
+  });
+});
+
+describe("un audio largo no se pierde", () => {
+  const gemini = readFileSync(path.join(raiz, "lib/ai/gemini.ts"), "utf8");
+
+  it("transcribir tiene su propio plazo, más largo que el de responder", () => {
+    expect(gemini).toContain("TIMEOUT_TRANSCRIBIR_MS");
+    expect(gemini, "con el plazo general de 120 s una grabación de 15 minutos moría").toMatch(/AI_TIMEOUT_TRANSCRIBIR_MS \?\? 2[0-9]{2}_000/);
+  });
+
+  it("el presupuesto de salida crece con la duración del audio", () => {
+    expect(gemini).toMatch(/maxOutputTokens: segundos != null/);
+  });
+
+  it("el tope de palabras no estorba a una grabación larga de verdad", () => {
+    // 25 palabras por segundo hablado es ~10x lo que habla una persona: solo caza lo inventado.
+    const m = gemini.match(/palabras > Math\.max\(20, segundos \* (\d+)\)/);
+    expect(m, "debe existir el tope de sensatez").not.toBeNull();
+    const porSegundo = Number(m![1]);
+    const en15min = 900 * porSegundo;
+    expect(en15min, "15 minutos hablados son ~2.500 palabras: debe caber de sobra").toBeGreaterThan(20000);
+  });
+});

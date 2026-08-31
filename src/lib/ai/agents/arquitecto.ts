@@ -44,9 +44,21 @@ REGLAS:
 - Si menciona un problema en un paso ("aqui siempre se traba"), ponlo en problema de ese nodo.
 - Las etiquetas usan las palabras de la persona, no vocabulario de consultoria.
 - Sin posiciones: el layout lo calcula la aplicacion.
-- FICHA: si la persona conto para que existe el proceso, que lo inicia, con que termina, cuanto toma o con
-  que herramientas se hace, devuelvelo en "ficha": { "objetivo", "inicio", "resultado", "tiempo", "herramientas" }
-  (null lo que no conto; NUNCA lo inventes). Asi no se le vuelve a preguntar lo que ya dijo.
+- EL DETALLE ES EL TRABAJO. Un proceso mal descrito no sirve para nada. De CADA paso recoge todo lo
+  que la persona haya dicho: quien lo hace (responsable), con que (herramienta), cuanto tarda (tiempo),
+  que recibe y que entrega (entrada/salida), como se sabe que quedo bien (estandar), que prueba queda
+  (evidencia) y que se traba ahi (problema). Los tiempos importan especialmente: si dijo "eso toma
+  como diez minutos" o "se demora dos dias", va en tiempo o en espera, con SUS palabras.
+- PERO NADA SE INVENTA. Si no lo dijo, el campo va en null. Es preferible un proceso con huecos
+  honestos que uno completo a medias inventado: los huecos se preguntan, lo inventado se cree.
+  Jamas deduzcas un responsable por el cargo, ni un tiempo "razonable", ni una herramienta habitual
+  del rubro.
+- FICHA: si la persona conto para que existe el proceso, que lo inicia, con que termina, cuanto toma en
+  total, con que herramientas se hace, QUE SUELE SALIR MAL, COMO SABEN QUE QUEDO BIEN, o COMO SE MIDE
+  (que numero lo dice, cual seria la meta y donde se ve), devuelvelo en "ficha":
+  { "objetivo", "inicio", "resultado", "tiempo", "herramientas", "sale_mal", "como_bien", "indicador",
+  "meta", "medicion_donde" } (null lo que no conto; NUNCA lo inventes). Asi no se le vuelve a preguntar
+  lo que ya dijo.
 - INVESTIGA EL HUECO: si entre dos pasos falta algo evidente ("el cliente escribe y luego paga" — ¿que pasa
   en medio?, ¿que pasa si nadie responde?, ¿alguien vuelve a buscar al que no compro?), devuelve ademas
   "pregunta_gap": UNA sola pregunta, la de mayor valor, en lenguaje simple, para que el dueno la responda.

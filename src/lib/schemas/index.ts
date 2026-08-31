@@ -129,7 +129,10 @@ export const SalidaArquitecto = z.object({
   // Una pregunta de alto valor sobre el hueco mas importante del proceso (o null si esta completo).
   pregunta_gap: z.string().nullable().optional(),
   // Ficha del proceso si la persona la contó (nunca inventada): el cliente completa solo huecos.
-  ficha: z.object({ objetivo: z.string().nullable().optional(), inicio: z.string().nullable().optional(), resultado: z.string().nullable().optional(), tiempo: z.string().nullable().optional(), herramientas: z.string().nullable().optional() }).nullable().optional(),
+  // La ficha recoge lo que la persona YA contó para no volver a preguntárselo. `indicador`, `meta` y
+  // `medicion_donde` existían en la base desde siempre y nadie los llenaba: sin ellos un proceso se
+  // describe pero no se puede vigilar, que es la mitad del trabajo.
+  ficha: z.object({ objetivo: z.string().nullable().optional(), inicio: z.string().nullable().optional(), resultado: z.string().nullable().optional(), tiempo: z.string().nullable().optional(), herramientas: z.string().nullable().optional(), indicador: z.string().nullable().optional(), meta: z.string().nullable().optional(), medicion_donde: z.string().nullable().optional(), sale_mal: z.string().nullable().optional(), como_bien: z.string().nullable().optional() }).nullable().optional(),
 });
 export type SalidaArquitecto = z.infer<typeof SalidaArquitecto>;
 

@@ -78,6 +78,13 @@ export async function handleGenerarProceso(job: Job) {
       resultado: ficha?.resultado ?? null,
       tiempo: ficha?.tiempo ?? null,
       herramientas: ficha?.herramientas ?? null,
+      // Lo que la persona ya contó sobre qué se traba y cómo se mide: estaba en la base desde
+      // siempre y nadie lo guardaba, así que la ficha volvía a preguntárselo. Null si no lo dijo.
+      sale_mal: ficha?.sale_mal ?? null,
+      como_bien: ficha?.como_bien ?? null,
+      indicador: ficha?.indicador ?? null,
+      meta: ficha?.meta ?? null,
+      medicion_donde: ficha?.medicion_donde ?? null,
     }).eq("id", String(job.payload.process_id));
   }
   // La pregunta del hueco (fase 17) entra a la conversación del dueño como siguiente pregunta pendiente.
