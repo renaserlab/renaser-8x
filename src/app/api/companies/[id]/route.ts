@@ -1,5 +1,6 @@
 import { protegido, ok, fallo, leerJSON, exigirAcceso } from "@/lib/api";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { prepararBorradoEmpresa } from "@/lib/borrar-empresa";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -27,6 +28,8 @@ export const DELETE = protegido<Ctx>({ consultor: true }, async (_p, _req, ctx) 
   const { data: archivos } = await sb.rpc("archivos_de_empresa", { p_company_id: id });
   const rutas = (archivos as string[] | null) ?? [];
   for (let i = 0; i < rutas.length; i += 100) await sb.storage.from("fuentes").remove(rutas.slice(i, i + 100));
+  // Suelta los enlaces que bloquean la cascada antes de borrar (ver lib/borrar-empresa.ts).
+  await prepararBorradoEmpresa(id);
   const { error } = await sb.from("companies").delete().eq("id", id);
   if (error) return fallo(error.message, 500);
   return ok({ eliminada: true, archivos: rutas.length });

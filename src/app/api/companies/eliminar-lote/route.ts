@@ -2,6 +2,7 @@ import { z } from "zod";
 import { protegido, ok, fallo, leerValidado, uuid } from "@/lib/api";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { registrar, ipDe } from "@/lib/auditoria";
+import { prepararBorradoEmpresa } from "@/lib/borrar-empresa";
 
 /**
  * LIMPIEZA EN LOTE (solo consultora). Después de semanas de pruebas quedan una docena de empresas
@@ -37,6 +38,7 @@ export const POST = protegido({ consultor: true }, async (perfil, req) => {
     const rutas = (archivos as string[] | null) ?? [];
     for (let i = 0; i < rutas.length; i += 100) await sb.storage.from("fuentes").remove(rutas.slice(i, i + 100));
 
+    await prepararBorradoEmpresa(e.id);
     const { error } = await sb.from("companies").delete().eq("id", e.id);
     if (error) {
       fallidas.push({ nombre: e.nombre, motivo: error.message });

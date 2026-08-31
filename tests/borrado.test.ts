@@ -81,3 +81,48 @@ describe("la limpieza en lote no borra a ciegas", () => {
     expect(tabla).toContain("se quedará sin empresa");
   });
 });
+
+/**
+ * BORRAR UNA EMPRESA TRABAJADA. Kelin no pudo eliminar Jardín Renaser: «violates foreign key
+ * constraint interview_responses_origen_claim_id_fkey». Al borrar la empresa sus definiciones se van
+ * en cascada, pero otras filas apuntan a ellas SIN acción de borrado. No es una sola: hay diez
+ * referencias así, y cuál salta depende del orden en que Postgres decida cascadear — o sea, del azar
+ * y de qué datos tenga esa empresa. Por eso a veces se podía borrar y a veces no.
+ */
+describe("una empresa con trabajo dentro se puede borrar igual", () => {
+  const src = readFileSync(path.join(process.cwd(), "src/lib/borrar-empresa.ts"), "utf8");
+
+  it("suelta el enlace exacto que bloqueó a Kelin", () => {
+    expect(src, "la respuesta de entrevista nacida de una definición").toContain("origen_claim_id: null");
+  });
+
+  it("suelta también las otras referencias sin cascada del esquema", () => {
+    for (const [campo, porque] of [
+      ["contradice_a: null", "una definición que contradice a otra"],
+      ["finding_id: null", "acciones y correcciones sobre un hallazgo"],
+      ["source_id: null", "el documento que apunta a su fuente"],
+      ["padre_id: null", "el proceso TO-BE que apunta a su AS-IS"],
+    ])
+      expect(src, `falta soltar ${porque}`).toContain(campo);
+  });
+
+  it("borra los hijos en orden en vez de confiar en el orden de la cascada", () => {
+    const orden = ["interview_responses", "interview_sessions", "findings", "claims", "sources", "participants"];
+    const posiciones = orden.map((t) => src.indexOf(`from("${t}").delete()`));
+    expect(posiciones.every((p) => p > -1), `faltan borrados: ${orden.filter((t, i) => posiciones[i] === -1).join(", ")}`).toBe(true);
+    // De la hoja a la raíz: las respuestas antes que las sesiones, las definiciones antes que las fuentes.
+    expect(posiciones[0]).toBeLessThan(posiciones[1]!);
+    expect(posiciones[3]).toBeLessThan(posiciones[4]!);
+  });
+
+  it("se usa en las DOS rutas de borrado, no solo en una", () => {
+    for (const r of ["src/app/api/companies/[id]/route.ts", "src/app/api/companies/eliminar-lote/route.ts"]) {
+      const ruta = readFileSync(path.join(process.cwd(), r), "utf8");
+      expect(ruta, `${r} borra sin sanear y volvería a fallar`).toContain("prepararBorradoEmpresa");
+    }
+  });
+
+  it("va en lotes: una empresa trabajada tiene cientos de filas", () => {
+    expect(src).toMatch(/i \+= 200/);
+  });
+});
