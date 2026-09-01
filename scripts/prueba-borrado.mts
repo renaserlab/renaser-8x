@@ -39,14 +39,18 @@ try {
   await sb.from("processes").insert({ company_id: companyId, nombre: "TO-BE", version: "to_be", origen: "generado_ia", padre_id: p1!.id });
   console.log("  Creada con: definición que contradice a otra, respuesta nacida de definición,\n  evidencia, acción y corrección sobre un hallazgo, documento con fuente y TO-BE con padre.\n");
 
-  // Primero, SIN sanear: debe fallar igual que le falló a Kelin.
-  const { error: sinSanear } = await sb.from("companies").delete().eq("id", companyId);
-  paso(!!sinSanear, "sin sanear, Postgres bloquea el borrado (es el fallo real)", sinSanear ? sinSanear.message.slice(0, 80) : "NO bloqueó: la prueba no reproduce el caso");
-
-  // Ahora con el saneamiento.
-  await prepararBorradoEmpresa(companyId);
-  const { error: conSanear } = await sb.from("companies").delete().eq("id", companyId);
-  paso(!conSanear, "con el saneamiento, la empresa se borra", conSanear ? conSanear.message.slice(0, 90) : "");
+  // Antes esto fallaba con «violates foreign key constraint interview_responses_origen_claim_id_fkey».
+  // Desde la migración del 30-08-2026 la base ya resuelve sola las diez referencias que bloqueaban,
+  // así que un borrado directo tiene que funcionar. Si esto vuelve a fallar, alguien deshizo la
+  // migración y el problema de Kelin está de vuelta.
+  const { error: directo } = await sb.from("companies").delete().eq("id", companyId);
+  paso(!directo, "la base borra una empresa trabajada sin ayuda de nadie", directo ? directo.message.slice(0, 100) : "");
+  if (directo) {
+    // Red de seguridad: si la base volviera a bloquear, el saneamiento por código debe salvarlo.
+    await prepararBorradoEmpresa(companyId);
+    const { error: conSanear } = await sb.from("companies").delete().eq("id", companyId);
+    paso(!conSanear, "y si algún día vuelve a bloquear, el saneamiento por código lo resuelve", conSanear ? conSanear.message.slice(0, 90) : "");
+  }
 
   const { count } = await sb.from("companies").select("id", { count: "exact", head: true }).eq("id", companyId);
   paso(count === 0, "no queda la empresa en la base", `quedan ${count}`);
