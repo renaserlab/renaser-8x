@@ -27,15 +27,26 @@ export function Hallazgo({ h, modo }: { h: HallazgoRow; modo: "consultor" | "cli
   const [comentario, setComentario] = useState("");
   const [cambios, setCambios] = useState({ titulo: h.titulo, causa_raiz: h.causa_raiz ?? "", recomendacion: h.recomendacion ?? "", impacto: h.impacto ?? "medio" });
   const [error, setError] = useState<string | null>(null);
+  // LA DECISIÓN SE VE: sin esto, Kelin pulsó Aprobar cinco veces porque nada le confirmaba que ya estaba hecho.
+  const [estado, setEstado] = useState(h.estado_revision);
+  const [decidido, setDecidido] = useState(h.estado_revision !== "pendiente");
+  const [guardando, setGuardando] = useState(false);
+  const [validacionLevantada, setValidacionLevantada] = useState(false);
 
   const revisar = async (accion: "aprobado" | "corregido" | "rechazado", opts?: { levantar_validacion?: boolean }) => {
     setError(null);
+    setGuardando(true);
     try {
       await pedir(`/api/findings/${h.id}/review`, { json: { accion, motivo: motivo || undefined, comentario: comentario || undefined, cambios: accion === "corregido" ? cambios : undefined, levantar_validacion: opts?.levantar_validacion } });
       setModoCorregir(false);
+      setEstado(accion);
+      setDecidido(true);
+      setValidacionLevantada(true);
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo.");
+    } finally {
+      setGuardando(false);
     }
   };
 
@@ -43,7 +54,7 @@ export function Hallazgo({ h, modo }: { h: HallazgoRow; modo: "consultor" | "cli
   const contradice = h.finding_evidence.filter((e) => e.relacion === "contradice");
   const esCliente = modo === "cliente";
   const preserva = !!h.filtros?.preserva;
-  const necesitaValidacion = !!h.requiere_validacion;
+  const necesitaValidacion = !!h.requiere_validacion && !validacionLevantada;
 
   return (
     // La severidad ya vive en la etiqueta coloreada — sin borde lateral (piso de calidad).
@@ -52,7 +63,7 @@ export function Hallazgo({ h, modo }: { h: HallazgoRow; modo: "consultor" | "cli
         {preserva ? <span className="t-etiqueta" style={{ color: "var(--confirmado)" }}>fortaleza · se conserva</span> : <span className="t-etiqueta" style={{ color: COLOR_IMPACTO[h.impacto ?? "bajo"] }}>impacto {h.impacto}</span>}
         {!esCliente && <span className="t-etiqueta">{PILAR[h.pilar]}{h.filtros?.dimension ? ` · ${h.filtros.dimension}` : ""}</span>}
         {!esCliente && h.patron && <span className="t-etiqueta">{h.patron.replace(/_/g, " ")}</span>}
-        {!esCliente && <span className="t-etiqueta" style={{ color: h.estado_revision === "aprobado" || h.estado_revision === "corregido" ? "var(--confirmado)" : h.estado_revision === "rechazado" ? "var(--contradicho)" : "var(--caducado)" }}>{h.estado_revision}</span>}
+        {!esCliente && <span className="t-etiqueta" style={{ color: estado === "aprobado" || estado === "corregido" ? "var(--confirmado)" : estado === "rechazado" ? "var(--contradicho)" : "var(--caducado)" }}>{estado}</span>}
         {!esCliente && necesitaValidacion && <span className="t-etiqueta" style={{ color: "var(--contradicho)" }}>necesita validación</span>}
         {!esCliente && h.filtros?.fuerza_maxima && <span className="t-etiqueta">{FUERZA[h.filtros.fuerza_maxima] ?? h.filtros.fuerza_maxima} · {h.filtros.fuentes_independientes ?? 0} fuente(s)</span>}
         {!esCliente && h.origen === "consultor" && <span className="t-etiqueta">creado por el consultor</span>}
@@ -131,7 +142,16 @@ export function Hallazgo({ h, modo }: { h: HallazgoRow; modo: "consultor" | "cli
         </p>
       )}
 
-      {!esCliente && (
+      {/* LA DECISIÓN TOMADA SE DICE CON TODAS SUS LETRAS — y los botones descansan hasta que quieras cambiarla. */}
+      {!esCliente && decidido && !modoCorregir && (
+        <div className="mt-5 flex flex-wrap items-center gap-3 no-imprimir" style={{ borderTop: "1px solid var(--linea)", paddingTop: 14 }}>
+          <p className="t-dato" style={{ fontWeight: 600, color: estado === "rechazado" ? "var(--contradicho)" : "var(--confirmado)" }}>
+            {estado === "aprobado" ? "Aprobado. Ya cuenta para el cliente y sus documentos." : estado === "corregido" ? "Corregido y aprobado. Ya cuenta para el cliente." : "Rechazado. No llega al cliente."}
+          </p>
+          <button className="boton boton--secundario" style={{ minHeight: 36, fontSize: 14 }} onClick={() => setDecidido(false)}>Cambiar mi decisión</button>
+        </div>
+      )}
+      {!esCliente && (!decidido || modoCorregir) && (
         <div className="mt-5 flex flex-col gap-3 no-imprimir">
           <div className="flex flex-wrap gap-3 items-center">
             <select className="campo" style={{ width: "auto" }} value={motivo} onChange={(e) => setMotivo(e.target.value)} aria-label="Motivo">
@@ -146,18 +166,18 @@ export function Hallazgo({ h, modo }: { h: HallazgoRow; modo: "consultor" | "cli
           <div className="flex flex-wrap gap-2">
             {modoCorregir ? (
               <>
-                <button className="boton" onClick={() => revisar("corregido")} disabled={!motivo}>Guardar corrección</button>
-                <button className="boton boton--secundario" onClick={() => setModoCorregir(false)}>Cancelar</button>
+                <button className="boton" onClick={() => revisar("corregido")} disabled={!motivo || guardando}>{guardando ? "Guardando…" : "Guardar corrección"}</button>
+                <button className="boton boton--secundario" onClick={() => setModoCorregir(false)} disabled={guardando}>Cancelar</button>
               </>
             ) : (
               <>
                 {necesitaValidacion ? (
-                  <button className="boton" onClick={() => revisar("aprobado", { levantar_validacion: true })} disabled={!comentario.trim()} title="Escribe en el comentario qué evidencia adicional lo sostiene">Validar y aprobar</button>
+                  <button className="boton" onClick={() => revisar("aprobado", { levantar_validacion: true })} disabled={!comentario.trim() || guardando} title="Escribe en el comentario qué evidencia adicional lo sostiene">{guardando ? "Guardando…" : "Validar y aprobar"}</button>
                 ) : (
-                  <button className="boton" onClick={() => revisar("aprobado")}>Aprobar</button>
+                  <button className="boton" onClick={() => revisar("aprobado")} disabled={guardando}>{guardando ? "Guardando…" : "Aprobar"}</button>
                 )}
-                <button className="boton boton--secundario" onClick={() => setModoCorregir(true)}>Corregir</button>
-                <button className="boton boton--peligro" onClick={() => revisar("rechazado")} disabled={!motivo}>Rechazar</button>
+                <button className="boton boton--secundario" onClick={() => setModoCorregir(true)} disabled={guardando}>Corregir</button>
+                <button className="boton boton--peligro" onClick={() => revisar("rechazado")} disabled={!motivo || guardando}>{guardando ? "Guardando…" : "Rechazar"}</button>
               </>
             )}
           </div>
