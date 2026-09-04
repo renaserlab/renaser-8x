@@ -2,7 +2,7 @@
 
 Consultor digital autoservicio de RENASER: diagnostica, audita en profundidad y sistematiza pymes peruanas — de la primera conversación hablada al plan estratégico con calidad de firma top. Comprender → contrastar → descubrir → diagnosticar → rediseñar → sistematizar → implementar → medir → aprender.
 
-Estado: **1.0.0-rc.1**, en producción en `https://8x-renaser-s-projects.vercel.app`, con RENASER como primera empresa cliente de su propio producto.
+Estado: **1.0.0**, en producción en `https://8x-renaser-s-projects.vercel.app`, con RENASER como primera empresa cliente de su propio producto.
 
 ---
 
