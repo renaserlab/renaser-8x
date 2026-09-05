@@ -50,18 +50,24 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         nombre: "Cómo contratan gente",
         ayuda: "Avisos, entrevistas, pruebas… o el ojo del dueño.",
         preguntas: ["La última vez que contrataron a alguien, ¿cómo fue, paso a paso?", "¿Qué buscas en una persona antes de traerla al equipo?"],
+        estructura:
+          "EL PERFIL antes del aviso: qué debe saber hacer y qué actitud no es negociable (de lo que el dueño busca); DÓNDE SE BUSCA (los canales que ya usan); LOS PASOS: aviso → conversación con las preguntas que ya usan → prueba práctica del oficio, comparando al menos 2 candidatos aunque vengan recomendados → referencias verificadas; QUIÉN DECIDE y con qué criterio; y LOS PRIMEROS 30 DÍAS como prueba real: qué debe demostrar para quedarse",
       },
       {
         clave: "onboarding",
         nombre: "Cómo entra alguien nuevo",
         ayuda: "Qué le enseñan los primeros días, quién y con qué.",
         preguntas: ["¿Quién le enseña a un nuevo y cuánto tarda en trabajar solo?", "¿Qué es lo primero que un nuevo hace mal casi siempre?"],
+        estructura:
+          "LA PRIMERA SEMANA día por día: qué aprende, con quién y haciendo qué; LO QUE DEBE SABER HACER SOLO al cumplir el mes (lista verificable, sacada de las tareas reales); LOS ERRORES TÍPICOS del nuevo (los que la empresa contó) y cómo evitarlos desde el día uno; QUIÉN LO ACOMPAÑA y responde sus preguntas; y CÓMO SE CONFIRMA que ya está listo: lo demuestra haciendo, no diciendo",
       },
       {
         clave: "evaluacion",
         nombre: "Cómo saben si alguien lo hace bien",
         ayuda: "Evaluaciones, conversaciones, indicadores o simple observación.",
         preguntas: ["¿Cómo te das cuenta de que alguien está rindiendo?", "¿Cada cuánto conversan sobre cómo le va a cada persona?"],
+        estructura:
+          "POR CADA PUESTO: el resultado que se le mide (su número o el hecho observable que ya usa el dueño) y la conducta que se espera; LA CONVERSACIÓN de seguimiento: cada cuánto, quién la tiene y las 3 preguntas que se hacen; QUÉ PASA con quien rinde (conecta con el reconocimiento) y con quien no (conecta con la escalera de disciplina); DÓNDE queda apuntado; proporcional al tamaño: en una empresa chica es una conversación al mes con apuntes, no un formato de oficina",
       },
       {
         clave: "plan_personal",
@@ -148,24 +154,32 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         nombre: "Guías y manuales escritos",
         ayuda: "Manuales, checklists, instructivos. Aunque estén desactualizados, sirven.",
         preguntas: ["¿Qué cosas se hacen 'como siempre se hicieron' sin nada escrito?", "Cuando alguien duda de cómo hacer algo, ¿a quién o a qué recurre?"],
+        estructura:
+          "INVENTARIO honesto: qué existe escrito (aunque esté viejo) y qué vive solo en la memoria de alguien, con nombre; LAS 3 GUÍAS URGENTES — las tareas que más se repiten o más fallan — cada una con sus pasos numerados tal como se hacen HOY, quién la hace, con qué empieza y cómo se ve terminada bien; DÓNDE VIVEN las guías para que se consulten de verdad (impresas en el puesto, no en un cajón); y QUIÉN las mantiene al día cuando algo cambia",
       },
       {
         clave: "politicas",
         nombre: "Las reglas del negocio",
         ayuda: "Descuentos, créditos, devoluciones, permisos: quién decide qué.",
         preguntas: ["¿Quién puede dar un descuento o fiar, y hasta cuánto?", "¿Qué pasa cuando un cliente pide algo fuera de lo normal? ¿Quién decide?"],
+        estructura:
+          "cada regla que ya existe en la práctica, escrita con su límite exacto: DESCUENTOS (quién puede dar y hasta cuánto), FIADO Y CRÉDITO (a quién, tope en soles y plazo), DEVOLUCIONES Y CAMBIOS (cuándo sí, cuándo no), PEDIDOS FUERA DE LO NORMAL (quién decide); por cada regla: qué puede resolver el equipo SOLO, sin llamar al dueño — el propósito es que el negocio decida sin él; y las 2-3 situaciones repetidas que hoy no tienen regla, con la propuesta para decidirla",
       },
       {
         clave: "indicadores",
         nombre: "Los números que revisan",
         ayuda: "Lo que miran cada semana o mes para saber cómo van.",
         preguntas: ["¿Qué números revisas tú cada semana, aunque sea mentalmente?", "¿Hay algo que te gustaría medir y hoy no puedes?"],
+        estructura:
+          "LOS NÚMEROS QUE YA MIRA el dueño (aunque sea de memoria), cada uno con: cómo se llama, cómo se calcula con lo que ya apuntan, cada cuánto se mira y qué valor es normal y cuál preocupa (según lo contado, o 'por definir'); LOS 2-3 QUE FALTAN según lo que duele — salidos de las incidencias y de los números vitales — con la forma más simple de empezar a contarlos mañana (una raya en un cuaderno cuenta); QUIÉN los anota y QUIÉN los revisa; sin inventar metas",
       },
       {
         clave: "sistemas",
         nombre: "Dónde vive la información",
         ayuda: "Excel, WhatsApp, cuadernos, algún sistema: donde se apunta lo importante.",
         preguntas: ["Si mañana se pierde tu celular o tu cuaderno, ¿qué información se pierde con él?", "¿Qué se apunta dos veces en lugares distintos?"],
+        estructura:
+          "EL MAPA: qué información vive dónde (cuaderno, WhatsApp, Excel, sistema) y quién la tiene; LO QUE SE PIERDE si se pierde ese celular o cuaderno — el riesgo contado — con su RESPALDO mínimo: qué se copia, a dónde y cada cuánto; LO QUE SE APUNTA DOS VECES y cuál queda como única fuente; y los ACCESOS: quién puede ver y tocar qué, y quién lo decide",
       },
       {
         // Las incidencias son la mina de KPIs: lo que se repite es lo que hay que medir y corregir.
@@ -208,30 +222,40 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         nombre: "Tus productos o servicios",
         ayuda: "Lista, catálogo o foto de la pizarra de precios.",
         preguntas: ["¿Qué vendes y cuál de todo deja más dinero?", "¿Hay algo que vendes por costumbre y casi no sale?"],
+        estructura:
+          "LA LISTA REAL: cada producto o servicio con su precio, su costo si lo dieron (o 'sin dato') y lo que deja por venta; EL ESTRELLA marcado — el que más ganancia deja — con su número y por qué conviene empujarlo; LO QUE CASI NO SALE con la decisión pendiente (mantener, cambiar o soltar); presentado de forma que sirva como lista de precios interna del equipo",
       },
       {
         clave: "entrega",
         nombre: "Cómo entregas lo prometido",
         ayuda: "Del pedido a la entrega: pasos, tiempos, quién.",
         preguntas: ["Desde que el cliente pide hasta que recibe: ¿qué pasa en el medio y cuánto tarda?", "¿Dónde se demora o se traba más seguido?"],
+        estructura:
+          "EL CAMINO del pedido a la entrega, paso a paso y con TIEMPOS: lo prometido frente a lo real en cada tramo (con los números contados o 'sin dato'); DÓNDE SE TRABA más seguido y qué lo causa; QUIÉN responde por cada tramo; y EL COMPROMISO DE ENTREGA que la empresa puede prometer hoy con seguridad — el real, no el ideal",
       },
       {
         clave: "calidad",
         nombre: "Cómo cuidas la calidad",
         ayuda: "Revisiones, estándares o el criterio de alguien con buen ojo.",
         preguntas: ["¿Cómo sabes que lo que salió está bien hecho, antes de que lo vea el cliente?", "¿Quién se da cuenta primero cuando algo no está quedando bien, y en qué se fija?"],
+        estructura:
+          "EL ESTÁNDAR: cómo se ve 'bien hecho' en esta empresa, en 3-5 puntos observables (sacados del ojo de quien revisa hoy); LA REVISIÓN: quién revisa, en qué momento (siempre antes de que lo vea el cliente) y en qué señales se fija; QUÉ PASA cuando algo no pasa la revisión: se rehace, quién asume y qué se aprende; y el REGISTRO mínimo para saber cuántas veces al mes algo salió mal",
       },
       {
         clave: "reclamos",
         nombre: "Reclamos y devoluciones",
         ayuda: "Qué reclaman los clientes y qué hacen ustedes con eso.",
         preguntas: ["¿Cuál es el reclamo que más se repite?", "¿Qué hacen cuando un cliente reclama? ¿Queda apuntado en algún lado?"],
+        estructura:
+          "LOS RECLAMOS QUE SE REPITEN (los contados, con su frecuencia si la dieron); QUÉ HACER cuando llega uno: los pasos, quién responde, en cuánto tiempo, y hasta dónde resuelve el equipo sin el dueño; DÓNDE QUEDA APUNTADO cada reclamo (fecha, cliente, motivo, cómo se resolvió) — de ese registro sale el número a vigilar; y LA REGLA DE ORO: el reclamo es información gratis del proceso que falló, nunca una molestia que se despacha",
       },
       {
         clave: "testimonios",
         nombre: "Lo que dicen tus clientes",
         ayuda: "Reseñas, mensajes de agradecimiento, contratos tipo.",
         preguntas: ["¿Qué te dicen los clientes contentos que les gusta de ustedes?", "¿Tienes mensajes o reseñas guardados que lo muestren?"],
+        estructura:
+          "LO QUE VALORAN los clientes, con sus palabras (los mensajes y reseñas reales, citados); DÓNDE SE GUARDAN de ahora en adelante (un solo lugar) y CÓMO SE PIDEN sin incomodar: el momento (justo después del gracias) y la frase; y DÓNDE SE USAN: en la oferta, en las redes, en la pared del local — un testimonio guardado no vende",
       },
     ],
   },
@@ -252,24 +276,32 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         nombre: "Qué prometes y a qué precio",
         ayuda: "Tu oferta: qué se lleva el cliente, precio, garantía.",
         preguntas: ["¿Qué le prometes exactamente al cliente cuando te compra?", "¿Cómo pusiste tus precios?"],
+        estructura:
+          "LA PROMESA en una frase, con las palabras del cliente (qué se lleva y qué problema deja de tener); QUÉ INCLUYE y qué no; EL PRECIO y cómo se formó (costo más margen si lo dieron, o 'puesto al ojo' si así fue — dicho con honestidad); LA GARANTÍA o respaldo si existe; y la COMPARACIÓN simple: qué das tú que el de al lado no puede dar",
       },
       {
         clave: "canales",
         nombre: "Por dónde llegan los clientes",
         ayuda: "Referidos, redes, el local, llamadas: por dónde entra la gente.",
         preguntas: ["¿De dónde llegaron tus últimos 5 clientes nuevos?", "Si esa forma de llegar se apagara un mes, ¿qué pasaría?"],
+        estructura:
+          "POR DÓNDE LLEGARON los últimos clientes (lo contado, en proporción 'de cada 10'); EL CANAL DEL QUE DEPENDEN y el riesgo real si se apaga un mes; QUÉ CUESTA cada canal, en dinero o en tiempo de quién; y EL SIGUIENTE CANAL que conviene probar para no depender de uno solo, con su primer paso concreto y quién lo da",
       },
       {
         clave: "proceso_comercial",
         nombre: "Qué pasa con un interesado",
         ayuda: "Del primer mensaje a la venta: pasos y seguimiento.",
         preguntas: ["Cuando alguien pregunta y no compra en el momento, ¿alguien lo vuelve a buscar?", "¿Dónde queda apuntado quién preguntó y en qué quedaron?"],
+        estructura:
+          "EL CAMINO del interesado: pregunta → respuesta (quién y en cuánto tiempo) → precio o cotización → seguimiento → cierre; DÓNDE SE APUNTA cada interesado (nombre, qué pidió, en qué quedaron) — la lista de interesados ES dinero en espera; LA REGLA DE SEGUIMIENTO: cuándo se vuelve a buscar al que no compró y con qué frase; y EL NÚMERO: de cada 10 que preguntan, cuántos compran hoy — y la meta honesta",
       },
       {
         clave: "resultados_comerciales",
         nombre: "Tus números de venta",
         ayuda: "Ventas por mes, cotizaciones enviadas, cuántos terminan comprando.",
         preguntas: ["¿Cuánto vendes en un mes normal y en uno bueno?", "De cada 10 que preguntan, ¿cuántos compran?"],
+        estructura:
+          "VENTAS por mes: normal, bueno y malo (los números contados, con su estado); LA CONVERSIÓN de cada 10 que preguntan; EL TICKET típico si se conoce; DE DÓNDE salen estos números hoy, y CÓMO EMPEZAR A CONTARLOS sin sistema: la libreta de interesados y la venta del día; todo con estado a la vista — contado, verificado o sin dato",
       },
     ],
   },
@@ -283,24 +315,32 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         nombre: "Ventas",
         ayuda: "Facturación por mes, aunque salga del cuaderno.",
         preguntas: ["¿Cuánto vende el negocio al mes, más o menos?", "¿Las ventas van subiendo, bajando o igual que el año pasado?"],
+        estructura:
+          "la SERIE de ventas por mes tal como se conoce (cada número con su fuente: contado del cuaderno, verificado del sistema, o 'sin dato'); EL MEJOR y EL PEOR mes con su explicación contada; LA TENDENCIA en una frase honesta; y CÓMO SE REGISTRARÁ de ahora en adelante: quién apunta, dónde y cuándo",
       },
       {
         clave: "margen",
         nombre: "Lo que queda",
         ayuda: "Margen o utilidad después de los costos, si lo conocen.",
         preguntas: ["Después de pagar todo, ¿cuánto queda en un mes normal?", "¿Sabes cuál de tus productos o servicios te deja más ganancia por cada venta?"],
+        estructura:
+          "DE CADA 100 SOLES vendidos, cuánto queda (el número contado o calculado, con su estado); EL PRODUCTO que más ganancia deja por venta y el que menos; LOS COSTOS que más se comen la venta (los nombrados); y EL NÚMERO A VIGILAR cada mes con la forma más simple de calcularlo con lo que ya apuntan",
       },
       {
         clave: "retencion",
         nombre: "Clientes que vuelven",
         ayuda: "Recompra, permanencia, o tu sensación con nombres concretos.",
         preguntas: ["De tus clientes de hace un año, ¿cuántos siguen comprando?", "¿Sabes por qué se fue el último cliente que se fue?"],
+        estructura:
+          "CUÁNTOS clientes de hace un año siguen comprando (el dato o la mejor estimación honesta, con su estado); POR QUÉ SE FUE el último que se fue (lo contado); QUÉ HACE VOLVER a los que vuelven; y CÓMO EMPEZAR A MEDIR la recompra con lo que ya apuntan (la lista de caseros y cuándo compraron por última vez)",
       },
       {
         clave: "tiempos",
         nombre: "Tiempos reales",
         ayuda: "Cuánto tarda lo prometido, y cuánto tarda de verdad.",
         preguntas: ["¿Cuánto prometes de tiempo de entrega y cuánto tarda en realidad?", "¿Qué es lo que más espera un cliente sin necesidad?"],
+        estructura:
+          "LO PROMETIDO frente a LO REAL por tipo de pedido (con los números contados o 'sin dato'); DÓNDE se pierde tiempo sin necesidad (la espera que nadie cobra); y EL COMPROMISO de tiempo que la empresa puede prometer hoy con seguridad — con la regla de que se promete lo real, no el ideal",
       },
     ],
   },

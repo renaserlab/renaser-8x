@@ -1,9 +1,9 @@
 "use client";
 
-/** Imprime la página (los elementos .no-imprimir quedan fuera). Para SOPs y documentos pegables en la pared. */
-export function BotonImprimir({ texto = "Imprimir" }: { texto?: string }) {
+/** Un solo botón: el navegador imprime o guarda como PDF — sin librerías, sin servidores. */
+export function BotonImprimir({ texto = "Imprimir / Guardar PDF" }: { texto?: string }) {
   return (
-    <button className="boton boton--secundario no-imprimir" style={{ minHeight: 40 }} onClick={() => window.print()}>
+    <button className="boton no-imprimir" onClick={() => window.print()}>
       {texto}
     </button>
   );

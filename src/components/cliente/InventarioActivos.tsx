@@ -347,6 +347,12 @@ export function InventarioActivos({ companyId, guardados, prioridades = [], docD
                           <div className="mt-2"><DocMd texto={g.borrador} /></div>
                         </details>
                       )}
+                      {/* EL DOCUMENTO EN LIMPIO: con membrete y logo, para pegarlo en la pared. */}
+                      {(estado === "construido" || estado === "en_uso") && (g?.borrador || g?.propuesta) && (
+                        <a href={`/imprimir/documento/${clave}`} target="_blank" rel="noreferrer" className="t-dato mt-2" style={{ textDecoration: "underline", color: "var(--marca)", alignSelf: "flex-start" }}>
+                          Imprimir / Guardar PDF — con tu logo
+                        </a>
+                      )}
 
                       {/* CAPA 3 · Sistematización: de lo declarado a lo trabajado, lado a lado. */}
                       {(estado === "construido" || estado === "en_uso") && g?.borrador && !g?.propuesta_estado && (
