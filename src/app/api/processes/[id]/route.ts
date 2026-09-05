@@ -52,6 +52,9 @@ export const DELETE = protegido<Ctx>({}, async (perfil, _req, ctx) => {
   const { data: p } = await sb.from("processes").select("id,company_id").eq("id", id).single();
   if (!p) return fallo("Proceso no encontrado", 404);
   await exigirAcceso(perfil, p.company_id);
-  await sb.from("processes").delete().eq("id", id);
+  // El TO-BE hijo se va con su AS-IS: su padre_id es SET NULL y quedaría flotando, invisible pero vivo.
+  await sb.from("processes").delete().eq("padre_id", id);
+  const { error } = await sb.from("processes").delete().eq("id", id);
+  if (error) return fallo(error.message, 500);
   return ok({ eliminado: true });
 });

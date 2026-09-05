@@ -24,8 +24,11 @@ export function ProcesosLista({ companyId, procesos, base, paraCliente = false }
   const [revisando, setRevisando] = useState(false);
   const [borrando, setBorrando] = useState<string | null>(null);
 
+  const [eliminando, setEliminando] = useState(false);
+
   const quitar = async (id: string) => {
     setError(null);
+    setEliminando(true);
     try {
       await pedir(`/api/processes/${id}`, { method: "DELETE" });
       setBorrando(null);
@@ -33,6 +36,8 @@ export function ProcesosLista({ companyId, procesos, base, paraCliente = false }
     } catch (e) {
       setError(e instanceof Error ? e.message : "No pudimos quitarlo.");
       setBorrando(null);
+    } finally {
+      setEliminando(false);
     }
   };
 
@@ -222,10 +227,10 @@ export function ProcesosLista({ companyId, procesos, base, paraCliente = false }
                   {borrando === p.id ? (
                     <div className="flex gap-3 items-center flex-wrap mt-3" style={{ borderTop: "1px solid var(--linea)", paddingTop: 10 }}>
                       <span className="t-dato">¿Quitar «{p.nombre}»? No se puede deshacer.</span>
-                      <button type="button" className="boton" style={{ minHeight: 34, fontSize: 13, background: "var(--contradicho)", borderColor: "var(--contradicho)" }} onClick={() => quitar(p.id)}>
-                        Sí, quitarlo
+                      <button type="button" className="boton" style={{ minHeight: 34, fontSize: 13, background: "var(--contradicho)", borderColor: "var(--contradicho)" }} disabled={eliminando} onClick={() => quitar(p.id)}>
+                        {eliminando ? "Quitando…" : "Sí, quitarlo"}
                       </button>
-                      <button type="button" className="t-dato" style={{ background: "none", border: "none", cursor: "pointer", font: "inherit", color: "var(--grafito)" }} onClick={() => setBorrando(null)}>
+                      <button type="button" className="t-dato" style={{ background: "none", border: "none", cursor: "pointer", font: "inherit", color: "var(--grafito)" }} disabled={eliminando} onClick={() => setBorrando(null)}>
                         No
                       </button>
                     </div>
@@ -252,6 +257,7 @@ export function ProcesosLista({ companyId, procesos, base, paraCliente = false }
                 <th>Pasos</th>
                 {!paraCliente && <th>TO-BE</th>}
                 {!paraCliente && <th>SOP</th>}
+                {!paraCliente && <th aria-label="Acciones"></th>}
               </tr>
             </thead>
             <tbody>
@@ -260,11 +266,37 @@ export function ProcesosLista({ companyId, procesos, base, paraCliente = false }
                   <td className="t-dato">
                     <Link href={`${base}/${p.id}`}>{p.nombre}</Link>
                     <div className="t-etiqueta" style={{ textTransform: "none", letterSpacing: 0 }}>{p.origen === "generado_ia" ? (paraCliente ? "lo dibujamos con lo que contaste" : "dibujado por IA") : "dibujado a mano"}</div>
+                    {/* CONFIRMAR DONDE SE DECIDE: el sí/no vive bajo el nombre, no en una celda estrecha. */}
+                    {borrando === p.id && (
+                      <div className="flex gap-3 items-center flex-wrap mt-2" style={{ borderTop: "1px solid var(--linea)", paddingTop: 8 }}>
+                        <span className="t-dato">¿Quitar «{p.nombre}»?{p.tiene_tobe || p.tiene_sop ? " Se borra también su TO-BE y su manual." : ""} No se puede deshacer.</span>
+                        <button type="button" className="boton" style={{ minHeight: 32, fontSize: 13, background: "var(--contradicho)", borderColor: "var(--contradicho)" }} disabled={eliminando} onClick={() => quitar(p.id)}>
+                          {eliminando ? "Quitando…" : "Sí, quitarlo"}
+                        </button>
+                        <button type="button" className="t-dato" style={{ background: "none", border: "none", cursor: "pointer", font: "inherit", color: "var(--grafito)" }} disabled={eliminando} onClick={() => setBorrando(null)}>
+                          No
+                        </button>
+                      </div>
+                    )}
                   </td>
                   <td>{p.area ?? "—"}</td>
                   <td className="t-dato">{p.nodos}</td>
                   {!paraCliente && <td>{p.tiene_tobe ? <span style={{ color: "var(--confirmado)" }}>sí</span> : "—"}</td>}
                   {!paraCliente && <td>{p.tiene_sop ? <span style={{ color: "var(--confirmado)" }}>sí</span> : "—"}</td>}
+                  {!paraCliente && (
+                    <td>
+                      {borrando !== p.id && (
+                        <button
+                          type="button"
+                          className="t-dato"
+                          style={{ background: "none", border: "none", cursor: "pointer", font: "inherit", textDecoration: "underline", color: "var(--grafito)", padding: 0 }}
+                          onClick={() => setBorrando(p.id)}
+                        >
+                          Quitar
+                        </button>
+                      )}
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
