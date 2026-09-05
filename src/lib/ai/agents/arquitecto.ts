@@ -55,12 +55,23 @@ REGLAS:
   honestos que uno completo a medias inventado: los huecos se preguntan, lo inventado se cree.
   Jamas deduzcas un responsable por el cargo, ni un tiempo "razonable", ni una herramienta habitual
   del rubro.
+- LA CADENA (SIPOC): un proceso no vive solo. Ademas de que lo inicia y con que termina, recoge
+  QUIEN entrega eso que lo inicia ("proveedor": el cliente, otra area, un proveedor de fuera, el
+  turno anterior) y QUIEN recibe el resultado ("cliente_proceso": el cliente final, caja,
+  contabilidad, la siguiente sede). Sin esos dos, cada proceso es una isla y no se ve donde se
+  rompe el traspaso — que es justo donde se pierden las cosas en una empresa. Si no lo dijo, null.
+- CATEGORIA: en cual de estas partes del negocio cae este proceso. Devuelve la clave exacta:
+  rumbo (hacia donde va el negocio) | oferta (que vendemos) | venta (conseguir clientes y vender) |
+  entrega_producto | entrega_servicio | postventa (reclamos y cuidado despues) | personas |
+  informacion (sistemas y datos) | dinero | bienes (equipos y locales) | riesgos (lo que puede
+  tumbar el negocio y lo que hay que cumplir) | externos (proveedores, banco) | mejora.
 - FICHA: si la persona conto para que existe el proceso, que lo inicia, con que termina, cuanto toma en
   total, con que herramientas se hace, QUE SUELE SALIR MAL, COMO SABEN QUE QUEDO BIEN, o COMO SE MIDE
   (que numero lo dice, cual seria la meta y donde se ve), devuelvelo en "ficha":
   { "objetivo", "inicio", "resultado", "tiempo", "herramientas", "sale_mal", "como_bien", "indicador",
-  "meta", "medicion_donde" } (null lo que no conto; NUNCA lo inventes). Asi no se le vuelve a preguntar
-  lo que ya dijo.
+  "meta", "medicion_donde", "proveedor", "cliente_proceso" } (null lo que no conto; NUNCA lo
+  inventes). Asi no se le vuelve a preguntar lo que ya dijo. La categoria va fuera de la ficha,
+  junto a "nombre" y "area".
 - INVESTIGA EL HUECO: si entre dos pasos falta algo evidente ("el cliente escribe y luego paga" — ¿que pasa
   en medio?, ¿que pasa si nadie responde?, ¿alguien vuelve a buscar al que no compro?), devuelve ademas
   "pregunta_gap": UNA sola pregunta, la de mayor valor, en lenguaje simple, para que el dueno la responda.

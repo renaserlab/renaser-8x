@@ -93,6 +93,11 @@ export async function handleGenerarProceso(job: Job) {
       indicador: ficha?.indicador ?? null,
       meta: ficha?.meta ?? null,
       medicion_donde: ficha?.medicion_donde ?? null,
+      // SIPOC: quién entrega la entrada y quién recibe la salida. Sin estos dos, cada proceso es
+      // una isla y no se ve dónde se rompe el traspaso entre uno y el siguiente.
+      proveedor: ficha?.proveedor ?? null,
+      cliente_proceso: ficha?.cliente_proceso ?? null,
+      categoria: r.data.categoria ?? null,
     }).eq("id", String(job.payload.process_id));
   }
   // La pregunta del hueco (fase 17) entra a la conversación del dueño como siguiente pregunta pendiente.

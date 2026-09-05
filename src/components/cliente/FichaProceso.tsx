@@ -3,15 +3,19 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { pedir } from "@/lib/cliente";
 
-type Ficha = { responsable: string | null; objetivo: string | null; inicio: string | null; resultado: string | null; tiempo: string | null; herramientas: string | null; sale_mal: string | null; como_bien: string | null; comentario: string | null; descripcion_original: string | null; indicador: string | null; meta: string | null; medicion_donde: string | null };
+type Ficha = { responsable: string | null; objetivo: string | null; inicio: string | null; resultado: string | null; tiempo: string | null; herramientas: string | null; sale_mal: string | null; como_bien: string | null; comentario: string | null; descripcion_original: string | null; indicador: string | null; meta: string | null; medicion_donde: string | null; proveedor: string | null; cliente_proceso: string | null };
 type Adjunto = { id: string; nombre: string; tipo: string; created_at: string };
 type Caleta = { puesto: string | null; situacion: string | null; senal: string | null; regla_practica: string | null };
 
 const CAMPOS: { k: keyof Ficha; etiqueta: string; placeholder: string }[] = [
   { k: "responsable", etiqueta: "Quién responde por este proceso", placeholder: "una persona, no un área" },
   { k: "objetivo", etiqueta: "Para qué existe", placeholder: "qué logra cuando sale bien" },
+  // SIPOC: sin saber quién entrega y quién recibe, cada proceso es una isla y no se ve dónde se
+  // rompe el traspaso al siguiente — que es donde se pierden las cosas en una empresa.
+  { k: "proveedor", etiqueta: "Quién te entrega lo que necesitas", placeholder: "el cliente, otra área, un proveedor, el turno anterior" },
   { k: "inicio", etiqueta: "Qué lo inicia", placeholder: "un pedido, una llamada, una fecha…" },
   { k: "resultado", etiqueta: "Con qué termina", placeholder: "el resultado esperado" },
+  { k: "cliente_proceso", etiqueta: "Quién recibe el resultado", placeholder: "el cliente, caja, contabilidad, la siguiente sede" },
   { k: "tiempo", etiqueta: "Cuánto toma normalmente", placeholder: "de inicio a fin" },
   { k: "herramientas", etiqueta: "Con qué se hace", placeholder: "WhatsApp, Excel, cuaderno…" },
   { k: "sale_mal", etiqueta: "Qué suele salir mal", placeholder: "y cada cuánto pasa" },

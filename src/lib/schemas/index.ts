@@ -132,7 +132,9 @@ export const SalidaArquitecto = z.object({
   // La ficha recoge lo que la persona YA contó para no volver a preguntárselo. `indicador`, `meta` y
   // `medicion_donde` existían en la base desde siempre y nadie los llenaba: sin ellos un proceso se
   // describe pero no se puede vigilar, que es la mitad del trabajo.
-  ficha: z.object({ objetivo: z.string().nullable().optional(), inicio: z.string().nullable().optional(), resultado: z.string().nullable().optional(), tiempo: z.string().nullable().optional(), herramientas: z.string().nullable().optional(), indicador: z.string().nullable().optional(), meta: z.string().nullable().optional(), medicion_donde: z.string().nullable().optional(), sale_mal: z.string().nullable().optional(), como_bien: z.string().nullable().optional() }).nullable().optional(),
+  // A qué parte del negocio pertenece, según el mapa de 13 categorías (APQC PCF).
+  categoria: z.enum(["rumbo","oferta","venta","entrega_producto","entrega_servicio","postventa","personas","informacion","dinero","bienes","riesgos","externos","mejora"]).nullable().optional(),
+  ficha: z.object({ objetivo: z.string().nullable().optional(), inicio: z.string().nullable().optional(), resultado: z.string().nullable().optional(), tiempo: z.string().nullable().optional(), herramientas: z.string().nullable().optional(), indicador: z.string().nullable().optional(), meta: z.string().nullable().optional(), medicion_donde: z.string().nullable().optional(), proveedor: z.string().nullable().optional(), cliente_proceso: z.string().nullable().optional(), sale_mal: z.string().nullable().optional(), como_bien: z.string().nullable().optional() }).nullable().optional(),
 });
 export type SalidaArquitecto = z.infer<typeof SalidaArquitecto>;
 
