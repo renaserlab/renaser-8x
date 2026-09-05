@@ -6,14 +6,15 @@ import { Participantes } from "@/components/consultor/Participantes";
 import { Etapa } from "@/components/consultor/Etapa";
 import { PILAR, ESTADO_PILAR, ETAPA, fechaCorta } from "@/lib/textos";
 import { tokensUsados } from "@/lib/db/queries";
-import { cumplimientoLegal } from "@/lib/biblioteca";
+import { cumplimientoLegal, bibliotecaEsperada } from "@/lib/biblioteca";
 import { tableroEmpresario } from "@/lib/tablero";
 import { Franja, Lectura } from "@/components/base/Franja";
 import { comparar, veredicto, nombreMedicion, type Medicion } from "@/lib/medicion";
 import { radiografia, type Metrica as MetricaVital } from "@/lib/metricas";
 import { AdministrarEmpresa } from "@/components/consultor/AdministrarEmpresa";
 import { coberturaSesion } from "@/lib/rules/cobertura";
-import { puntajePilar, techoPorEvidencia, techoPorProcesos } from "@/lib/rules/evidencia";
+import { puntajePilar, techoPorEvidencia, procesosEsperados, avanceProcesos } from "@/lib/rules/evidencia";
+import { HECHO, A_MEDIO } from "@/lib/mercado";
 import { TIPO_SESION } from "@/lib/textos";
 
 export const dynamic = "force-dynamic";
@@ -62,20 +63,34 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
   const admision = c.admision as (Record<string, string> & { evaluacion?: { admisible: boolean; motivo: string; senales: string[] } }) | null;
   const ficha = c.ficha as { personas?: string; ciudad?: string; whatsapp?: string } | null;
 
-  // El puntaje se CALCULA de los hallazgos vigentes; antes era una etiqueta con número fijo y todo salía 60.
-  const [{ data: hallazgosVigentes }, { data: procesosEmpresa }] = await Promise.all([
+  // EL PUNTAJE EVALÚA SEGÚN EL TIPO DE EMPRESA: evidencia confirmada (lo que se sabe), hallazgos
+  // (lo que se vio) y construcción de lo que su tamaño exige (biblioteca proporcional + procesos).
+  const [{ data: hallazgosVigentes }, { data: procesosEmpresa }, { data: assetsEmpresa }] = await Promise.all([
     sb.from("findings").select("pilar,impacto,requiere_validacion,filtros").eq("company_id", id).neq("estado_revision", "rechazado"),
     sb.from("processes").select("version,confirmacion").eq("company_id", id).eq("version", "as_is"),
+    sb.from("company_assets").select("clave,estado").eq("company_id", id),
   ]);
+  const personasNum = ficha?.personas ? parseInt(ficha.personas, 10) : null;
   const dibujados = (procesosEmpresa ?? []).length;
   const confirmadosDueno = (procesosEmpresa ?? []).filter((x) => x.confirmacion === "confirmado").length;
+  const estadoDoc = new Map((assetsEmpresa ?? []).map((a) => [a.clave, a.estado ?? ""]));
+  const avanceDocs = (p: string): number | null => {
+    const esperadas = bibliotecaEsperada(personasNum).filter((c) => c.startsWith(`${p}.`));
+    if (!esperadas.length) return null; // a este tamaño no se le exige nada aquí: no se castiga.
+    const puntos = esperadas.reduce((a, c) => a + (HECHO.has(estadoDoc.get(c) ?? "") ? 1 : A_MEDIO.has(estadoDoc.get(c) ?? "") ? 0.5 : 0), 0);
+    return Math.round((100 * puntos) / esperadas.length);
+  };
   const puntajeDe = (p: string) => {
-    const base = puntajePilar(
+    const docs = avanceDocs(p);
+    const construccion =
+      p === "procesos"
+        ? Math.round((avanceProcesos(dibujados, confirmadosDueno, procesosEsperados(personasNum)) + (docs ?? 0)) / (docs == null ? 1 : 2))
+        : docs;
+    return puntajePilar(
       (hallazgosVigentes ?? []).filter((h) => h.pilar === p).map((h) => ({ impacto: h.impacto, requiere_validacion: h.requiere_validacion, preserva: !!(h.filtros as { preserva?: boolean } | null)?.preserva })),
       conteo[p]?.confirmadas ?? 0,
+      construccion,
     );
-    // El pilar de procesos también responde por sus procesos reales: dibujados y confirmados por el dueño.
-    return p === "procesos" ? Math.min(base, techoPorProcesos(dibujados, confirmadosDueno)) : base;
   };
   const diagnosticados = (diag ?? []).filter((d) => d.estado !== "desconocido");
   const puntuados = diagnosticados.map((d) => puntajeDe(d.pilar));

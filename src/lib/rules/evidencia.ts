@@ -102,25 +102,38 @@ export function techoPorEvidencia(confirmadas: number): number {
   return Math.min(95, 5 * confirmadas);
 }
 
-export function puntajePilar(hallazgos: HallazgoPuntaje[], confirmadas?: number): number {
-  let p = 90;
+/**
+ * EVALUACIÓN SEGÚN EL TIPO DE EMPRESA (pedido de Kelin: "deberías tener un sistema que realmente
+ * evalúe ello según el tipo de empresa"). El puntaje combina TRES verdades:
+ *  1. Lo que se SABE — techo por evidencia confirmada.
+ *  2. Lo que se VIO — salud por hallazgos (arriba).
+ *  3. Lo que está CONSTRUIDO de lo que SU TAMAÑO exige — la biblioteca proporcional del pilar y,
+ *     en procesos, los procesos dibujados y confirmados frente a los que su tamaño espera.
+ * puntaje = min(techoEvidencia, 60% salud vista + 40% construcción). Una empresa de 11 personas
+ * con todo en la cabeza del dueño no puede lucir sana aunque converse mucho.
+ */
+export function puntajePilar(hallazgos: HallazgoPuntaje[], confirmadas?: number, avanceConstruccion?: number | null): number {
+  let salud = 90;
   for (const h of hallazgos) {
     if (h.preserva) {
-      p += 3;
+      salud += 3;
       continue;
     }
-    p -= h.impacto === "alto" ? 20 : h.impacto === "medio" ? 10 : 4;
+    salud -= h.impacto === "alto" ? 20 : h.impacto === "medio" ? 10 : 4;
   }
+  const p = avanceConstruccion == null ? salud : 0.6 * salud + 0.4 * avanceConstruccion;
   const techo = confirmadas == null ? 95 : techoPorEvidencia(confirmadas);
   return Math.round(Math.max(10, Math.min(techo, p)));
 }
 
-/**
- * El pilar de procesos mira LOS PROCESOS, no solo la conversación: 4 dibujos sin confirmar por el
- * dueño no son un pilar sano ("procesos 80? pero si solo registró 4 y ni siquiera están bien
- * hechos" — Kelin). Cada proceso dibujado da 3 puntos de techo; confirmado por el dueño, 15.
- * Sin nada dibujado, el techo es 25: apenas la primera impresión.
- */
-export function techoPorProcesos(dibujados: number, confirmados: number): number {
-  return Math.min(95, 25 + 3 * dibujados + 15 * confirmados);
+/** Procesos medulares que una empresa de este tamaño debería tener dibujados y confirmados. */
+export function procesosEsperados(personas: number | null | undefined): number {
+  const n = personas == null || Number.isNaN(personas) ? null : personas;
+  return n == null ? 5 : n <= 3 ? 3 : n <= 10 ? 5 : 8;
+}
+
+/** Avance 0-100 del trabajo de procesos: confirmado por el dueño vale entero, dibujado la mitad. */
+export function avanceProcesos(dibujados: number, confirmados: number, esperados: number): number {
+  if (esperados <= 0) return 100;
+  return Math.round(Math.min(100, (100 * (confirmados + 0.5 * Math.max(0, dibujados - confirmados))) / esperados));
 }

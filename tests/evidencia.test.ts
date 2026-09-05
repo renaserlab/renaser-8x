@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calibrarImpacto, aplicarFiltros, estadoPilar, puntajePilar, techoPorProcesos, fuentesIndependientes, tieneFuenteObjetiva, tieneEvidencia, type ClaimEvidencia } from "@/lib/rules/evidencia";
+import { calibrarImpacto, aplicarFiltros, estadoPilar, puntajePilar, procesosEsperados, avanceProcesos, fuentesIndependientes, tieneFuenteObjetiva, tieneEvidencia, type ClaimEvidencia } from "@/lib/rules/evidencia";
 
 const ev = (id: string, o: Partial<ClaimEvidencia> = {}): ClaimEvidencia => ({ id, source_id: "doc1", participant_id: null, estado: "confirmado", source_tipo: "documento", ...o });
 const pasa = { resultado: "pasa" as const, nota: "" };
@@ -115,10 +115,17 @@ describe("puntaje del pilar: calculado de los hallazgos, no una etiqueta con nú
     expect(puntajePilar([{ impacto: null, preserva: true }, { impacto: null, preserva: true }], 19)).toBe(95);
     expect(puntajePilar([], 14)).toBe(70);
   });
-  it("el pilar de procesos responde por sus procesos: dibujado +3, confirmado por el dueño +15", () => {
+  it("evalúa según el tipo de empresa: la construcción de lo que su tamaño exige pesa 40%", () => {
+    // "deberías tener un sistema que realmente evalúe ello según el tipo de empresa" — Kelin.
+    expect(puntajePilar([], 19, 0)).toBe(54); // mucho conversado, nada construido: no luce sano
+    expect(puntajePilar([], 19, 100)).toBe(94); // conversado Y construido: salud demostrada
+  });
+  it("los procesos esperados crecen con el tamaño; confirmado vale entero, dibujado la mitad", () => {
     // "procesos 80? pero si solo registró 4 procesos y ni siquiera están bien hechos" — Kelin.
-    expect(techoPorProcesos(0, 0)).toBe(25);
-    expect(techoPorProcesos(4, 0)).toBe(37);
-    expect(techoPorProcesos(4, 4)).toBe(95);
+    expect(procesosEsperados(2)).toBe(3);
+    expect(procesosEsperados(11)).toBe(8);
+    expect(avanceProcesos(4, 0, 8)).toBe(25);
+    expect(avanceProcesos(4, 4, 8)).toBe(50);
+    expect(avanceProcesos(8, 8, 8)).toBe(100);
   });
 });

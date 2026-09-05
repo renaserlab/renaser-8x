@@ -35,8 +35,8 @@ const NOMBRES: Record<string, string> = Object.fromEntries(
 );
 
 /** Estados que cuentan como "documento ya trabajado". Lo contado o a medio construir sigue en la brecha. */
-const HECHO = new Set(["lo_tengo", "construido", "en_uso"]);
-const A_MEDIO = new Set(["incompleto", "contado", "borrador_generado", "construyendo"]);
+export const HECHO = new Set(["lo_tengo", "construido", "en_uso"]);
+export const A_MEDIO = new Set(["incompleto", "contado", "borrador_generado", "construyendo"]);
 
 export type ItemBrecha = { clave: string; nombre: string; soles: [number, number]; semanas: [number, number]; medio: boolean };
 
