@@ -157,7 +157,7 @@ export async function handleGenerarSop(job: Job) {
   const r = await correrSop(contexto);
   await registrarLlamada(job.company_id, job.id, "sop", r);
   await sb.from("sops").delete().eq("process_id", pid);
-  const { data: s } = await sb.from("sops").insert({ process_id: pid, objetivo: r.data.objetivo, disparador: r.data.disparador, responsable: r.data.responsable, pasos: r.data.pasos, entradas: r.data.entradas, salidas: r.data.salidas, estandar: r.data.estandar, indicador: r.data.indicador, excepciones: r.data.excepciones }).select("id").single();
+  const { data: s } = await sb.from("sops").insert({ process_id: pid, objetivo: r.data.objetivo, disparador: r.data.disparador, responsable: r.data.responsable, pasos: r.data.pasos, materiales: r.data.materiales, entradas: r.data.entradas, salidas: r.data.salidas, estandar: r.data.estandar, indicador: r.data.indicador, excepciones: r.data.excepciones }).select("id").single();
   const delProceso = (kh ?? []).filter(() => true).map((k) => k.id);
   if (s && delProceso.length) await sb.from("know_how").update({ sop_id: s.id, destino: "sop" }).in("id", delProceso).or(`process_id.eq.${pid},process_id.eq.${padre}`);
   return { sop_id: s?.id };
