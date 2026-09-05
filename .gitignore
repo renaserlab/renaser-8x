@@ -44,3 +44,4 @@ benchmark/ultimo-error.txt
 
 .vercel
 .env*
+scripts/tmp-w.mjs
