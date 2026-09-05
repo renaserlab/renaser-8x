@@ -89,8 +89,13 @@ export type HallazgoPuntaje = { impacto: string | null; preserva?: boolean; requ
  * número que parecía medido y no medía nada. Ahora cada hallazgo pesa: alto -20, medio -10, bajo -4;
  * a la mitad si aún espera validación (incierto no es invisible). Cada fortaleza suma 3.
  * Base 90 (sólido no es perfecto), piso 10, techo 95.
+ *
+ * Y el techo CRECE con la evidencia confirmada: un pilar del que casi no sabemos nada no tiene
+ * derecho a lucir alto — con pocas confirmaciones se han encontrado pocos problemas porque casi
+ * no se ha mirado, no porque esté bien. En el mínimo para diagnosticar (5) el techo es 65;
+ * desde 11 confirmadas el techo pleno de 95. Ojo de Kelin: "¿86? es imposible si casi no tienen nada".
  */
-export function puntajePilar(hallazgos: HallazgoPuntaje[]): number {
+export function puntajePilar(hallazgos: HallazgoPuntaje[], confirmadas?: number): number {
   let p = 90;
   for (const h of hallazgos) {
     if (h.preserva) {
@@ -100,5 +105,6 @@ export function puntajePilar(hallazgos: HallazgoPuntaje[]): number {
     const peso = h.impacto === "alto" ? 20 : h.impacto === "medio" ? 10 : 4;
     p -= h.requiere_validacion ? peso / 2 : peso;
   }
-  return Math.round(Math.max(10, Math.min(95, p)));
+  const techo = confirmadas == null ? 95 : Math.min(95, 40 + 5 * confirmadas);
+  return Math.round(Math.max(10, Math.min(techo, p)));
 }

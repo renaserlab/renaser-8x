@@ -69,7 +69,10 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
     .eq("company_id", id)
     .neq("estado_revision", "rechazado");
   const puntajeDe = (p: string) =>
-    puntajePilar((hallazgosVigentes ?? []).filter((h) => h.pilar === p).map((h) => ({ impacto: h.impacto, requiere_validacion: h.requiere_validacion, preserva: !!(h.filtros as { preserva?: boolean } | null)?.preserva })));
+    puntajePilar(
+      (hallazgosVigentes ?? []).filter((h) => h.pilar === p).map((h) => ({ impacto: h.impacto, requiere_validacion: h.requiere_validacion, preserva: !!(h.filtros as { preserva?: boolean } | null)?.preserva })),
+      conteo[p]?.confirmadas ?? 0,
+    );
   const diagnosticados = (diag ?? []).filter((d) => d.estado !== "desconocido");
   const puntuados = diagnosticados.map((d) => puntajeDe(d.pilar));
   const salud = puntuados.length ? Math.round(puntuados.reduce((a, b) => a + b, 0) / puntuados.length) : null;
@@ -193,7 +196,7 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
                 >
                   <span className="t-etiqueta" style={{ display: "block" }}>{PILAR[p]}</span>
                   <span className="num-grande" style={{ fontSize: 26, color: d ? color : "var(--grafito)" }}>{d && d.estado !== "desconocido" ? puntajeDe(p) : "—"}</span>
-                  <span className="t-dato" style={{ display: "block", color: "var(--grafito)", fontSize: 13 }}>{d ? ESTADO_PILAR[d.estado] : "Sin diagnosticar"} · {n.confirmadas}/{n.total}</span>
+                  <span className="t-dato" style={{ display: "block", color: "var(--grafito)", fontSize: 13 }}>{d ? ESTADO_PILAR[d.estado] : "Sin diagnosticar"} · {n.confirmadas}/{n.total}{d && d.estado !== "desconocido" && n.confirmadas < 11 ? " · poca evidencia aún" : ""}</span>
                 </Link>
               );
             })}

@@ -101,4 +101,13 @@ describe("puntaje del pilar: calculado de los hallazgos, no una etiqueta con nú
   it("una avalancha de hallazgos no baja del piso 10", () => {
     expect(puntajePilar(Array.from({ length: 10 }, () => ({ impacto: "alto" as const })))).toBe(10);
   });
+  it("el techo crece con la evidencia: con lo mínimo confirmado (5) nadie luce más de 65", () => {
+    // Ojo de Kelin: "¿86? es imposible si casi no tienen nada".
+    expect(puntajePilar([{ impacto: "bajo" }], 5)).toBe(65);
+    expect(puntajePilar([], 5)).toBe(65);
+  });
+  it("con evidencia amplia (11+) el techo pleno de 95 vuelve a regir", () => {
+    expect(puntajePilar([], 14)).toBe(90);
+    expect(puntajePilar([{ impacto: null, preserva: true }, { impacto: null, preserva: true }], 11)).toBe(95);
+  });
 });
