@@ -90,11 +90,17 @@ export type HallazgoPuntaje = { impacto: string | null; preserva?: boolean; requ
  * a la mitad si aún espera validación (incierto no es invisible). Cada fortaleza suma 3.
  * Base 90 (sólido no es perfecto), piso 10, techo 95.
  *
- * Y el techo CRECE con la evidencia confirmada: un pilar del que casi no sabemos nada no tiene
- * derecho a lucir alto — con pocas confirmaciones se han encontrado pocos problemas porque casi
- * no se ha mirado, no porque esté bien. En el mínimo para diagnosticar (5) el techo es 65;
- * desde 11 confirmadas el techo pleno de 95. Ojo de Kelin: "¿86? es imposible si casi no tienen nada".
+ * Y el techo CRECE con la evidencia confirmada: la salud no se regala, se demuestra. Cada
+ * confirmación da derecho a 5 puntos de techo — con el mínimo para diagnosticar (5) el máximo
+ * es 25: sabemos poco y el número lo dice sin maquillaje. El techo pleno de 95 se gana con una
+ * conversación de verdad (19+ confirmadas). Criterio de Kelin, afinado en tres pasadas: "¿86?
+ * es imposible si casi no tienen nada", "65 sigue demasiado alto", "yo diría un 20, 30, lo que
+ * realmente sea".
  */
+export function techoPorEvidencia(confirmadas: number): number {
+  return Math.min(95, 5 * confirmadas);
+}
+
 export function puntajePilar(hallazgos: HallazgoPuntaje[], confirmadas?: number): number {
   let p = 90;
   for (const h of hallazgos) {
@@ -105,6 +111,6 @@ export function puntajePilar(hallazgos: HallazgoPuntaje[], confirmadas?: number)
     const peso = h.impacto === "alto" ? 20 : h.impacto === "medio" ? 10 : 4;
     p -= h.requiere_validacion ? peso / 2 : peso;
   }
-  const techo = confirmadas == null ? 95 : Math.min(95, 40 + 5 * confirmadas);
+  const techo = confirmadas == null ? 95 : techoPorEvidencia(confirmadas);
   return Math.round(Math.max(10, Math.min(techo, p)));
 }

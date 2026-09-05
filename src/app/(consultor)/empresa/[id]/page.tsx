@@ -13,7 +13,7 @@ import { comparar, veredicto, nombreMedicion, type Medicion } from "@/lib/medici
 import { radiografia, type Metrica as MetricaVital } from "@/lib/metricas";
 import { AdministrarEmpresa } from "@/components/consultor/AdministrarEmpresa";
 import { coberturaSesion } from "@/lib/rules/cobertura";
-import { puntajePilar } from "@/lib/rules/evidencia";
+import { puntajePilar, techoPorEvidencia } from "@/lib/rules/evidencia";
 import { TIPO_SESION } from "@/lib/textos";
 
 export const dynamic = "force-dynamic";
@@ -196,7 +196,7 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
                 >
                   <span className="t-etiqueta" style={{ display: "block" }}>{PILAR[p]}</span>
                   <span className="num-grande" style={{ fontSize: 26, color: d ? color : "var(--grafito)" }}>{d && d.estado !== "desconocido" ? puntajeDe(p) : "—"}</span>
-                  <span className="t-dato" style={{ display: "block", color: "var(--grafito)", fontSize: 13 }}>{d ? ESTADO_PILAR[d.estado] : "Sin diagnosticar"} · {n.confirmadas}/{n.total}{d && d.estado !== "desconocido" && n.confirmadas < 11 ? " · poca evidencia aún" : ""}</span>
+                  <span className="t-dato" style={{ display: "block", color: "var(--grafito)", fontSize: 13 }}>{d ? ESTADO_PILAR[d.estado] : "Sin diagnosticar"} · {n.confirmadas}/{n.total}{d && d.estado !== "desconocido" && techoPorEvidencia(n.confirmadas) < 95 ? " · poca evidencia aún" : ""}</span>
                 </Link>
               );
             })}
