@@ -86,9 +86,10 @@ export type HallazgoPuntaje = { impacto: string | null; preserva?: boolean; requ
 /**
  * Puntaje 0-100 del pilar, calculado de sus hallazgos vigentes (no rechazados) — no una etiqueta disfrazada.
  * Antes sólido/mejorable/crítico se traducían a 85/60/35 fijos y toda empresa "mejorable" salía 60: un
- * número que parecía medido y no medía nada. Ahora cada hallazgo pesa: alto -20, medio -10, bajo -4;
- * a la mitad si aún espera validación (incierto no es invisible). Cada fortaleza suma 3.
- * Base 90 (sólido no es perfecto), piso 10, techo 95.
+ * número que parecía medido y no medía nada. Ahora cada hallazgo pesa: alto -20, medio -10, bajo -4 —
+ * COMPLETO aunque espere validación: un problema comentado cuenta hasta demostrarse lo contrario
+ * (el candado de validación protege lo que llega al cliente; no maquilla el tablero del consultor).
+ * Cada fortaleza suma 3. Base 90 (sólido no es perfecto), piso 10, techo 95.
  *
  * Y el techo CRECE con la evidencia confirmada: la salud no se regala, se demuestra. Cada
  * confirmación da derecho a 5 puntos de techo — con el mínimo para diagnosticar (5) el máximo
@@ -108,9 +109,18 @@ export function puntajePilar(hallazgos: HallazgoPuntaje[], confirmadas?: number)
       p += 3;
       continue;
     }
-    const peso = h.impacto === "alto" ? 20 : h.impacto === "medio" ? 10 : 4;
-    p -= h.requiere_validacion ? peso / 2 : peso;
+    p -= h.impacto === "alto" ? 20 : h.impacto === "medio" ? 10 : 4;
   }
   const techo = confirmadas == null ? 95 : techoPorEvidencia(confirmadas);
   return Math.round(Math.max(10, Math.min(techo, p)));
+}
+
+/**
+ * El pilar de procesos mira LOS PROCESOS, no solo la conversación: 4 dibujos sin confirmar por el
+ * dueño no son un pilar sano ("procesos 80? pero si solo registró 4 y ni siquiera están bien
+ * hechos" — Kelin). Cada proceso dibujado da 3 puntos de techo; confirmado por el dueño, 15.
+ * Sin nada dibujado, el techo es 25: apenas la primera impresión.
+ */
+export function techoPorProcesos(dibujados: number, confirmados: number): number {
+  return Math.min(95, 25 + 3 * dibujados + 15 * confirmados);
 }
