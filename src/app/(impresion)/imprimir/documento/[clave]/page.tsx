@@ -54,7 +54,7 @@ export default async function ImprimirDocumento({ params }: { params: Promise<{ 
       {/* LA FIRMA DE ORIGEN: nuestra regla convertida en sello visible. */}
       <footer style={{ marginTop: 40, borderTop: "1px solid var(--linea)", paddingTop: 12, display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
         <p className="t-dato" style={{ color: "var(--grafito)" }}>Construido con lo que nos contaste{cuando ? ` · ${cuando}` : ""} — nada es inventado.</p>
-        <p className="t-dato" style={{ color: "var(--grafito)" }}>8X · RENASER</p>
+        <p className="t-dato" style={{ color: "var(--grafito)" }}>Sistema de Alto Rendimiento Renaser</p>
       </footer>
 
       <style>{`@media print { .no-imprimir { display: none !important; } @page { margin: 16mm; } }`}</style>
