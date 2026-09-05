@@ -80,3 +80,25 @@ export function estadoPilar(impactos: Impacto[], confirmadas: number, minConfirm
   if (impactos.includes("medio")) return "mejorable";
   return "solido";
 }
+
+export type HallazgoPuntaje = { impacto: string | null; preserva?: boolean; requiere_validacion?: boolean | null };
+
+/**
+ * Puntaje 0-100 del pilar, calculado de sus hallazgos vigentes (no rechazados) — no una etiqueta disfrazada.
+ * Antes sólido/mejorable/crítico se traducían a 85/60/35 fijos y toda empresa "mejorable" salía 60: un
+ * número que parecía medido y no medía nada. Ahora cada hallazgo pesa: alto -20, medio -10, bajo -4;
+ * a la mitad si aún espera validación (incierto no es invisible). Cada fortaleza suma 3.
+ * Base 90 (sólido no es perfecto), piso 10, techo 95.
+ */
+export function puntajePilar(hallazgos: HallazgoPuntaje[]): number {
+  let p = 90;
+  for (const h of hallazgos) {
+    if (h.preserva) {
+      p += 3;
+      continue;
+    }
+    const peso = h.impacto === "alto" ? 20 : h.impacto === "medio" ? 10 : 4;
+    p -= h.requiere_validacion ? peso / 2 : peso;
+  }
+  return Math.round(Math.max(10, Math.min(95, p)));
+}

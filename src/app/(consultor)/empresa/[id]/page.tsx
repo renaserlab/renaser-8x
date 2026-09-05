@@ -13,12 +13,12 @@ import { comparar, veredicto, nombreMedicion, type Medicion } from "@/lib/medici
 import { radiografia, type Metrica as MetricaVital } from "@/lib/metricas";
 import { AdministrarEmpresa } from "@/components/consultor/AdministrarEmpresa";
 import { coberturaSesion } from "@/lib/rules/cobertura";
+import { puntajePilar } from "@/lib/rules/evidencia";
 import { TIPO_SESION } from "@/lib/textos";
 
 export const dynamic = "force-dynamic";
 
 const COLOR_PILAR: Record<string, string> = { solido: "var(--confirmado)", mejorable: "var(--caducado)", critico: "var(--contradicho)", desconocido: "var(--grafito)" };
-const PUNTAJE: Record<string, number> = { solido: 85, mejorable: 60, critico: 35 };
 const soles = (n: number) => `S/${Math.round(n).toLocaleString("es-PE")}`;
 
 function Sparkline({ serie }: { serie: { valor: number }[] }) {
@@ -62,7 +62,16 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
   const admision = c.admision as (Record<string, string> & { evaluacion?: { admisible: boolean; motivo: string; senales: string[] } }) | null;
   const ficha = c.ficha as { personas?: string; ciudad?: string; whatsapp?: string } | null;
 
-  const puntuados = (diag ?? []).map((d) => PUNTAJE[d.estado]).filter((n): n is number => n != null);
+  // El puntaje se CALCULA de los hallazgos vigentes; antes era una etiqueta con número fijo y todo salía 60.
+  const { data: hallazgosVigentes } = await sb
+    .from("findings")
+    .select("pilar,impacto,requiere_validacion,filtros")
+    .eq("company_id", id)
+    .neq("estado_revision", "rechazado");
+  const puntajeDe = (p: string) =>
+    puntajePilar((hallazgosVigentes ?? []).filter((h) => h.pilar === p).map((h) => ({ impacto: h.impacto, requiere_validacion: h.requiere_validacion, preserva: !!(h.filtros as { preserva?: boolean } | null)?.preserva })));
+  const diagnosticados = (diag ?? []).filter((d) => d.estado !== "desconocido");
+  const puntuados = diagnosticados.map((d) => puntajeDe(d.pilar));
   const salud = puntuados.length ? Math.round(puntuados.reduce((a, b) => a + b, 0) / puntuados.length) : null;
   const colorSalud = salud == null ? "var(--grafito)" : salud >= 70 ? "var(--confirmado)" : salud >= 50 ? "var(--caducado)" : "var(--contradicho)";
   const { data: restricciones } = await sb
@@ -183,7 +192,7 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
                   style={{ borderRadius: "var(--radio)", border: `1.5px solid ${color}`, background: `color-mix(in srgb, ${color} 8%, var(--papel))`, padding: "14px 16px", textDecoration: "none", display: "block" }}
                 >
                   <span className="t-etiqueta" style={{ display: "block" }}>{PILAR[p]}</span>
-                  <span className="num-grande" style={{ fontSize: 26, color: d ? color : "var(--grafito)" }}>{d ? PUNTAJE[d.estado] : "—"}</span>
+                  <span className="num-grande" style={{ fontSize: 26, color: d ? color : "var(--grafito)" }}>{d && d.estado !== "desconocido" ? puntajeDe(p) : "—"}</span>
                   <span className="t-dato" style={{ display: "block", color: "var(--grafito)", fontSize: 13 }}>{d ? ESTADO_PILAR[d.estado] : "Sin diagnosticar"} · {n.confirmadas}/{n.total}</span>
                 </Link>
               );

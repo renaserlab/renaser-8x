@@ -1,5 +1,6 @@
 import { protegido, ok, fallo, leerJSON } from "@/lib/api";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { encolar, PRIORIDAD, claveIdempotente } from "@/lib/jobs/queue";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -8,13 +9,13 @@ type Ctx = { params: Promise<{ id: string }> };
  * Tres acciones y siempre un motivo. Cada una escribe en corrections.
  * 1.11: un hallazgo con `requiere_validacion` no se aprueba sin declarar (en el comentario) la evidencia adicional que lo sostiene.
  */
-export const POST = protegido<Ctx>({ consultor: true }, async (perfil, req, ctx) => {
+export const POST = protegido<Ctx>({ consultor: true, cupo: "ia" }, async (perfil, req, ctx) => {
   const { id } = await ctx.params;
   const b = await leerJSON<{ accion?: "aprobado" | "corregido" | "rechazado"; motivo?: string; comentario?: string; texto_corregido?: string; cambios?: Record<string, unknown>; levantar_validacion?: boolean }>(req);
   if (!b.accion) return fallo("Falta la acción");
   if (b.accion !== "aprobado" && !b.motivo) return fallo("Corregir o rechazar exige un motivo: es lo que enseña al sistema.");
   const sb = supabaseAdmin();
-  const { data: f } = await sb.from("findings").select("id,requiere_validacion").eq("id", id).single();
+  const { data: f } = await sb.from("findings").select("id,requiere_validacion,company_id,pilar").eq("id", id).single();
   if (!f) return fallo("Hallazgo no encontrado", 404);
   const cambios: Record<string, unknown> = { estado_revision: b.accion };
   if (b.accion === "corregido" && b.cambios) {
@@ -30,5 +31,13 @@ export const POST = protegido<Ctx>({ consultor: true }, async (perfil, req, ctx)
   const { error } = await sb.from("findings").update(cambios).eq("id", id);
   if (error) return fallo(error.message, 500);
   await sb.from("corrections").insert({ finding_id: id, user_id: perfil.id, accion: b.accion, motivo: b.motivo ?? null, comentario: b.levantar_validacion ? `[validación levantada] ${b.comentario ?? ""}` : b.comentario ?? null, texto_corregido: b.texto_corregido ?? (b.cambios ? JSON.stringify(b.cambios) : null) });
+  // El criterio del consultor mueve el tablero: al revisar, el pilar se re-diagnostica con la foto
+  // fresca (antes el estado del pilar quedaba congelado en el día que corrió, revisara lo que revisara).
+  if (f.pilar && f.company_id) {
+    const { data: enCola } = await sb.from("jobs").select("id").eq("company_id", f.company_id).eq("tipo", "diagnosticar").eq("estado", "pendiente").filter("payload->>pilar", "eq", f.pilar).limit(1);
+    if (!enCola?.length) {
+      await encolar({ company_id: f.company_id, tipo: "diagnosticar", payload: { pilar: f.pilar }, prioridad: PRIORIDAD.diagnosticar, idempotency_key: claveIdempotente(["revision-diag", f.company_id, f.pilar, id, b.accion]) }).catch(() => {});
+    }
+  }
   return ok({ id, estado_revision: b.accion });
 });

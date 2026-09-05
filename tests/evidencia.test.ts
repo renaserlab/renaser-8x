@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calibrarImpacto, aplicarFiltros, estadoPilar, fuentesIndependientes, tieneFuenteObjetiva, tieneEvidencia, type ClaimEvidencia } from "@/lib/rules/evidencia";
+import { calibrarImpacto, aplicarFiltros, estadoPilar, puntajePilar, fuentesIndependientes, tieneFuenteObjetiva, tieneEvidencia, type ClaimEvidencia } from "@/lib/rules/evidencia";
 
 const ev = (id: string, o: Partial<ClaimEvidencia> = {}): ClaimEvidencia => ({ id, source_id: "doc1", participant_id: null, estado: "confirmado", source_tipo: "documento", ...o });
 const pasa = { resultado: "pasa" as const, nota: "" };
@@ -77,5 +77,28 @@ describe("estado del pilar", () => {
     expect(estadoPilar(["medio"], 10, 5)).toBe("mejorable");
     expect(estadoPilar(["bajo"], 10, 5)).toBe("solido");
     expect(estadoPilar([], 10, 5)).toBe("solido");
+  });
+});
+
+describe("puntaje del pilar: calculado de los hallazgos, no una etiqueta con número fijo", () => {
+  it("sin hallazgos → 90 (sólido no es perfecto)", () => {
+    expect(puntajePilar([])).toBe(90);
+  });
+  it("dos pilares 'mejorables' con distinta carga ya no salen iguales", () => {
+    const liviano = puntajePilar([{ impacto: "medio" }]);
+    const pesado = puntajePilar([{ impacto: "medio" }, { impacto: "medio" }, { impacto: "bajo" }]);
+    expect(liviano).toBe(80);
+    expect(pesado).toBe(66);
+    expect(liviano).not.toBe(pesado);
+  });
+  it("un alto pesa el doble que un medio; pendiente de validación pesa la mitad", () => {
+    expect(puntajePilar([{ impacto: "alto" }])).toBe(70);
+    expect(puntajePilar([{ impacto: "alto", requiere_validacion: true }])).toBe(80);
+  });
+  it("las fortalezas suman y el techo es 95", () => {
+    expect(puntajePilar([{ impacto: null, preserva: true }, { impacto: null, preserva: true }])).toBe(95);
+  });
+  it("una avalancha de hallazgos no baja del piso 10", () => {
+    expect(puntajePilar(Array.from({ length: 10 }, () => ({ impacto: "alto" as const })))).toBe(10);
   });
 });
