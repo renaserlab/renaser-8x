@@ -35,6 +35,7 @@ export default async function ImprimirDocumento({ params }: { params: Promise<{ 
       <header className="flex items-center justify-between gap-4" style={{ borderBottom: "2px solid var(--tinta)", paddingBottom: 16 }}>
         <div className="flex items-center gap-3" style={{ minWidth: 0 }}>
           {ficha.logo_url && (
+            /* Hoja de impresión: el logo va directo, sin optimizador — se imprime una vez, no se sirve mil. */
             // eslint-disable-next-line @next/next/no-img-element
             <img src={ficha.logo_url} alt="" style={{ maxHeight: 48, maxWidth: 120 }} />
           )}

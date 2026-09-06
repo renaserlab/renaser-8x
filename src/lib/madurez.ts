@@ -16,7 +16,7 @@ export const NIVELES: DefNivel[] = [
   { nivel: 0, nombre: "Sin mapear", queSignifica: "Nadie ha dibujado cómo funciona esto todavía", cmmi: "—" },
   { nivel: 1, nombre: "Contado", queSignifica: "Está dibujado: se sabe cómo funciona hoy, aunque solo viva en la cabeza de alguien", cmmi: "Inicial" },
   { nivel: 2, nombre: "Ordenado", queSignifica: "Tiene dueño, tiempos y se sabe qué entra y qué sale: ya no depende de a quién le preguntes", cmmi: "Gestionado" },
-  { nivel: 3, nombre: "Escrito", queSignifica: "Está documentado y aprobado: alguien nuevo podría hacerlo leyendo", cmmi: "Definido" },
+  { nivel: 3, nombre: "Escrito", queSignifica: "Está escrito paso a paso: alguien nuevo podría hacerlo leyendo", cmmi: "Definido" },
   { nivel: 4, nombre: "Medido", queSignifica: "Tiene un número que se anota de verdad, no solo una meta escrita", cmmi: "Gestionado cuantitativamente" },
   { nivel: 5, nombre: "Mejorando", queSignifica: "Ese número se movió a mejor contra el punto de partida", cmmi: "Optimizando" },
 ];
@@ -75,8 +75,8 @@ export function madurezProceso(p: ProcesoParaMedir): Evaluacion {
   if (faltanSipoc.length) return { nivel: 1, nombre: NIVEL.get(1)!.nombre, siguiente: `Falta decir ${faltanSipoc.join(", ")}`, porque };
   porque.push("Tiene dueño, tiempos, y se sabe qué entra y qué sale");
 
-  if (!p.documentado) return { nivel: 2, nombre: NIVEL.get(2)!.nombre, siguiente: "Falta escribirlo y aprobarlo para que alguien nuevo pueda hacerlo leyendo", porque };
-  porque.push("Escrito y aprobado");
+  if (!p.documentado) return { nivel: 2, nombre: NIVEL.get(2)!.nombre, siguiente: "Falta escribirlo paso a paso para que alguien nuevo pueda hacerlo leyendo", porque };
+  porque.push("Escrito paso a paso");
 
   if (!lleno(p.indicador)) return { nivel: 3, nombre: NIVEL.get(3)!.nombre, siguiente: "Falta el número que dice si va bien", porque };
   if ((p.medicionesReales ?? 0) < 2) return { nivel: 3, nombre: NIVEL.get(3)!.nombre, siguiente: "Tiene número, pero falta anotarlo al menos dos veces para poder comparar", porque };
@@ -92,10 +92,23 @@ export function madurezProceso(p: ProcesoParaMedir): Evaluacion {
  * tener y no tiene: una empresa con un proceso perfecto y catorce sin mapear no está en nivel 5.
  * Contar solo lo hecho es la forma más fácil de mentirle a un cliente con un número bonito.
  */
-export function madurezEmpresa(evaluaciones: Evaluacion[], procesosEsperados: number): { nivel: number; nombre: string; mapeados: number; esperados: number } {
+export function madurezEmpresa(evaluaciones: Evaluacion[], procesosEsperados: number): { nivel: number; nombre: string; mapeados: number; esperados: number; nivelMapeados: number; nombreMapeados: string } {
   const total = Math.max(procesosEsperados, evaluaciones.length);
-  if (total === 0) return { nivel: 0, nombre: NIVEL.get(0)!.nombre, mapeados: 0, esperados: 0 };
+  const vacio = { nivel: 0, nombre: NIVEL.get(0)!.nombre, mapeados: 0, esperados: 0, nivelMapeados: 0, nombreMapeados: NIVEL.get(0)!.nombre };
+  if (total === 0) return vacio;
   const suma = evaluaciones.reduce((s, e) => s + e.nivel, 0);
+  const redondear = (n: number) => Math.round(n * 10) / 10;
+  const nombreDe = (n: number) => NIVEL.get(Math.floor(n) as Nivel)?.nombre ?? NIVEL.get(0)!.nombre;
   const nivel = suma / total;
-  return { nivel: Math.round(nivel * 10) / 10, nombre: NIVEL.get(Math.floor(nivel) as Nivel)?.nombre ?? NIVEL.get(0)!.nombre, mapeados: evaluaciones.length, esperados: total };
+  // El promedio SOLO de lo mapeado. Sin este segundo número, «nivel 0,3 · Sin mapear» al lado de
+  // «6 procesos mapeados» se lee como un error nuestro, y no lo es: son dos preguntas distintas.
+  const nivelMapeados = evaluaciones.length ? suma / evaluaciones.length : 0;
+  return {
+    nivel: redondear(nivel),
+    nombre: nombreDe(nivel),
+    mapeados: evaluaciones.length,
+    esperados: total,
+    nivelMapeados: redondear(nivelMapeados),
+    nombreMapeados: nombreDe(nivelMapeados),
+  };
 }

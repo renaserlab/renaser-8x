@@ -1,6 +1,6 @@
 import { RASGOS, tiene, type ClaveRasgo, type Perfil } from "./perfil";
 import { BLOQUES_ACTIVOS } from "./activos";
-import { CATEGORIAS, type ClaveCategoria } from "./pcf";
+import { type ClaveCategoria } from "./pcf";
 
 /**
  * LA MATRIZ DE DOCUMENTACIÓN: qué necesita ESTA empresa para diagnosticarse, ordenarse y escalar.

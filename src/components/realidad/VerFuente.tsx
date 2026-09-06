@@ -45,6 +45,8 @@ export function VerFuente({ sourceId, fragmentId, cerrar }: { sourceId: string; 
             <p className="t-doc">{d.fragmento.texto ?? "(sin texto)"}</p>
           </div>
         )}
+        {/* Evidencia subida por el cliente: URL firmada y temporal de Supabase — el optimizador de Next no puede servirla. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         {d?.url && d.fuente.mime?.startsWith("image/") && <img src={d.url} alt={d.fuente.nombre} style={{ maxWidth: "100%", borderRadius: "var(--radio)", border: "1px solid var(--linea)" }} />}
         {d?.url && d.fuente.mime === "application/pdf" && <iframe src={d.url} title={d.fuente.nombre} style={{ width: "100%", height: "70vh", border: "1px solid var(--linea)", borderRadius: "var(--radio)" }} />}
         {d?.url && d.fuente.mime?.startsWith("audio/") && <audio controls src={d.url} style={{ width: "100%" }} />}

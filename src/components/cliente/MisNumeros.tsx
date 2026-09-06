@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { pedir } from "@/lib/cliente";
 import { VITALES, type Radiografia, type Vital } from "@/lib/metricas";
-import { MESES, ultimosMeses, nombreDePeriodo } from "@/lib/temporadas";
+import { MESES, nombreDePeriodo } from "@/lib/temporadas";
 
 type Serie = { periodo: string; valor: number }[];
 
