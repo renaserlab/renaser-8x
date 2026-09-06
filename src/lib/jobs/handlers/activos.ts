@@ -4,6 +4,7 @@ import { GUARDIA, comoDato } from "@/lib/rules/patrones";
 import { SalidaConstructor, SalidaSistematizador } from "@/lib/schemas";
 import { BLOQUES_ACTIVOS } from "@/lib/activos";
 import { ESTANDARES } from "@/lib/rules/estandares";
+import { culturaComoTexto, leerCultura } from "@/lib/rules/cultura";
 import { baseSistematizacion } from "@/lib/rules/base-renaser";
 import { claimsDeEmpresa, registrarLlamada, etiquetaFuente } from "@/lib/db/queries";
 
@@ -12,13 +13,18 @@ type Job = { id: string; company_id: string; payload: Record<string, unknown> };
 export const PROMPT_CONSTRUCTOR = `${GUARDIA}
 
 Eres un consultor senior que REDACTA un activo empresarial (organigrama, manual de funciones,
-proposito/mision/vision/valores, manual de cultura, reglamento interno, plan de personal,
-mapa de procesos, cliente y propuesta de valor) para una empresa que no lo tiene escrito.
+proposito/mision/vision/valores, manual de cultura, MANUAL DE IDENTIDAD, reglamento interno,
+plan de personal, mapa de procesos, cliente y propuesta de valor) para una empresa que no lo tiene
+escrito.
 La regla de oro: usas SOLO lo que la empresa ya mostro (afirmaciones confirmadas, personas y
 puestos, procesos, el saber del equipo, respuestas de entrevistas). La ausencia de un documento NO es un
 defecto: muchas empresas funcionan bien sin escribirlo; tu trabajo es ponerlo en palabras, no juzgar.
 
-DOCUMENTOS QUE NACEN DE HISTORIAS (cultura, reglamento, plan de personal): cada valor, regla o
+DOCUMENTOS QUE SE COMPONEN: si recibes un bloque "LO QUE ESTE DOCUMENTO COMPONE", ese material YA
+lo dio la empresa. Reusalo: no vuelvas a preguntar lo que ya esta ahi. Tu trabajo es fundirlo en UN
+solo documento que se lea corrido, no pegar dos textos uno detras de otro.
+
+DOCUMENTOS QUE NACEN DE HISTORIAS (identidad, cultura, reglamento, plan de personal): cada valor, regla o
 plan se ancla en el CASO REAL que la empresa conto ("cuando falto el repartidor, el dueno salio a
 repartir" -> el plan B del reparto). Un valor sin su historia, una regla sin su caso o un plan B
 sin nombre propio son plantilla hueca: no los escribas. Si la empresa no conto el caso, va a
@@ -61,6 +67,26 @@ export async function handleConstruirActivo(job: Job) {
   const confirmadas = todas.filter((c) => c.estado === "confirmado");
   const extra = (job.payload.respuestas as { pregunta: string; respuesta: string }[] | undefined) ?? [];
 
+  // LO QUE ESTE DOCUMENTO COMPONE. Un manual maestro se arma con lo que el dueño ya contó en sus
+  // piezas; volver a preguntárselo es la forma más rápida de que sienta que no lo escuchamos.
+  const { data: piezas } = def.componer?.length
+    ? await sb.from("company_assets").select("clave,nota,borrador").eq("company_id", job.company_id).in("clave", def.componer)
+    : { data: [] };
+  const nombreDe = new Map(BLOQUES_ACTIVOS.flatMap((b) => b.activos.map((a) => [`${b.clave}.${a.clave}`, a.nombre] as [string, string])));
+  const compuesto = (piezas ?? []).map((p) => ({ nombre: nombreDe.get(p.clave) ?? p.clave, texto: [p.borrador, p.nota].filter(Boolean).join("\n") }));
+
+  // La cultura se LEE de lo que contaron; lo que no muestra nada queda como pregunta, no como
+  // conclusión. Decirle a un dueño que su empresa «es de familia» porque su rubro suele serlo es
+  // exactamente la clase de invención que este producto no comete.
+  const lectura = leerCultura([...compuesto.map((c) => c.texto), ...(respuestas ?? []).map((r) => String(r.respuesta ?? "")), ...confirmadas.map((c) => c.texto)]);
+  const marcoCultura = [
+    culturaComoTexto(),
+    lectura.presentes.length
+      ? `LO QUE ESTA EMPRESA MOSTRO: ${lectura.presentes.map((c) => c.nombre).join(", ")}. Anclalo en SUS historias, nunca en el nombre del tipo.`
+      : "ESTA EMPRESA NO MOSTRO NINGUN RASGO CLARO todavia: no le atribuyas ninguno. Lo que falte va a faltantes como pregunta.",
+  ].join("\n");
+  const necesitaCultura = clave === "personas.identidad" || clave === "personas.cultura";
+
   const contexto = [
     `ACTIVO A CONSTRUIR: ${def.nombre} (${def.ayuda})`,
     `ESTRUCTURA SUGERIDA: ${def.estructura ?? "la natural para este activo, breve"}`,
@@ -76,6 +102,14 @@ export async function handleConstruirActivo(job: Job) {
     `RESPUESTAS DE ENTREVISTAS (${respuestas?.length ?? 0}, resumen):`,
     comoDato("RESPUESTAS", (respuestas ?? []).map((r) => `- ${r.pregunta} → ${String(r.respuesta).slice(0, 220)}`).join("\n") || "(ninguna)"),
     extra.length ? `RESPUESTAS DEL DUEÑO A TUS PREGUNTAS PREVIAS:\n${extra.map((x) => `- ${x.pregunta} → ${x.respuesta}`).join("\n")}` : "",
+    compuesto.length
+      ? `LO QUE ESTE DOCUMENTO COMPONE (ya levantado con la empresa — se REUSA, no se vuelve a preguntar):\n${compuesto
+          .map((c) => `--- ${c.nombre} ---\n${c.texto || "(todavía sin contenido)"}`)
+          .join("\n\n")}`
+      : "",
+    // El marco de cultura solo entra donde sirve, y jamás sale a la superficie: son palabras
+    // internas para que el redactor vea la tensión, no vocabulario para el dueño.
+    necesitaCultura ? marcoCultura : "",
   ].filter(Boolean).join("\n\n");
 
   const r = await ai().complete({ system: PROMPT_CONSTRUCTOR, user: contexto, schema: SalidaConstructor, priority: "interactive", maxTokens: 4000, agente: "constructor" });

@@ -58,7 +58,7 @@ function FilaProceso({ p, base }: { p: ProcesoEvaluado; base: string }) {
 }
 
 export function MapaEmpresa({ mapa, base }: { mapa: Mapa; base: string }) {
-  const { perfil, empresa, documentos, partes, sinCategoria, matriz } = mapa;
+  const { perfil, empresa, documentos, partes, sinCategoria, matriz, cadena, cultura } = mapa;
   const conAlgo = partes.filter((p) => p.mapeados.length || p.faltan.length);
   const porPrioridad = (pr: Prioridad) => documentos.filter((d) => d.prioridad === pr);
 
@@ -142,6 +142,72 @@ export function MapaEmpresa({ mapa, base }: { mapa: Mapa; base: string }) {
           </details>
         )}
       </section>
+
+      {/* CÓMO ES ESTA EMPRESA. Solo lo que mostró con una historia. */}
+      <section style={{ marginBottom: 28 }}>
+        <h2 className="t-seccion mb-1">Cómo es esta empresa</h2>
+        <p className="t-dato" style={{ color: "var(--grafito)", marginBottom: 12 }}>
+          Ninguna forma de ser es la buena: cada una compra algo y rompe algo. Lo que importa es si lo que el dueño dice querer
+          coincide con lo que hoy premia sin darse cuenta.
+        </p>
+        {cultura.presentes.length === 0 ? (
+          <p className="t-cuerpo">
+            Todavía no contó ninguna historia que muestre cómo es su empresa. Eso no es un defecto: es lo siguiente que hay que
+            preguntarle.
+          </p>
+        ) : (
+          <ul className="lista-editorial">
+            {cultura.presentes.map((c) => (
+              <li key={c.clave}>
+                <strong>{c.nombre}</strong>
+                <div className="t-dato" style={{ color: "var(--grafito)" }}>{c.comoSeVe}</div>
+                <div className="t-dato" style={{ color: "var(--grafito)", marginTop: 2 }}>
+                  Lo que gana: {c.fuerza}. <span style={{ color: "var(--caducado)" }}>Lo que hay que vigilar: {c.riesgo}.</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+        {cultura.porPreguntar.length > 0 && (
+          <details style={{ marginTop: 14 }}>
+            <summary className="t-etiqueta" style={{ cursor: "pointer" }}>Qué preguntarle para completarlo ({cultura.porPreguntar.length})</summary>
+            <ul className="lista-editorial" style={{ marginTop: 10 }}>
+              {cultura.porPreguntar.map((c) => (
+                <li key={c.clave}>{c.pregunta}</li>
+              ))}
+            </ul>
+          </details>
+        )}
+      </section>
+
+      {/* LA CADENA: donde se pierde lo prometido entre una parte y la siguiente. */}
+      {(cadena.corte || cadena.traspasos.length > 0) && (
+        <section style={{ marginBottom: 28 }}>
+          <h2 className="t-seccion mb-1">Por dónde pasa el negocio</h2>
+          <p className="t-dato" style={{ color: "var(--grafito)", marginBottom: 12 }}>
+            Lo que se promete se pierde ENTRE una parte y la siguiente, no dentro de ellas: cada área hizo bien lo suyo y aun así
+            el cliente recibió otra cosa. Nadie lo registra porque nadie se siente dueño del traspaso.
+          </p>
+          {cadena.corte && (
+            <p className="t-cuerpo" style={{ marginBottom: 12 }}>
+              <strong>La cadena se corta en «{cadena.corte.nombre}».</strong> De esa parte no ha contado nada todavía, y todo lo que
+              viene después depende de ella, porque es la que entrega {cadena.corte.entrega}.
+            </p>
+          )}
+          {cadena.traspasos.length > 0 && (
+            <ul className="lista-editorial">
+              {cadena.traspasos.map((t) => (
+                <li key={`${t.de.clave}-${t.a.clave}`}>
+                  <strong>
+                    {t.de.nombre} → {t.a.nombre}
+                  </strong>
+                  <div className="t-dato" style={{ color: "var(--grafito)" }}>{t.pregunta}</div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
 
       {/* LA MATRIZ DE DOCUMENTACIÓN. */}
       <section style={{ marginBottom: 28 }}>

@@ -17,6 +17,8 @@ import { matrizDe, type Matriz, type PiezaProceso } from "./matriz";
 import { CATEGORIAS, type ClaveCategoria } from "./pcf";
 import { madurezProceso, madurezEmpresa, type Evaluacion } from "./madurez";
 import { normalizarParaConfirmar } from "./confirmacion";
+import { traspasosDe, primerCorte, type Traspaso, type Eslabon } from "./rules/cadena-valor";
+import { leerCultura, type LecturaCultura } from "./rules/cultura";
 
 /** Un documento de la matriz con el estado real en el que está hoy. */
 export type EstadoDoc = "falta" | "levantado" | "listo";
@@ -53,6 +55,10 @@ export type MapaEmpresa = {
   empresa: ReturnType<typeof madurezEmpresa>;
   /** Procesos sin categoría asignada: se muestran aparte en vez de colgarlos donde no van. */
   sinCategoria: ProcesoEvaluado[];
+  /** La cadena: dónde se corta y en qué traspasos se pierde lo que se prometió. */
+  cadena: { traspasos: Traspaso[]; corte: Eslabon | null };
+  /** Cómo es esta empresa, leído de sus historias. Nunca deducido del rubro. */
+  cultura: LecturaCultura;
 };
 
 const LISTO = new Set(["construido", "en_uso"]);
@@ -164,12 +170,21 @@ export async function mapaDe(companyId: string): Promise<MapaEmpresa | null> {
   // solo contra lo hecho, porque entonces cualquiera con un proceso perfecto estaría en nivel 5.
   const esperados = new Set([...matriz.procesos.map((p) => normalizar(p.nombre)), ...evaluados.map((e) => normalizar(e.nombre))]);
 
+  // LA CADENA se lee de las categorías donde la empresa YA mapeó algo: preguntarle a una consultora
+  // por su despacho de mercadería es exactamente el ruido que hace desconfiar de un diagnóstico.
+  const categoriasConProceso = evaluados.map((e) => e.categoria).filter((c): c is ClaveCategoria => !!c);
+
   return {
     perfil,
     matriz,
     documentos,
     procesos: evaluados,
     partes,
+    cadena: { traspasos: traspasosDe(categoriasConProceso), corte: primerCorte(categoriasConProceso) },
+    cultura: leerCultura([
+      ...(activos ?? []).map((a) => a.nota),
+      ...(respuestas ?? []).map((r) => (r as { respuesta: string | null }).respuesta),
+    ]),
     empresa: madurezEmpresa(
       evaluados.map((e) => e.evaluacion),
       esperados.size

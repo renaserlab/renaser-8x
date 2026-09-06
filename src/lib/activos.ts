@@ -15,6 +15,12 @@ export type ActivoDef = {
   preguntas: string[];
   /** Estructura sugerida cuando más adelante se construya el documento (constructor). */
   estructura?: string;
+  /**
+   * Claves completas de otros activos cuyo material COMPONE este documento. Un manual maestro no
+   * se levanta otra vez desde cero: se arma con lo que el dueño ya contó en sus piezas. Sin esto,
+   * al dueño se le vuelve a preguntar lo que ya respondió — que es de las cosas que más molestan.
+   */
+  componer?: string[];
 };
 export type BloqueActivos = { clave: string; nombre: string; intro: string; activos: ActivoDef[] };
 
@@ -89,6 +95,22 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         ayuda: "La cultura real: lo que se celebra, lo que no se tolera, y cómo se decide cuando hay que elegir.",
         preguntas: ["Cuéntame algo que hizo alguien del equipo y te hizo pensar «así quiero que seamos siempre».", "¿Y algo que hizo alguien que te hizo decir «esto aquí no va»?", "Cuando hay que elegir entre hacerlo rápido o hacerlo bien, ¿qué se elige en tu empresa?", "¿Qué se celebra en tu empresa y cómo? ¿Qué te gustaría que se celebre?"],
         estructura: "cada valor con el EJEMPLO REAL que lo demuestra (la historia contada, con nombre si lo dieron), los límites (lo que aquí no va, con su caso), cómo se decide ante los dilemas típicos (rápido vs bien, cliente vs caja), y qué se celebra; nada de palabras de póster sin historia detrás",
+      },
+      {
+        // EL DOCUMENTO MAESTRO. No se levanta de cero: compone lo que el dueño ya contó en «Lo que
+        // la empresa quiere ser» y «Cómo somos aquí». Es lo que se imprime, se entrega y se lee en
+        // la inducción — un solo documento, no dos piezas sueltas que nadie junta nunca.
+        clave: "identidad",
+        nombre: "Manual de Identidad",
+        ayuda: "El documento único que dice quiénes son: para qué existe la empresa, a dónde va, cómo se comporta su gente y qué aquí no va. Se arma con lo que ya nos contaste.",
+        preguntas: [
+          "Si mañana entra alguien nuevo y solo puede leer una hoja para entender cómo son ustedes, ¿qué tendría que decir esa hoja?",
+          "¿Qué es lo que tu empresa NUNCA haría, aunque se pierda plata?",
+          "Cuando alguien de tu equipo tiene un problema personal fuerte, ¿qué pasa en tu empresa?",
+          "¿A quién se le reconoce en tu empresa y por qué? ¿Cómo se entera el resto?",
+        ],
+        estructura: "un solo documento con: para qué existe la empresa (en las palabras del dueño), a dónde quiere llegar, qué hace y para quién, los valores CADA UNO con su historia real, los límites (lo que aquí no va, con su caso), cómo se decide ante los dilemas típicos, qué se celebra, y cómo se comporta alguien nuevo en su primera semana. Un valor sin historia no entra",
+        componer: ["personas.mvv", "personas.cultura"],
       },
       {
         // Exigente Y legal: la escalera disciplinaria peruana bien documentada protege a la empresa
