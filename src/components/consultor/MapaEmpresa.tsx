@@ -11,6 +11,10 @@ import type { MapaEmpresa as Mapa, ProcesoEvaluado, EstadoDoc } from "@/lib/mapa
  * opinión con decimales.
  */
 
+/** Coma decimal, siempre. toLocaleString depende de datos de idioma que el servidor puede no tener,
+ *  y un «0.3» donde debe decir «0,3» es de las cosas que hacen dudar de todo lo demás. */
+const conComa = (n: number) => String(n).replace(".", ",");
+
 const COLOR_NIVEL = ["var(--linea)", "var(--sin-verificar)", "var(--sin-verificar)", "var(--medida)", "var(--confirmado)", "var(--confirmado)"];
 
 function Barra({ nivel }: { nivel: number }) {
@@ -66,7 +70,7 @@ export function MapaEmpresa({ mapa, base }: { mapa: Mapa; base: string }) {
           <div>
             <div className="t-etiqueta">Nivel de la empresa</div>
             <div className="num-grande">
-              {empresa.nivel.toLocaleString("es-PE")} <span style={{ fontSize: "0.45em", color: "var(--grafito)" }}>de 5</span>
+              {conComa(empresa.nivel)} <span style={{ fontSize: "0.45em", color: "var(--grafito)" }}>de 5</span>
             </div>
             <div className="t-dato" style={{ color: "var(--grafito)" }}>
               {empresa.mapeados} de {empresa.esperados} procesos mapeados
@@ -75,7 +79,7 @@ export function MapaEmpresa({ mapa, base }: { mapa: Mapa; base: string }) {
           <div>
             <div className="t-etiqueta">Lo que ya está mapeado</div>
             <div className="num-grande" style={{ color: "var(--grafito)" }}>
-              {empresa.nivelMapeados.toLocaleString("es-PE")} <span style={{ fontSize: "0.45em" }}>de 5</span>
+              {conComa(empresa.nivelMapeados)} <span style={{ fontSize: "0.45em" }}>de 5</span>
             </div>
             <div className="t-dato" style={{ color: "var(--grafito)" }}>{empresa.nombreMapeados}</div>
           </div>
