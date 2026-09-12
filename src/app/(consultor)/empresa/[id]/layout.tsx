@@ -10,6 +10,7 @@ const TABS: [string, string][] = [
   ["/afirmaciones", "Afirmaciones"],
   ["/realidad", "Realidad"],
   ["/entrevista", "Entrevista"],
+  ["/dia", "El día"],
   ["/procesos", "Procesos"],
   ["/madurez", "Radiografía"],
   ["/diagnostico", "Diagnóstico"],
