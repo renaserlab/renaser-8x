@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { z } from "zod";
 import { AIProviderDownError, AIRateLimitError, AIValidationError, type AIProvider, type CompleteParams, type CompleteResult, type Transcripcion } from "./provider";
+import { aplicarContrato } from "@/lib/agentes/contratos";
 
 /**
  * Proveedor Gemini (REST, sin SDK). Mismo contrato que AnthropicProvider:
@@ -110,6 +111,10 @@ export class GeminiProvider implements AIProvider {
   }
 
   async complete<T>(p: CompleteParams<T>): Promise<CompleteResult<T>> {
+    // EL CONTRATO MANDA (manual RENASER v1.2, AH01 y AH05): el presupuesto del agente se impone
+    // aquí, en el entorno, no en el prompt. Un agente sin ficha no corre.
+    const contrato = aplicarContrato(p.agente, p.maxTokens);
+    if (contrato) p = { ...p, maxTokens: contrato.maxTokens };
     const parts: Record<string, unknown>[] = [];
     for (const a of p.adjuntos ?? []) {
       parts.push({ inlineData: { mimeType: a.tipo === "imagen" ? a.mime : "application/pdf", data: a.base64 } });

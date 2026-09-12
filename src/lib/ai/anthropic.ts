@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { AIProviderDownError, AIRateLimitError, AIValidationError, type AIProvider, type CompleteParams, type CompleteResult, type Transcripcion } from "./provider";
+import { aplicarContrato } from "@/lib/agentes/contratos";
 
 const MODEL = process.env.AI_MODEL ?? "claude-sonnet-5";
 const TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS ?? 120_000);
@@ -18,6 +19,10 @@ export class AnthropicProvider implements AIProvider {
   }
 
   async complete<T>(p: CompleteParams<T>): Promise<CompleteResult<T>> {
+    // EL CONTRATO MANDA (manual RENASER v1.2, AH01 y AH05): el presupuesto del agente se impone
+    // aquí, en el entorno, no en el prompt. Un agente sin ficha no corre.
+    const contrato = aplicarContrato(p.agente, p.maxTokens);
+    if (contrato) p = { ...p, maxTokens: contrato.maxTokens };
     const content: Anthropic.ContentBlockParam[] = [];
     for (const a of p.adjuntos ?? []) {
       if (a.tipo === "imagen") content.push({ type: "image", source: { type: "base64", media_type: a.mime, data: a.base64 } });
