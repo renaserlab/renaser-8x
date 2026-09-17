@@ -19,6 +19,7 @@ export type TipoJob =
   | "transcribir_respuesta"
   | "minar_know_how"
   | "proponer_indicadores"
+  | "estudio_organigrama"
   | "generar_proceso"
   | "generar_tobe"
   | "generar_sop"

@@ -345,3 +345,22 @@ export const SalidaMedidor = z.object({
     )
     .max(6),
 });
+
+/** EL ESTUDIO DE ORGANIGRAMA: qué quiere la empresa y qué estructura necesita construir (pedido de Kelin). */
+export const SalidaEstudioOrganigrama = z.object({
+  lo_que_quiere: z.string().min(20).max(700),
+  como_esta_hoy: z.string().min(20).max(700),
+  puestos_por_construir: z
+    .array(
+      z.object({
+        nombre: z.string().min(3).max(80),
+        mision: z.string().min(10).max(300),
+        decide: z.string().min(5).max(300),
+        por_que: z.string().min(15).max(400),
+        cuando: z.enum(["ahora", "tres_meses", "al_crecer"]).catch("tres_meses"),
+      })
+    )
+    .max(8),
+  riesgos_de_la_estructura: z.array(z.string().max(300)).max(5),
+  orden_de_construccion: z.string().min(20).max(700),
+});

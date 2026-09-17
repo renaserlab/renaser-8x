@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { pedir } from "@/lib/cliente";
 import type { Puesto, ReglaEstudio } from "@/lib/rules/organigrama";
 import { nivelesDelArbol } from "@/lib/rules/organigrama";
+import { EstudioOrganigrama, type EstudioIA } from "@/components/consultor/EstudioOrganigrama";
 
 /**
  * EL ORGANIGRAMA COMO ESTUDIO (pedido de Kelin): no es un dibujo libre — cada puesto lleva misión,
@@ -11,7 +12,7 @@ import { nivelesDelArbol } from "@/lib/rules/organigrama";
  * el PORQUÉ la estructura está bien o mal armada. De aquí salen el manual de funciones y el cierre
  * de los procesos. Edición en panel lateral, como todo en la casa.
  */
-export function Organigrama({ companyId, puestos, estudio }: { companyId: string; puestos: Puesto[]; estudio: ReglaEstudio[] }) {
+export function Organigrama({ companyId, puestos, estudio, estudioIA, estudioFecha }: { companyId: string; puestos: Puesto[]; estudio: ReglaEstudio[]; estudioIA: EstudioIA | null; estudioFecha: string | null }) {
   const router = useRouter();
   const [editando, setEditando] = useState<Partial<Puesto> | null>(null);
   const [guardando, setGuardando] = useState(false);
@@ -165,6 +166,8 @@ export function Organigrama({ companyId, puestos, estudio }: { companyId: string
           </section>
         </>
       )}
+      <EstudioOrganigrama companyId={companyId} estudio={estudioIA} fecha={estudioFecha} />
+
       {error && <p className="t-cuerpo mb-4" role="alert" style={{ color: "var(--contradicho)" }}>{error}</p>}
 
       {abierto && (

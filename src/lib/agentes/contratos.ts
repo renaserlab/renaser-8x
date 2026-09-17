@@ -19,7 +19,7 @@
 
 export type ClaveAgente =
   | "admision" | "arquitecto" | "auditor" | "constructor" | "contrastador" | "diagnosticador"
-  | "entrevistador" | "estratega" | "extractor" | "medidor" | "minero" | "planificador"
+  | "entrevistador" | "estratega" | "extractor" | "medidor" | "minero" | "organizador" | "planificador"
   | "redactor" | "rediseno" | "sistematizador" | "sop";
 
 /** Quién responde por el agente, según la sección 1 del manual. */
@@ -180,6 +180,18 @@ export const CONTRATOS: Record<ClaveAgente, Contrato> = {
     aprobador: "dueño",
     presupuesto_tokens: 1600, tiempo_max_ms: 90_000, reintentos: 2,
     exito: "Indicadores propuestos con cómo se miden y dónde se ven.",
+    parada: PARADA_COMUN, recuperacion: SEGURO_DE_REPETIR, responsable: "Producto", medido: false,
+  },
+  organizador: {
+    clave: "organizador", version: "1.0",
+    proposito: "El estudio de organigrama: qué quiere lograr la empresa y qué puestos necesita construir, cada uno con misión, decisión y porqué citando su evidencia.",
+    disparador: "El consultor pide el estudio desde la pestaña Organigrama.",
+    fuentes: ["sueño del dueño (citas)", "ficha de la empresa", "gente y puestos actuales", "hallazgos", "procesos levantados"],
+    entrada: "Todo lo que el sistema sabe de la empresa, como dato.", salida: "SalidaEstudioOrganigrama",
+    acciones_prohibidas: ["Proponer un puesto sin evidencia que lo pida", "Recetar estructura de corporación a una pyme", "Proponer personas en vez de puestos"],
+    aprobador: "consultor",
+    presupuesto_tokens: 2400, tiempo_max_ms: 90_000, reintentos: 2,
+    exito: "Estudio guardado: lo que quiere, cómo está, puestos por construir con su cuándo, riesgos y orden.",
     parada: PARADA_COMUN, recuperacion: SEGURO_DE_REPETIR, responsable: "Producto", medido: false,
   },
   minero: {
