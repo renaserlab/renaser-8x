@@ -12,7 +12,7 @@ import { EstudioOrganigrama, type EstudioIA } from "@/components/consultor/Estud
  * el PORQUÉ la estructura está bien o mal armada. De aquí salen el manual de funciones y el cierre
  * de los procesos. Edición en panel lateral, como todo en la casa.
  */
-export function Organigrama({ companyId, puestos, estudio, estudioIA, estudioFecha }: { companyId: string; puestos: Puesto[]; estudio: ReglaEstudio[]; estudioIA: EstudioIA | null; estudioFecha: string | null }) {
+export function Organigrama({ companyId, puestos, estudio, estudioIA, estudioFecha, versiones }: { companyId: string; puestos: Puesto[]; estudio: ReglaEstudio[]; estudioIA: EstudioIA | null; estudioFecha: string | null; versiones: string[] }) {
   const router = useRouter();
   const [editando, setEditando] = useState<Partial<Puesto> | null>(null);
   const [guardando, setGuardando] = useState(false);
@@ -166,7 +166,7 @@ export function Organigrama({ companyId, puestos, estudio, estudioIA, estudioFec
           </section>
         </>
       )}
-      <EstudioOrganigrama companyId={companyId} estudio={estudioIA} fecha={estudioFecha} />
+      <EstudioOrganigrama companyId={companyId} estudio={estudioIA} fecha={estudioFecha} versiones={versiones} />
 
       {error && <p className="t-cuerpo mb-4" role="alert" style={{ color: "var(--contradicho)" }}>{error}</p>}
 

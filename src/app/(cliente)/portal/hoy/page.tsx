@@ -10,6 +10,7 @@ import { TarjetaHallazgo } from "@/components/cliente/TarjetaHallazgo";
 import { VerMasLateral } from "@/components/base/VerMasLateral";
 import { MapaMental } from "@/components/cliente/MapaMental";
 import { DatosEmpresa } from "@/components/cliente/DatosEmpresa";
+import { DeclararEquipo } from "@/components/cliente/DeclararEquipo";
 import { TarjetaNumeros } from "@/components/cliente/TarjetaNumeros";
 import { radiografia, derivados, type Metrica as MetricaVital } from "@/lib/metricas";
 import { rastroDeEmpresa } from "@/lib/auditoria";
@@ -152,6 +153,9 @@ export default async function Hoy() {
       <TarjetaNumeros radiografia={radio} margen={deriv.margen} diasAguante={deriv.diasAguante} />
 
       <DatosEmpresa nombre={c.empresa?.nombre ?? "Tu empresa"} ficha={fichaEmpresa} bloques={bloquesActivos} faltaLevantar={faltaLevantar} rastro={await rastroDeEmpresa(c.companyId, 40)} />
+
+      {/* ASÍ NOS ORGANIZAMOS HOY: el dueño declara sus puestos — la materia prima del estudio de organigrama. */}
+      <DeclararEquipo puestos={(await supabaseAdmin().from("org_puestos").select("id,nombre,mision,persona,reporta_a,origen").eq("company_id", c.companyId).order("orden").order("created_at")).data as never[] ?? []} />
 
       {hoy.stats.porValidar > 0 && (
         <p className="t-dato" style={{ color: "var(--grafito)", marginTop: -28 }}>

@@ -346,21 +346,43 @@ export const SalidaMedidor = z.object({
     .max(6),
 });
 
-/** EL ESTUDIO DE ORGANIGRAMA: qué quiere la empresa y qué estructura necesita construir (pedido de Kelin). */
+/**
+ * EL ESTUDIO DE ORGANIGRAMA v2 (pedido de Kelin): el cliente declara cómo funciona hoy; el motor
+ * diseña DOS opciones de estructura de alto rendimiento con ventajas y desventajas y recomienda una;
+ * y lo que falte de información queda como observaciones de levantamiento para la consultora.
+ */
+const PuestoPropuesto = z.object({
+  nombre: z.string().min(3).max(80),
+  mision: z.string().min(10).max(300),
+  decide: z.string().min(5).max(300),
+  por_que: z.string().min(15).max(400),
+  cuando: z.enum(["ahora", "tres_meses", "al_crecer"]).catch("tres_meses"),
+});
+const OpcionEstructura = z.object({
+  nombre: z.string().min(3).max(80),
+  logica: z.string().min(20).max(500),
+  puestos: z.array(PuestoPropuesto).min(1).max(10),
+  ventajas: z.array(z.string().max(300)).min(2).max(5),
+  desventajas: z.array(z.string().max(300)).min(1).max(5),
+  conviene_si: z.string().min(15).max(400),
+});
 export const SalidaEstudioOrganigrama = z.object({
   lo_que_quiere: z.string().min(20).max(700),
   como_esta_hoy: z.string().min(20).max(700),
-  puestos_por_construir: z
+  opcion_a: OpcionEstructura,
+  opcion_b: OpcionEstructura,
+  recomendacion: z.object({
+    opcion: z.enum(["a", "b"]),
+    por_que: z.string().min(20).max(600),
+  }),
+  faltantes: z
     .array(
       z.object({
-        nombre: z.string().min(3).max(80),
-        mision: z.string().min(10).max(300),
-        decide: z.string().min(5).max(300),
-        por_que: z.string().min(15).max(400),
-        cuando: z.enum(["ahora", "tres_meses", "al_crecer"]).catch("tres_meses"),
+        que_falta: z.string().min(10).max(300),
+        por_que_importa: z.string().min(10).max(300),
+        pregunta_sugerida: z.string().min(10).max(300),
       })
     )
     .max(8),
   riesgos_de_la_estructura: z.array(z.string().max(300)).max(5),
-  orden_de_construccion: z.string().min(20).max(700),
 });
