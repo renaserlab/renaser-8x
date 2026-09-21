@@ -386,3 +386,33 @@ export const SalidaEstudioOrganigrama = z.object({
     .max(8),
   riesgos_de_la_estructura: z.array(z.string().max(300)).max(5),
 });
+
+/**
+ * LA TERCERA VISTA (pedido de Kelin): cómo DEBE SER una empresa de alto rendimiento de este rubro.
+ * Es REFERENCIA DE INDUSTRIA — nunca se mezcla con la evidencia de la empresa; cada pieza declara
+ * su origen (práctica de industria o norma a verificar con asesoría).
+ */
+export const SalidaModeloAltoRendimiento = z.object({
+  el_rubro_en_su_mejor_version: z.string().min(30).max(900),
+  estandares_de_servicio: z
+    .array(z.object({
+      estandar: z.string().min(10).max(300),
+      meta: z.string().min(2).max(200),
+      origen: z.enum(["practica_de_industria", "norma_verificar_asesoria"]).catch("practica_de_industria"),
+    }))
+    .min(3).max(10),
+  estructura_tipo: z.array(z.object({ puesto: z.string().min(3).max(80), mision: z.string().min(10).max(300) })).min(3).max(12),
+  procesos_imprescindibles: z
+    .array(z.object({
+      nombre: z.string().min(3).max(100),
+      por_que: z.string().min(10).max(300),
+      detalle_minimo: z.string().min(10).max(400),
+      la_empresa_lo_tiene: z.enum(["si", "parcial", "no", "sin_dato"]).catch("sin_dato"),
+    }))
+    .min(5).max(20),
+  numeros_de_clase_mundial: z
+    .array(z.object({ nombre: z.string().min(3).max(120), como_se_mide: z.string().min(10).max(300), meta_referencia: z.string().min(2).max(200) }))
+    .min(3).max(10),
+  normativa: z.array(z.object({ obligacion: z.string().min(5).max(300), detalle: z.string().min(10).max(400) })).max(8),
+  las_tres_brechas_mayores: z.array(z.string().min(15).max(400)).min(1).max(3),
+});

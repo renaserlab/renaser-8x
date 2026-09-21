@@ -20,6 +20,7 @@ export type TipoJob =
   | "minar_know_how"
   | "proponer_indicadores"
   | "estudio_organigrama"
+  | "modelo_alto_rendimiento"
   | "generar_proceso"
   | "generar_tobe"
   | "generar_sop"

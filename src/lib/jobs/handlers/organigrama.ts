@@ -21,6 +21,8 @@ export async function handleEstudioOrganigrama(job: Job) {
     sb.from("processes").select("nombre,version,confirmacion").eq("company_id", job.company_id).eq("version", "as_is"),
   ]);
   if (!c) throw new Error("empresa no encontrada");
+  const { data: modelo } = await sb.from("modelo_alto_rendimiento").select("contenido").eq("company_id", job.company_id).maybeSingle();
+  const vara = modelo?.contenido as { estructura_tipo?: { puesto: string; mision: string }[]; las_tres_brechas_mayores?: string[] } | null;
 
   const ficha = (c.ficha ?? {}) as Record<string, string>;
   const sueno = (claims ?? []).filter((x) => /suen|meta|quiere llegar|aspir|vision|local(es)? nuevos|crecer/i.test(x.texto)).slice(0, 8);
@@ -42,6 +44,9 @@ export async function handleEstudioOrganigrama(job: Job) {
         : "ESTRUCTURA ACTUAL: el cliente aún no declara sus puestos — ese es el primer faltante.",
       halls.length ? `HALLAZGOS DEL DIAGNÓSTICO:\n${halls.join("\n")}` : "",
       procs.length ? `PROCESOS LEVANTADOS (${procs.length}):\n${procs.join("\n")}` : "",
+      vara?.estructura_tipo?.length
+        ? `LA VARA DEL RUBRO (referencia de industria del Investigador — NO es evidencia de la empresa):\nEstructura tipo: ${vara.estructura_tipo.map((p) => p.puesto).join(", ")}.${vara.las_tres_brechas_mayores?.length ? ` Brechas mayores detectadas: ${vara.las_tres_brechas_mayores.join(" · ")}` : ""}`
+        : "",
     ]
       .filter(Boolean)
       .join("\n\n")

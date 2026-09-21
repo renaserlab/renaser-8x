@@ -19,7 +19,7 @@
 
 export type ClaveAgente =
   | "admision" | "arquitecto" | "auditor" | "constructor" | "contrastador" | "diagnosticador"
-  | "entrevistador" | "estratega" | "extractor" | "medidor" | "minero" | "organizador" | "planificador"
+  | "entrevistador" | "estratega" | "extractor" | "investigador" | "medidor" | "minero" | "organizador" | "planificador"
   | "redactor" | "rediseno" | "sistematizador" | "sop";
 
 /** Quién responde por el agente, según la sección 1 del manual. */
@@ -180,6 +180,18 @@ export const CONTRATOS: Record<ClaveAgente, Contrato> = {
     aprobador: "dueño",
     presupuesto_tokens: 1600, tiempo_max_ms: 90_000, reintentos: 2,
     exito: "Indicadores propuestos con cómo se miden y dónde se ven.",
+    parada: PARADA_COMUN, recuperacion: SEGURO_DE_REPETIR, responsable: "Producto", medido: false,
+  },
+  investigador: {
+    clave: "investigador", version: "1.0",
+    proposito: "La tercera vista: el modelo de alto rendimiento del rubro — estándares, estructura tipo, procesos imprescindibles con su detalle mínimo, números de clase mundial y normativa — como referencia de industria, nunca como evidencia de la empresa.",
+    disparador: "El consultor pide el modelo desde la pestaña Debe ser.",
+    fuentes: ["ficha de la empresa (para dimensionar)", "aspiración declarada", "diagnóstico", "procesos y puestos actuales", "conocimiento del rubro"],
+    entrada: "La ficha real de la empresa, como dato.", salida: "SalidaModeloAltoRendimiento",
+    acciones_prohibidas: ["Inventar cifras normativas (umbrales, multas, plazos)", "Presentar referencia de industria como hecho de la empresa", "Recetar el modelo del gigante a una pyme"],
+    aprobador: "consultor",
+    presupuesto_tokens: 3600, tiempo_max_ms: 120_000, reintentos: 2,
+    exito: "Modelo versionado: la vara del rubro con brechas mayores, lista para dirigir el diseño.",
     parada: PARADA_COMUN, recuperacion: SEGURO_DE_REPETIR, responsable: "Producto", medido: false,
   },
   organizador: {

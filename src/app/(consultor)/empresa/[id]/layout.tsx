@@ -15,6 +15,7 @@ const TABS: [string, string][] = [
   ["/organigrama", "Organigrama"],
   ["/madurez", "Radiografía"],
   ["/diagnostico", "Diagnóstico"],
+  ["/debe-ser", "Debe ser"],
   ["/plan-estrategico", "Plan estratégico"],
   ["/plan", "Plan"],
   ["/entrega", "Entrega"],

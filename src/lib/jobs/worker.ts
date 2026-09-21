@@ -10,6 +10,7 @@ import { handlePlanificar, handleRedactarEntregables, handleEvaluarAdmision, han
 import { handleConstruirActivo, handleSistematizarActivo } from "./handlers/activos";
 import { handleProponerIndicadores } from "./handlers/indicadores";
 import { handleEstudioOrganigrama } from "./handlers/organigrama";
+import { handleModeloAltoRendimiento } from "./handlers/modelo";
 import { esperaRateLimit, estadoTrasFallo } from "./reglas";
 import { redactarToken } from "../tokens";
 
@@ -34,6 +35,7 @@ export const HANDLERS: Record<string, (job: Job) => Promise<unknown>> = {
   plan_estrategico: handlePlanEstrategico,
   proponer_indicadores: handleProponerIndicadores,
   estudio_organigrama: handleEstudioOrganigrama,
+  modelo_alto_rendimiento: handleModeloAltoRendimiento,
 };
 
 const CONCURRENCIA = Number(process.env.WORKER_CONCURRENCIA ?? 6);
