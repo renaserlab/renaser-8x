@@ -419,6 +419,8 @@ export const RUTA_POR_PREGUNTA: { contiene: string; bloque: Destino }[] = [
   { contiene: "horas a la semana", bloque: "tiempo" },
   { contiene: "fuera del negocio", bloque: "tiempo" },
   { contiene: "que ya no haces", bloque: "rol_futuro" },
+  // Desde el 16-10-2026 «qué haces tú… y qué ya no haces» son dos preguntas: la primera también es el rol futuro.
+  { contiene: "que haces tu en el negocio", bloque: "rol_futuro" },
   { contiene: "postergando", bloque: "decisiones_pendientes" },
   { contiene: "debe cambiar", bloque: "decisiones_pendientes" },
   { contiene: "miedo soltar", bloque: "decisiones_pendientes" },

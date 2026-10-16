@@ -68,7 +68,7 @@ export function PlanCliente({ companyId, acciones }: { companyId: string; accion
           <article key={a.id} className="panel p-4 flex flex-col gap-3" style={{ borderTop: `2.5px solid ${COLOR[e]}` }}>
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <span className="t-dato" style={{ color: COLOR[e] }}>{ESTADO_CLIENTE[e]}</span>
-              <span className="t-dato" style={{ color: vencida ? "var(--contradicho)" : "var(--grafito)" }}>{vencida ? "Venció el " : "Para el "}{fechaCorta(a.vence_at)}</span>
+              <span className="t-dato" style={{ color: vencida ? "var(--contradicho)" : "var(--grafito)" }}>{a.vence_at ? `${vencida ? "Venció el" : "Para el"} ${fechaCorta(a.vence_at)}` : "Sin fecha todavía"}</span>
             </div>
             <p className="t-cuerpo">{a.accion}</p>
             <div className="grid gap-3 sm:grid-cols-2">

@@ -23,7 +23,7 @@
  *   Tablero de la consultora: 9 `soles` en app/(consultor)/empresa/[id]/page.tsx ·
  *   Reglas que escriben frases para todas las pantallas:
  *   10 `soles` en lib/medicion.ts · 11 `conDecimales` y el valor legible en lib/kpis.ts ·
- *   12 la fecha «(hora de Lima)» y `soles` en lib/actas.ts · 13 `soles` en lib/perdida.ts ·
+ *   12 la fecha «(hora de Lima)» y `soles` en lib/actas.ts · 13 lib/perdida.ts (ya usa `moneda`, 16-10) ·
  *   14 `soles` en lib/rules/anomalias.ts · 15 `fechaCorta` y `fechaMes` en lib/textos.ts.
  *   Fuera de la lista por tráfico, pero el más delicado: lib/jobs/handlers/activos.ts le dice al modelo que «la
  *   moneda es SIEMPRE soles». Una empresa con otra moneda recibiría documentos en soles hasta que eso cambie.

@@ -164,7 +164,7 @@ export default async function Producto({ params, searchParams }: { params: Promi
           <h2 id="lo-que-anoto" className="t-seccion">Lo que anotó la empresa</h2>
           <p className="t-dato mt-1" style={{ color: "var(--grafito)" }}>
             Las mismas preguntas que ve el dueño, con el estado de cada dato. Aquí puedes corregir y marcar «Comprobado con un documento» cuando lo tengas delante.
-            {modelos.length === 0 && " Elige en el Panorama (La ruta) cómo gana dinero la empresa: así las preguntas se adaptan a su negocio."}
+            {modelos.length === 0 && " Elige en Diagnóstico › Ficha de trabajo cómo gana dinero la empresa: así las preguntas se adaptan a su negocio."}
           </p>
         </div>
         <TablaProductos companyId={id} modo="consultora" lineas={lineas} modelos={modelos} totales={fichaNegocio.totales} editable usuarioId={null} config={config} deja={deja} />

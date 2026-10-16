@@ -4,7 +4,8 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { empresaHoy, type HallazgoHoy } from "@/lib/hoy";
 import { tableroEmpresario, pendientesDelDueno, accionDeEntrada, RUTA_ENTRADA, type PuntoVenta } from "@/lib/tablero";
 import { accionPendiente, accionDeSiempre } from "@/lib/siguiente-accion";
-import { proyeccionPerdida } from "@/lib/perdida";
+import { bolsasDeFugas, tarjetaDelDueno } from "@/lib/perdida";
+import { monedaParaFugas } from "@/components/negocio/datos";
 import { caminosDesdeHallazgos } from "@/lib/caminos";
 import type { Metrica } from "@/lib/rules/anomalias";
 import { CrearEmpresa } from "@/components/cliente/CrearEmpresa";
@@ -61,7 +62,7 @@ export default async function Portal() {
       </>
     );
 
-  const [hoy, t, { data: metricasRaw }, { data: empFicha }, pendientes] = await Promise.all([
+  const [hoy, t, { data: metricasRaw }, { data: empFicha }, pendientes, monedaFugas] = await Promise.all([
     empresaHoy(c.companyId),
     tableroEmpresario(c.companyId),
     supabaseAdmin().from("company_metricas").select("clave,periodo,valor,estado").eq("company_id", c.companyId).limit(80),
@@ -69,6 +70,8 @@ export default async function Portal() {
     // Lo que espera al dueño (confirmaciones, tareas, indicadores, números, informe). Nunca lanza: una tabla que
     // todavía no existe solo hace que ese aviso no aparezca.
     pendientesDelDueno(c.companyId, c.u),
+    // Lo que se queda en el camino al cobrar en otra moneda, para la caja de las fugas. Nunca lanza.
+    monedaParaFugas(c.companyId),
   ]);
   const metaMensual = Number(((empFicha?.ficha as Record<string, string>) ?? {}).meta_venta_mensual ?? 0) || null;
 
@@ -93,7 +96,11 @@ export default async function Portal() {
       </>
     );
 
-  const perdida = proyeccionPerdida((metricasRaw ?? []) as Metrica[]);
+  // «Se te está yendo»: SOLO la caja de las fugas. Lo que podría vender va aparte, sin rojo, y nunca se le suma
+  // (src/lib/perdida.ts). La tarjeta vieja, «En riesgo al mes», sumaba las dos.
+  const fugas = bolsasDeFugas((metricasRaw ?? []) as Metrica[], { moneda: monedaFugas });
+  const yendo = tarjetaDelDueno(fugas);
+  const hayFugas = fugas.caja.fugas.length > 0 || fugas.oportunidad.fugas.length > 0;
   const cosas = hoy.espejo.length + hoy.noVes.length + hoy.fortalezas.length;
 
   // LA SIGUIENTE ACCIÓN: UNA, la más urgente, con su enlace. El orden lo decide src/lib/siguiente-accion.ts
@@ -227,17 +234,27 @@ export default async function Portal() {
         </div>
       </section>
 
-      <section className="tarjeta cifra-tarjeta ancha" aria-labelledby="t-riesgo">
+      <section className="tarjeta cifra-tarjeta ancha" aria-labelledby="t-yendo">
         <div className="cabeza">
-          <div><h2 id="t-riesgo">En riesgo al mes</h2><p className="sub">Lo que se puede estar yendo, según tus números</p></div>
+          <div><h2 id="t-yendo">{yendo.titulo}</h2><p className="sub">{yendo.sub}</p></div>
+          <Link className="ir" href={hayFugas ? "/portal/hoy" : "/portal/numeros"} aria-label={hayFugas ? "Ver de dónde sale cada cifra" : "Ver tus números"}><Icono nombre="diagonal" /></Link>
         </div>
         <div className="fila-cifra">
-          {perdida.totalMensual > 0 ? (
-            <span className="grande" style={{ color: "var(--contradicho)" }}><small className="moneda" style={{ color: "inherit" }}>~S/</small>{Math.round(perdida.totalMensual).toLocaleString("es-PE")}</span>
+          {yendo.cifra ? (
+            <span className="grande" style={{ color: "var(--contradicho)" }}>
+              <small className="moneda" style={{ color: "inherit" }}>~S/</small>{Math.round(yendo.cifra.desde).toLocaleString("es-PE")}
+              {Math.round(yendo.cifra.hasta) !== Math.round(yendo.cifra.desde) && <small>a {Math.round(yendo.cifra.hasta).toLocaleString("es-PE")}</small>}
+              <small>al mes</small>
+            </span>
+          ) : yendo.enVez?.rayado ? (
+            <span className="sin-dato">{yendo.enVez.texto}</span>
           ) : (
-            <span className="sin-dato">Aún por calcular: faltan números</span>
+            <span className="nota">{yendo.enVez?.texto}</span>
           )}
         </div>
+        {yendo.aparte && <p className="nota">{yendo.aparte}</p>}
+        {/* Lo que podría vender: otra palabra, el color de siempre y nunca dentro de la cifra de arriba. */}
+        {yendo.oportunidad && <p className="nota">{yendo.oportunidad}</p>}
       </section>
 
       <section className="tarjeta cifra-tarjeta ancha" aria-labelledby="t-tareas">

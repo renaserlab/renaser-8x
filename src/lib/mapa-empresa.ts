@@ -32,6 +32,10 @@ export type ProcesoEvaluado = {
   nombre: string;
   categoria: ClaveCategoria | null;
   evaluacion: Evaluacion;
+  /** Qué se hace y quién responde: lo que la lista de procesos de la consultora pinta en cada tarjeta (16-10-2026). */
+  responsable?: string | null;
+  inicio?: string | null;
+  resultado?: string | null;
 };
 
 /** Una de las 13 partes del negocio, con lo que la empresa tiene y lo que le falta ahí. */
@@ -161,6 +165,9 @@ export async function mapaDe(companyId: string): Promise<MapaEmpresa | null> {
       id: p.id,
       nombre: p.nombre,
       categoria: (p.categoria as ClaveCategoria | null) ?? null,
+      responsable: p.responsable ?? null,
+      inicio: p.inicio ?? null,
+      resultado: p.resultado ?? null,
       evaluacion: madurezProceso({
         nodos,
         responsable: p.responsable,

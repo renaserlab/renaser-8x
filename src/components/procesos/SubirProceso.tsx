@@ -14,6 +14,11 @@ type Props = {
   porDibujar?: ProcesoPorDibujar[];
   /** false si los archivos no se pudieron leer: se dice, no se muestra una lista vacía como si no hubiera nada. */
   archivosLeidos?: boolean;
+  /**
+   * Revisión del 16-10-2026, pantalla de Procesos de la consultora: lo subido por dibujar va a la vista («lista») y el
+   * formulario, plegado en «Agregar procesos» («formulario»). Sin decirlo, las dos cosas juntas.
+   */
+  parte?: "todo" | "lista" | "formulario";
 };
 
 type Hecho = { nombre: string; processId: string; existia: boolean };
@@ -28,7 +33,7 @@ type Fallo = { texto: string; processId: string | null };
  * Si el paso 1 sale y el 2 no, se dice: el proceso quedó creado y el archivo se vuelve a subir desde su ficha.
  * Debajo, lo subido que falta dibujar, con su estado: subido (leyéndose), listo para dibujar, o no se pudo leer.
  */
-export function SubirProceso({ companyId, base, paraCliente = false, porDibujar = [], archivosLeidos = true }: Props) {
+export function SubirProceso({ companyId, base, paraCliente = false, porDibujar = [], archivosLeidos = true, parte = "todo" }: Props) {
   const router = useRouter();
   const entrada = useRef<HTMLInputElement>(null);
   const [nombre, setNombre] = useState("");
@@ -73,6 +78,51 @@ export function SubirProceso({ companyId, base, paraCliente = false, porDibujar 
   };
 
   const falta = !nombre.trim() || !archivo;
+
+  const lista = (!archivosLeidos || porDibujar.length > 0) && (
+    <>
+      {!archivosLeidos && (
+        <p className="t-dato mt-5" role="alert" style={{ color: "var(--caducado)" }}>
+          No pudimos leer cuáles procesos tienen archivo. Vuelve a cargar la página; lo subido no se perdió.
+        </p>
+      )}
+
+      {porDibujar.length > 0 && (
+        <div className={parte === "lista" ? undefined : "mt-6"} style={parte === "lista" ? undefined : { borderTop: "1px solid var(--linea)", paddingTop: 16 }}>
+          <h3 className="t-etiqueta">{paraCliente ? `Lo que subiste, por dibujar (${porDibujar.length})` : `Subidos, por dibujar (${porDibujar.length})`}</h3>
+          {/* Una tarjeta por proceso, como la lista de los dibujados: su archivo, su estado y abrirlo. */}
+          <ul className="procesos-tarjetas mt-3">
+            {porDibujar.map((p) => {
+              const ultimo = p.archivos[0];
+              const e = estadoSubida(ultimo);
+              const r = rotuloSubida(e, modo, "dibujar");
+              return (
+                <li key={p.id} className="proceso-tarjeta proceso-tarjeta--chica">
+                  <div className="proceso-tarjeta__cuerpo">
+                    <span className="proceso-tarjeta__nombre">{p.nombre}</span>
+                    <p className="proceso-tarjeta__datos">
+                      {ultimo.nombre}
+                      {p.archivos.length > 1 ? ` y ${p.archivos.length - 1} más` : ""}
+                    </p>
+                  </div>
+                  <div className="proceso-tarjeta__estado">
+                    <span className={`estado ${r.clase}`}>{r.texto}</span>
+                  </div>
+                  <div className="proceso-tarjeta__acciones">
+                    <Link href={`${base}/${p.id}`} className="boton boton--secundario">
+                      {sePuedeDibujar(e) ? "Dibujarlo" : "Abrirlo"}
+                    </Link>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+    </>
+  );
+
+  if (parte === "lista") return lista ? <section className="por-dibujar">{lista}</section> : null;
 
   return (
     <section className="panel p-5">
@@ -143,41 +193,7 @@ export function SubirProceso({ companyId, base, paraCliente = false, porDibujar 
         </p>
       )}
 
-      {!archivosLeidos && (
-        <p className="t-dato mt-5" role="alert" style={{ color: "var(--caducado)" }}>
-          No pudimos leer cuáles procesos tienen archivo. Vuelve a cargar la página; lo subido no se perdió.
-        </p>
-      )}
-
-      {porDibujar.length > 0 && (
-        <div className="mt-6" style={{ borderTop: "1px solid var(--linea)", paddingTop: 16 }}>
-          <h3 className="t-etiqueta">{paraCliente ? `Lo que subiste, por dibujar (${porDibujar.length})` : `Subidos, por dibujar (${porDibujar.length})`}</h3>
-          <ul className="flex flex-col gap-3 mt-3">
-            {porDibujar.map((p) => {
-              const ultimo = p.archivos[0];
-              const e = estadoSubida(ultimo);
-              const r = rotuloSubida(e, modo, "dibujar");
-              return (
-                <li key={p.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-                  <span className="t-dato" style={{ minWidth: 0 }}>
-                    <span style={{ fontWeight: 600 }}>{p.nombre}</span>
-                    <span style={{ color: "var(--grafito)" }}>
-                      {" "}· {ultimo.nombre}
-                      {p.archivos.length > 1 ? ` y ${p.archivos.length - 1} más` : ""}
-                    </span>
-                  </span>
-                  <span className="flex flex-wrap items-center gap-3">
-                    <span className={`estado ${r.clase}`}>{r.texto}</span>
-                    <Link href={`${base}/${p.id}`} className="enlace-azul" style={{ minHeight: 44, display: "inline-flex", alignItems: "center" }}>
-                      {sePuedeDibujar(e) ? "Dibujarlo" : "Abrirlo"}
-                    </Link>
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
+      {parte !== "formulario" && lista}
     </section>
   );
 }

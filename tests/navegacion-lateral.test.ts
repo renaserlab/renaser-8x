@@ -9,6 +9,10 @@
  * — la barra de avance arriba: en /empresa/[id] antes de las secciones de la empresa, y en el portal antes del
  *   contenido; un % que no se pudo calcular se dice «sin medir», nunca «0 %», y lo que no se pudo leer va rayado.
  *
+ * 16-10-2026, más tarde: la empresa pasó de tres capas de pestañas a cinco vistas y el Expediente (TabsEmpresa con
+ * `vistas={VISTAS}`), y el portal, a cinco destinos nuevos: «Mi empresa» (/portal/hoy) vive ahora dentro de «Tu
+ * diagnóstico», y lo de «Tus números» (lo que vende, gastos, historia, cobros) dentro de su destino.
+ *
  * NOTA DE ALCANCE: lee el código fuente y pinta los componentes en Node con renderToStaticMarkup. No demuestra
  * el comportamiento en un navegador (abrir, cerrar, foco, Escape): eso no se vio todavía en pantalla.
  */
@@ -19,7 +23,8 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { AvanceRuta, CriterioEvaluado, EtapaEvaluada } from "@/lib/ruta";
 
-vi.mock("next/navigation", () => ({ usePathname: () => "/portal/hoy" }));
+const estado = vi.hoisted(() => ({ ruta: "/portal/hoy" }));
+vi.mock("next/navigation", () => ({ usePathname: () => estado.ruta }));
 
 import { BarraRuta } from "@/components/navegacion/BarraRuta";
 import { CLAVE_LATERAL } from "@/components/navegacion/Lateral";
@@ -104,9 +109,19 @@ describe("los dos marcos: barra a la izquierda, columna con el contenido", () =>
     expect(barraCliente).toBeLessThan(layoutCliente.lastIndexOf("<main"));
   });
 
-  it("la empresa: secciones a la izquierda y la pantalla a la derecha, con las capas de siempre", () => {
-    expect(layoutEmpresa).toMatch(/className="empresa-rejilla"/);
-    expect(layoutEmpresa).toMatch(/<TabsEmpresa[^>]*capas=\{CAPAS\}/);
+  // Revisión del 16-10-2026: la columna fija de vistas junto a la barra lateral era una columna de más. Las vistas van en
+  // una barra horizontal bajo la cabecera, sus pantallas debajo, y la pantalla a todo lo ancho (sin rejilla de dos columnas).
+  it("la empresa: las vistas en una barra bajo la cabecera, «En esta vista» debajo y la pantalla a todo lo ancho", () => {
+    expect(layoutEmpresa).toMatch(/className="empresa-navegacion[^"]*"/);
+    expect(layoutEmpresa).not.toMatch(/className="empresa-rejilla"/);
+    expect(layoutEmpresa).toMatch(/<TabsEmpresa[^>]*vistas=\{VISTAS\}/);
+    const navegacion = layoutEmpresa.indexOf('className="empresa-navegacion');
+    expect(navegacion).toBeGreaterThan(layoutEmpresa.indexOf("</header>"));
+    expect(layoutEmpresa.indexOf("<TabsEmpresa")).toBeGreaterThan(navegacion);
+    expect(layoutEmpresa.indexOf("<EnEstaVista")).toBeGreaterThan(layoutEmpresa.indexOf("<TabsEmpresa"));
+    expect(layoutEmpresa.indexOf("{children}")).toBeGreaterThan(layoutEmpresa.indexOf("<EnEstaVista"));
+    // La ruta, arriba y en una sola línea; la barra entera vive en Avance.
+    expect(layoutEmpresa).toMatch(/<BarraRuta[^>]*\bcompacta\b/);
   });
 });
 
@@ -236,11 +251,12 @@ describe("la barra de avance de la consultora", () => {
 });
 
 describe("la barra lateral del portal, pintada", () => {
+  estado.ruta = "/portal/hoy";
   const html = renderToStaticMarkup(
     createElement(NavCliente, {
       enlaces: [
         ["/portal", "Inicio"],
-        ["/portal/hoy", "Mi empresa"],
+        ["/portal/diagnostico", "Tu diagnóstico"],
       ],
       empresa: "Jeans del Valle (ficticia)",
       avisos: { "/portal": 2 },
@@ -256,13 +272,15 @@ describe("la barra lateral del portal, pintada", () => {
   });
 
   it("marca el destino de la pantalla abierta y cuenta lo que pidió la consultora", () => {
-    expect(html).toMatch(/aria-current="page"[^>]*aria-label="Mi empresa"/);
+    // En /portal/hoy («Todo lo que encontramos») el destino es «Tu diagnóstico».
+    expect(html).toMatch(/aria-current="page"[^>]*aria-label="Tu diagnóstico"/);
+    expect(html.match(/aria-current="page"/g) ?? []).toHaveLength(1);
     expect(html).toContain('aria-label="2 pedidos de tu consultora"');
     expect(html).toContain('aria-label="Inicio, 2 pedidos de tu consultora"');
   });
 });
 
-describe("«Mi empresa» muestra lo que le toca hoy al dueño, no todo lo que existe", () => {
+describe("«Tus números» muestra lo que le toca hoy al dueño, no todo lo que existe", () => {
   it("costos, historia y cobros solo con su sección abierta o con algo guardado; sin saber, no se esconde nada", async () => {
     const { pantallasOcultas } = await import("@/lib/secciones");
     const nada = { costos: false, historia: false, cobros: false };
@@ -278,6 +296,8 @@ describe("«Mi empresa» muestra lo que le toca hoy al dueño, no todo lo que ex
   });
 
   it("la fila no pinta lo oculto; el layout le pasa lo que hoy no toca", async () => {
+    // Costos, historia y cobros viven bajo «Tus números»: la fila se pinta en su destino.
+    estado.ruta = "/portal/numeros";
     const { EnEstaSeccion } = await import("@/components/cliente/EnEstaSeccion");
     const todo = renderToStaticMarkup(createElement(EnEstaSeccion, {}));
     for (const href of ["/portal/costos", "/portal/historia", "/portal/cobros"]) expect(todo).toContain(`href="${href}"`);

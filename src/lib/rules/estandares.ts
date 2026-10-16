@@ -26,7 +26,7 @@ export const ESTANDARES: Record<string, string[]> = {
     "La promesa al cliente es explícita y verificable (qué recibe, cuándo, en qué condición)",
     "Hay control de calidad con criterio nombrado antes de entregar — el cliente nunca es el control de calidad",
     "Se conoce el costo y la ganancia POR producto o servicio, no solo el total del mes",
-    "La recompra o permanencia se mide (aunque sea contando: de cada 10, cuántos vuelven)",
+    "La recompra o permanencia se mide (aunque sea contando cuántos clientes del mes ya habían comprado antes)",
     "Los reclamos quedan registrados y cada reclamo repetido produce un cambio, no solo una disculpa",
   ],
   marketing: [

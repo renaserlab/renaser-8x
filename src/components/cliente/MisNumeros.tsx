@@ -4,6 +4,7 @@ import { pedir } from "@/lib/cliente";
 import {
   VITALES, RECONOCIDA_POR_CLAVE, cuerpoDeNumeros, costoVariableDeclarado, revisarNumerosEscritos, campoDeValor, campoDeMes,
   AVISO_NUMERO_NO_ENTENDIDO, AVISO_NUMERO_NEGATIVO, AVISO_PERDIDA, AVISO_FALTA_EL_MES, CLAVE_QUE_PUEDE_SER_PERDIDA, ROTULO_CIFRA_PROVISIONAL,
+  AVISO_CONTEO, claveDeConteo, esCampoDeConteo, lecturaDeCampo,
   type Radiografia, type Vital,
 } from "@/lib/metricas";
 import { MESES, nombreDePeriodo } from "@/lib/temporadas";
@@ -22,9 +23,14 @@ const soles = (n: number) => `S/${Math.round(n).toLocaleString("es-PE")}`;
  */
 const RECONOCIDA_COSTO_VARIABLE = RECONOCIDA_POR_CLAVE.get("costo_variable_mes");
 const CAMPO_COSTO_VARIABLE: Vital | null = RECONOCIDA_COSTO_VARIABLE
-  ? { ...RECONOCIDA_COSTO_VARIABLE, pregunta: "Lo que te cuesta lo que vendes en el mes (mercadería, insumos, comisiones)" }
+  ? { ...RECONOCIDA_COSTO_VARIABLE, pregunta: "El mes pasado, ¿cuánto te costó lo que vendiste?" }
   : null;
 /** Una sola frase: qué entra, qué no, y que «no lo sé» vale más que un cero puesto por poner. */
+/**
+ * LO QUE VA DENTRO DE UNA CAJA DE NÚMERO (revisión del 16-10-2026). Antes decía «p. ej. 8 mil» o «p. ej. 3», y una
+ * cifra dentro de la caja se devuelve como respuesta. Ahora la caja dice qué va, sin ninguna cifra.
+ */
+const PISTA_CIFRA = "Escribe la cifra";
 const AYUDA_COSTO_VARIABLE =
   "Cuenta solo lo que sube y baja con la venta, no el alquiler ni los sueldos; si no lo sabes, marca «No lo sé» en vez de poner cero.";
 
@@ -34,8 +40,14 @@ export function MisNumeros({
   soloDeDocumento = [],
   temporadasAltas,
   mesesDisponibles,
+  conRadiografia = true,
 }: {
   radiografia: Radiografia;
+  /**
+   * false cuando la pantalla ya muestra arriba cuántos de los nueve hay (el tablero de «Tus números»): la radiografía
+   * «5 de 9» no se repite debajo con otro color y otra barra (revisión del 16-10-2026). Quedan las preguntas.
+   */
+  conRadiografia?: boolean;
   serieVenta: Serie;
   /** Claves de los vitales de los que solo hay un número leído de un documento sin revisar (`vitalesSoloDeDocumento`). */
   soloDeDocumento?: string[];
@@ -70,8 +82,12 @@ export function MisNumeros({
   const revision = revisarNumerosEscritos({ valores, meses, mejor, peor, sinDato: [...sinDato] });
   // Un negativo no es «no entendimos»: se dice que ahí no cabe. Y en «Lo que te quedó libre» es una pérdida: se
   // le dice qué pasa con ella (hoy no se guarda) y no se le impide guardar lo demás.
+  // Un conteo bien escrito que no deja hacer la cuenta (falta el otro, o compraron más de los que preguntaron) no es
+  // «no entendimos»: se dice qué falta para la cuenta.
   const avisoDe = (campo: string) =>
-    revision.invalidos.includes(campo) ? (
+    revision.invalidos.includes(campo) && esCampoDeConteo(campo) && lecturaDeCampo(valores[campo.slice("valor:".length)]) !== "invalido" ? (
+      <p className="t-dato mt-1 medida" style={{ color: "var(--contradicho)" }} role="alert">{AVISO_CONTEO}</p>
+    ) : revision.invalidos.includes(campo) ? (
       <p className="t-dato mt-1" style={{ color: "var(--contradicho)" }} role="alert">{AVISO_NUMERO_NO_ENTENDIDO}</p>
     ) : revision.negativos.includes(campo) ? (
       <p className="t-dato mt-1" style={{ color: "var(--contradicho)" }} role="alert">{AVISO_NUMERO_NEGATIVO}</p>
@@ -100,23 +116,39 @@ export function MisNumeros({
     }
   };
 
-  /** Una pregunta hablada, su campo y el «No lo sé». `ayuda` es una frase más, para la que lo necesita. */
+  /** Una caja de número, sin cifras de muestra. `clave` es la del vital o la de uno de sus conteos. */
+  const cajaDeCifra = (v: Vital, clave: string, rotulo: string) => (
+    <input
+      className="campo"
+      style={{ maxWidth: 200 }}
+      inputMode="decimal"
+      placeholder={PISTA_CIFRA}
+      value={valores[clave] ?? ""}
+      disabled={sinDato.has(v.clave)}
+      onChange={(e) => setValores((x) => ({ ...x, [clave]: e.target.value }))}
+      aria-label={rotulo}
+      aria-invalid={marcado(campoDeValor(clave))}
+    />
+  );
+
+  /**
+   * Una pregunta hablada, su campo y el «No lo sé». `ayuda` es una frase más, para la que lo necesita. Lo que es una
+   * proporción (la conversión) se pregunta en dos conteos, cada uno con su caja, y la cuenta la hace 8X
+   * (`cuerpoDeNumeros`): preguntar «de cada diez» sembraba el marco en la respuesta.
+   */
   const campoVital = (v: Vital, ayuda?: string) => (
     <div key={v.clave} className="py-4" style={{ borderTop: "1px solid var(--linea)" }}>
       <p className="t-cuerpo" style={{ fontWeight: 550 }}>{v.pregunta}</p>
       {ayuda && <p className="t-dato mt-1 medida" style={{ color: "var(--grafito)" }}>{ayuda}</p>}
+      {v.seguida && (
+        <>
+          <div className="mt-2">{cajaDeCifra(v, claveDeConteo(v.clave, "total"), `${v.nombre}: cuántas personas preguntaron`)}</div>
+          {avisoDe(campoDeValor(claveDeConteo(v.clave, "total")))}
+          <p className="t-cuerpo mt-3" style={{ fontWeight: 550 }}>{v.seguida}</p>
+        </>
+      )}
       <div className="flex items-center gap-2 flex-wrap mt-2">
-        <input
-          className="campo"
-          style={{ maxWidth: 200 }}
-          inputMode="decimal"
-          placeholder={v.unidad === "de_cada_10" ? "p. ej. 3" : "p. ej. 8 mil"}
-          value={valores[v.clave] ?? ""}
-          disabled={sinDato.has(v.clave)}
-          onChange={(e) => setValores((x) => ({ ...x, [v.clave]: e.target.value }))}
-          aria-label={v.nombre}
-          aria-invalid={marcado(campoDeValor(v.clave))}
-        />
+        {v.seguida ? cajaDeCifra(v, claveDeConteo(v.clave, "parte"), `${v.nombre}: cuántas compraron`) : cajaDeCifra(v, v.clave, v.nombre)}
         <button
           type="button"
           className="t-dato"
@@ -125,7 +157,11 @@ export function MisNumeros({
             setSinDato((s) => {
               const n = new Set(s);
               if (n.has(v.clave)) n.delete(v.clave);
-              else { n.add(v.clave); setValores((x) => ({ ...x, [v.clave]: "" })); }
+              else {
+                n.add(v.clave);
+                // Con «No lo sé» se vacían su caja y, si es una proporción, sus dos conteos.
+                setValores((x) => ({ ...x, [v.clave]: "", [claveDeConteo(v.clave, "total")]: "", [claveDeConteo(v.clave, "parte")]: "" }));
+              }
               return n;
             })
           }
@@ -134,6 +170,7 @@ export function MisNumeros({
         </button>
       </div>
       {avisoDe(campoDeValor(v.clave))}
+      {v.seguida && avisoDe(campoDeValor(claveDeConteo(v.clave, "parte")))}
     </div>
   );
 
@@ -160,6 +197,7 @@ export function MisNumeros({
   return (
     <div className="flex flex-col gap-8">
       {/* DÓNDE VA: una sola cifra, sin adornos. */}
+      {conRadiografia && (
       <section className="panel p-5">
         <div className="flex items-baseline justify-between gap-3 flex-wrap">
           <div>
@@ -186,6 +224,7 @@ export function MisNumeros({
           ))}
         </div>
       </section>
+      )}
 
       {radiografia.faltan.length > 0 && (
         <section>
@@ -208,7 +247,7 @@ export function MisNumeros({
           <div className="py-4" style={{ borderTop: "1px solid var(--linea)" }}>
             <p className="t-cuerpo" style={{ fontWeight: 550 }}>¿Cuánto vendiste en {mesPasado.etiqueta}?</p>
             <input
-              className="campo mt-2" style={{ maxWidth: 200 }} inputMode="decimal" placeholder="p. ej. 40 mil"
+              className="campo mt-2" style={{ maxWidth: 200 }} inputMode="decimal" placeholder={PISTA_CIFRA}
               value={meses[mesPasado.periodo] ?? ""}
               onChange={(e) => setMeses((x) => ({ ...x, [mesPasado.periodo]: e.target.value }))}
               aria-label={`Ventas de ${mesPasado.etiqueta}`}
@@ -219,8 +258,9 @@ export function MisNumeros({
         )}
 
         {[
-          { t: "De los últimos 12 meses, ¿cuál fue tu MEJOR mes y cuánto vendiste?", v: mejor, set: setMejor, id: "mejor" as const },
-          { t: "¿Y cuál fue el PEOR?", v: peor, set: setPeor, id: "peor" as const },
+          // Una cosa por pregunta: el mes se elige en la lista y el monto va en su caja, que dice qué va.
+          { t: "En los últimos doce meses, ¿cuál fue el mes que más vendiste?", v: mejor, set: setMejor, id: "mejor" as const },
+          { t: "¿Y el mes que menos vendiste?", v: peor, set: setPeor, id: "peor" as const },
         ].map((f) => (
           <div key={f.id} className="py-4" style={{ borderTop: "1px solid var(--linea)" }}>
             <p className="t-cuerpo" style={{ fontWeight: 550 }}>{f.t}</p>
@@ -234,7 +274,7 @@ export function MisNumeros({
                 {mesesDisponibles.map((m) => <option key={m.periodo} value={m.periodo}>{m.etiqueta}</option>)}
               </select>
               <input
-                className="campo" style={{ maxWidth: 180 }} inputMode="decimal" placeholder="cuánto vendiste"
+                className="campo" style={{ maxWidth: 180 }} inputMode="decimal" placeholder="Cuánto vendiste ese mes"
                 value={f.v.monto} onChange={(e) => f.set({ ...f.v, monto: e.target.value })}
                 aria-label={`Ventas del mes ${f.id}`}
                 aria-invalid={marcado(f.id)}

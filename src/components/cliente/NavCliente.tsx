@@ -13,13 +13,15 @@ import { Lateral } from "@/components/navegacion/Lateral";
  * puede ir un contador con lo que la consultora pidió llenar (`avisos`, lo pasa el layout).
  */
 
-// Cinco destinos: cada uno es un LUGAR distinto, ninguno repite lo del otro.
+// Cinco destinos (pedido de Kelin, 16-10-2026: «diagnóstico, qué hay en números, indicadores y el avance»).
+// Cada uno es un LUGAR distinto, ninguno repite lo del otro: lo que hay, lo que encontramos, cuánto, cómo se
+// hace y qué haremos. «Mi empresa» y «Tus documentos» dejaron de ser destinos: viven dentro de uno de estos.
 const PRINCIPALES: [string, string, NombreIcono][] = [
   ["/portal", "Inicio", "inicio"],
-  ["/portal/hoy", "Mi empresa", "miempresa"],
-  ["/portal/procesos", "Procesos", "procesos"],
-  ["/portal/activos", "Tus documentos", "carpeta"],
-  ["/portal/plan", "Plan", "plan"],
+  ["/portal/diagnostico", "Tu diagnóstico", "diagnostico"],
+  ["/portal/numeros", "Tus números", "numeros"],
+  ["/portal/procesos", "Tus procesos", "procesos"],
+  ["/portal/plan", "Tu plan", "plan"],
 ];
 
 /**
@@ -27,20 +29,23 @@ const PRINCIPALES: [string, string, NombreIcono][] = [
  * activo en la barra y decidir qué enlaces pinta la fila «En esta sección» (EnEstaSeccion.tsx).
  * Toda carpeta con page.tsx bajo /portal que no sea uno de los cinco destinos tiene que estar aquí:
  * lo vigila tests/recorrido-conectado.test.ts. La barra NO crece cuando nace una pantalla; crece este mapa.
+ * Ninguna pantalla se borró al pasar a cinco destinos: «Mi empresa» (/portal/hoy) sigue abriendo, bajo
+ * «Tu diagnóstico», y «Tus documentos» (/portal/activos), bajo «Inicio».
  */
 export const GRUPO: [string, string][] = [
   ["/portal/entrada", "/portal"],
   ["/portal/conversacion", "/portal"],
   ["/portal/pedidos", "/portal"],
-  ["/portal/direccion", "/portal/hoy"],
-  ["/portal/numeros", "/portal/hoy"],
-  ["/portal/producto", "/portal/hoy"],
-  ["/portal/costos", "/portal/hoy"],
-  ["/portal/historia", "/portal/hoy"],
-  ["/portal/cobros", "/portal/hoy"],
-  ["/portal/validar", "/portal/hoy"],
-  ["/portal/informe", "/portal/hoy"],
-  ["/portal/documentos", "/portal/activos"],
+  ["/portal/activos", "/portal"],
+  ["/portal/documentos", "/portal"],
+  ["/portal/hoy", "/portal/diagnostico"],
+  ["/portal/validar", "/portal/diagnostico"],
+  ["/portal/direccion", "/portal/diagnostico"],
+  ["/portal/informe", "/portal/diagnostico"],
+  ["/portal/producto", "/portal/numeros"],
+  ["/portal/costos", "/portal/numeros"],
+  ["/portal/historia", "/portal/numeros"],
+  ["/portal/cobros", "/portal/numeros"],
   ["/portal/semana", "/portal/plan"],
   ["/portal/kpis", "/portal/plan"],
   ["/portal/resultados", "/portal/plan"],

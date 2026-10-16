@@ -30,7 +30,7 @@ export type TipoCultura = {
   fuerza: string;
   /** Lo que esa misma cultura rompe cuando nadie la equilibra. Es lo que hay que vigilar. */
   riesgo: string;
-  /** Qué pregunta hacer para ver si la empresa es así, en lenguaje oral. */
+  /** Qué pregunta hacer para ver si la empresa es así, en lenguaje oral: una sola cosa, por el episodio (16-10-2026). */
   pregunta: string;
 };
 
@@ -42,7 +42,7 @@ export const CULTURAS: TipoCultura[] = [
     comoSeVe: "La gente se queda años, se cubren entre ellos y el dueño conoce a las familias de su equipo",
     fuerza: "Lealtad y aguante: en la mala, el equipo no se va",
     riesgo: "Cuesta exigir y cuesta despedir. El que rinde poco se protege con el cariño, y el que rinde mucho se cansa de cargarlo",
-    pregunta: "Cuando alguien de tu equipo tiene un problema personal fuerte, ¿qué pasa en tu empresa?",
+    pregunta: "La última vez que alguien de tu equipo tuvo un problema personal fuerte, ¿qué hizo la empresa?",
   },
   {
     clave: "creadora",
@@ -51,7 +51,7 @@ export const CULTURAS: TipoCultura[] = [
     comoSeVe: "Se prueban cosas nuevas seguido, se cambia rápido y se tolera equivocarse si se aprendió",
     fuerza: "Se adapta antes que los demás y encuentra negocios que otros no ven",
     riesgo: "Se empieza mucho y se termina poco. Sin proceso escrito, cada cosa nueva depende otra vez del dueño",
-    pregunta: "En el último año, ¿qué probaron que nunca habían hecho? ¿Qué pasó con eso?",
+    pregunta: "Cuéntame lo último que probaron en tu empresa y que nunca habían hecho.",
   },
   {
     clave: "competidora",
@@ -60,7 +60,7 @@ export const CULTURAS: TipoCultura[] = [
     comoSeVe: "Se habla de metas y de números, se reconoce al que vende más y el ritmo lo marca el cliente",
     fuerza: "Empuja: la empresa crece porque alguien está midiendo y exigiendo",
     riesgo: "Se quema a la gente y se premia el número aunque el cliente quede mal atendido",
-    pregunta: "¿A quién se le reconoce en tu empresa y por qué? ¿Cómo se entera el resto?",
+    pregunta: "La última vez que reconocieron a alguien en tu empresa, ¿por qué fue?",
   },
   {
     clave: "ordenada",
@@ -69,7 +69,7 @@ export const CULTURAS: TipoCultura[] = [
     comoSeVe: "Hay reglas, se pide permiso, cada cosa tiene su forma de hacerse y se cuida no equivocarse",
     fuerza: "Sale parejo: el cliente recibe lo mismo lo atienda quien lo atienda",
     riesgo: "Se vuelve lento y nadie decide sin preguntar. Lo nuevo cuesta el doble",
-    pregunta: "Cuando hay que decidir algo fuera de lo común, ¿quién decide y cuánto se demora?",
+    pregunta: "La última vez que hubo que decidir algo fuera de lo común, ¿quién lo decidió?",
   },
 ];
 

@@ -45,7 +45,7 @@ export default async function LayoutCliente({ children }: { children: React.Reac
     }
   }
   // La empresa, qué pedidos de la consultora siguen abiertos y qué tiene guardado, a la vez. Lo abierto da el contador
-  // junto a «Inicio» y, con lo guardado, qué pantallas de «Mi empresa» le tocan hoy al dueño: las que su consultora
+  // junto a «Inicio» y, con lo guardado, qué pantallas de «Tus números» le tocan hoy al dueño: las que su consultora
   // abrió o en las que ya guardó algo (pantallasOcultas). Lo guardado sale de la caché de la ruta (negocioDeEmpresa),
   // no de otra lectura. Si algo no se pudo leer, no hay contador (nunca un cero inventado) y no se esconde nada.
   const [empresa, abiertasAhora, negocio] = companyId
@@ -57,17 +57,19 @@ export default async function LayoutCliente({ children }: { children: React.Reac
     : [null, null, null];
   const abiertas = abiertasAhora ? abiertasAhora.length : null;
   const ocultar = pantallasOcultas(abiertasAhora, negocio?.guardado ?? null);
-  // CINCO DESTINOS, NO OCHO (pedido de Kelin: "que no salga lo mismo en todos lados").
-  // Conversar sale de la barra: es la ACCIÓN principal (el botón de Inicio), no un lugar.
-  // Procesos entra como destino propio. Las demás pantallas viven DENTRO de uno de los cinco y se
-  // alcanzan desde la fila «En esta sección» (EnEstaSeccion, montada una sola vez aquí abajo): cuando
-  // nace una pantalla la barra no crece; se anota en el mapa GRUPO de NavCliente y en esa fila.
+  // CINCO DESTINOS (pedido de Kelin, 16-10-2026: «hace rato estaba simple y fácil: diagnóstico, qué hay en números,
+  // indicadores y el avance… son muchas pestañas»). Lo que hay hoy (Inicio), lo que encontramos (Tu diagnóstico),
+  // cuánto (Tus números), cómo se hace (Tus procesos) y qué haremos (Tu plan, con los indicadores dentro). Conversar no
+  // es un destino: es la ACCIÓN principal (el botón de Inicio). Las demás pantallas viven DENTRO de uno de los cinco y
+  // se alcanzan desde la fila «En esta sección» (EnEstaSeccion, montada una sola vez aquí abajo): cuando nace una
+  // pantalla la barra no crece; se anota en el mapa GRUPO de NavCliente y en esa fila. Ninguna pantalla se borró:
+  // «Mi empresa» y «Tus documentos» siguen abriendo en su dirección de siempre, dentro de un destino.
   const enlaces = [
     ["/portal", "Inicio"],
-    ["/portal/hoy", "Mi empresa"],
-    ["/portal/procesos", "Procesos"],
-    ["/portal/activos", "Tus documentos"],
-    ["/portal/plan", "Plan"],
+    ["/portal/diagnostico", "Tu diagnóstico"],
+    ["/portal/numeros", "Tus números"],
+    ["/portal/procesos", "Tus procesos"],
+    ["/portal/plan", "Tu plan"],
   ];
   return (
     <div className="marco-app">

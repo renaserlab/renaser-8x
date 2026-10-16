@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "../design/tokens.css";
 @import "../design/tablero.css";
+@import "../design/vistas.css";
 
 @theme inline {
   --color-papel: var(--papel);

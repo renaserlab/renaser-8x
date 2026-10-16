@@ -64,36 +64,39 @@ export type PreguntaEntrada = {
 };
 
 export const PLAN_ENTRADA: PreguntaEntrada[] = [
+  // UNA PREGUNTA, UNA COSA (revisión del 16-10-2026, sección 3a). Las doce piden el episodio («el mes pasado», «la
+  // última vez») y no traen ejemplos, cifras ni listas: lo que va dentro de la pregunta se devuelve como respuesta.
+  // Lo que antes se pedía junto (cuánto vendes Y cuánto te queda) se pide por partes, y la cuenta la hace 8X.
   // (a) empresa y modelo de negocio
   {
     clave: "entrada.negocio_hoy",
     grupo: "a",
     asunto: "Tu negocio hoy",
-    texto: "Cuéntame tu negocio hoy: ¿qué haces, dónde y con cuánta gente?",
+    texto: "Cuéntame tu negocio hoy: ¿a qué se dedica?",
     bloque_banco: "hoy",
-    equivale_a: ["Cuéntame tu negocio hoy: ¿qué haces, dónde, con cuánta gente?"],
-    alimenta: "ficha: actividad, ciudad, personas; clasificación del modelo (rules/matrices)",
+    equivale_a: ["Cuéntame tu negocio hoy: ¿a qué se dedica?"],
+    alimenta: "ficha: actividad (dónde y con cuánta gente, si la ficha ya trae el rubro: estadoDePregunta); clasificación del modelo (rules/matrices)",
     acepta_aproximado: false,
   },
   {
     clave: "entrada.que_vende_estrella",
     grupo: "a",
-    asunto: "Qué vendes, a quién y qué te deja más",
-    texto: "¿Qué vendes, a quién, y qué de todo eso te deja más dinero?",
+    asunto: "Qué vendes",
+    texto: "¿Qué vendes? Dime los nombres, uno por uno.",
     bloque_banco: "hoy",
-    equivale_a: ["¿Qué vendes y a quién?", "¿Qué es lo que más dinero te trae: qué producto o qué tipo de cliente?"],
-    alimenta: "lineas_producto; producto estrella; cliente objetivo",
+    equivale_a: ["¿Qué vendes? Dime los nombres, uno por uno."],
+    alimenta: "lineas_producto; si ya los sabemos, cuál se vendió más veces el mes pasado. Lo que más deja no se pregunta: sale del precio y el costo",
     acepta_aproximado: false,
   },
   // (b) realidad actual y recursos
   {
     clave: "entrada.ventas_y_ganancia",
     grupo: "b",
-    asunto: "Cuánto vendes y cuánto te queda",
-    texto: "En un mes normal, ¿cuánto vendes en total y cuánto te queda después de pagar todo? Si no lo tienes exacto, un «más o menos» sirve.",
+    asunto: "Cuánto vendiste el mes pasado",
+    texto: "El mes pasado, ¿cuánto vendiste en total?",
     bloque_banco: "hoy",
-    equivale_a: ["En un mes normal, ¿cuánto suman tus ventas totales… y cuánto queda para ti después de pagar todo?"],
-    alimenta: "company_metricas: venta_mes, ganancia_mes (declarado, contado)",
+    equivale_a: ["El mes pasado, ¿cuánto vendiste en total?"],
+    alimenta: "company_metricas: venta_mes del mes pasado (de memoria). Lo que queda no se pregunta aquí: es una cuenta, y la hace 8X con las partes",
     acepta_aproximado: true,
   },
   {
@@ -109,10 +112,10 @@ export const PLAN_ENTRADA: PreguntaEntrada[] = [
   {
     clave: "entrada.que_se_detiene_sin_mi",
     grupo: "b",
-    asunto: "Qué se detiene sin ti",
-    texto: "Si tú no vas al negocio durante una semana, ¿qué se detiene y qué sigue andando sin ti?",
+    asunto: "Lo que espera cuando faltas",
+    texto: "La última vez que faltaste al negocio, ¿qué se quedó esperando hasta que volviste?",
     bloque_banco: "dependencia",
-    equivale_a: ["La última vez que te enfermaste o viajaste, ¿qué se detuvo en el negocio y qué siguió andando sin ti?"],
+    equivale_a: ["La última vez que faltaste al negocio, ¿qué se quedó esperando hasta que volviste?"],
     alimenta: "ficha de dirección: dependencia del propietario (descripción, no índice)",
     acepta_aproximado: false,
   },
@@ -121,19 +124,19 @@ export const PLAN_ENTRADA: PreguntaEntrada[] = [
     clave: "entrada.vision_3_anios",
     grupo: "c",
     asunto: "Tu negocio dentro de tres años",
-    texto: "Si dentro de tres años todo sale bien y yo visito tu negocio, ¿qué veo: cuánta gente, qué locales, qué se vende?",
+    texto: "Si dentro de tres años todo sale bien y yo visito tu negocio, ¿qué veo?",
     bloque_banco: "empresa_deseada",
-    equivale_a: ["Si dentro de tres años todo sale bien y yo visito tu negocio, ¿qué veo? Cuéntamelo: cuánta gente, qué locales, qué se vende."],
+    equivale_a: ["Si dentro de tres años todo sale bien y yo visito tu negocio, ¿qué veo?"],
     alimenta: "ficha de dirección: empresa deseada",
     acepta_aproximado: false,
   },
   {
     clave: "entrada.rol_futuro",
     grupo: "c",
-    asunto: "Qué harás tú y qué ya no",
-    texto: "Ese día, dentro de tres años, ¿qué haces tú en el negocio y qué ya no haces?",
+    asunto: "Qué harás tú",
+    texto: "Ese día, dentro de tres años, ¿qué haces tú en el negocio?",
     bloque_banco: "empresa_deseada",
-    equivale_a: ["Ese día, dentro de tres años, ¿qué haces tú en el negocio… y qué ya no haces?"],
+    equivale_a: ["Ese día, dentro de tres años, ¿qué haces tú en el negocio?"],
     alimenta: "ficha de dirección: rol futuro del propietario",
     acepta_aproximado: false,
   },
@@ -143,7 +146,7 @@ export const PLAN_ENTRADA: PreguntaEntrada[] = [
     asunto: "Cuánto necesitas al mes para estar tranquilo",
     texto: "¿Cuánto tendría que quedarte al mes, libre, para estar tranquilo?",
     bloque_banco: "exito",
-    equivale_a: ["¿Cuánto dinero tendría que quedarte al mes para estar tranquilo? ¿Cuánto es suficiente para ti?"],
+    equivale_a: ["¿Cuánto dinero tendría que quedarte al mes para estar tranquilo?"],
     alimenta: "ficha de dirección: resultado deseado (meta de ganancia mensual)",
     acepta_aproximado: true,
   },
@@ -162,9 +165,9 @@ export const PLAN_ENTRADA: PreguntaEntrada[] = [
     clave: "entrada.mejor_resultado_anterior",
     grupo: "d",
     asunto: "Tu mejor época",
-    texto: "¿Cuál fue el mejor mes o la mejor época de tu negocio, y cuánto vendías entonces?",
+    texto: "En el mejor mes de toda la historia de tu negocio, ¿cuánto vendiste?",
     bloque_banco: "epoca_dorada",
-    equivale_a: ["¿Hubo un año o una época en que el negocio vendía más que hoy? ¿Cuándo fue?", "¿Cuánto vendías en ese tiempo, más o menos?"],
+    equivale_a: ["En esa época, ¿cuánto vendías al mes?"],
     alimenta: "company_metricas: venta_mes en el periodo epoca_dorada",
     acepta_aproximado: true,
   },
@@ -181,11 +184,12 @@ export const PLAN_ENTRADA: PreguntaEntrada[] = [
   {
     clave: "entrada.recursos_desaprovechados",
     grupo: "d",
-    asunto: "Lo que tienes y no aprovechas",
-    texto: "¿Qué tienes hoy en el negocio que no se aprovecha del todo: un local, una máquina, una persona, clientes antiguos, mercadería parada?",
+    asunto: "Lo que tienes y no usas",
+    texto: "La semana pasada, ¿qué máquina o espacio del negocio no se usó?",
     bloque_banco: "recursos",
-    equivale_a: ["¿Qué tienes hoy en el negocio que no se aprovecha del todo: un local, una máquina, una persona, clientes antiguos, mercadería parada?"],
-    alimenta: "ficha de dirección: oportunidades (recursos desaprovechados)",
+    equivale_a: ["La semana pasada, ¿qué máquina o espacio del negocio no se usó?"],
+    // Es INTERNO: lo que la empresa tiene y no usa va al mapa de recursos, no a «oportunidades», que son de afuera.
+    alimenta: "ficha de dirección: recursos sin usar (interno; no es una oportunidad)",
     acepta_aproximado: false,
   },
 ];
@@ -593,6 +597,12 @@ function respuestaEquivalente(item: PreguntaEntrada, c: Conocido): RespuestaPrev
 }
 
 /**
+ * Cuando ya sabemos qué vende: la pregunta que sigue, por el episodio y no por la opinión sobre el margen. Empieza
+ * con «¿» a propósito: la síntesis separa lo sabido de la pregunta quitando la última «¿…?» (afirmacionDe).
+ */
+export const CUAL_SE_VENDIO_MAS = "¿Cuál de esos vendiste más veces el mes pasado?";
+
+/**
  * Regla por pregunta, en código. Lo sabido vuelve como una afirmación con su fuente y UNA pregunta al final:
  * «¿Es así?» cuando lo sabemos entero, o la pregunta por la parte que falta cuando lo sabemos a medias. Lo
  * que la ficha dice a medias no se ignora ni se vuelve a pedir: se trae a la pregunta.
@@ -609,9 +619,10 @@ export function estadoDePregunta(item: PreguntaEntrada, c: Conocido): EstadoPreg
     const personas = f.personas ? `con ${f.personas} persona${f.personas.trim() === "1" ? "" : "s"}` : null;
     const partes = [`tu negocio es ${f.actividad}`, f.ciudad ? `en ${f.ciudad}` : null, personas].filter(Boolean).join(", ");
     if (f.ciudad && f.personas) return sabida(`Al crear tu empresa nos dijiste que ${partes}.`, "lo que escribiste al crear tu empresa", CIERRES_CONFIRMACION[1]);
-    // Sabemos el rubro (y quizá la ciudad): no se piden otra vez. Se pregunta lo que falta.
-    const falta = f.personas ? "¿qué haces tú en un día normal y dónde atiendes?" : "¿qué haces tú en un día normal y con cuánta gente trabajas?";
-    return pendiente(`Al crear tu empresa nos dijiste que ${partes}. Cuéntame cómo funciona hoy: ${falta}`);
+    // Sabemos el rubro (y quizá la ciudad): no se piden otra vez. Se pregunta lo que falta, una sola cosa: primero
+    // con cuánta gente (de ahí sale `personas` para la ficha) y, si eso ya está, dónde atiende.
+    const falta = f.personas ? "Hoy, ¿dónde atiendes a tus clientes?" : "Hoy, ¿con cuánta gente trabajas?";
+    return pendiente(`Al crear tu empresa nos dijiste que ${partes}. ${falta}`);
   }
 
   if (item.clave === "entrada.ventas_y_ganancia") {
@@ -620,7 +631,8 @@ export function estadoDePregunta(item: PreguntaEntrada, c: Conocido): EstadoPreg
       const porVenta = fuenteDeMetrica(venta, c);
       const ganancia = ultimaMetrica(c, "ganancia_mes");
       const base = `Por ${porVenta} entendimos que vendes unos ${montoDe(Number(venta.valor), c.config)} al mes`;
-      if (!ganancia) return sabida(`${base}.`, porVenta, "¿Cuánto de eso te queda después de pagar todo?");
+      // Lo que queda no se pregunta de memoria: es una cuenta y la hace 8X con las partes (revisión del 16-10, 3a).
+      if (!ganancia) return sabida(`${base}.`, porVenta);
       const porGanancia = fuenteDeMetrica(ganancia, c);
       const queda = `te quedan unos ${montoDe(Number(ganancia.valor), c.config)}`;
       return porGanancia === porVenta ? sabida(`${base} y que ${queda}.`, porVenta) : sabida(`${base} y, por ${porGanancia}, que ${queda}.`, `${porVenta} y ${porGanancia}`);
@@ -639,13 +651,15 @@ export function estadoDePregunta(item: PreguntaEntrada, c: Conocido): EstadoPreg
   if (previa) return sabida(`Antes nos contaste: «${recorte(previa.respuesta, 160)}».`, "una conversación anterior contigo", CIERRES_CONFIRMACION[2]);
 
   if (item.clave === "entrada.que_vende_estrella") {
-    if (f.productos) return pendiente(`Al crear tu empresa pusiste que vendes ${f.productos}. ¿A quién le vendes y qué de eso te deja más dinero?`);
+    // Lo que vende ya lo sabemos: se pregunta la siguiente cosa, una sola. Lo que más deja no se pregunta: sale del
+    // precio y del costo de cada uno.
+    if (f.productos) return pendiente(`Al crear tu empresa pusiste que vendes ${f.productos}. ${CUAL_SE_VENDIO_MAS}`);
     if (c.lineas.length) {
       const por = nombreDeFuente(c.lineas[0].source_id, c) ?? "lo que ya tenemos de tu empresa";
       const nombres = enumerar(c.lineas.slice(0, 4).map((l) => l.nombre.trim()));
       const mas = c.lineas.length > 4 ? ", entre otras cosas" : "";
       // Lo que vende ya lo sabíamos por otra fuente: se dice con su origen, y a un «sí» le faltaría el resto.
-      return sabida(`Por ${por} vimos que vendes ${nombres}${mas}.`, por, "¿A quién le vendes y qué de eso te deja más dinero?");
+      return sabida(`Por ${por} vimos que vendes ${nombres}${mas}.`, por, CUAL_SE_VENDIO_MAS);
     }
   }
   return pendiente();

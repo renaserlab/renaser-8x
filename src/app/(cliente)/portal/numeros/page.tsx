@@ -1,8 +1,9 @@
+import Link from "next/link";
 import { contextoPortal } from "@/lib/portal";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { radiografia, derivados, serieDeVentas, vitalesSoloDeDocumento, PERIODO_DORADA, ROTULO_CIFRA_PROVISIONAL, type Metrica } from "@/lib/metricas";
 import { explicarCalculo, type Calculo } from "@/lib/finanzas";
-import { ultimosMeses } from "@/lib/temporadas";
+import { ultimosMeses, MESES } from "@/lib/temporadas";
 import { zonaDe } from "@/lib/kpis";
 import { leerHoraCierre } from "@/lib/negocio-datos";
 import { MisNumeros } from "@/components/cliente/MisNumeros";
@@ -10,12 +11,53 @@ import { Avance } from "@/components/cliente/Avance";
 import { lecturaDeCorte, diaEnZona, mesCerradoAnterior } from "@/lib/medicion";
 import { cargarMediciones, cargarAccionesLigadas } from "@/components/medicion/datos";
 import { Indicadores, type Indicador, type ValorIndicador } from "@/components/cliente/Indicadores";
-import { Franja, Lectura } from "@/components/base/Franja";
+import { leerIncongruencias } from "@/lib/diagnostico-datos";
 import { pedidoDeSecciones, AvisoPedido, ListoPedido } from "@/components/negocio/PedidoDeConsultora";
+import { Icono } from "@/components/base/Icono";
+import { Barritas, Pista, type Barra } from "@/components/tablero/Piezas";
+import { GraficoLinea, type PuntoLinea } from "@/components/tablero/GraficoLinea";
 
 export const dynamic = "force-dynamic";
 
-const soles = (n: number) => `S/${Math.round(n).toLocaleString("es-PE")}`;
+// ─────────────── EL TABLERO DE ARRIBA (16-10-2026, «Tus números» como destino) ───────────────
+// Kelin: «diagnóstico, qué hay en números, indicadores y el avance». Antes de llenar, el dueño ve en un vistazo lo
+// que ya cuentan sus números: lo que le queda, lo que vendió, cómo va su venta frente a lo que necesita para cubrir
+// sus gastos y cuántos de sus nueve números ya dio. Lo que falta va rayado y con su nombre; nunca un «S/ 0» que nadie
+// contó.
+// REVISIÓN DEL 16-10-2026: debajo del tablero se repetía todo en otro formato (la franja de cifras y la radiografía
+// «5 de 9», con «S/ 11,505» y «S/11,505»). Ahora cada cifra sale UNA vez, arriba, con su «Cómo se calculó» y su rótulo
+// de provisional al lado; abajo, en su hoja, solo las preguntas. Y una cifra que en «Tu diagnóstico» se pide corregir
+// (lo que le quedó, la venta de ese mes) aquí sale «por confirmar», no como un hecho: lo dice leerIncongruencias, con
+// las mismas reglas.
+
+const ES_MES = /^[0-9]{4}-(0[1-9]|1[0-2])$/;
+const mesLargo = (p: string) => MESES.find((m) => m.clave === p.slice(5, 7))?.nombre ?? p;
+const mesCorto = (p: string) => (MESES.find((m) => m.clave === p.slice(5, 7))?.corto ?? p).toLowerCase();
+const enSoles = (n: number) => `S/ ${Math.round(Math.abs(n)).toLocaleString("es-PE")}`;
+
+/** El periodo AAAA-MM de `p` más `k` meses. */
+function sumarMeses(p: string, k: number): string {
+  const total = Number(p.slice(0, 4)) * 12 + Number(p.slice(5, 7)) - 1 + k;
+  return `${Math.floor(total / 12)}-${String((total % 12) + 1).padStart(2, "0")}`;
+}
+
+/** El número de un mes más reciente con cifra, sin lo descartado. `provisional`: salió de un documento sin revisar. */
+function ultimoDelMes(metricas: Metrica[], clave: string): { valor: number; periodo: string; provisional: boolean } | null {
+  const m = metricas
+    .filter((x) => x.clave === clave && x.valor != null && x.estado !== "descartado" && ES_MES.test(x.periodo))
+    .sort((a, b) => b.periodo.localeCompare(a.periodo))[0];
+  return m ? { valor: Number(m.valor), periodo: m.periodo, provisional: m.estado === "extraido" } : null;
+}
+
+/** Los meses seguidos entre `desde` y `hasta`: un mes sin venta contada queda como hueco (rayado), nunca como cero. */
+function mesesSeguidos(serie: { periodo: string; valor: number; provisional: boolean }[], desde: string, hasta: string) {
+  const salida: { periodo: string; valor: number | null; provisional: boolean }[] = [];
+  for (let p = desde; p <= hasta; p = sumarMeses(p, 1)) {
+    const s = serie.find((x) => x.periodo === p);
+    salida.push(s ?? { periodo: p, valor: null, provisional: false });
+  }
+  return salida;
+}
 
 /**
  * El detalle desplegable de cada cifra calculada: cómo se calcula, de qué periodo, de dónde salen
@@ -38,6 +80,16 @@ function DetalleCalculo({ calculo }: { calculo: Calculo<unknown> }) {
   );
 }
 
+/** «por confirmar» y adónde ir a corregirlo: una cifra con un dato abierto que no cuadra. */
+function PorConfirmar({ que }: { que: string }) {
+  return (
+    <p className="nota" style={{ lineHeight: 1.6 }}>
+      <span className="estado espera">por confirmar</span> {que} no cuadra con la cuenta de tus números.{" "}
+      <Link href="/portal/diagnostico#incongruencias" className="enlace-azul">Corregir</Link>
+    </p>
+  );
+}
+
 /**
  * EL RÓTULO DE LO PROVISIONAL, JUNTO A LA CIFRA Y A LA VISTA. `derivados` ya sabía qué cifra se apoya en un
  * número leído de un documento sin revisar, pero aquí solo lo decía dentro de «Cómo se calculó», que está
@@ -51,7 +103,7 @@ function RotuloProvisional({ enLinea = false }: { enLinea?: boolean }) {
 
 /**
  * TUS NÚMEROS — la pantalla que faltaba. Hasta hoy los números solo entraban por lo que se lograba
- * pescar de la conversación, y la radiografía nunca se cerraba (Qori: 18 números, 3 de los nueve
+ * pescar de la conversación, y la radiografía nunca se cerraba (una empresa: 18 números, 3 de los nueve
  * vitales). Aquí el dueño ve cuántos le faltan, los pone él mismo, y por primera vez los pone
  * POR MES: sin serie mensual no hay "cómo estuvo" ni con qué comparar después.
  */
@@ -60,7 +112,7 @@ export default async function Numeros() {
   if (!c.companyId) return <p className="t-cuerpo medida">{c.queFalta}</p>;
 
   const sb = supabaseAdmin();
-  const [{ data: metricasRaw }, { data: empresa }, meds, { data: indicadoresRaw }, { data: reloj }, horaCierre] = await Promise.all([
+  const [{ data: metricasRaw }, { data: empresa }, meds, { data: indicadoresRaw }, { data: reloj }, horaCierre, incongruencias] = await Promise.all([
     sb.from("company_metricas").select("clave,periodo,valor,estado").eq("company_id", c.companyId).limit(200),
     sb.from("companies").select("ficha").eq("id", c.companyId).single(),
     cargarMediciones(sb, c.companyId),
@@ -69,6 +121,8 @@ export default async function Numeros() {
     sb.from("companies").select("zona_horaria").eq("id", c.companyId).maybeSingle(),
     // A qué hora cierra el negocio (lo diario de hoy se anota desde esa hora). Aparte: si la columna falta, no arrastra a la zona.
     leerHoraCierre(c.companyId),
+    // Lo que no cuadra, con las reglas de «Tu diagnóstico». Si no se pudo leer, null: no se marca nada (no se inventa una duda).
+    leerIncongruencias(c.companyId, { para: "dueno" }),
   ]);
   // Lo que pidió la consultora («Los números que faltan») va arriba, con su nota; «Listo» al final.
   const pedido = await pedidoDeSecciones(c.companyId, ["datos_faltantes"], c.u, zonaDe((reloj as { zona_horaria?: unknown } | null)?.zona_horaria));
@@ -119,102 +173,269 @@ export default async function Numeros() {
     .filter((m) => clavesInd.has(m.clave) && m.valor != null && m.estado !== "descartado" && /^[0-9]{4}-[0-9]{2}$/.test(m.periodo))
     .map((m) => ({ clave: m.clave, periodo: m.periodo, valor: Number(m.valor) }));
 
+  // ── Lo que pinta el tablero de arriba, todo de lo ya leído ──
+  const queda = ultimoDelMes(metricas, "ganancia_mes");
+  const vendio = serieVenta[0] ?? null;
+  const ventasAsc = [...serieVenta].reverse();
+  // La línea: hasta doce meses seguidos que terminan en el último con venta. Las barritas: los últimos seis.
+  const desdeLinea = vendio ? (ventasAsc[0]!.periodo > sumarMeses(vendio.periodo, -11) ? ventasAsc[0]!.periodo : sumarMeses(vendio.periodo, -11)) : null;
+  const linea: PuntoLinea[] =
+    vendio && desdeLinea
+      ? mesesSeguidos(ventasAsc, desdeLinea, vendio.periodo).map((m) => ({ corto: mesCorto(m.periodo), largo: mesLargo(m.periodo), valor: m.valor }))
+      : [];
+  const conVenta = linea.filter((p) => p.valor != null).length;
+  const seisMeses: Barra[] = vendio
+    ? mesesSeguidos(ventasAsc, sumarMeses(vendio.periodo, -5), vendio.periodo).map((m) => ({ valor: m.valor, dicho: m.valor != null && m.provisional }))
+    : [];
+  const huecos = seisMeses.filter((b) => b.valor == null).length;
+  const equilibrio = d.equilibrio;
+  const faltanNombres = r.faltan.map((v) => v.nombre);
+  // ¿Hay un dato abierto que no cuadra sobre esta misma cifra? Uno sin periodo vale para cualquiera.
+  const enDuda = (clave: string, periodo: string) => !!incongruencias?.some((i) => !i.resuelta && i.clave === clave && (i.periodo == null || i.periodo === periodo));
+  const quedaEnDuda = !!queda && enDuda("ganancia_mes", queda.periodo);
+  const vendioEnDuda = !!vendio && enDuda("venta_mes", vendio.periodo);
+
   return (
     <>
-      <p className="t-etiqueta">Los números de tu negocio</p>
-      <h1 className="t-titulo mt-2 mb-2">Tus números</h1>
-      <p className="t-cuerpo medida mb-7" style={{ color: "var(--grafito)" }}>
-        Nueve números cuentan la salud de cualquier negocio. No hace falta contabilidad ni buscar papeles:
-        contesta de memoria, como si te lo preguntáramos hablando.
-      </p>
-      <AvisoPedido p={pedido} />
+      <div className="tablero">
+        <header className="a-lo-ancho" style={{ padding: "6px 4px 0" }}>
+          <p className="t-etiqueta">Los números de tu negocio</p>
+          <h1 className="hola"><strong>Tus números</strong></h1>
+          <p className="bienvenida medida">
+            Nueve números cuentan la salud de cualquier negocio. No hace falta contabilidad ni buscar papeles:
+            contesta de memoria, como si te lo preguntáramos hablando.
+          </p>
+        </header>
 
-      {/* LO QUE YA SE PUEDE CALCULAR: la recompensa por haber contestado. Cada cifra con su detalle.
-          EL EQUILIBRIO QUE SE MUESTRA ES EL DE LA EMPRESA (D5): fijos entre lo que queda de cada sol
-          vendido después de pagar lo que cuesta lo vendido. Sin costos variables no hay cifra y se dice
-          por qué; la del producto estrella va aparte, rotulada como la hipótesis que es. Y toda cifra que
-          se apoye en un número leído de un documento sin revisar lleva su rótulo al lado, no plegado. */}
-      {(d.margen != null || d.diasAguante != null || d.equilibrio != null || d.equilibrioProductoEstrella != null) && (
-        <div className="mb-8">
-          <Franja columnas={3}>
-            <Lectura
-              divisor={false}
-              valor={d.margen != null ? `${d.margen.toFixed(0)}%` : "—"}
-              etiqueta="de cada 100 soles, te queda"
-              color={d.margen != null && d.margen < 10 ? "var(--contradicho)" : undefined}
-              extra={<>{d.provisional.margen && <RotuloProvisional />}<DetalleCalculo calculo={d.detalle.margen} /></>}
-            />
-            <Lectura
-              valor={d.diasAguante != null ? String(Math.round(d.diasAguante)) : "—"}
-              unidad={d.diasAguante != null ? "días" : undefined}
-              etiqueta="aguantas si mañana no entra nada"
-              color={d.diasAguante != null && d.diasAguante < 30 ? "var(--contradicho)" : undefined}
-              extra={<>{d.provisional.diasAguante && <RotuloProvisional />}<DetalleCalculo calculo={d.detalle.diasAguante} /></>}
-            />
-            <Lectura
-              valor={d.equilibrio != null ? soles(d.equilibrio) : "—"}
-              etiqueta={d.equilibrio != null ? "tienes que vender al mes para cubrir tus costos" : "desde qué venta cubres tus costos"}
-              extra={<>{d.provisional.equilibrio && <RotuloProvisional />}<DetalleCalculo calculo={d.detalle.equilibrio} /></>}
-            />
-          </Franja>
-          {d.equilibrio == null && d.detalle.equilibrio.motivo_nulo && (
-            <p className="t-cuerpo mt-3 medida">{d.detalle.equilibrio.motivo_nulo}</p>
+        <section className="tarjeta cifra-tarjeta" aria-labelledby="n-queda">
+          <div className="cabeza">
+            <div>
+              <h2 id="n-queda">Lo que te queda</h2>
+              <p className="sub">{queda ? `${mesLargo(queda.periodo)}, ya pagado todo` : "Libre, ya pagado todo"}</p>
+            </div>
+            <Link className="ir" href="#formulario" aria-label="Ir a tus números para contarlo"><Icono nombre="diagonal" /></Link>
+          </div>
+          <div className="fila-cifra">
+            {queda ? (
+              queda.valor >= 0 ? (
+                <span className="grande" style={quedaEnDuda ? { color: "var(--grafito)" } : undefined}><small className="moneda">S/</small>{Math.round(queda.valor).toLocaleString("es-PE")}<small>al mes</small></span>
+              ) : (
+                <span className="grande" style={{ color: quedaEnDuda ? "var(--grafito)" : "var(--contradicho)" }}><small className="moneda" style={{ color: "inherit" }}>−S/</small>{Math.round(Math.abs(queda.valor)).toLocaleString("es-PE")}<small>perdiste</small></span>
+              )
+            ) : (
+              <span className="sin-dato">Todavía no lo contaste</span>
+            )}
+          </div>
+          {queda?.provisional && <RotuloProvisional />}
+          {quedaEnDuda && <PorConfirmar que="Esta cifra" />}
+          {/* De cada 100 soles: sale de lo que le queda, así que va con él y con la misma duda. */}
+          {d.margen != null && (
+            <div className="lectura-chica">
+              <span className="num" style={{ color: quedaEnDuda ? "var(--grafito)" : d.margen < 10 ? "var(--contradicho)" : undefined }}>{d.margen.toFixed(0)} %</span>
+              <p className="nota">de cada 100 soles, te queda</p>
+              {d.provisional.margen && <RotuloProvisional />}
+              <DetalleCalculo calculo={d.detalle.margen} />
+            </div>
           )}
-          {/* Esta frase sale del equilibrio: si él es provisional, ella también, y se dice en la misma línea. */}
-          {d.sobreEquilibrio != null && (
-            <p className="t-cuerpo mt-3 medida">
+        </section>
+
+        <section className="tarjeta cifra-tarjeta" aria-labelledby="n-vendio">
+          <div className="cabeza">
+            <div>
+              <h2 id="n-vendio">Lo que vendiste</h2>
+              <p className="sub">{vendio ? mesLargo(vendio.periodo) : "Tus ventas del mes"}</p>
+            </div>
+            <Link className="ir" href="#formulario" aria-label="Ir a tus números para contarlo"><Icono nombre="diagonal" /></Link>
+          </div>
+          {vendio ? (
+            <>
+              <div className="fila-cifra">
+                <span className="grande" style={vendioEnDuda ? { color: "var(--grafito)" } : undefined}><small className="moneda">S/</small>{Math.round(vendio.valor).toLocaleString("es-PE")}</span>
+                <Barritas barras={seisMeses} etiqueta="Ventas de los últimos seis meses" />
+              </div>
+              {huecos > 0 && <p className="pie-barritas">Rayado: {huecos === 1 ? "un mes" : `${huecos} meses`} sin venta contada</p>}
+              {vendio.provisional && <RotuloProvisional />}
+              {vendioEnDuda && <PorConfirmar que="Esta cifra" />}
+            </>
+          ) : (
+            <div className="fila-cifra"><span className="sin-dato">Todavía sin ventas contadas</span></div>
+          )}
+        </section>
+
+        {/* EL EQUILIBRIO QUE SE MUESTRA ES EL DE LA EMPRESA (D5): fijos entre lo que queda de cada sol vendido después
+            de pagar lo que cuesta lo vendido. Sin costos variables no hay cifra y se dice por qué. */}
+        <section className="tarjeta cifra-tarjeta" aria-labelledby="n-equilibrio">
+          <div className="cabeza">
+            <div>
+              <h2 id="n-equilibrio">Para cubrir tus costos</h2>
+              <p className="sub">Lo que necesitas vender al mes</p>
+            </div>
+          </div>
+          <div className="fila-cifra">
+            {equilibrio != null ? (
+              <span className="grande"><small className="moneda">S/</small>{Math.round(equilibrio).toLocaleString("es-PE")}</span>
+            ) : (
+              <span className="sin-dato">Aún por calcular</span>
+            )}
+          </div>
+          {equilibrio != null ? (
+            <div className="lectura-chica">
+              <p className="nota">tienes que vender al mes para cubrir tus costos</p>
+              {d.provisional.equilibrio && <RotuloProvisional />}
+              <DetalleCalculo calculo={d.detalle.equilibrio} />
+            </div>
+          ) : (
+            d.detalle.equilibrio.motivo_nulo && <p className="nota">{d.detalle.equilibrio.motivo_nulo}</p>
+          )}
+        </section>
+
+        <section className="tarjeta cifra-tarjeta" aria-labelledby="n-aguante">
+          <div className="cabeza">
+            <div>
+              <h2 id="n-aguante">Cuánto aguantas</h2>
+              <p className="sub">Con la caja de hoy</p>
+            </div>
+          </div>
+          <div className="fila-cifra">
+            {d.diasAguante != null ? (
+              <span className="grande" style={d.diasAguante < 30 ? { color: "var(--contradicho)" } : undefined}>{Math.round(d.diasAguante)}<small>días</small></span>
+            ) : (
+              <span className="sin-dato">Aún por calcular</span>
+            )}
+          </div>
+          {d.diasAguante != null ? (
+            <div className="lectura-chica">
+              <p className="nota">aguantas si mañana no entra nada</p>
+              {d.provisional.diasAguante && <RotuloProvisional />}
+              <DetalleCalculo calculo={d.detalle.diasAguante} />
+            </div>
+          ) : (
+            <p className="nota">Hacen falta tu dinero en caja y lo que pagas sí o sí cada mes.</p>
+          )}
+        </section>
+
+        <section className="tarjeta linea-tarjeta a-lo-ancho" aria-labelledby="n-linea">
+          <div className="cabeza">
+            <div>
+              <h2 id="n-linea">Tus ventas mes a mes</h2>
+              <p className="sub">{equilibrio != null ? "La raya es lo que necesitas vender para cubrir tus gastos" : "De lo que contaste y de tus documentos"}</p>
+            </div>
+          </div>
+          {conVenta >= 2 && vendio ? (
+            <>
+              {/* Al lado de la línea, lo que la línea dice: cuánto por encima (o por debajo) de la raya quedó el último mes.
+                  Lo que vendió ya está en su tarjeta, arriba: aquí no se repite. */}
+              <div className="resumen">
+                {d.sobreEquilibrio != null ? (
+                  <>
+                    <span className="num" style={d.sobreEquilibrio < 0 ? { color: "var(--contradicho)" } : undefined}>{enSoles(d.sobreEquilibrio)}</span>
+                    <p>
+                      {d.sobreEquilibrio >= 0 ? "por encima" : "por debajo"} de lo que necesitas vender, con lo de {mesLargo(vendio.periodo).toLowerCase()}
+                      {d.provisional.equilibrio && <RotuloProvisional enLinea />}.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <span className="num">{enSoles(vendio.valor)}</span>
+                    <p>en {mesLargo(vendio.periodo).toLowerCase()}{vendio.provisional && <RotuloProvisional enLinea />}.</p>
+                  </>
+                )}
+              </div>
+              <GraficoLinea
+                puntos={linea}
+                formato="soles"
+                etiqueta="Ventas por mes"
+                referencia={equilibrio != null ? { valor: equilibrio, texto: `lo que necesitas para cubrir tus gastos: ${enSoles(equilibrio)}` } : null}
+              />
+            </>
+          ) : (
+            <p className="sin-dato" style={{ gridColumn: "1 / -1", marginTop: 12 }}>
+              {vendio ? "Hacen falta dos meses de ventas para dibujar la línea" : "Todavía sin ventas contadas"}
+            </p>
+          )}
+          {/* Esta frase sale del equilibrio: si él es provisional, ella también, y se dice en la misma línea. Con la línea
+              dibujada ya lo dice su resumen, al lado; sin línea, se dice aquí. */}
+          {d.sobreEquilibrio != null && !(conVenta >= 2 && vendio) && (
+            <p className="nota" style={{ gridColumn: "1 / -1", fontSize: 13.5 }}>
               {d.sobreEquilibrio >= 0
-                ? `Vendiendo lo del último mes ${d.provisional.equilibrio ? "estarías" : "estás"} ${soles(d.sobreEquilibrio)} por encima de tu punto de equilibrio`
-                : `Cuidado: con lo del último mes te ${d.provisional.equilibrio ? "faltarían" : "faltan"} ${soles(Math.abs(d.sobreEquilibrio))} para llegar a tu punto de equilibrio`}
+                ? `Vendiendo lo del último mes ${d.provisional.equilibrio ? "estarías" : "estás"} ${enSoles(d.sobreEquilibrio)} por encima de tu punto de equilibrio`
+                : `Cuidado: con lo del último mes te ${d.provisional.equilibrio ? "faltarían" : "faltan"} ${enSoles(Math.abs(d.sobreEquilibrio))} para llegar a tu punto de equilibrio`}
               {d.provisional.equilibrio && <RotuloProvisional enLinea />}.
             </p>
           )}
+          {dorada?.valor != null && serieVenta[0] && (
+            <p className="nota" style={{ gridColumn: "1 / -1", fontSize: 13.5 }}>
+              Tu mejor época vendías {enSoles(Number(dorada.valor))} al mes{dorada.estado === "extraido" && <RotuloProvisional enLinea />}. Hoy, {enSoles(serieVenta[0].valor)}
+              {serieVenta[0].provisional && <RotuloProvisional enLinea />}.
+            </p>
+          )}
           {d.equilibrioProductoEstrella != null && (
-            <div className="mt-3 medida">
-              <p className="t-cuerpo" style={{ color: "var(--grafito)" }}>
-                Si todo lo que vendieras fuera lo que más vendes, necesitarías vender {soles(d.equilibrioProductoEstrella)} al mes para cubrir
+            <div style={{ gridColumn: "1 / -1" }}>
+              <p className="nota" style={{ fontSize: 13.5 }}>
+                Si todo lo que vendieras fuera lo que más vendes, necesitarías vender {enSoles(d.equilibrioProductoEstrella)} al mes para cubrir
                 tus gastos fijos{d.provisional.equilibrioProductoEstrella && <RotuloProvisional enLinea />}. Es una hipótesis para conversar, no el punto de equilibrio de tu negocio.
               </p>
               <DetalleCalculo calculo={d.detalle.equilibrioProductoEstrella} />
             </div>
           )}
-          {dorada?.valor != null && serieVenta[0] && (
-            <p className="t-cuerpo mt-1 medida" style={{ color: "var(--grafito)" }}>
-              Tu mejor época vendías {soles(Number(dorada.valor))} al mes{dorada.estado === "extraido" && <RotuloProvisional enLinea />}. Hoy, {soles(serieVenta[0].valor)}
-              {serieVenta[0].provisional && <RotuloProvisional enLinea />}.
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* ¿FUNCIONÓ? Va arriba de todo cuando ya hay con qué responder. */}
-      {base && ultimoCorte && (
-        <div className="mb-9">
-          <Avance companyId={c.companyId} base={base} ultimoCorte={ultimoCorte} lectura={lectura} cortes={cortes} numerosListos={r.listos} mesPasado={mesPasado} hoy={hoy} />
-        </div>
-      )}
-
-      {/* Los indicadores propios ya tienen su sección abajo: no se repiten como «otros números». */}
-      <MisNumeros
-        radiografia={{ ...r, otros: r.otros.filter((o) => !clavesInd.has(o.clave)) }}
-        serieVenta={serieVenta}
-        soloDeDocumento={vitalesSoloDeDocumento(metricas)}
-        temporadasAltas={altas}
-        mesesDisponibles={mesesDisponibles}
-      />
-
-      <div className="mt-9">
-        <Indicadores companyId={c.companyId} indicadores={indicadores} valores={valoresInd} zona={zona} horaCierre={horaCierre} />
+        </section>
+        <section className="tarjeta fuentes-tarjeta a-lo-ancho" aria-labelledby="n-nueve">
+          <div className="cabeza">
+            <div>
+              <h2 id="n-nueve">De tus 9 números: {r.listos}</h2>
+              <p className="sub">Lleno: ya nos lo dijiste, aunque sea «no lo sé». Rayado: falta.</p>
+            </div>
+            <Link className="ir" href="#formulario" aria-label="Completar tus números"><Icono nombre="diagonal" /></Link>
+          </div>
+          <div className="fuentes">
+            <div className="fuente">
+              <span className="icono"><Icono nombre="numeros" /></span>
+              <div className="rotulo"><b>Tus números del negocio</b><span>{r.listos} de {r.total}</span></div>
+              <Pista lleno={r.listos} resto={r.total - r.listos} escala={r.total} />
+            </div>
+          </div>
+          <p className="nota" style={{ marginTop: 14 }}>
+            {faltanNombres.length > 0
+              ? `Falta${faltanNombres.length === 1 ? "" : "n"}: ${faltanNombres.join(" · ")}. Sin ellos, cualquier diagnóstico es opinión.`
+              : "Ya diste los nueve. Puedes corregir cualquiera aquí abajo."}
+          </p>
+        </section>
       </div>
 
-      {/* Sin comparación todavía: el punto de partida va abajo, después de que ponga sus números. */}
-      {!(base && ultimoCorte) && (
-        <div className="mt-9">
-          <Avance companyId={c.companyId} base={base} ultimoCorte={ultimoCorte} lectura={lectura} cortes={cortes} numerosListos={r.listos} mesPasado={mesPasado} hoy={hoy} />
-        </div>
-      )}
+      {/* LO QUE SE LLENA, en su hoja: las preguntas. Las cifras ya están arriba, una vez cada una. Los enlaces del tablero bajan hasta aquí. */}
+      <div className="hoja-suelta" id="formulario">
+        <AvisoPedido p={pedido} />
 
-      <ListoPedido p={pedido} />
+        {/* ¿FUNCIONÓ? Va arriba de todo cuando ya hay con qué responder. */}
+        {base && ultimoCorte && (
+          <div className="mb-9">
+            <Avance companyId={c.companyId} base={base} ultimoCorte={ultimoCorte} lectura={lectura} cortes={cortes} numerosListos={r.listos} mesPasado={mesPasado} hoy={hoy} />
+          </div>
+        )}
+
+        {/* Los indicadores propios ya tienen su sección abajo: no se repiten como «otros números». */}
+        <MisNumeros
+          conRadiografia={false}
+          radiografia={{ ...r, otros: r.otros.filter((o) => !clavesInd.has(o.clave)) }}
+          serieVenta={serieVenta}
+          soloDeDocumento={vitalesSoloDeDocumento(metricas)}
+          temporadasAltas={altas}
+          mesesDisponibles={mesesDisponibles}
+        />
+
+        <div className="mt-9">
+          <Indicadores companyId={c.companyId} indicadores={indicadores} valores={valoresInd} zona={zona} horaCierre={horaCierre} />
+        </div>
+
+        {/* Sin comparación todavía: el punto de partida va abajo, después de que ponga sus números. */}
+        {!(base && ultimoCorte) && (
+          <div className="mt-9">
+            <Avance companyId={c.companyId} base={base} ultimoCorte={ultimoCorte} lectura={lectura} cortes={cortes} numerosListos={r.listos} mesPasado={mesPasado} hoy={hoy} />
+          </div>
+        )}
+
+        <ListoPedido p={pedido} />
+      </div>
     </>
   );
 }

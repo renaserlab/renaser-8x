@@ -3,6 +3,17 @@ import { existsSync, readFileSync } from "fs";
 import path from "path";
 import { MODELO, MODELOS_NEGOCIO } from "@/lib/negocio";
 import { AVISO_DATO_NEGATIVO, AVISO_DATO_NO_ENTENDIDO, AVISO_DATO_VACIO } from "@/lib/dato-oral";
+import { BLOQUES } from "@/lib/rules/cobertura";
+import { BLOQUES_ACTIVOS, PISTA_RESPUESTA } from "@/lib/activos";
+import { MATRICES } from "@/lib/rules/matrices";
+import { CULTURAS } from "@/lib/rules/cultura";
+import { PLAN_ENTRADA, CUAL_SE_VENDIO_MAS } from "@/lib/entrada";
+import {
+  VITALES, RECONOCIDAS, VITAL_POR_CLAVE, deCadaDiez, claveDeConteo, campoDeValor, comoSeMide, cuerpoDeNumeros, revisarNumerosEscritos,
+  esCampoDeConteo, AVISO_CONTEO, type FormularioNumeros,
+} from "@/lib/metricas";
+import { PROMPT_ENTREVISTADOR } from "@/lib/ai/agents/entrevistador";
+import { PROMPT_DIAGNOSTICADOR } from "@/lib/ai/agents/diagnosticador";
 
 /**
  * UNA PREGUNTA NO SUGIERE LA RESPUESTA (revisión del 16-10-2026, secciones 3a y 3b).
@@ -121,6 +132,30 @@ const ARCHIVOS = [
   "src/lib/siguiente-accion.ts",
   "src/lib/solicitudes.ts",
   "src/lib/tablero.ts",
+  // Vistas limpias (16-10-2026): cinco vistas para la consultora y cinco destinos para el dueño. Los archivos nuevos con
+  // texto de pantalla de los cuatro constructores; el que todavía no existe se salta (existsSync), no se revisa a medias.
+  "src/app/(cliente)/portal/diagnostico/page.tsx",
+  "src/app/(consultor)/empresa/[id]/avance/page.tsx",
+  "src/app/(consultor)/empresa/[id]/expediente/page.tsx",
+  "src/app/(consultor)/empresa/[id]/numeros/page.tsx",
+  "src/components/cliente/CorregirDato.tsx",
+  "src/components/consultor/EnEstaVista.tsx",
+  "src/components/consultor/MenuAdministrar.tsx",
+  "src/components/consultor/SeguimientoConversacion.tsx",
+  "src/components/diagnostico/PedirAlCliente.tsx",
+  "src/components/diagnostico/TableroDiagnostico.tsx",
+  "src/components/numeros/NueveNumeros.tsx",
+  "src/components/procesos/ResumenProcesos.tsx",
+  "src/lib/correccion-dato.ts",
+  "src/lib/diagnostico-datos.ts",
+  "src/lib/diagnostico-tablero.ts",
+  "src/lib/incongruencias.ts",
+  "src/lib/numeros-vista.ts",
+  "src/lib/vistas-empresa.ts",
+  // Las pantallas que muestran los bancos de preguntas (limpieza del 16-10-2026): «Tus números» y el levantamiento
+  // de documentos, donde estaban las cifras de muestra («p. ej. 8 mil») y las 34 respuestas modelo.
+  "src/components/cliente/MisNumeros.tsx",
+  "src/components/cliente/InventarioActivos.tsx",
 ];
 
 /** Los que no pueden faltar: si uno se mueve, esta lista se actualiza (no se deja de revisar en silencio). */
@@ -381,5 +416,253 @@ describe("los avisos de la caja no traen cifras de muestra (src/lib/dato-oral.ts
       expect(a).not.toMatch(/\d/);
       expect(a).not.toMatch(POR_EJEMPLO);
     }
+  });
+});
+
+/**
+ * LOS BANCOS DE PREGUNTAS Y LAS INSTRUCCIONES DE LAS IA QUE PREGUNTAN (revisión del 16-10-2026, sección 3 y pieza 1).
+ *
+ * La entrevista de una clienta traía cifras dentro de la pregunta y ella las devolvió como suyas. La raíz estaba en
+ * dos lados: los bancos de preguntas (ejemplos entre paréntesis, listas después de dos puntos, dos preguntas pegadas
+ * con «…y», promedios) y la IA que entrevista, que tenía la orden escrita de cerrar cada pregunta con «(Por ejemplo:
+ * …)» y de repreguntar con un menú de opciones. Aquí se recorre todo lo que una persona escucha o lee como pregunta:
+ * los cinco bancos, los nueve números, el plan de la entrada breve, las preguntas de cultura y del modelo de negocio,
+ * y los prompts del entrevistador y del diagnosticador. Una pregunta falla si trae:
+ *  - «Por ejemplo» o «ej.»;
+ *  - una cifra: cualquier dígito, un porcentaje o el marco de una proporción («de cada diez»). Una cantidad que solo
+ *    fija el alcance va en letras («tus últimos cinco clientes»): una pregunta oral no lleva dígitos;
+ *  - una lista: después de dos puntos, entre paréntesis o abierta con «…»;
+ *  - dos preguntas en una: dos signos de abrir o de cerrar pregunta, o una segunda pegada con «y», «o» o «ni»
+ *    («¿Qué vendes y a quién?»). Una pregunta que empieza con «¿Y…» es una sola;
+ *  - «plata»;
+ *  - un promedio en vez del episodio («en un mes normal», «más o menos», «suele»).
+ */
+type DeBanco = { banco: string; texto: string };
+
+const BANCOS: DeBanco[] = [
+  ...Object.entries(BLOQUES).flatMap(([tipo, bloques]) => bloques.flatMap((b) => b.preguntas.map((texto) => ({ banco: `rules/cobertura.ts · ${tipo}.${b.clave}`, texto })))),
+  ...BLOQUES_ACTIVOS.flatMap((b) => b.activos.flatMap((a) => a.preguntas.map((texto) => ({ banco: `activos.ts · ${b.clave}.${a.clave}`, texto })))),
+  ...MATRICES.flatMap((m) => m.preguntas.map((texto) => ({ banco: `rules/matrices.ts · ${m.clave}`, texto }))),
+  ...[...VITALES, ...RECONOCIDAS].flatMap((v) => [v.pregunta, ...(v.seguida ? [v.seguida] : [])].map((texto) => ({ banco: `metricas.ts · ${v.clave}`, texto }))),
+  ...PLAN_ENTRADA.map((p) => ({ banco: `entrada.ts · ${p.clave}`, texto: p.texto })),
+  { banco: "entrada.ts · CUAL_SE_VENDIO_MAS", texto: CUAL_SE_VENDIO_MAS },
+  ...CULTURAS.map((c) => ({ banco: `rules/cultura.ts · ${c.clave}`, texto: c.pregunta })),
+  ...MODELOS_NEGOCIO.flatMap((m) => {
+    const d = MODELO[m];
+    return [d.preguntaPrecio, d.preguntaPrecioPorHora, d.preguntaSegundoPrecio, d.preguntaCosto, d.preguntaVolumen]
+      .filter((p): p is string => !!p)
+      .map((texto) => ({ banco: `negocio.ts · ${m}`, texto }));
+  }),
+];
+const lugar = (t: DeBanco) => `${t.banco} · «${t.texto}»`;
+
+/** Una cifra dentro de la pregunta: un dígito, un porcentaje o el marco de una proporción. */
+const CIFRA = /\d|%|\bpor ciento\b|\bde cada (?:diez|cien|veinte|mil)\b/i;
+/** Una lista: después de dos puntos (con una coma más adelante), entre paréntesis, o abierta con puntos suspensivos. */
+const LISTA_TRAS_DOS_PUNTOS = /:[^:]*,/;
+const ENTRE_PARENTESIS = /\([^)]*\)/;
+const SUSPENSIVOS = /…|\.\.\./;
+/** Una segunda pregunta pegada a la primera con «y», «o» o «ni» («¿qué vendes y a quién?»), no al empezar. */
+const PEGADA = /[^\s¿]\s*,?\s+(?:y|o|ni)\s+(?:(?:a|de|en|con|hasta|desde|para)\s+)?(?:qué|cuánt[oa]s?|cuál(?:es)?|quién(?:es)?|cómo|dónde|cuándo|por qué)(?![\p{L}])/iu;
+const dosPreguntas = (t: string) => cuenta(t, "¿") > 1 || cuenta(t, "?") > 1 || PEGADA.test(t);
+
+describe("los bancos de preguntas no sugieren la respuesta", () => {
+  it("se recorren todos los bancos, y hay preguntas en cada uno", () => {
+    for (const banco of ["rules/cobertura.ts", "activos.ts", "rules/matrices.ts", "metricas.ts", "entrada.ts", "rules/cultura.ts", "negocio.ts"])
+      expect(BANCOS.filter((t) => t.banco.startsWith(banco)).length, banco).toBeGreaterThan(3);
+    expect(BANCOS.length).toBeGreaterThan(250);
+  });
+
+  it("ni «Por ejemplo» ni «ej.»", () => {
+    expect(BANCOS.filter((t) => POR_EJEMPLO.test(t.texto)).map(lugar)).toEqual([]);
+  });
+
+  it("ninguna cifra de ejemplo: ni dígitos, ni porcentajes, ni «de cada diez»", () => {
+    expect(BANCOS.filter((t) => CIFRA.test(t.texto)).map(lugar), "una cifra dentro de la pregunta se devuelve como respuesta").toEqual([]);
+  });
+
+  it("ninguna lista: ni después de dos puntos, ni entre paréntesis, ni abierta con «…»", () => {
+    expect(BANCOS.filter((t) => LISTA_TRAS_DOS_PUNTOS.test(t.texto)).map(lugar), "la lista se queda corta y el dueño solo nombra lo que ve").toEqual([]);
+    expect(BANCOS.filter((t) => ENTRE_PARENTESIS.test(t.texto)).map(lugar), "lo que va entre paréntesis es un ejemplo").toEqual([]);
+    expect(BANCOS.filter((t) => SUSPENSIVOS.test(t.texto)).map(lugar), "«…» abre una lista o pega dos preguntas").toEqual([]);
+  });
+
+  it("una sola pregunta por texto: ni dos signos de pregunta, ni una segunda pegada con «y» u «o»", () => {
+    expect(BANCOS.filter((t) => dosPreguntas(t.texto)).map(lugar)).toEqual([]);
+  });
+
+  it("«dinero», nunca «plata»", () => {
+    expect(BANCOS.filter((t) => PLATA.test(t.texto)).map(lugar)).toEqual([]);
+  });
+
+  it("el episodio, no el promedio: nada de «en un mes normal», «más o menos» ni «suele»", () => {
+    expect(BANCOS.filter((t) => PROMEDIO.test(t.texto) || /\b(?:semana|mes) normal\b/i.test(t.texto)).map(lugar)).toEqual([]);
+  });
+
+  it("la regla atrapa lo que la revisión señaló (si deja de atraparlo, la prueba no prueba nada)", () => {
+    expect(CIFRA.test("De cada 10 personas que preguntan por tu producto, ¿cuántas terminan pagando?")).toBe(true);
+    expect(CIFRA.test("De cada diez personas que preguntan, ¿cuántas compran?")).toBe(true);
+    expect(LISTA_TRAS_DOS_PUNTOS.test("¿Dónde queda apuntado todo: cuaderno, WhatsApp, Excel… o en la cabeza de alguien?")).toBe(true);
+    expect(ENTRE_PARENTESIS.test("¿Cuánto gastas para que te llegue un cliente nuevo (anuncios, comisiones, lo que sea)?")).toBe(true);
+    expect(dosPreguntas("¿Qué vendes, a quién, y qué de todo eso te deja más dinero?")).toBe(true);
+    expect(dosPreguntas("¿Qué vendes y a quién?")).toBe(true);
+    expect(dosPreguntas("¿Hay alguien que haga de todo un poco? ¿Qué cosas?")).toBe(true);
+    expect(PLATA.test("¿Qué es lo que tu empresa NUNCA haría, aunque se pierda plata?")).toBe(true);
+    expect(PROMEDIO.test("En un mes normal, ¿cuánto vendes en total?")).toBe(true);
+    // Y deja pasar lo que está bien: una pregunta que empieza con «¿Y…», o un «y» que no abre otra pregunta.
+    expect(dosPreguntas("¿Y qué recibe de verdad?")).toBe(false);
+    expect(dosPreguntas("Cuéntame lo último que probaron en tu empresa y que nunca habían hecho.")).toBe(false);
+  });
+
+  it("las doce preguntas que señaló la revisión quedaron con su versión buena, en su archivo", () => {
+    const de = (prefijo: string) => BANCOS.filter((t) => t.banco.startsWith(prefijo)).map((t) => t.texto);
+    const entrada = new Map(PLAN_ENTRADA.map((p) => [p.clave, p.texto]));
+    // 2, 3, 4 y 5: la entrada breve, con la otra mitad de cada una en el banco de la entrevista.
+    expect(entrada.get("entrada.ventas_y_ganancia")).toBe("El mes pasado, ¿cuánto vendiste en total?");
+    expect(de("rules/cobertura.ts")).toContain("Ese mes, ¿cuánto dinero sacaste del negocio para ti?");
+    expect(entrada.get("entrada.que_vende_estrella")).toBe("¿Qué vendes? Dime los nombres, uno por uno.");
+    expect(de("rules/cobertura.ts")).toContain("El mes pasado, ¿cuál de esos vendiste más veces?");
+    expect(entrada.get("entrada.que_se_detiene_sin_mi")).toBe("La última vez que faltaste al negocio, ¿qué se quedó esperando hasta que volviste?");
+    expect(entrada.get("entrada.recursos_desaprovechados")).toBe("La semana pasada, ¿qué máquina o espacio del negocio no se usó?");
+    expect(de("rules/cobertura.ts · entrada_breve")).toContain("De los clientes que ya no te compran, ¿de cuántos tienes todavía el número?");
+    // 6 y 7: los nueve números. La conversión se cuenta en dos preguntas; el gasto fijo, sin lista.
+    const conversion = VITAL_POR_CLAVE.get("conversion_de_cada_10")!;
+    expect([conversion.pregunta, conversion.seguida]).toEqual(["El último día que abriste, ¿cuántas personas preguntaron por lo que vendes?", "De ellas, ¿cuántas compraron?"]);
+    expect(VITAL_POR_CLAVE.get("gasto_fijo_mes")!.pregunta).toBe("El mes pasado, sumando todo lo que pagas vendas o no vendas, ¿cuánto pagaste?");
+    // 8, 9 y 10: el banco de la entrevista.
+    for (const q of [
+      "Tu última venta de ayer, ¿dónde quedó anotada?",
+      "El mes pasado, ¿cuánto pagaste en publicidad?",
+      "¿Y en comisiones?",
+      "¿Cuántos clientes nuevos llegaron ese mes?",
+      "¿En qué mes notaste que las ventas empezaban a bajar?",
+      "Ese mes, ¿qué cambió dentro del negocio?",
+      "Y afuera del negocio, ¿qué pasó ese mismo mes?",
+    ]) expect(de("rules/cobertura.ts"), q).toContain(q);
+    // 11: las preguntas del oficio.
+    expect(de("rules/matrices.ts")).toContain("El mes pasado, ¿qué producto vendiste más veces?");
+    // 12: los documentos de la empresa.
+    expect(de("activos.ts")).toEqual(expect.arrayContaining(["Cuéntame una venta que rechazaste.", "¿Por qué la rechazaste?"]));
+  });
+
+  it("los casos que señaló la revisión no vuelven a ningún banco", () => {
+    const todo = BANCOS.map((t) => t.texto).join("\n");
+    for (const viejo of [
+      "por dato o por ojo",
+      "Sueldos, alquiler y servicios",
+      "De cada 10",
+      "aunque se pierda plata",
+      "(anuncios, comisiones",
+      "cuaderno, WhatsApp, Excel",
+      "competencia, precios, la zona",
+      "un local, una máquina, una persona",
+      "Si tú no vas al negocio durante una semana",
+    ]) expect(todo, viejo).not.toContain(viejo);
+  });
+});
+
+describe("la caja de cada pregunta no trae una respuesta modelo (src/lib/activos.ts)", () => {
+  it("la pista es una sola, neutra: sin cifras, sin nombres, sin «Por ejemplo»", () => {
+    expect(PISTA_RESPUESTA).toBe("Cuéntalo con tus palabras.");
+    expect(PISTA_RESPUESTA).not.toMatch(CIFRA);
+    expect(PISTA_RESPUESTA).not.toMatch(POR_EJEMPLO);
+  });
+});
+
+describe("lo que es una proporción se cuenta en dos preguntas, y la cuenta la hace 8X (src/lib/metricas.ts)", () => {
+  const vacio = { periodo: "", monto: "" };
+  const formulario = (valores: Record<string, string>, sinDato: string[] = []): FormularioNumeros => ({
+    valores, meses: {}, mejor: vacio, peor: vacio, sinDato, mesPasado: "2026-09", mesesConVenta: [],
+  });
+  const total = claveDeConteo("conversion_de_cada_10", "total");
+  const parte = claveDeConteo("conversion_de_cada_10", "parte");
+
+  it("de cada diez, con un decimal; sin los dos conteos, con cero personas o con más compras que personas, no hay cuenta", () => {
+    expect(deCadaDiez(8, 2)).toBe(2.5);
+    expect(deCadaDiez(3, 3)).toBe(10);
+    expect(deCadaDiez(7, 0)).toBe(0);
+    for (const [t, p] of [[0, 0], [3, 5], [null, 2], [8, null], [-1, 0]] as const) expect(deCadaDiez(t, p), `${t}/${p}`).toBeNull();
+  });
+
+  it("Tus números envía el número calculado, nunca las dos cajas sueltas", () => {
+    expect(cuerpoDeNumeros(formulario({ [total]: "8", [parte]: "2" })).vitales).toEqual({ conversion_de_cada_10: 2.5 });
+    expect(cuerpoDeNumeros(formulario({ [total]: "8" })).vitales, "con un solo conteo no se inventa la cuenta").toEqual({});
+    expect(cuerpoDeNumeros(formulario({ [total]: "8", [parte]: "2" }, ["conversion_de_cada_10"])).vitales, "«No lo sé» manda").toEqual({});
+  });
+
+  it("un conteo a medias o imposible detiene el guardado y se dice por qué, sin cifras de muestra", () => {
+    expect(revisarNumerosEscritos(formulario({ [total]: "8" }))).toMatchObject({ invalidos: [campoDeValor(parte)], listo: false });
+    expect(revisarNumerosEscritos(formulario({ [parte]: "2" }))).toMatchObject({ invalidos: [campoDeValor(total)], listo: false });
+    expect(revisarNumerosEscritos(formulario({ [total]: "2", [parte]: "5" }))).toMatchObject({ invalidos: [campoDeValor(parte)], listo: false });
+    expect(revisarNumerosEscritos(formulario({ [total]: "8", [parte]: "2" })).listo).toBe(true);
+    expect(revisarNumerosEscritos(formulario({ [total]: "8" }, ["conversion_de_cada_10"])).listo, "con «No lo sé» no se revisa").toBe(true);
+    expect(esCampoDeConteo(campoDeValor(parte))).toBe(true);
+    expect(esCampoDeConteo(campoDeValor("conversion_de_cada_10"))).toBe(false);
+    expect(AVISO_CONTEO).not.toMatch(CIFRA);
+  });
+
+  it("el indicador que nace de la conversión dice cómo se mide: los dos conteos y quién hace la cuenta", () => {
+    const como = comoSeMide(VITAL_POR_CLAVE.get("conversion_de_cada_10")!);
+    expect(como).toContain("¿cuántas personas preguntaron");
+    expect(como).toContain("¿cuántas compraron?");
+    expect(como).toContain("La cuenta la hace 8X");
+    expect(comoSeMide(VITAL_POR_CLAVE.get("venta_mes")!)).toBe(VITAL_POR_CLAVE.get("venta_mes")!.pregunta);
+  });
+});
+
+/**
+ * Las preguntas que escriben las IA salen de sus instrucciones: lo que el prompt pone entre comillas como modelo es lo
+ * que la IA imita. Esas preguntas modelo se revisan con las mismas reglas de los bancos. Los contraejemplos van
+ * marcados «MAL: … ->» y no se revisan: están ahí para que la IA sepa qué no hacer.
+ */
+const preguntasModelo = (prompt: string) =>
+  [...prompt.replace(/MAL:[\s\S]*?->/g, " ").matchAll(/"([^"]*)"/g)].map((m) => m[1]!.replace(/\s+/g, " ").trim()).filter((q) => q.includes("?"));
+
+describe("las IA que preguntan tienen la orden de pedir el episodio, no de dar ejemplos ni opciones", () => {
+  const PROMPTS = { entrevistador: PROMPT_ENTREVISTADOR, diagnosticador: PROMPT_DIAGNOSTICADOR };
+
+  it("las comillas de los prompts están pareadas: si no, las preguntas modelo no se pueden leer", () => {
+    for (const [n, p] of Object.entries(PROMPTS)) expect(cuenta(p, '"') % 2, n).toBe(0);
+  });
+
+  it("ya no está la orden de cerrar con un ejemplo entre paréntesis, ni la de repreguntar con opciones", () => {
+    for (const [n, p] of Object.entries(PROMPTS)) {
+      expect(p, n).not.toMatch(/por ejemplo/i);
+      expect(p, n).not.toMatch(/ejemplo entre parentesis|un ejemplo corto|repregunta concreta con un ejemplo/i);
+      expect(p, n).not.toMatch(/con opciones/i);
+      expect(p, n).not.toMatch(/\(ej[.:]|\bp\.\s?ej\./i);
+      expect(p, n).not.toMatch(/de cada (?:\d+|diez|cien)\b/i);
+    }
+  });
+
+  it("la orden está en positivo: el episodio, una sola cosa, y las tres repreguntas", () => {
+    const e = PROMPT_ENTREVISTADOR;
+    for (const ancla of ['"la ultima vez"', '"el mes pasado"', '"ayer"']) expect(e).toContain(ancla);
+    expect(e).toMatch(/UNA SOLA COSA POR PREGUNTA/);
+    expect(e).toMatch(/LA PREGUNTA NO TRAE LA RESPUESTA/);
+    for (const r of ['"¿como lo sabes?"', '"¿cuando fue la ultima vez?"', '"¿donde se ve?"']) expect(e, r).toContain(r);
+    expect(PROMPT_DIAGNOSTICADOR).toMatch(/LA PREGUNTA NO TRAE LA RESPUESTA/);
+    expect(PROMPT_DIAGNOSTICADOR).toMatch(/EPISODIO antes que el concepto/);
+  });
+
+  it("«dinero», nunca «plata»: la palabra solo aparece en la prohibición misma", () => {
+    for (const [n, p] of Object.entries(PROMPTS)) expect(p.replace(/nunca\s+"plata"/gi, ""), n).not.toMatch(PLATA);
+  });
+
+  it("las preguntas modelo cumplen las mismas reglas que los bancos", () => {
+    for (const [n, p] of Object.entries(PROMPTS)) {
+      const modelos = preguntasModelo(p);
+      expect(modelos.length, n).toBeGreaterThan(3);
+      const malas = modelos.filter(
+        (q) => POR_EJEMPLO.test(q) || CIFRA.test(q) || LISTA_TRAS_DOS_PUNTOS.test(q) || ENTRE_PARENTESIS.test(q) || SUSPENSIVOS.test(q) || dosPreguntas(q) || PLATA.test(q) || PROMEDIO.test(q),
+      );
+      expect(malas, n).toEqual([]);
+    }
+  });
+
+  it("los casos que señaló la revisión no vuelven a los prompts", () => {
+    for (const [n, p] of Object.entries(PROMPTS))
+      for (const viejo of ["Rosa revisa los pedidos", "entran pocos clientes, entran pero no compran", "con el Dia del Padre", "el pago, los", "38%", "de cada 100 soles"])
+        expect(p, `${n}: ${viejo}`).not.toContain(viejo);
   });
 });

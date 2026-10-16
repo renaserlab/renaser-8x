@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { NextResponse } from "next/server";
-import { protegido, ok, fallo, leerValidado } from "@/lib/api";
+import { protegido, ok, fallo, leerValidado, AccesoDenegado } from "@/lib/api";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { empresaDelCliente } from "@/lib/auth";
 import { registrar, ipDe } from "@/lib/auditoria";
@@ -9,6 +9,10 @@ import { filasDeNumeros, VITAL_POR_CLAVE, RECONOCIDA_POR_CLAVE } from "@/lib/met
 import { conCifraDesplazada, escribirConservando, type MetricaGuardada } from "@/lib/rules/contradiccion-numerica";
 import { nombreDePeriodo } from "@/lib/temporadas";
 import { refrescarRuta } from "@/lib/ruta-datos";
+import { exigirAlgunaSeccion } from "@/app/api/companies/[id]/negocio/_comun";
+import {
+  EsquemaCorreccion, filaDeCorreccion, detalleDeRastro, AVISO_SIN_RASTRO, SECCIONES_PARA_CORREGIR, type CorreccionPedida,
+} from "@/lib/correccion-dato";
 
 /**
  * LOS NÚMEROS DEL NEGOCIO, contados por el propio dueño.
@@ -42,6 +46,17 @@ import { refrescarRuta } from "@/lib/ruta-datos";
  *    trae, no que el número esté verificado. Ahí el dueño sí puede dar su cifra (queda contada, y la
  *    fila deja de figurar como conciliada). Antes se le respondía «ya está verificado con un
  *    documento», que era falso; y si escribía 0, se daba por igual a «nada» y no se guardaba ni se decía.
+ *
+ * CORREGIR UN DATO QUE NO CUADRA (16-10-2026, «Tu diagnóstico»). El cuerpo puede traer `correccion` en vez de los
+ * números del formulario: el dueño eligió, ante dos cifras que no cuadran, cuál es la correcta, escribió la que es o
+ * dijo que no lo sabe (src/lib/correccion-dato.ts). Entonces:
+ *  - solo con cuenta de cliente (dueño o líder) y con «Confirmar lo que encontramos» o «Los números que faltan»
+ *    abierta por su consultora; si no, 403 y no se escribe nada;
+ *  - se escribe UNA fila (`filaDeCorreccion`) por el mismo bucle de siempre: lectura entera de la fila previa, la
+ *    cifra del documento conservada al lado, lo verificado no se pisa y se dice;
+ *  - después de guardar, el rastro en audit_log (entidad «correccion_dato», con lo que había a cada lado, lo que
+ *    quedó y la huella de después). Si el rastro falla, el número queda y la respuesta lo dice (`aviso`).
+ * Sin `correccion`, la ruta hace exactamente lo de siempre.
  */
 type NoGuardado = { clave: string; periodo: string; motivo: "verificado" | "error"; texto: string };
 
@@ -84,6 +99,11 @@ const Cuerpo = z.object({
   temporadas: z.object({ altas: z.array(z.string().max(20)).max(12), bajas: z.array(z.string().max(20)).max(12) }).optional(),
   /** Cuando el dueño dice que un número no lo sabe: eso es un hallazgo, no un vacío. */
   sin_dato: z.array(z.string().max(60)).max(12).optional(),
+  /**
+   * Corregir un dato que no cuadra, desde «Tu diagnóstico» (EsquemaCorreccion). Se valida aparte, después de comprobar
+   * que la sección está abierta, para responder con la frase del esquema y no con el nombre de un campo.
+   */
+  correccion: z.unknown().optional(),
 });
 
 export const POST = protegido({}, async (perfil, req) => {
@@ -93,8 +113,19 @@ export const POST = protegido({}, async (perfil, req) => {
   const sb = supabaseAdmin();
   const ahora = new Date().toISOString();
 
-  // Qué entra y en qué periodo queda: una sola regla, la misma que se prueba sin base.
-  const filas = filasDeNumeros(b);
+  // UNA CORRECCIÓN: la escribe el dueño desde su cuenta, con lo que su consultora abrió. Primero el permiso (nada se
+  // lee ni se escribe sin él), después qué pidió.
+  let correccion: CorreccionPedida | null = null;
+  if (b.correccion !== undefined) {
+    if (perfil.rol !== "cliente") throw new AccesoDenegado("Corregir un dato lo hace el empresario desde su cuenta.", "rol", companyId);
+    await exigirAlgunaSeccion(perfil, companyId, [...SECCIONES_PARA_CORREGIR]);
+    const r = EsquemaCorreccion.safeParse(b.correccion);
+    if (!r.success) return fallo(r.error.issues[0]?.message ?? "No entendimos qué quieres corregir.", 400);
+    correccion = r.data;
+  }
+
+  // Qué entra y en qué periodo queda: una sola regla, la misma que se prueba sin base. Con una corrección, una fila.
+  const filas = correccion ? [filaDeCorreccion(correccion)] : filasDeNumeros(b);
 
   let guardados = 0;
   // NADA FALLA EN SILENCIO: antes un guardado que la base rechazaba se contaba igual como guardado
@@ -168,7 +199,7 @@ export const POST = protegido({}, async (perfil, req) => {
     guardados++;
   }
 
-  if (b.temporadas) {
+  if (b.temporadas && !correccion) {
     const { data: empresa } = await sb.from("companies").select("ficha").eq("id", companyId).single();
     const ficha = {
       ...((empresa?.ficha ?? {}) as Record<string, unknown>),
@@ -178,9 +209,35 @@ export const POST = protegido({}, async (perfil, req) => {
     await sb.from("companies").update({ ficha }).eq("id", companyId);
   }
 
+  // EL RASTRO DE LA CORRECCIÓN, después de guardar la cifra y solo si quedó (o ya estaba así): qué había a cada lado,
+  // qué eligió y qué quedó. Con su huella, el diagnóstico sabe que esa diferencia ya la vio el dueño. Se comprueba el
+  // error: si no se anotó, el número sigue guardado y se le dice que avise a su consultora.
+  let aviso: string | null = null;
+  if (correccion && noGuardados.length === 0) {
+    const { error: errorRastro } = await sb.from("audit_log").insert({
+      company_id: companyId,
+      actor_id: perfil.id,
+      actor_rol: perfil.rol,
+      accion: "editar",
+      entidad: "correccion_dato",
+      entidad_id: correccion.id,
+      detalle: detalleDeRastro(correccion, filas[0]?.valor ?? null),
+      ruta: "/api/portal/numeros",
+      ip: ipDe(req),
+    });
+    if (errorRastro) {
+      aviso = AVISO_SIN_RASTRO;
+      void registrarError({
+        ruta: "/api/portal/numeros", metodo: "POST", mensaje: "No se anotó en el rastro la corrección de un dato del dueño",
+        detalle: `${correccion.id}: ${errorRastro.message}`, actorId: perfil.id, companyId,
+      });
+    }
+  }
+
   void registrar({
     companyId, actor: perfil, accion: "editar", entidad: "numeros",
-    detalle: { guardados, no_guardados: noGuardados.length, meses: b.meses?.length ?? 0 }, ruta: "/api/portal/numeros", ip: ipDe(req),
+    detalle: { guardados, no_guardados: noGuardados.length, meses: b.meses?.length ?? 0, ...(correccion ? { correccion: correccion.id } : {}) },
+    ruta: "/api/portal/numeros", ip: ipDe(req),
   });
   const fallidos = noGuardados.filter((n) => n.motivo === "error");
   const verificados = noGuardados.filter((n) => n.motivo === "verificado");
@@ -209,5 +266,5 @@ export const POST = protegido({}, async (perfil, req) => {
     );
   }
   refrescarRuta(companyId, "ruta");
-  return ok({ guardados, no_guardados });
+  return ok({ guardados, no_guardados, ...(aviso ? { aviso } : {}) });
 });

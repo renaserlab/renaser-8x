@@ -3,7 +3,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { pedir } from "@/lib/cliente";
-import { fechaCorta } from "@/lib/textos";
+import { fechaCorta, TIPO_SESION } from "@/lib/textos";
+
+/** El estado de una conversación en palabras, no el código de la base («en_curso»). */
+const ESTADO_SESION: Record<string, string> = { pendiente: "sin empezar", en_curso: "en curso", completa: "completa" };
 
 type P = { id: string; nombre: string; puesto: string | null; rol: string | null; token_expira_at: string | null; token_revocado_at: string | null; token_canjeado_at?: string | null; sesiones: { id: string; tipo: string; estado: string }[] };
 
@@ -92,7 +95,7 @@ export function Participantes({ companyId, participantes }: { companyId: string;
                   <div className="flex flex-wrap gap-2">
                     {p.sesiones.map((s) => (
                       <Link key={s.id} href={`/empresa/${companyId}/entrevista?sesion=${s.id}`} className="t-dato" style={{ color: s.estado === "completa" ? "var(--confirmado)" : s.estado === "en_curso" ? "var(--caducado)" : "var(--grafito)" }}>
-                        {s.tipo} · {s.estado}
+                        {TIPO_SESION[s.tipo] ?? s.tipo} · {ESTADO_SESION[s.estado] ?? s.estado.replace(/_/g, " ")}
                       </Link>
                     ))}
                   </div>

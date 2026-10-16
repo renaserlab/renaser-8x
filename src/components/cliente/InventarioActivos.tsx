@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { pedir } from "@/lib/cliente";
-import { BLOQUES_ACTIVOS, ESTADOS_ACTIVO, EJEMPLOS, type ActivoDef } from "@/lib/activos";
+import { BLOQUES_ACTIVOS, ESTADOS_ACTIVO, PISTA_RESPUESTA, type ActivoDef } from "@/lib/activos";
 import { BotonGrabar } from "@/components/voz/BotonGrabar";
 import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import { DocMd } from "@/components/base/DocMd";
@@ -180,11 +180,13 @@ export function InventarioActivos({ companyId, guardados, prioridades = [], docD
           <label className="t-cuerpo" style={{ fontWeight: 500 }} htmlFor={`${clave}-p${i}`}>{p}</label>
           <div className="flex flex-col gap-2">
             <BotonGrabar grande={false} alTexto={(t) => setRespuestas((r) => ({ ...r, [clave]: { ...(r[clave] ?? {}), [i]: (((r[clave]?.[i] ?? "") + " " + t)).trim() } }))} />
-            {/* EL EJEMPLO VA COMO PLACEHOLDER, NUNCA COMO CONTENIDO (30-08-2026). La dueña de Qori
-                creyó que el ejemplo eran datos suyos —de otro rubro— metidos en su caja, y tuvo que
-                borrarlos letra por letra. En tenue y dentro de la caja se entiende que es una guía, y
-                se va solo al escribir o al dictar. Regla del producto: un ejemplo jamás es `value`. */}
-            <textarea id={`${clave}-p${i}`} aria-label={p} className="campo" rows={2} value={respuestas[clave]?.[i] ?? ""} onChange={(e) => setRespuestas((r) => ({ ...r, [clave]: { ...(r[clave] ?? {}), [i]: e.target.value } }))} placeholder={EJEMPLOS[p] ? `Por ejemplo: ${EJEMPLOS[p]}` : "Con tus palabras — no hay respuestas malas"} />
+            {/* NADA DENTRO DE LA CAJA QUE SE PUEDA REPETIR (16-10-2026). Primero (30-08-2026) el ejemplo salió
+                del contenido de la caja: una dueña creyó que eran datos de otra empresa y tuvo que borrarlos
+                letra por letra. Después se vio que tampoco sirve en tenue: lo que va dentro de la caja se
+                devuelve como respuesta. Ahora la caja trae solo la pista neutra, igual para todas, y la pregunta
+                pide el episodio. Regla del producto: un ejemplo jamás es `value`, y una respuesta modelo
+                tampoco es `placeholder`. */}
+            <textarea id={`${clave}-p${i}`} aria-label={p} className="campo" rows={2} value={respuestas[clave]?.[i] ?? ""} onChange={(e) => setRespuestas((r) => ({ ...r, [clave]: { ...(r[clave] ?? {}), [i]: e.target.value } }))} placeholder={PISTA_RESPUESTA} />
           </div>
         </div>
       ))}
@@ -439,8 +441,8 @@ export function InventarioActivos({ companyId, guardados, prioridades = [], docD
                         <div className="mt-3 flex flex-col gap-2 p-4" style={{ background: "var(--suave)", borderRadius: "var(--radio)" }}>
                           <p className="t-cuerpo" style={{ fontWeight: 500 }}>Un documento confirmado todavía no cambia nada: hay que usarlo.</p>
                           <label className="flex flex-col gap-1">
-                            <span className="t-dato" style={{ color: "var(--grafito)" }}>¿Quién responde por que se use? (una persona, con nombre)</span>
-                            <input className="campo" value={editando[`impl-${clave}`] ?? ""} onChange={(e) => setEditando((x) => ({ ...x, [`impl-${clave}`]: e.target.value }))} placeholder="Ej.: Marta — lo repasa con el equipo el lunes" aria-label={`Responsable de usar ${a.nombre}`} />
+                            <span className="t-dato" style={{ color: "var(--grafito)" }}>¿Quién responde por que se use? Escribe su nombre.</span>
+                            <input className="campo" value={editando[`impl-${clave}`] ?? ""} onChange={(e) => setEditando((x) => ({ ...x, [`impl-${clave}`]: e.target.value }))} placeholder="Su nombre" aria-label={`Responsable de usar ${a.nombre}`} />
                           </label>
                           <button
                             className="boton"

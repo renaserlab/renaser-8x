@@ -8,7 +8,8 @@ import { CortesPlan, type Corte } from "@/components/plan/CortesPlan";
 
 export const dynamic = "force-dynamic";
 
-const soles = (n: number) => `S/${Math.round(n).toLocaleString("es-PE")}`;
+// «S/ 1,200», con espacio, como en el resto del portal (revisión del 16-10-2026: aquí era «S/1,200»).
+const soles = (n: number) => `S/ ${Math.round(n).toLocaleString("es-PE")}`;
 
 /** Lo que falta trabajar y lo que costaría con consultoría tradicional — el valor del acompañamiento, en números. */
 function BrechaAfuera({ personas, assets }: { personas: number | null; assets: { clave: string; estado: string | null }[] }) {
@@ -67,17 +68,18 @@ export default async function PlanClientePag() {
   const personas = Number((empresa?.ficha as { personas?: string } | null)?.personas) || null;
   const visibles = plan.acciones.filter((a) => VISIBLES.includes(a.estado_canonico));
 
+  // SIN ACCIONES TODAVÍA: lo que viene y dónde está lo que encontramos. Sin la lista de precios de afuera (revisión del
+  // 16-10-2026: un plan vacío con «Todo junto, afuera S/ 15,000 – S/ 42,500» se leía como una cotización).
   if (!visibles.length)
     return (
       <>
         <p className="t-etiqueta">Tu plan</p>
         <h1 className="t-titulo mt-2 mb-6">Tu plan se está armando</h1>
         <p className="t-cuerpo medida mb-6" style={{ color: "var(--grafito)" }}>
-          El punto de partida ya vive en <strong>Mi empresa</strong> (la sección «Por dónde empezaría»). Cuando lo convirtamos
-          juntos en acciones con fechas y responsables, aparecen aquí para que marques lo que vas cerrando.
+          Lo que encontramos en tu empresa ya está en <strong>Tu diagnóstico</strong>. Cuando lo convirtamos juntos en
+          acciones con fechas y responsables, aparecen aquí para que marques lo que vas cerrando.
         </p>
-        <Link href="/portal/hoy" className="boton">Ver por dónde empezar</Link>
-        <BrechaAfuera personas={personas} assets={assets ?? []} />
+        <Link href="/portal/diagnostico" className="boton">Ver tu diagnóstico</Link>
       </>
     );
 

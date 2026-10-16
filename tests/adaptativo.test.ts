@@ -97,7 +97,8 @@ describe("Candado de redundancia (queja real: la misma pregunta 5-6 veces)", () 
 
 describe("Biblioteca de documentos (el diagnóstico dicta qué construir)", async () => {
   const { bibliotecaRecomendada } = await import("@/lib/biblioteca");
-  const { BLOQUES_ACTIVOS, EJEMPLOS } = await import("@/lib/activos");
+  const activos = await import("@/lib/activos");
+  const { BLOQUES_ACTIVOS } = activos;
   it("dependencia del fundador → funciones, políticas de decisión y plan de personal", () => {
     const r = bibliotecaRecomendada([{ patron: "dependencia_fundador", pilar: "personas", titulo: "Todo pasa por el dueño", impacto: "alto" }]);
     expect(r.map((x) => x.clave)).toContain("personas.funciones");
@@ -129,29 +130,35 @@ describe("Biblioteca de documentos (el diagnóstico dicta qué construir)", asyn
     const claves = BLOQUES_ACTIVOS.flatMap((b) => b.activos.map((a) => `${b.clave}.${a.clave}`));
     for (const c of ["personas.plan_personal", "personas.reglamento", "personas.cultura"]) expect(claves).toContain(c);
   });
-  it("cada ejemplo apunta a una pregunta que existe (sin claves huérfanas)", () => {
-    const preguntas = new Set(BLOQUES_ACTIVOS.flatMap((b) => b.activos.flatMap((a) => a.preguntas)));
-    for (const k of Object.keys(EJEMPLOS)) expect(preguntas.has(k), `ejemplo huérfano: ${k.slice(0, 60)}`).toBe(true);
+  it("no hay respuestas modelo por pregunta: la caja lleva una sola pista neutra (revisión del 16-10-2026)", () => {
+    // Antes: 34 ejemplos, uno por pregunta, que el dueño repetía. Si alguien los vuelve a poner, falla aquí.
+    expect(activos).not.toHaveProperty("EJEMPLOS");
+    expect(activos.PISTA_RESPUESTA).toBe("Cuéntalo con tus palabras.");
   });
 });
 
 describe("Proyección de pérdida y caminos (feedback de demo)", async () => {
-  const { proyeccionPerdida } = await import("@/lib/perdida");
+  const { bolsasDeFugas } = await import("@/lib/perdida");
   const { caminosDesdeHallazgos } = await import("@/lib/caminos");
-  it("calcula fugas solo con números contados y muestra de dónde sale cada una", () => {
-    const r = proyeccionPerdida([
+  it("calcula fugas solo con números contados, cada una en su bolsa y con de dónde sale", () => {
+    const r = bolsasDeFugas([
       { clave: "venta_mes", periodo: "2026-07", valor: 25000, estado: "contado" },
       { clave: "cobrado_mes", periodo: "2026-07", valor: 18000, estado: "contado" },
       { clave: "venta_epoca_dorada", periodo: "epoca_dorada", valor: 45000, estado: "contado" },
     ]);
-    expect(r.fugas.map((f) => f.concepto)).toContain("Vendido y no cobrado");
-    expect(r.fugas.find((f) => f.concepto === "Vendido y no cobrado")!.monto).toBe(7000);
-    expect(r.fugas.find((f) => f.concepto === "La brecha con tu mejor época")!.monto).toBe(20000);
-    expect(r.totalMensual).toBe(27000);
-    for (const f of r.fugas) expect(f.base.length).toBeGreaterThan(10);
+    expect(r.caja.fugas.find((f) => f.concepto === "Vendido y no cobrado")!.monto).toBe(7000);
+    expect(r.oportunidad.fugas.find((f) => f.concepto === "Volver a vender como en tu mejor época")!.monto).toBe(20000);
+    // Cada bolsa suma solo lo suyo: la caja no lleva la distancia a la mejor época (antes, un total de 27,000).
+    expect(r.caja.alMes).toEqual({ desde: 7000, hasta: 7000 });
+    expect(r.oportunidad.alMes).toEqual({ desde: 20000, hasta: 20000 });
+    for (const f of [...r.caja.fugas, ...r.oportunidad.fugas]) expect(f.base.length).toBeGreaterThan(10);
   });
   it("sin datos no hay fugas — jamás un monto inventado", () => {
-    expect(proyeccionPerdida([]).fugas).toEqual([]);
+    const r = bolsasDeFugas([]);
+    for (const b of [r.caja, r.horas, r.oportunidad]) {
+      expect(b.fugas).toEqual([]);
+      expect(b.alMes).toBeNull();
+    }
   });
   it("los caminos nacen de los hallazgos, en forma de pregunta", () => {
     const r = caminosDesdeHallazgos([

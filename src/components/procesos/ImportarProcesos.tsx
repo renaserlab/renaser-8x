@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { pedir } from "@/lib/cliente";
+import { MenuAcciones } from "@/components/base/MenuAcciones";
 
 type ProcesoPorCrear = { fila: number; nombre: string; area: string | null; responsable: string | null; descripcion: string | null };
 type Omitido = { fila: number; nombre: string | null; motivo: string };
@@ -38,7 +39,23 @@ const NOMBRE_COLUMNA: Record<string, string> = { nombre: "nombre", area: "área"
  * dibujar los procesos» (la página no lo monta sin eso, y la ruta lo exige igual). Mismos dos pasos, en sus palabras:
  * lo que entra queda en «por dibujar», y desde ahí lo abre para subirle su archivo o dibujarlo.
  */
-export function ImportarProcesos({ companyId, enLista = [], base, paraCliente = false }: { companyId: string; enLista?: ProcesoEnLista[]; base?: string; paraCliente?: boolean }) {
+export function ImportarProcesos({
+  companyId,
+  enLista = [],
+  base,
+  paraCliente = false,
+  parte = "todo",
+}: {
+  companyId: string;
+  enLista?: ProcesoEnLista[];
+  base?: string;
+  paraCliente?: boolean;
+  /**
+   * Revisión del 16-10-2026, pantalla de Procesos de la consultora: la lista de lo importado sin dibujar va a la vista
+   * («lista») y el importador, plegado en «Agregar procesos» («formulario»). Sin decirlo, las dos cosas juntas.
+   */
+  parte?: "todo" | "lista" | "formulario";
+}) {
   const router = useRouter();
   const entrada = useRef<HTMLInputElement>(null);
   const [archivo, setArchivo] = useState<File | null>(null);
@@ -116,6 +133,51 @@ export function ImportarProcesos({ companyId, enLista = [], base, paraCliente = 
   };
 
   const sinColumna = (vista?.faltantes ?? []).filter((c) => c !== "nombre");
+
+  const lista = enLista.length > 0 && (
+        <div className={parte === "lista" ? undefined : "mt-6"} style={parte === "lista" ? undefined : { borderTop: "1px solid var(--linea)", paddingTop: 16 }}>
+          <h3 className="t-etiqueta">{paraCliente ? `De tu lista, por dibujar (${enLista.length})` : `De la lista de la empresa, sin dibujar (${enLista.length})`}</h3>
+          <p className="t-dato medida mt-1" style={{ color: "var(--grafito)" }}>
+            {paraCliente
+              ? "Ábrelos uno por uno: súbele a cada uno su archivo y lo dibujamos, o dibújalo tú. Cuando tenga su primer paso, pasa a «Tus procesos»."
+              : "La empresa dijo que estos procesos existen; nadie los ha dibujado. No cuentan en el avance ni entran al diagnóstico. El dueño los ve solo mientras le tengas abierta «Subir o dibujar los procesos». Al guardarle el primer paso, el proceso pasa solo a «Procesos dibujados»."}
+          </p>
+          {errorLista && <p className="t-dato mt-2" role="alert" style={{ color: "var(--contradicho)" }}>{errorLista}</p>}
+          {/* Una tarjeta por proceso, como la lista de los dibujados: abrirlo a la vista, quitarlo en su menú. */}
+          <ul className="procesos-tarjetas mt-3">
+            {enLista.map((p) => (
+              <li key={p.id} className="proceso-tarjeta proceso-tarjeta--chica">
+                <div className="proceso-tarjeta__cuerpo">
+                  <span className="proceso-tarjeta__nombre">{p.nombre}</span>
+                  <p className="proceso-tarjeta__datos">{p.area ?? "sin área"}</p>
+                </div>
+                <div className="proceso-tarjeta__estado">
+                  <span className="estado neutro">sin dibujar</span>
+                </div>
+                <div className="proceso-tarjeta__acciones">
+                  <Link href={`${raiz}/${p.id}`} className="boton boton--secundario">{paraCliente ? "Abrirlo" : "Abrir para dibujarlo"}</Link>
+                  <MenuAcciones etiqueta={`Más acciones de «${p.nombre}»`}>
+                    <button type="button" data-peligro="" onClick={() => setQuitando(p.id)}>Quitar de la lista</button>
+                  </MenuAcciones>
+                </div>
+                {quitando === p.id && (
+                  <div className="proceso-tarjeta__confirmar">
+                    <span className="t-dato">¿Quitar «{p.nombre}» de la lista? No se puede deshacer.</span>
+                    <button type="button" className="boton" style={{ minHeight: 40, fontSize: 13.5, background: "var(--contradicho)", borderColor: "var(--contradicho)" }} disabled={eliminando} onClick={() => quitar(p.id)}>
+                      {eliminando ? "Quitando" : "Sí, quitarlo"}
+                    </button>
+                    <button type="button" className="boton boton--secundario" style={{ minHeight: 40, fontSize: 13.5 }} disabled={eliminando} onClick={() => setQuitando(null)}>
+                      No
+                    </button>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
+
+  if (parte === "lista") return lista ? <section className="por-dibujar">{lista}</section> : null;
 
   return (
     <section className="panel p-5 mb-10">
@@ -251,41 +313,7 @@ export function ImportarProcesos({ companyId, enLista = [], base, paraCliente = 
         </div>
       )}
 
-      {enLista.length > 0 && (
-        <div className="mt-6" style={{ borderTop: "1px solid var(--linea)", paddingTop: 16 }}>
-          <h3 className="t-etiqueta">{paraCliente ? `De tu lista, por dibujar (${enLista.length})` : `De la lista de la empresa, sin dibujar (${enLista.length})`}</h3>
-          <p className="t-dato medida mt-1" style={{ color: "var(--grafito)" }}>
-            {paraCliente
-              ? "Ábrelos uno por uno: súbele a cada uno su archivo y lo dibujamos, o dibújalo tú. Cuando tenga su primer paso, pasa a «Tus procesos»."
-              : "La empresa dijo que estos procesos existen; nadie los ha dibujado. No cuentan en el avance ni entran al diagnóstico. El dueño los ve solo mientras le tengas abierta «Subir o dibujar los procesos». Al guardarle el primer paso, el proceso pasa solo a la tabla de arriba."}
-          </p>
-          {errorLista && <p className="t-dato mt-2" role="alert" style={{ color: "var(--contradicho)" }}>{errorLista}</p>}
-          <ul className="flex flex-col gap-2 mt-3">
-            {enLista.map((p) => (
-              <li key={p.id} className="t-dato flex flex-wrap items-baseline gap-x-4 gap-y-1">
-                <span>{p.nombre}</span>
-                <span style={{ color: "var(--grafito)" }}>{p.area ?? "sin área"}</span>
-                <Link href={`${raiz}/${p.id}`} style={{ color: "var(--marca)", textDecoration: "underline" }}>{paraCliente ? "Abrirlo" : "Abrir para dibujarlo"}</Link>
-                {quitando === p.id ? (
-                  <span className="flex flex-wrap items-center gap-3">
-                    <span>¿Quitar «{p.nombre}» de la lista? No se puede deshacer.</span>
-                    <button type="button" className="boton" style={{ minHeight: 32, fontSize: 13, background: "var(--contradicho)", borderColor: "var(--contradicho)" }} disabled={eliminando} onClick={() => quitar(p.id)}>
-                      {eliminando ? "Quitando" : "Sí, quitarlo"}
-                    </button>
-                    <button type="button" className="t-dato" style={{ background: "none", border: "none", cursor: "pointer", font: "inherit", color: "var(--grafito)" }} disabled={eliminando} onClick={() => setQuitando(null)}>
-                      No
-                    </button>
-                  </span>
-                ) : (
-                  <button type="button" className="t-dato" style={{ background: "none", border: "none", cursor: "pointer", font: "inherit", textDecoration: "underline", color: "var(--grafito)", padding: 0 }} onClick={() => setQuitando(p.id)}>
-                    Quitar de la lista
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {parte !== "formulario" && lista}
     </section>
   );
 }

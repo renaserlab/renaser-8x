@@ -75,7 +75,10 @@ export function PanelMediciones({ companyId, mediciones, actas, acciones, numero
         <>
           <p className="t-cuerpo medida" style={{ color: "var(--grafito)" }}>
             Sin punto de partida no hay contra qué comparar{cortes.length > 0 ? `, y ${cortes.length === 1 ? "hay un corte congelado sin él" : `hay ${cortes.length} cortes congelados sin él`}: no se comparan con nada` : ""}. {numerosListos < 5
-              ? `Le faltan ${9 - numerosListos} números: hasta llegar a 5 no se puede fijar.`
+              ? // Con versiones, FijarPuntoDePartida (debajo) ya dice cuántos tiene y cuántos hacen falta: no se repite.
+                conVersiones
+                ? ""
+                : `Tiene ${numerosListos} de 9 números y hacen falta al menos 5 para fijarlo.`
               : "Ya tiene números suficientes: el dueño puede fijarlo desde Tus números, o se fija desde aquí."}
           </p>
           {conVersiones && <FijarPuntoDePartida companyId={companyId} vigente={null} numerosListos={numerosListos} />}

@@ -34,21 +34,21 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         clave: "organigrama",
         nombre: "Cómo está organizado el equipo",
         ayuda: "Si tienes un organigrama —aunque sea una foto de la pizarra— súbelo. Si no, cuéntanos cómo se organizan.",
-        preguntas: ["¿Quiénes forman la empresa y qué hace cada uno, en una frase por persona?", "¿Quién le responde a quién cuando algo sale mal?", "¿Hay alguien que haga de todo un poco? ¿Qué cosas?"],
+        preguntas: ["¿Quiénes trabajan en la empresa? Dime sus nombres, uno por uno.", "Cada una de esas personas, ¿qué hizo en su último día de trabajo?", "La última vez que algo salió mal, ¿quién le avisó a quién?", "La semana pasada, ¿quién hizo tareas que no son de su puesto?"],
         estructura: "quién dirige, quién reporta a quién, y qué hace cada puesto en una línea; solo personas y puestos que la empresa mencionó",
       },
       {
         clave: "funciones",
         nombre: "Qué se espera de cada puesto",
         ayuda: "Manual de funciones, descripciones de puesto o simplemente lo que cada quien sabe que le toca.",
-        preguntas: ["Toma un puesto clave: ¿qué resultado tiene que entregar para decir que hizo bien su trabajo?", "¿Qué puede decidir esa persona sola y qué tiene que consultar?", "¿Cómo se dan cuenta cuando alguien está fallando en su puesto?"],
+        preguntas: ["Toma un puesto clave: ¿qué resultado tiene que entregar para decir que hizo bien su trabajo?", "La semana pasada, ¿qué decidió esa persona sin consultarte?", "¿Y qué tuvo que consultarte antes de hacerlo?", "La última vez que alguien falló en su puesto, ¿cómo se dieron cuenta?"],
         estructura: "por cada puesto conocido: resultado que entrega, tareas principales, qué decide solo y qué escala, cómo se sabe que lo hizo bien",
       },
       {
         clave: "mvv",
         nombre: "Lo que la empresa quiere ser",
         ayuda: "Misión, visión, valores o propósito escritos. Si nunca se escribieron, cuéntanos qué los mueve.",
-        preguntas: ["¿Para qué existe esta empresa, más allá de ganar dinero?", "¿Qué comportamiento de tu gente te enorgullece y cuál no tolerarías?", "¿Cómo quieres que se sienta un cliente después de tratar con ustedes?"],
+        preguntas: ["¿Para qué existe esta empresa, más allá de ganar dinero?", "¿Qué comportamiento de tu gente no tolerarías?", "¿Cómo quieres que se sienta un cliente después de tratar con ustedes?"],
         estructura: "propósito (por qué existe, en las palabras del dueño), misión (qué hace y para quién), visión (a dónde quiere llegar según lo dicho HOY, no planes viejos), valores (los que se ven en cómo trabajan, con un ejemplo real cada uno)",
       },
       {
@@ -63,7 +63,7 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         clave: "onboarding",
         nombre: "Cómo entra alguien nuevo",
         ayuda: "Qué le enseñan los primeros días, quién y con qué.",
-        preguntas: ["¿Quién le enseña a un nuevo y cuánto tarda en trabajar solo?", "¿Qué es lo primero que un nuevo hace mal casi siempre?"],
+        preguntas: ["La última persona que entró, ¿quién le enseñó?", "¿Cuántos días pasaron hasta que trabajó sola?", "La última persona que entró, ¿qué hizo mal en su primera semana?"],
         estructura:
           "LA PRIMERA SEMANA día por día: qué aprende, con quién y haciendo qué; LO QUE DEBE SABER HACER SOLO al cumplir el mes (lista verificable, sacada de las tareas reales); LOS ERRORES TÍPICOS del nuevo (los que la empresa contó) y cómo evitarlos desde el día uno; QUIÉN LO ACOMPAÑA y responde sus preguntas; y CÓMO SE CONFIRMA que ya está listo: lo demuestra haciendo, no diciendo",
       },
@@ -71,7 +71,7 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         clave: "evaluacion",
         nombre: "Cómo saben si alguien lo hace bien",
         ayuda: "Evaluaciones, conversaciones, indicadores o simple observación.",
-        preguntas: ["¿Cómo te das cuenta de que alguien está rindiendo?", "¿Cada cuánto conversan sobre cómo le va a cada persona?"],
+        preguntas: ["La última vez que notaste que alguien rendía bien, ¿qué viste?", "¿Cuándo fue la última vez que conversaste con alguien del equipo sobre cómo le va?"],
         estructura:
           "POR CADA PUESTO: el resultado que se le mide (su número o el hecho observable que ya usa el dueño) y la conducta que se espera; LA CONVERSACIÓN de seguimiento: cada cuánto, quién la tiene y las 3 preguntas que se hacen; QUÉ PASA con quien rinde (conecta con el reconocimiento) y con quien no (conecta con la escalera de disciplina); DÓNDE queda apuntado; proporcional al tamaño: en una empresa chica es una conversación al mes con apuntes, no un formato de oficina",
       },
@@ -79,21 +79,21 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         clave: "plan_personal",
         nombre: "Qué pasa si alguien falta",
         ayuda: "El plan B por puesto: quién cubre, qué no puede esperar, y qué harías si tu mejor persona renuncia.",
-        preguntas: ["La última vez que alguien faltó sin avisar, ¿qué pasó ese día? ¿Quién cubrió?", "Por cada puesto clave: si esa persona no viene mañana, ¿quién sabe hacer lo suyo?", "¿Qué tarea NO puede esperar ni un día si falta quien la hace?", "Si tu mejor persona renuncia hoy con una semana de aviso, ¿qué harías esa semana?"],
+        preguntas: ["La última vez que alguien faltó sin avisar, ¿qué pasó ese día?", "Ese día, ¿quién hizo lo suyo?", "Toma un puesto clave. Si esa persona no viene mañana, ¿quién sabe hacer lo suyo?", "¿Qué tarea NO puede esperar ni un día si falta quien la hace?", "Si tu mejor persona renuncia hoy con una semana de aviso, ¿qué harías esa semana?"],
         estructura: "por cada puesto clave: quién cubre (plan B), qué tareas no pueden esperar, qué debe quedar escrito para que otro las haga; señales de alerta (tardanzas, bajón de ritmo) y qué se hace a la primera y a la tercera; qué hacer ante una renuncia (la semana de transición)",
       },
       {
         clave: "reglamento",
         nombre: "Las reglas de la casa",
         ayuda: "Reglamento interno: horarios, permisos, faltas, adelantos… las reglas que ya existen aunque nadie las escribió.",
-        preguntas: ["¿Qué reglas ya existen aunque nadie las escribió? (horarios, celular, permisos, adelantos)", "Cuéntame la última vez que tuviste que llamar la atención a alguien: ¿por qué fue y cómo se resolvió?", "¿Cómo se piden los permisos y quién los aprueba? ¿Y las faltas: se descuentan, se recuperan, se conversan?", "¿Qué cosa se permite hoy que sabes que no deberías permitir?"],
+        preguntas: ["¿Qué reglas ya existen aunque nadie las escribió?", "Cuéntame la última vez que tuviste que llamar la atención a alguien.", "Esa vez, ¿cómo se resolvió?", "La última vez que alguien pidió permiso, ¿quién lo aprobó?", "La última vez que alguien faltó, ¿qué pasó con ese día?", "¿Qué cosa se permite hoy que sabes que no deberías permitir?"],
         estructura: "horario y asistencia (tardanzas y faltas: qué pasa), permisos (cómo se piden, quién aprueba), adelantos y préstamos si existen, uso de celular/herramientas, y las 3-5 reglas que el dueño ya aplica en la práctica — cada regla con su consecuencia real, no letra muerta",
       },
       {
         clave: "cultura",
         nombre: "Cómo somos aquí",
         ayuda: "La cultura real: lo que se celebra, lo que no se tolera, y cómo se decide cuando hay que elegir.",
-        preguntas: ["Cuéntame algo que hizo alguien del equipo y te hizo pensar «así quiero que seamos siempre».", "¿Y algo que hizo alguien que te hizo decir «esto aquí no va»?", "Cuando hay que elegir entre hacerlo rápido o hacerlo bien, ¿qué se elige en tu empresa?", "¿Qué se celebra en tu empresa y cómo? ¿Qué te gustaría que se celebre?"],
+        preguntas: ["Cuéntame algo que hizo alguien del equipo y te hizo pensar «así quiero que seamos siempre».", "¿Y algo que hizo alguien que te hizo decir «esto aquí no va»?", "La última vez que hubo que elegir entre hacerlo rápido o hacerlo bien, ¿qué se eligió?", "¿Qué fue lo último que celebraron en tu empresa?", "¿Qué te gustaría que se celebre?"],
         estructura: "cada valor con el EJEMPLO REAL que lo demuestra (la historia contada, con nombre si lo dieron), los límites (lo que aquí no va, con su caso), cómo se decide ante los dilemas típicos (rápido vs bien, cliente vs caja), y qué se celebra; nada de palabras de póster sin historia detrás",
       },
       {
@@ -105,9 +105,9 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         ayuda: "El documento único que dice quiénes son: para qué existe la empresa, a dónde va, cómo se comporta su gente y qué aquí no va. Se arma con lo que ya nos contaste.",
         preguntas: [
           "Si mañana entra alguien nuevo y solo puede leer una hoja para entender cómo son ustedes, ¿qué tendría que decir esa hoja?",
-          "¿Qué es lo que tu empresa NUNCA haría, aunque se pierda plata?",
-          "Cuando alguien de tu equipo tiene un problema personal fuerte, ¿qué pasa en tu empresa?",
-          "¿A quién se le reconoce en tu empresa y por qué? ¿Cómo se entera el resto?",
+          "Cuéntame una venta que rechazaste.", "¿Por qué la rechazaste?",
+          "La última vez que alguien de tu equipo tuvo un problema personal fuerte, ¿qué hizo la empresa?",
+          "La última vez que reconocieron a alguien en tu empresa, ¿por qué fue?", "¿Cómo se enteró el resto del equipo?",
         ],
         estructura: "un solo documento con: para qué existe la empresa (en las palabras del dueño), a dónde quiere llegar, qué hace y para quién, los valores CADA UNO con su historia real, los límites (lo que aquí no va, con su caso), cómo se decide ante los dilemas típicos, qué se celebra, y cómo se comporta alguien nuevo en su primera semana. Un valor sin historia no entra",
         componer: ["personas.mvv", "personas.cultura"],
@@ -119,11 +119,11 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         nombre: "Qué pasa cuando alguien falla",
         ayuda: "Cómo se corrige de verdad: la conversación, el memorándum, y qué queda por escrito. Exigente y bien hecho.",
         preguntas: [
-          "La última vez que alguien hizo algo que no debía, ¿qué pasó? ¿Quién habló con esa persona y qué le dijo?",
-          "Cuando llamas la atención, ¿queda algo escrito y firmado, o solo es conversación?",
-          "¿Qué cosas para ti son un error del que se aprende, y qué cosas no las perdonas nunca?",
-          "Si la misma persona repite la misma falta tres veces, ¿qué pasa hoy en tu empresa?",
-          "Antes de sancionar a alguien, ¿le das oportunidad de explicar su versión?",
+          "La última vez que alguien hizo algo que no debía, ¿qué pasó?", "Esa vez, ¿quién habló con esa persona?",
+          "La última vez que llamaste la atención a alguien, ¿quedó algo escrito?",
+          "La última vez que alguien se equivocó sin querer, ¿qué hiciste?", "¿Qué falta no le perdonarías nunca a nadie de tu equipo?",
+          "La última vez que alguien repitió la misma falta, ¿qué pasó?",
+          "La última vez que sancionaste a alguien, ¿esa persona pudo explicar su versión antes?",
         ],
         estructura:
           "TRES NIVELES DE FALTA con ejemplos REALES de esta empresa (leve / grave / muy grave); LA DIFERENCIA CLAVE: error honesto que se reporta (se corrige y se mejora el proceso) vs negligencia (no cumplió el estándar que debía) vs incumplimiento deliberado (conocía la regla y decidió saltarla); LA ESCALERA en tres pasos: 1) conversación con constancia escrita, 2) memorándum de amonestación firmado, 3) sanción mayor; CÓMO SE DOCUMENTA cada paso: qué dice el memorándum (hecho concreto, fecha, regla incumplida, qué se espera en adelante), quién lo firma, qué hacer si la persona se niega a firmar (constancia con testigo), dónde se archiva; EL DESCARGO: antes de una sanción grave la persona da su versión por escrito — es su derecho y protege a la empresa; QUIÉN APLICA cada nivel; y LO QUE NUNCA SE SANCIONA: reportar un error propio a tiempo. Cierra con la nota de que los plazos y formalidades del despido se validan con asesoría laboral antes de aplicarlos",
@@ -134,11 +134,11 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         nombre: "Quién sabe hacer qué",
         ayuda: "Las tareas clave del negocio y quién las domina de verdad. Para que nada dependa de una sola persona.",
         preguntas: [
-          "Nómbrame las 5 cosas que alguien tiene que saber hacer sí o sí en tu negocio.",
+          "Nómbrame las cosas que alguien tiene que saber hacer sí o sí en tu negocio, una por una.",
           "De cada una: ¿quién la hace hoy sin que nadie lo supervise?",
-          "¿Hay algo que SOLO una persona sabe hacer? ¿Qué pasaría si mañana no viene?",
-          "Cuando alguien nuevo aprende una tarea, ¿cómo te das cuenta de que ya la domina?",
-          "¿Quién enseña a los nuevos, y esa persona tiene tiempo para hacerlo?",
+          "¿Hay algo que SOLO una persona sabe hacer?", "La última vez que esa persona faltó, ¿qué pasó con eso?",
+          "La última vez que alguien aprendió una tarea nueva, ¿cómo te diste cuenta de que ya la dominaba?",
+          "¿Quién le enseñó a la última persona que entró?", "Mientras le enseñaba, ¿quién hizo el trabajo de esa persona?",
         ],
         estructura:
           "TABLA de las tareas críticas × las personas reales, con tres niveles por casilla: APRENDIENDO (necesita supervisión) / LO HACE SOLO / PUEDE ENSEÑARLO; los PUNTOS ÚNICOS DE FALLA marcados (tarea que solo una persona domina) con qué pasaría si esa persona falta; CÓMO SE CERTIFICA cada tarea: qué tiene que demostrar la persona para pasar de nivel (una prueba observable, no un curso), quién lo evalúa y dónde queda registrado; y EL PLAN: qué persona debe aprender qué en los próximos 90 días para cerrar los puntos únicos de falla",
@@ -149,13 +149,13 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         nombre: "Cómo se reconoce al que lo hace bien",
         ayuda: "Qué gana quien cumple y mejora: reconocimiento, crecimiento, o lo que ya haces sin nombrarlo.",
         preguntas: [
-          "¿Cómo reconoces hoy a alguien que hizo un buen trabajo? Cuéntame la última vez.",
-          "¿Tu gente sabe qué tiene que lograr para ganar más o subir de puesto?",
+          "Cuéntame la última vez que reconociste a alguien por un buen trabajo.",
+          "La última vez que alguien ganó más o subió de puesto, ¿qué había logrado?",
           "Si dos personas hacen el mismo puesto y una lo hace mucho mejor, ¿se nota en algo?",
           "¿Alguien de tu equipo se ha ido porque sentía que su esfuerzo no se veía?",
         ],
         estructura:
-          "QUÉ SE RECONOCE, atado a tres cosas medibles: resultado (su número), conducta (los valores de esta empresa en hechos) y responsabilidad; CÓMO se reconoce: lo que ya existe hoy (aunque no tenga nombre) más lo que conviene agregar a este tamaño de empresa — reconocimiento público, crecimiento de puesto, bono si el margen lo permite [por definir: p. ej. S/200]; CADA CUÁNTO se revisa y QUIÉN decide; y la regla anti-favoritismo: el reconocimiento se sustenta en el número o en el hecho observado, nunca en la simpatía",
+          "QUÉ SE RECONOCE, atado a tres cosas medibles: resultado (su número), conducta (los valores de esta empresa en hechos) y responsabilidad; CÓMO se reconoce: lo que ya existe hoy (aunque no tenga nombre) más lo que conviene agregar a este tamaño de empresa — reconocimiento público, crecimiento de puesto, bono si el margen lo permite [monto por definir con el dueño]; CADA CUÁNTO se revisa y QUIÉN decide; y la regla anti-favoritismo: el reconocimiento se sustenta en el número o en el hecho observado, nunca en la simpatía",
       },
     ],
   },
@@ -168,14 +168,14 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         clave: "mapa_procesos",
         nombre: "Las tareas importantes, paso a paso",
         ayuda: "Si tienes procesos escritos o dibujados, súbelos. Si no, en la sección Procesos puedes contarlos y los dibujamos.",
-        preguntas: ["¿Cuáles son las 3 tareas que si fallan, la empresa sufre? (vender, entregar, cobrar…)", "De esas, ¿cuál depende más de la memoria de alguien?"],
+        preguntas: ["¿Qué tareas, si fallan, hacen sufrir a la empresa? Dímelas una por una.", "De esas, ¿cuál depende más de la memoria de alguien?"],
         estructura: "lista de los procesos que la empresa mostró, cada uno con: para qué existe, quién lo hace, con qué empieza y con qué termina; marcar cuáles están dibujados y cuáles solo mencionados",
       },
       {
         clave: "procedimientos",
         nombre: "Guías y manuales escritos",
         ayuda: "Manuales, checklists, instructivos. Aunque estén desactualizados, sirven.",
-        preguntas: ["¿Qué cosas se hacen 'como siempre se hicieron' sin nada escrito?", "Cuando alguien duda de cómo hacer algo, ¿a quién o a qué recurre?"],
+        preguntas: ["¿Qué cosas se hacen 'como siempre se hicieron' sin nada escrito?", "La última vez que alguien dudó de cómo hacer algo, ¿a quién le preguntó?"],
         estructura:
           "INVENTARIO honesto: qué existe escrito (aunque esté viejo) y qué vive solo en la memoria de alguien, con nombre; LAS 3 GUÍAS URGENTES — las tareas que más se repiten o más fallan — cada una con sus pasos numerados tal como se hacen HOY, quién la hace, con qué empieza y cómo se ve terminada bien; DÓNDE VIVEN las guías para que se consulten de verdad (impresas en el puesto, no en un cajón); y QUIÉN las mantiene al día cuando algo cambia",
       },
@@ -183,7 +183,7 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         clave: "politicas",
         nombre: "Las reglas del negocio",
         ayuda: "Descuentos, créditos, devoluciones, permisos: quién decide qué.",
-        preguntas: ["¿Quién puede dar un descuento o fiar, y hasta cuánto?", "¿Qué pasa cuando un cliente pide algo fuera de lo normal? ¿Quién decide?"],
+        preguntas: ["La última vez que se dio un descuento, ¿quién lo dio?", "La última vez que se le fió a un cliente, ¿quién lo decidió?", "Esa vez, ¿cuánto se le fió?", "La última vez que un cliente pidió algo fuera de lo de siempre, ¿quién decidió?"],
         estructura:
           "cada regla que ya existe en la práctica, escrita con su límite exacto: DESCUENTOS (quién puede dar y hasta cuánto), FIADO Y CRÉDITO (a quién, tope en soles y plazo), DEVOLUCIONES Y CAMBIOS (cuándo sí, cuándo no), PEDIDOS FUERA DE LO NORMAL (quién decide); por cada regla: qué puede resolver el equipo SOLO, sin llamar al dueño — el propósito es que el negocio decida sin él; y las 2-3 situaciones repetidas que hoy no tienen regla, con la propuesta para decidirla",
       },
@@ -191,7 +191,7 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         clave: "indicadores",
         nombre: "Los números que revisan",
         ayuda: "Lo que miran cada semana o mes para saber cómo van.",
-        preguntas: ["¿Qué números revisas tú cada semana, aunque sea mentalmente?", "¿Hay algo que te gustaría medir y hoy no puedes?"],
+        preguntas: ["La semana pasada, ¿qué números del negocio revisaste?", "¿Hay algo que te gustaría medir y hoy no puedes?"],
         estructura:
           "LOS NÚMEROS QUE YA MIRA el dueño (aunque sea de memoria), cada uno con: cómo se llama, cómo se calcula con lo que ya apuntan, cada cuánto se mira y qué valor es normal y cuál preocupa (según lo contado, o 'por definir'); LOS 2-3 QUE FALTAN según lo que duele — salidos de las incidencias y de los números vitales — con la forma más simple de empezar a contarlos mañana (una raya en un cuaderno cuenta); QUIÉN los anota y QUIÉN los revisa; sin inventar metas",
       },
@@ -199,7 +199,7 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         clave: "sistemas",
         nombre: "Dónde vive la información",
         ayuda: "Excel, WhatsApp, cuadernos, algún sistema: donde se apunta lo importante.",
-        preguntas: ["Si mañana se pierde tu celular o tu cuaderno, ¿qué información se pierde con él?", "¿Qué se apunta dos veces en lugares distintos?"],
+        preguntas: ["Si mañana se pierde tu celular o tu cuaderno, ¿qué información se pierde con él?", "Ayer, ¿qué tuviste que apuntar dos veces en lugares distintos?"],
         estructura:
           "EL MAPA: qué información vive dónde (cuaderno, WhatsApp, Excel, sistema) y quién la tiene; LO QUE SE PIERDE si se pierde ese celular o cuaderno — el riesgo contado — con su RESPALDO mínimo: qué se copia, a dónde y cada cuánto; LO QUE SE APUNTA DOS VECES y cuál queda como única fuente; y los ACCESOS: quién puede ver y tocar qué, y quién lo decide",
       },
@@ -210,9 +210,9 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         ayuda: "Los problemas que se repiten en el trabajo del día. De aquí salen los números que hay que vigilar.",
         preguntas: [
           "¿Qué problema se repite tanto que ya les parece normal?",
-          "La última vez que pasó, ¿cuánto costó arreglarlo: en dinero, en horas o en un cliente molesto?",
-          "Cuando pasa, ¿quién se da cuenta primero y qué hace?",
-          "¿Hay algo que ya intentaron para que no vuelva a pasar? ¿Funcionó?",
+          "La última vez que pasó, ¿cuánto costó arreglarlo?", "Esa vez, ¿cuántas horas de trabajo se fueron en arreglarlo?",
+          "La última vez que pasó, ¿quién se dio cuenta primero?",
+          "¿Qué intentaron ya para que no vuelva a pasar?", "¿Y qué pasó después de intentarlo?",
         ],
         estructura:
           "por cada incidencia repetida: QUÉ PASA (el hecho concreto, contado), CADA CUÁNTO (de cada 10 veces, cuántas sale mal), QUÉ CUESTA (en soles, horas o clientes — con el número si lo dieron, o 'sin dato' si no), POR QUÉ PASA (la causa, no el culpable: procedimiento poco claro, falta de capacitación, no hay control, o el diseño del proceso), CÓMO SE RESUELVE HOY (el parche actual) y CÓMO SE EVITA (la corrección de fondo); cierra con EL NÚMERO A VIGILAR de cada una — el indicador que avisa si el problema vuelve, con su meta",
@@ -223,11 +223,11 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         nombre: "Cómo se cuida el dinero y la información",
         ayuda: "Los controles que protegen la caja, los datos y los accesos. Sin volver lento el trabajo.",
         preguntas: [
-          "Al cerrar el día, ¿quién cuenta el dinero y quién lo revisa? ¿Es la misma persona?",
+          "Ayer, al cerrar, ¿quién contó el dinero?", "¿Quién lo revisó después?",
           "¿Hay alguna operación que hoy una sola persona puede hacer de principio a fin sin que nadie más la vea?",
           "¿Quién tiene las llaves, las claves y los accesos al dinero o al sistema?",
-          "La última vez que faltó dinero o hubo un descuadre, ¿cómo se dieron cuenta y qué hicieron?",
-          "¿Qué se guarda como respaldo y dónde: contratos, comprobantes, fotos, copias?",
+          "La última vez que faltó dinero en la caja, ¿cómo se dieron cuenta?",
+          "¿Dónde guardan los papeles importantes del negocio?",
         ],
         estructura:
           "por cada punto donde se toca dinero, datos o accesos: QUIÉN LO HACE y QUIÉN LO REVISA (el principio de que quien ejecuta no se autoriza a sí mismo), QUÉ SE CUENTA Y CUÁNDO (arqueos, cierre diario, conciliación con el banco), QUÉ QUEDA REGISTRADO y dónde, QUIÉN TIENE ACCESO a llaves/claves/sistema y quién lo revisa; los RIESGOS ABIERTOS que el levantamiento mostró (operación que una sola persona controla de punta a punta, accesos sin dueño, información sin respaldo) con el control concreto que los cierra; proporcional al tamaño: en una empresa chica el control es el dueño revisando una vez al día, no un área de auditoría",
@@ -243,7 +243,7 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         clave: "catalogo",
         nombre: "Tus productos o servicios",
         ayuda: "Lista, catálogo o foto de la pizarra de precios.",
-        preguntas: ["¿Qué vendes y cuál de todo deja más dinero?", "¿Hay algo que vendes por costumbre y casi no sale?"],
+        preguntas: ["¿Qué vendes? Dime los nombres, uno por uno.", "El mes pasado, ¿cuál vendiste más veces?", "El mes pasado, ¿qué producto casi no se vendió?"],
         estructura:
           "LA LISTA REAL: cada producto o servicio con su precio, su costo si lo dieron (o 'sin dato') y lo que deja por venta; EL ESTRELLA marcado — el que más ganancia deja — con su número y por qué conviene empujarlo; LO QUE CASI NO SALE con la decisión pendiente (mantener, cambiar o soltar); presentado de forma que sirva como lista de precios interna del equipo",
       },
@@ -251,7 +251,7 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         clave: "entrega",
         nombre: "Cómo entregas lo prometido",
         ayuda: "Del pedido a la entrega: pasos, tiempos, quién.",
-        preguntas: ["Desde que el cliente pide hasta que recibe: ¿qué pasa en el medio y cuánto tarda?", "¿Dónde se demora o se traba más seguido?"],
+        preguntas: ["Tu último pedido entregado: cuéntame qué pasó desde que el cliente lo pidió hasta que lo recibió.", "Ese pedido, ¿cuántos días tardó?", "La semana pasada, ¿qué pedido se atrasó?", "Ese pedido, ¿en qué paso se quedó?"],
         estructura:
           "EL CAMINO del pedido a la entrega, paso a paso y con TIEMPOS: lo prometido frente a lo real en cada tramo (con los números contados o 'sin dato'); DÓNDE SE TRABA más seguido y qué lo causa; QUIÉN responde por cada tramo; y EL COMPROMISO DE ENTREGA que la empresa puede prometer hoy con seguridad — el real, no el ideal",
       },
@@ -259,7 +259,7 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         clave: "calidad",
         nombre: "Cómo cuidas la calidad",
         ayuda: "Revisiones, estándares o el criterio de alguien con buen ojo.",
-        preguntas: ["¿Cómo sabes que lo que salió está bien hecho, antes de que lo vea el cliente?", "¿Quién se da cuenta primero cuando algo no está quedando bien, y en qué se fija?"],
+        preguntas: ["Lo último que entregaron, ¿quién revisó que estuviera bien hecho antes de que lo viera el cliente?", "La última vez que algo no estaba quedando bien, ¿quién se dio cuenta primero?", "¿En qué se fijó para darse cuenta?"],
         estructura:
           "EL ESTÁNDAR: cómo se ve 'bien hecho' en esta empresa, en 3-5 puntos observables (sacados del ojo de quien revisa hoy); LA REVISIÓN: quién revisa, en qué momento (siempre antes de que lo vea el cliente) y en qué señales se fija; QUÉ PASA cuando algo no pasa la revisión: se rehace, quién asume y qué se aprende; y el REGISTRO mínimo para saber cuántas veces al mes algo salió mal",
       },
@@ -267,7 +267,7 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         clave: "reclamos",
         nombre: "Reclamos y devoluciones",
         ayuda: "Qué reclaman los clientes y qué hacen ustedes con eso.",
-        preguntas: ["¿Cuál es el reclamo que más se repite?", "¿Qué hacen cuando un cliente reclama? ¿Queda apuntado en algún lado?"],
+        preguntas: ["¿Cuál fue el último reclamo de un cliente?", "El mes pasado, ¿cuántas veces llegó ese mismo reclamo?", "Con ese último reclamo, ¿qué hicieron?", "¿Dónde quedó apuntado?"],
         estructura:
           "LOS RECLAMOS QUE SE REPITEN (los contados, con su frecuencia si la dieron); QUÉ HACER cuando llega uno: los pasos, quién responde, en cuánto tiempo, y hasta dónde resuelve el equipo sin el dueño; DÓNDE QUEDA APUNTADO cada reclamo (fecha, cliente, motivo, cómo se resolvió) — de ese registro sale el número a vigilar; y LA REGLA DE ORO: el reclamo es información gratis del proceso que falló, nunca una molestia que se despacha",
       },
@@ -275,7 +275,7 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         clave: "testimonios",
         nombre: "Lo que dicen tus clientes",
         ayuda: "Reseñas, mensajes de agradecimiento, contratos tipo.",
-        preguntas: ["¿Qué te dicen los clientes contentos que les gusta de ustedes?", "¿Tienes mensajes o reseñas guardados que lo muestren?"],
+        preguntas: ["¿Qué te dijo, con sus palabras, el último cliente que volvió?", "¿Tienes mensajes o reseñas guardados que lo muestren?"],
         estructura:
           "LO QUE VALORAN los clientes, con sus palabras (los mensajes y reseñas reales, citados); DÓNDE SE GUARDAN de ahora en adelante (un solo lugar) y CÓMO SE PIDEN sin incomodar: el momento (justo después del gracias) y la frase; y DÓNDE SE USAN: en la oferta, en las redes, en la pared del local — un testimonio guardado no vende",
       },
@@ -290,7 +290,7 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         clave: "cliente_ideal",
         nombre: "Quién te compra hoy",
         ayuda: "El cliente real, no el del plan: quién es y por qué te elige.",
-        preguntas: ["Describe a tu cliente típico: ¿quién es y qué problema le resuelves?", "¿Por qué te compra a ti y no a otro?"],
+        preguntas: ["Tu último cliente, ¿quién era?", "¿Qué problema le resolviste?", "Tu último cliente, ¿qué te dijo cuando decidió comprarte?"],
         estructura: "quién compra hoy (con los datos reales si existen), qué problema le resuelve la empresa, qué promete (propuesta de valor en una frase), por qué la eligen frente a otras",
       },
       {
@@ -305,7 +305,7 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         clave: "canales",
         nombre: "Por dónde llegan los clientes",
         ayuda: "Referidos, redes, el local, llamadas: por dónde entra la gente.",
-        preguntas: ["¿De dónde llegaron tus últimos 5 clientes nuevos?", "Si esa forma de llegar se apagara un mes, ¿qué pasaría?"],
+        preguntas: ["¿De dónde llegaron tus últimos cinco clientes nuevos?", "Si esa forma de llegar se apagara un mes, ¿qué pasaría?"],
         estructura:
           "POR DÓNDE LLEGARON los últimos clientes (lo contado, en proporción 'de cada 10'); EL CANAL DEL QUE DEPENDEN y el riesgo real si se apaga un mes; QUÉ CUESTA cada canal, en dinero o en tiempo de quién; y EL SIGUIENTE CANAL que conviene probar para no depender de uno solo, con su primer paso concreto y quién lo da",
       },
@@ -313,7 +313,7 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         clave: "proceso_comercial",
         nombre: "Qué pasa con un interesado",
         ayuda: "Del primer mensaje a la venta: pasos y seguimiento.",
-        preguntas: ["Cuando alguien pregunta y no compra en el momento, ¿alguien lo vuelve a buscar?", "¿Dónde queda apuntado quién preguntó y en qué quedaron?"],
+        preguntas: ["La última persona que preguntó y no compró, ¿alguien la volvió a buscar?", "Ayer, ¿dónde quedó apuntado quién preguntó?"],
         estructura:
           "EL CAMINO del interesado: pregunta → respuesta (quién y en cuánto tiempo) → precio o cotización → seguimiento → cierre; DÓNDE SE APUNTA cada interesado (nombre, qué pidió, en qué quedaron) — la lista de interesados ES dinero en espera; LA REGLA DE SEGUIMIENTO: cuándo se vuelve a buscar al que no compró y con qué frase; y EL NÚMERO: de cada 10 que preguntan, cuántos compran hoy — y la meta honesta",
       },
@@ -321,7 +321,7 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         clave: "resultados_comerciales",
         nombre: "Tus números de venta",
         ayuda: "Ventas por mes, cotizaciones enviadas, cuántos terminan comprando.",
-        preguntas: ["¿Cuánto vendes en un mes normal y en uno bueno?", "De cada 10 que preguntan, ¿cuántos compran?"],
+        preguntas: ["El mes pasado, ¿cuánto vendiste?", "Este año, ¿cuál fue el mes que más vendiste?", "El último día que abriste, ¿cuántas personas preguntaron por lo que vendes?", "De ellas, ¿cuántas compraron?"],
         estructura:
           "VENTAS por mes: normal, bueno y malo (los números contados, con su estado); LA CONVERSIÓN de cada 10 que preguntan; EL TICKET típico si se conoce; DE DÓNDE salen estos números hoy, y CÓMO EMPEZAR A CONTARLOS sin sistema: la libreta de interesados y la venta del día; todo con estado a la vista — contado, verificado o sin dato",
       },
@@ -336,7 +336,7 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         clave: "ventas",
         nombre: "Ventas",
         ayuda: "Facturación por mes, aunque salga del cuaderno.",
-        preguntas: ["¿Cuánto vende el negocio al mes, más o menos?", "¿Las ventas van subiendo, bajando o igual que el año pasado?"],
+        preguntas: ["El mes pasado, ¿cuánto vendió el negocio?", "El mismo mes del año pasado, ¿cuánto vendió el negocio?"],
         estructura:
           "la SERIE de ventas por mes tal como se conoce (cada número con su fuente: contado del cuaderno, verificado del sistema, o 'sin dato'); EL MEJOR y EL PEOR mes con su explicación contada; LA TENDENCIA en una frase honesta; y CÓMO SE REGISTRARÁ de ahora en adelante: quién apunta, dónde y cuándo",
       },
@@ -344,7 +344,7 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         clave: "margen",
         nombre: "Lo que queda",
         ayuda: "Margen o utilidad después de los costos, si lo conocen.",
-        preguntas: ["Después de pagar todo, ¿cuánto queda en un mes normal?", "¿Sabes cuál de tus productos o servicios te deja más ganancia por cada venta?"],
+        preguntas: ["El mes pasado, ¿cuánto dinero sacaste del negocio para ti?", "Para tener listo lo que más vendes, ¿qué pagas? Dímelo parte por parte."],
         estructura:
           "DE CADA 100 SOLES vendidos, cuánto queda (el número contado o calculado, con su estado); EL PRODUCTO que más ganancia deja por venta y el que menos; LOS COSTOS que más se comen la venta (los nombrados); y EL NÚMERO A VIGILAR cada mes con la forma más simple de calcularlo con lo que ya apuntan",
       },
@@ -352,7 +352,7 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         clave: "retencion",
         nombre: "Clientes que vuelven",
         ayuda: "Recompra, permanencia, o tu sensación con nombres concretos.",
-        preguntas: ["De tus clientes de hace un año, ¿cuántos siguen comprando?", "¿Sabes por qué se fue el último cliente que se fue?"],
+        preguntas: ["De tus clientes de hace un año, ¿cuántos siguen comprando?", "El último cliente que dejó de comprarte, ¿dónde compra ahora?"],
         estructura:
           "CUÁNTOS clientes de hace un año siguen comprando (el dato o la mejor estimación honesta, con su estado); POR QUÉ SE FUE el último que se fue (lo contado); QUÉ HACE VOLVER a los que vuelven; y CÓMO EMPEZAR A MEDIR la recompra con lo que ya apuntan (la lista de caseros y cuándo compraron por última vez)",
       },
@@ -360,7 +360,7 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         clave: "tiempos",
         nombre: "Tiempos reales",
         ayuda: "Cuánto tarda lo prometido, y cuánto tarda de verdad.",
-        preguntas: ["¿Cuánto prometes de tiempo de entrega y cuánto tarda en realidad?", "¿Qué es lo que más espera un cliente sin necesidad?"],
+        preguntas: ["En tu último pedido, ¿qué día prometiste entregarlo?", "¿Qué día lo entregaste?", "Tu último cliente, ¿en qué momento tuvo que esperar?"],
         estructura:
           "LO PROMETIDO frente a LO REAL por tipo de pedido (con los números contados o 'sin dato'); DÓNDE se pierde tiempo sin necesidad (la espera que nadie cobra); y EL COMPROMISO de tiempo que la empresa puede prometer hoy con seguridad — con la regla de que se promete lo real, no el ideal",
       },
@@ -375,14 +375,14 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
         clave: "estrategia",
         nombre: "La estrategia del negocio",
         ayuda: "A quién le vendes, con qué ganas frente a otros, qué NO haces, y las 3 apuestas del año.",
-        preguntas: ["De todos los que podrían comprarte, ¿a quiénes decidiste dedicarte… y a quiénes NO?", "¿Con qué le ganas a los demás del rubro — qué haces tú que ellos no pueden copiar fácil?", "Si solo pudieras apostar por 3 cosas este año, ¿cuáles serían?", "¿Qué has decidido NO hacer aunque parezca negocio?"],
+        preguntas: ["De todos los que podrían comprarte, ¿a quiénes decidiste dedicarte?", "¿Y a quiénes decidiste NO venderles?", "¿Qué haces tú que los demás del rubro no pueden copiar fácil?", "Si solo pudieras apostar por tres cosas este año, ¿cuáles serían?", "¿Qué has decidido NO hacer aunque parezca negocio?"],
         estructura: "a quién servimos (y a quién no), con qué ganamos (el diferencial demostrado, no declarado), las 3 apuestas del año con su porqué, lo que NO hacemos, y cómo sabremos que la estrategia funciona (2-3 números simples); todo con las palabras y los datos de la empresa",
       },
       {
         clave: "plan_empresarial",
         nombre: "El plan de la empresa",
         ayuda: "El documento que resume el negocio completo: qué es, cómo gana dinero, sus metas y su plan.",
-        preguntas: ["En una frase: ¿qué es tu negocio y para quién?", "¿Cómo entra el dinero: qué vendes, a cuánto, y qué te cuesta?", "¿Cuál es tu meta de este año en dinero y en clientes?", "¿Qué necesitas (gente, equipo, dinero) para llegar a esa meta?"],
+        preguntas: ["En una frase, ¿qué es tu negocio?", "¿Para quién es?", "¿Por dónde entra el dinero al negocio?", "¿Cuánto quieres vender este año?", "¿Cuántos clientes quieres tener a fin de año?", "¿Qué te falta para llegar a esa meta?"],
         estructura: "resumen del negocio (qué es, para quién, con qué gana), cómo entra el dinero (productos, precios, costos y ganancia según lo contado), la foto de hoy (números con estado), las metas del año (las del dueño, no inventadas), el plan por frentes con responsable y primer paso, y los riesgos que el diagnóstico encontró",
       },
     ],
@@ -390,46 +390,13 @@ export const BLOQUES_ACTIVOS: BloqueActivos[] = [
 ];
 
 /**
- * Ejemplos por pregunta: abren la memoria del que responde (queja real: "no entiendo esa pregunta").
- * Se muestran en gris bajo la pregunta. Clave = texto exacto de la pregunta.
+ * LO QUE VA DENTRO DE LA CASILLA DE CADA PREGUNTA (revisión del 16-10-2026, pregunta 12 de la sección 3a). Hasta hoy
+ * había 34 respuestas modelo, una por pregunta, que se mostraban dentro de la casilla como «Por ejemplo: …». Lo que va
+ * dentro de la casilla se devuelve como respuesta: el dueño repetía la cifra, el nombre o la lista del ejemplo. Ahora
+ * la pregunta pide el episodio («la última vez», «el mes pasado») y eso abre la memoria sin poner palabras en la boca;
+ * en la casilla va solo esta pista, igual para todas.
  */
-export const EJEMPLOS: Record<string, string> = {
-  // Disciplina, habilidades, mérito, incidencias y controles: temas delicados, ejemplos que abren la memoria.
-  "La última vez que alguien hizo algo que no debía, ¿qué pasó? ¿Quién habló con esa persona y qué le dijo?": "«Llegó tarde tres días seguidos; le hablé yo en la mañana y quedamos en que avisaba si se le hacía tarde.»",
-  "Cuando llamas la atención, ¿queda algo escrito y firmado, o solo es conversación?": "«Solo hablamos; nunca hemos hecho un papel.»",
-  "¿Qué cosas para ti son un error del que se aprende, y qué cosas no las perdonas nunca?": "«Que se equivoque en un vuelto, se aprende. Que agarre plata de la caja, no.»",
-  "Si la misma persona repite la misma falta tres veces, ¿qué pasa hoy en tu empresa?": "«Le vuelvo a llamar la atención… la verdad es que no pasa nada más.»",
-  "Nómbrame las 5 cosas que alguien tiene que saber hacer sí o sí en tu negocio.": "«Atender al cliente, cobrar y dar vuelto, cerrar la caja, hacer el pedido al proveedor y limpiar el local.»",
-  "¿Hay algo que SOLO una persona sabe hacer? ¿Qué pasaría si mañana no viene?": "«Solo Rosa sabe hacer el pedido al proveedor; si falta, ese día no pedimos.»",
-  "Cuando alguien nuevo aprende una tarea, ¿cómo te das cuenta de que ya la domina?": "«Cuando lo veo hacerlo tres veces sin preguntarme nada.»",
-  "¿Cómo reconoces hoy a alguien que hizo un buen trabajo? Cuéntame la última vez.": "«Le dije 'buen trabajo' delante de todos y le invité el almuerzo.»",
-  "¿Qué problema se repite tanto que ya les parece normal?": "«Que el pedido llegue incompleto del proveedor; ya sabemos que hay que contarlo todo.»",
-  "La última vez que pasó, ¿cuánto costó arreglarlo: en dinero, en horas o en un cliente molesto?": "«Perdimos media mañana y un cliente se fue sin comprar.»",
-  "Al cerrar el día, ¿quién cuenta el dinero y quién lo revisa? ¿Es la misma persona?": "«Lo cuenta la cajera y lo vuelvo a contar yo antes de guardarlo.»",
-  "¿Quién tiene las llaves, las claves y los accesos al dinero o al sistema?": "«Yo y mi hermana tenemos llave; la clave del sistema la sabemos los dos.»",
-  "¿Quiénes forman la empresa y qué hace cada uno, en una frase por persona?": "«Somos 4: yo vendo y compro; Marta atiende la caja; Luis reparte; mi hijo ve las redes.»",
-  "¿Quién le responde a quién cuando algo sale mal?": "«Si un pedido sale mal, Luis me avisa a mí y yo hablo con el cliente.»",
-  "Toma un puesto clave: ¿qué resultado tiene que entregar para decir que hizo bien su trabajo?": "«La cajera tiene que cuadrar la caja al centavo cada noche.»",
-  "La última vez que contrataron a alguien, ¿cómo fue, paso a paso?": "«Pusimos un aviso, vinieron tres personas, conversamos y escogimos a la más puntual.»",
-  "¿Quién le enseña a un nuevo y cuánto tarda en trabajar solo?": "«Lo pongo una semana al lado de Marta; al mes ya atiende solo.»",
-  "¿Cómo te das cuenta de que alguien está rindiendo?": "«Veo cuántos pedidos saca al día y si los clientes se quejan o lo felicitan.»",
-  "¿Quién puede dar un descuento o fiar, y hasta cuánto?": "«Solo yo doy descuentos; Marta puede fiar hasta 50 soles a caseros conocidos.»",
-  "¿Qué pasa cuando un cliente pide algo fuera de lo normal? ¿Quién decide?": "«Si piden entrega un domingo, me llaman y yo decido.»",
-  "¿Qué números revisas tú cada semana, aunque sea mentalmente?": "«Cuánto vendí, cuánto debo a proveedores y cuánto me deben a mí.»",
-  "Si mañana se pierde tu celular o tu cuaderno, ¿qué información se pierde con él?": "«Los pedidos apuntados, los números de los caseros y quiénes me deben.»",
-  "¿Cómo sabes que lo que salió está bien hecho, antes de que lo vea el cliente?": "«Antes de entregar, yo mismo reviso cada pedido: que esté completo y bien presentado.»",
-  "¿Quién se da cuenta primero cuando algo no está quedando bien, y en qué se fija?": "«Rosa se da cuenta al toque: mira el color de la masa y ya sabe si va a salir mal.»",
-  "¿Cuál es el reclamo que más se repite?": "«Que la entrega llegó tarde», «que no era el color que pidieron».",
-  "Describe a tu cliente típico: ¿quién es y qué problema le resuelves?": "«Mamás de la zona que quieren la torta del cumpleaños sin complicarse.»",
-  "¿Qué cosas se hacen 'como siempre se hicieron' sin nada escrito?": "«El inventario se cuenta como lo hacía mi papá: al ojo, cada fin de mes.»",
-  "La última vez que alguien faltó sin avisar, ¿qué pasó ese día? ¿Quién cubrió?": "«Faltó el repartidor y yo mismo salí a repartir; se atrasaron tres pedidos.»",
-  "Por cada puesto clave: si esa persona no viene mañana, ¿quién sabe hacer lo suyo?": "«Si falta la cajera, Marta sabe cobrar; si falta el maestro, nadie — ese es el hueco.»",
-  "¿Qué reglas ya existen aunque nadie las escribió? (horarios, celular, permisos, adelantos)": "«Se entra 8:30, el celular se deja en el cajón en atención, los permisos se piden con un día.»",
-  "Cuéntame la última vez que tuviste que llamar la atención a alguien: ¿por qué fue y cómo se resolvió?": "«Llegaba tarde toda la semana; conversamos y quedamos en que avisa por WhatsApp si se retrasa.»",
-  "Cuéntame algo que hizo alguien del equipo y te hizo pensar «así quiero que seamos siempre».": "«Luis se quedó hasta tarde para rehacer un pedido que salió mal, sin que nadie se lo pidiera.»",
-  "¿Y algo que hizo alguien que te hizo decir «esto aquí no va»?": "«Uno le echó la culpa al compañero delante del cliente. Eso aquí no va.»",
-  "Cuando alguien duda de cómo hacer algo, ¿a quién o a qué recurre?": "«Le pregunta a Marta, que es la más antigua. Si ella no está, me llaman.»",
-};
+export const PISTA_RESPUESTA = "Cuéntalo con tus palabras.";
 
 export const ESTADOS_ACTIVO: { clave: string; nombre: string; sub: string }[] = [
   { clave: "lo_tengo", nombre: "Lo tengo", sub: "Súbelo aquí mismo" },

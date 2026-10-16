@@ -2,7 +2,7 @@ import Link from "next/link";
 import { contextoPortal } from "@/lib/portal";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { empresaHoy, esDeDocumentos, ROTULO_POR_CONFIRMAR, type HallazgoHoy, type PorConfirmarHoy } from "@/lib/hoy";
-import { proyeccionPerdida } from "@/lib/perdida";
+import { bolsasDeFugas } from "@/lib/perdida";
 import { caminosDesdeHallazgos } from "@/lib/caminos";
 import type { Metrica } from "@/lib/rules/anomalias";
 import { ESTADO_PILAR, PILAR_CLIENTE, fechaMes } from "@/lib/textos";
@@ -17,6 +17,8 @@ import { rastroDeEmpresa } from "@/lib/auditoria";
 import { BLOQUES_ACTIVOS } from "@/lib/activos";
 import { bloquesSinCubrir } from "@/lib/rules/cobertura";
 import { documentoQueResuelve } from "@/lib/biblioteca";
+import { monedaParaFugas } from "@/components/negocio/datos";
+import { BolsasDeFugas, hayAlgoEnLasBolsas } from "@/components/cliente/BolsasDeFugas";
 
 const soles = (n: number) => `S/${Math.round(n).toLocaleString("es-PE")}`;
 
@@ -135,12 +137,13 @@ export default async function Hoy() {
   const c = await contextoPortal();
   if (!c.companyId) return <p className="t-cuerpo medida">{c.queFalta}</p>;
   const sbHoy = supabaseAdmin();
-  const [hoy, { data: metricasRaw }, { data: empresaFila }, { data: assets }, { data: sesiones }] = await Promise.all([
+  const [hoy, { data: metricasRaw }, { data: empresaFila }, { data: assets }, { data: sesiones }, monedaFugas] = await Promise.all([
     empresaHoy(c.companyId),
     sbHoy.from("company_metricas").select("clave,periodo,valor,estado").eq("company_id", c.companyId).limit(80),
     sbHoy.from("companies").select("nombre,ficha").eq("id", c.companyId).single(),
     sbHoy.from("company_assets").select("clave,estado").eq("company_id", c.companyId),
     sbHoy.from("interview_sessions").select("id,tipo,bloques_cubiertos").eq("company_id", c.companyId),
+    monedaParaFugas(c.companyId),
   ]);
   const fichaEmpresa = ((empresaFila?.ficha ?? {}) as Record<string, string>);
   // Avance por bloque de la biblioteca: cuántos documentos de cada área ya tienen material.
@@ -165,7 +168,8 @@ export default async function Hoy() {
       ((s as { bloques_cubiertos?: string[] }).bloques_cubiertos ?? []) as string[]
     ).map((b) => b.nombre)
   ).filter((v, i, a) => a.indexOf(v) === i);
-  const perdida = proyeccionPerdida((metricasRaw ?? []) as Metrica[]);
+  // Las fugas en sus tres bolsas (caja, horas, oportunidad), que nunca se suman: src/lib/perdida.ts.
+  const fugas = bolsasDeFugas((metricasRaw ?? []) as Metrica[], { moneda: monedaFugas });
   // LOS NUEVE NÚMEROS: sin ellos el diagnóstico es opinión, así que se dice cuántos faltan.
   const radio = radiografia((metricasRaw ?? []) as MetricaVital[]);
   const deriv = derivados((metricasRaw ?? []) as MetricaVital[]);
@@ -218,24 +222,13 @@ export default async function Hoy() {
         </p>
       )}
 
-      {/* EL DINERO COMO HÉROE: una afirmación en grande, no una cajita más. */}
-      {perdida.fugas.length > 0 && (
+      {/* EL DINERO COMO HÉROE, en tres bolsas que no se suman: lo que se te está yendo (la única en grande y en rojo),
+          tu tiempo y lo que podrías vender. Antes iban sumadas en una sola cifra «que podrías estar perdiendo», y la
+          distancia a la mejor época se leía como dinero que se escapaba. */}
+      {hayAlgoEnLasBolsas(fugas) && (
         <section>
-          <p className="t-etiqueta mb-2">Lo que tus números dicen que podrías estar perdiendo</p>
-          {perdida.totalMensual > 0 && (
-            <p className="num-grande" style={{ color: "var(--contradicho)", fontSize: "clamp(30px, 6vw, 40px)" }}>
-              ~{soles(perdida.totalMensual)} <span className="t-cuerpo" style={{ color: "var(--grafito)", fontFamily: "var(--font-ui)" }}>al mes</span>
-            </p>
-          )}
-          <ul className="lista-editorial mt-4">
-            {perdida.fugas.map((f, i) => (
-              <li key={i}>
-                <span className="t-cuerpo" style={{ fontWeight: 550 }}>{f.concepto} · {soles(f.monto)}{f.mensual ? "/mes" : ""}</span>
-                <span className="block t-dato" style={{ color: "var(--grafito)" }}>De dónde sale: {f.base}.</span>
-              </li>
-            ))}
-          </ul>
-          <p className="t-dato mt-3" style={{ color: "var(--grafito)" }}>Calculado solo con lo que tú contaste o mostraste — nada está inventado.</p>
+          <BolsasDeFugas fugas={fugas} Encabezado="h2" />
+          <p className="t-dato mt-4" style={{ color: "var(--grafito)" }}>Son tres cuentas separadas: no se suman. Calculado solo con lo que tú contaste o mostraste — nada está inventado.</p>
         </section>
       )}
 

@@ -76,7 +76,7 @@ export function DebeSer({ companyId, sueno, aspiracion, modelo, fecha }: { compa
           <p className="t-etiqueta mb-2" style={{ color: "var(--marca)" }}>CÓMO QUEREMOS QUE SEA (tu declaración de diseño)</p>
           {editando ? (
             <div className="flex flex-col gap-3">
-              <textarea className="campo" rows={4} aria-label="Cómo queremos que sea" value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="La ambición dirigida: «una casa de cambio con estándar de entidad financiera: atención A1 en 3 minutos, caja impecable, cumplimiento al día, y el dueño fuera de la operación en 12 meses»" />
+              <textarea className="campo" rows={4} aria-label="Cómo queremos que sea" value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="La ambición dirigida, en una o dos frases: el estándar que se busca, cómo se va a medir y dónde queda el dueño en 12 meses" />
               <div className="flex gap-3">
                 <button className="boton" onClick={guardarAspiracion} disabled={ocupado === "aspiracion" || !texto.trim()}>{ocupado === "aspiracion" ? "Guardando…" : "Guardar"}</button>
                 {aspiracion && <button className="boton boton--secundario" onClick={() => { setTexto(aspiracion); setEditando(false); }}>Cancelar</button>}

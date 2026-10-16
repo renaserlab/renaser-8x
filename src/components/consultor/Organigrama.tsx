@@ -5,6 +5,7 @@ import { pedir } from "@/lib/cliente";
 import type { Puesto, ReglaEstudio } from "@/lib/rules/organigrama";
 import { nivelesDelArbol } from "@/lib/rules/organigrama";
 import { EstudioOrganigrama, type EstudioIA } from "@/components/consultor/EstudioOrganigrama";
+import { MenuAcciones } from "@/components/base/MenuAcciones";
 
 /**
  * EL ORGANIGRAMA COMO ESTUDIO (pedido de Kelin): no es un dibujo libre — cada puesto lleva misión,
@@ -117,7 +118,15 @@ export function Organigrama({ companyId, puestos, estudio, estudioIA, estudioFec
                     const vacante = !p.persona?.trim();
                     return (
                       <article key={p.id} className="panel p-4" style={{ width: 250, borderTop: `2.5px solid ${vacante ? "var(--caducado)" : "var(--marca)"}` }}>
-                        <p className="t-seccion" style={{ fontSize: 15 }}>{p.nombre}</p>
+                        {/* Editar y quitar van en el menú de la tarjeta (revisión del 16-10-2026): subrayados al pie de
+                            cada puesto eran ruido, y «Quitar» a un toque de «Editar», un riesgo. */}
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="t-seccion" style={{ fontSize: 15, minWidth: 0 }}>{p.nombre}</p>
+                          <MenuAcciones etiqueta={`Acciones del puesto «${p.nombre}»`}>
+                            <button type="button" onClick={() => setEditando(p)}>Editar el puesto</button>
+                            <button type="button" data-peligro="" onClick={() => setBorrando(p.id)}>Quitar el puesto</button>
+                          </MenuAcciones>
+                        </div>
                         <p className="t-dato" style={{ color: vacante ? "var(--caducado)" : "var(--tinta)", fontWeight: 600 }}>{p.persona?.trim() || "Vacante"}</p>
                         {p.mision && <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>{p.mision}</p>}
                         {p.decide && <p className="t-dato mt-1" style={{ color: "var(--marca)" }}>Decide: {p.decide}</p>}
@@ -125,18 +134,13 @@ export function Organigrama({ companyId, puestos, estudio, estudioIA, estudioFec
                           {i > 0 && nombreDe(p.reporta_a) ? `Reporta a ${nombreDe(p.reporta_a)}` : i > 0 ? "Sin jefe asignado" : "Cabeza de la estructura"}
                           {p.respaldo ? ` · lo cubre ${p.respaldo}` : ""}
                         </p>
-                        <div className="no-imprimir mt-2 flex gap-3">
-                          <button type="button" className="t-dato" style={{ background: "none", border: "none", cursor: "pointer", font: "inherit", textDecoration: "underline", color: "var(--marca)", padding: 0 }} onClick={() => setEditando(p)}>Editar</button>
-                          {borrando === p.id ? (
-                            <span className="t-dato">
-                              ¿Seguro?{" "}
-                              <button type="button" style={{ background: "none", border: "none", cursor: "pointer", font: "inherit", color: "var(--contradicho)", textDecoration: "underline", padding: 0 }} disabled={guardando} onClick={() => quitar(p.id)}>Sí, quitarlo</button>{" "}
-                              <button type="button" style={{ background: "none", border: "none", cursor: "pointer", font: "inherit", color: "var(--grafito)", padding: 0 }} onClick={() => setBorrando(null)}>No</button>
-                            </span>
-                          ) : (
-                            <button type="button" className="t-dato" style={{ background: "none", border: "none", cursor: "pointer", font: "inherit", textDecoration: "underline", color: "var(--grafito)", padding: 0 }} onClick={() => setBorrando(p.id)}>Quitar</button>
-                          )}
-                        </div>
+                        {borrando === p.id && (
+                          <div className="no-imprimir mt-3 flex flex-wrap items-center gap-2" style={{ borderTop: "1px solid var(--linea)", paddingTop: 10 }}>
+                            <span className="t-dato">¿Quitar este puesto?</span>
+                            <button type="button" className="boton" style={{ minHeight: 36, fontSize: 13, padding: "0 12px", background: "var(--contradicho)", borderColor: "var(--contradicho)" }} disabled={guardando} onClick={() => quitar(p.id)}>Sí, quitarlo</button>
+                            <button type="button" className="boton boton--secundario" style={{ minHeight: 36, fontSize: 13, padding: "0 12px" }} onClick={() => setBorrando(null)}>No</button>
+                          </div>
+                        )}
                       </article>
                     );
                   })}

@@ -746,7 +746,9 @@ describe("la pantalla y la ruta usan la regla (lectura del código fuente)", () 
   const SRC = path.resolve(__dirname, "../src");
   const ruta = readFileSync(path.join(SRC, "app/api/companies/[id]/configuracion/route.ts"), "utf8");
   const pantalla = readFileSync(path.join(SRC, "components/consultor/ConfiguracionEmpresa.tsx"), "utf8");
-  const pagina = readFileSync(path.join(SRC, "app/(consultor)/empresa/[id]/page.tsx"), "utf8");
+  // Desde el 16-10-2026 el acceso a la configuración vive en el menú «Administrar» de la cabecera de la empresa (layout de
+  // /empresa/[id], dentro de <MenuAdministrar>), no en la portada: sale en todas las vistas de la empresa.
+  const pagina = readFileSync(path.join(SRC, "app/(consultor)/empresa/[id]/layout.tsx"), "utf8");
   const modulo = readFileSync(path.join(SRC, "lib/formato.ts"), "utf8");
 
   it("la ruta PATCH exige autoridad para administrar y valida con Zod y las mismas listas", () => {
@@ -775,6 +777,9 @@ describe("la pantalla y la ruta usan la regla (lectura del código fuente)", () 
   it("la página de la empresa da acceso a la configuración con lo que la empresa declaró", () => {
     expect(pagina).toMatch(/import \{ ConfiguracionEmpresa \} from "@\/components\/consultor\/ConfiguracionEmpresa"/);
     expect(pagina).toMatch(/<ConfiguracionEmpresa companyId=\{id\} actual=\{configDe\(c\)\} \/>/);
+    // Dentro del menú «Administrar», que se pinta en todas las vistas de la empresa.
+    expect(pagina.indexOf("<ConfiguracionEmpresa")).toBeGreaterThan(pagina.indexOf("<MenuAdministrar>"));
+    expect(pagina.indexOf("<ConfiguracionEmpresa")).toBeLessThan(pagina.indexOf("</MenuAdministrar>"));
   });
   it("el módulo no trae dependencias ni caracteres invisibles: todo sale de Intl", () => {
     expect(modulo).not.toMatch(/^import /m);

@@ -469,8 +469,7 @@ export function tableroRentabilidad(e: EntradaTablero): TableroRentabilidad {
   }
 
   // ── Moneda, crédito, inventario
-  const monedaActiva = e.ficha.modulos.moneda === true || e.operaciones.length > 0;
-  const moneda = monedaActiva ? resumenMoneda(e.operaciones, e.ficha, fmt) : null;
+  const moneda = fugaDeMoneda(e.operaciones, e.ficha, cfg);
   const creditoActivo = e.ficha.modulos.credito === true || Object.keys(e.ficha.credito ?? {}).length > 0;
   const credito = creditoActivo ? calcularCredito(e.ficha.credito, e.metricas, fmt) : null;
   const inventarioActivo = e.ficha.modulos.inventario === true || Object.keys(e.ficha.inventario ?? {}).length > 0;
@@ -731,6 +730,14 @@ function resumenMoneda(operaciones: OperacionMoneda[], f: FichaNegocio, fmt: (n:
     base.limitaciones.push("Sin cuántas operaciones hay al mes y de cuánto suele ser cada una, no hay estimado del mes.");
   }
   return { operaciones: fugas, resumen: { ...base, valor: { esperado, recibido, perdido, pct, mes_estimado, al_menos } } };
+}
+
+/**
+ * Lo que se queda en el camino al cobrar en otra moneda, también fuera del tablero: la caja de las fugas del dueño
+ * (src/lib/perdida.ts) lo usa tal cual. null si la empresa no cobra en otra moneda (ni lo dijo ni anotó ventas).
+ */
+export function fugaDeMoneda(operaciones: OperacionMoneda[], f: FichaNegocio, cfg: ConfigEmpresa = porDefecto): TableroRentabilidad["moneda"] {
+  return f.modulos.moneda === true || operaciones.length > 0 ? resumenMoneda(operaciones, f, plata(cfg)) : null;
 }
 
 // ─── Crédito e inventario ────────────────────────────────────────────────────────────────────────

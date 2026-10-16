@@ -80,12 +80,21 @@ export function BarraRuta({
   para,
   enlace,
   fallo = false,
+  compacta = false,
+  faltaAbierta = false,
 }: {
   avance: AvanceRuta | null;
   para: "consultora";
   enlace?: string;
   /** La lectura del avance falló (no es lo mismo que una base sin la ruta): se dice y se dice qué hacer. */
   fallo?: boolean;
+  /**
+   * Una sola línea (revisión del 16-10-2026): la etapa con su %, los tramos sin rótulos y «Ver la ruta». Va arriba de
+   * cada pantalla de la empresa; la barra entera, con lo que falta para la compuerta, vive en Avance.
+   */
+  compacta?: boolean;
+  /** En Avance, lo que falta para la compuerta se lee abierto. */
+  faltaAbierta?: boolean;
 }) {
   if (fallo) {
     return (
@@ -121,6 +130,41 @@ export function BarraRuta({
   const actual = indice >= 0 ? avance.etapas[indice]! : null;
   const linea = lineaDia(avance.dia, avance.inicio, actual?.hastaDia ?? null);
   const falta = avance.faltaParaLaCompuerta;
+  const tramos: Tramo[] = avance.etapas.map((e) => ({
+    clave: e.clave,
+    nombre: e.nombre,
+    estado: e.estado,
+    pct: e.pct,
+    dias: e.hastaDia - e.desdeDia + 1,
+    compuerta: { nombre: e.compuerta.nombre, veredicto: e.compuerta.veredicto },
+  }));
+
+  if (compacta) {
+    // El día, corto: «Día 10» (lo de «la etapa prevé hasta…» se lee en Avance). Antes de empezar, la fecha de inicio.
+    const dia = avance.dia === null ? null : avance.dia < 1 ? linea : `Día ${avance.dia}`;
+    return (
+      <section className="barra-ruta barra-ruta--compacta no-imprimir" data-para={para} aria-label="Avance de la ruta">
+        <p className="barra-ruta__titulo">
+          {actual ? (
+            <>
+              Etapa {indice + 1} de {avance.etapas.length} · <b>{actual.nombre}</b> · {textoPct(actual.pct)}
+            </>
+          ) : (
+            <b>Ruta completa</b>
+          )}
+        </p>
+        <Tramos tramos={tramos} />
+        <p className="barra-ruta__dia">
+          {dia && <span>{dia}</span>}
+          {enlace && (
+            <Link href={enlace} className="enlace-azul">
+              Ver la ruta
+            </Link>
+          )}
+        </p>
+      </section>
+    );
+  }
 
   return (
     <section className="barra-ruta no-imprimir" data-para={para} aria-label="Avance de la ruta">
@@ -144,37 +188,40 @@ export function BarraRuta({
         </p>
       </div>
 
-      <Tramos
-        tramos={avance.etapas.map((e) => ({
-          clave: e.clave,
-          nombre: e.nombre,
-          estado: e.estado,
-          pct: e.pct,
-          dias: e.hastaDia - e.desdeDia + 1,
-          compuerta: { nombre: e.compuerta.nombre, veredicto: e.compuerta.veredicto },
-        }))}
-      />
+      <Tramos tramos={tramos} />
 
-      {actual && (
-        <details className="barra-ruta__falta">
-          <summary>
-            {falta.length === 0 ? `Todo listo para la compuerta «${actual.compuerta.nombre}»` : `Falta para la compuerta «${actual.compuerta.nombre}»: ${falta.length}`}
-            <span className="barra-ruta__sugerido"> · {SUGERIDO[actual.compuerta.sugerido]}</span>
-          </summary>
-          {falta.length > 0 && (
-            <ul>
-              {falta.map((c) => (
-                <li key={c.clave} data-estado={c.estado}>
-                  <span className={c.estado === "sin_medir" ? "senal sin-medir" : "senal"} aria-hidden="true" />
-                  <span>
-                    <b>{c.texto}</b> · {porQue(c)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </details>
-      )}
+      {actual && <FaltaCompuerta etapa={actual} falta={falta} abierta={faltaAbierta} />}
     </section>
+  );
+}
+
+/** «la Compuerta 5 · La Firma»: un nombre que ya dice «Compuerta» no la repite; a uno sin esa palabra se le antepone. */
+export const nombreCompuerta = (n: string) => (/^compuerta\b/i.test(n) ? `la ${n}` : `la compuerta «${n}»`);
+
+/**
+ * LO QUE FALTA PARA LA COMPUERTA DE LA ETAPA EN CURSO, uno por línea, con su porqué y el color que sugiere 8X. Lo usan la
+ * barra entera y la tarjeta «La ruta» de Avance.
+ */
+export function FaltaCompuerta({ etapa, falta, abierta = false }: { etapa: EtapaEvaluada; falta: CriterioEvaluado[]; abierta?: boolean }) {
+  const compuerta = nombreCompuerta(etapa.compuerta.nombre);
+  return (
+    <details className="barra-ruta__falta" open={abierta || undefined}>
+      <summary>
+        {falta.length === 0 ? `Todo listo para pasar ${compuerta}` : `Para pasar ${compuerta} ${falta.length === 1 ? "falta 1" : `faltan ${falta.length}`}`}
+        <span className="barra-ruta__sugerido"> · {SUGERIDO[etapa.compuerta.sugerido]}</span>
+      </summary>
+      {falta.length > 0 && (
+        <ul>
+          {falta.map((c) => (
+            <li key={c.clave} data-estado={c.estado}>
+              <span className={c.estado === "sin_medir" ? "senal sin-medir" : "senal"} aria-hidden="true" />
+              <span>
+                <b>{c.texto}</b> · {porQue(c)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </details>
   );
 }

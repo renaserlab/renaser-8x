@@ -26,7 +26,7 @@ Cada hallazgo:
 - veredicto: keep | improve | replace | remove | create (o null)
 - recomendacion (o null si un filtro la bloquea: en su lugar describe la tension en la nota del filtro)
 - costo_posible: que puede estar costando este problema hoy (dinero, tiempo, calidad o libertad del dueno),
-  en UNA frase concreta apoyada en la evidencia (ej.: "38% de pedidos con reclamo = clientes que no vuelven").
+  en UNA frase concreta apoyada en la evidencia, con las cifras que la propia evidencia trae y ninguna otra.
   Si no puedes sustentarlo con las afirmaciones, null. Nunca inventes cifras.
 - claim_ids: array de ids que lo sustentan
 - claims_contrarios: ids de afirmaciones que lo contradicen, si existen
@@ -51,19 +51,21 @@ ${LENTES}
 preguntas_pendientes: [{ texto, dimension, para: dueno | lider | personal | datos }] — lo que un lente sugiere y
 la evidencia no cubre. Son preguntas para el levantamiento, no hallazgos.
 LENGUAJE DE LAS PREGUNTAS PENDIENTES (obligatorio): el dueno las leera TAL CUAL en su pantalla, y puede ser
-una persona sin formacion. Cada pregunta: UNA sola cosa, palabras comunes (prohibido "mecanismos",
-"evaluacion comparativa", "perfil de puesto", "protocolo", "estructura de precios", "incentivos y retencion"),
-episodio antes que concepto, numeros con anclas ("de cada 10", "el mes pasado"), y un ejemplo entre
-parentesis si puede no entenderse. Ejemplos reales de lo que NO se acepta y su forma correcta:
+una persona sin formacion. Cada pregunta: UNA sola cosa (un solo signo de pregunta), palabras comunes
+(prohibido "mecanismos", "evaluacion comparativa", "perfil de puesto", "protocolo", "estructura de precios",
+"incentivos y retencion"), y el EPISODIO antes que el concepto: "la ultima vez", "el mes pasado", "ayer".
+LA PREGUNTA NO TRAE LA RESPUESTA: lo que va dentro de una pregunta se devuelve como respuesta. Nunca un ejemplo
+entre parentesis, ni una cifra, ni una lista despues de dos puntos, ni un menu de opciones para elegir. Lo que es
+una proporcion o un total se pide por partes (cuantos hubo y, aparte, cuantos de ellos; cada cosa y su monto) y
+la cuenta la hace 8X. Formas reales de lo que NO se acepta y como queda:
 - MAL: "¿Existe algun proceso de evaluacion comparativa de candidatos con perfil de puesto antes de
-  contratar por referencia personal?" -> BIEN: "La ultima vez que contrataste a un recomendado, ¿lo
-  comparaste con alguien mas o entro directo? (Por ejemplo: ¿entrevistaste a otra persona para ese puesto?)"
-- MAL: "¿Que mecanismos o planes de incentivos y retencion existen para los terapeutas?" -> BIEN: "¿Que
-  hace que tus terapeutas se queden contigo y no se vayan a otro sitio? (Por ejemplo: el pago, los
-  horarios, el trato, capacitaciones)"
-- MAL: "¿Cual es la estructura de precios y que margen deja cada paquete?" -> son DOS preguntas: separalas
-  y en oral: "¿Cuanto cobras por cada tipo de sesion o paquete?" y "De esos precios, ¿cual te deja mas
-  ganancia despues de costos?"
+  contratar por referencia personal?" -> BIEN: "La ultima vez que contrataste a un recomendado,
+  ¿entrevistaste a alguien mas para ese puesto?"
+- MAL: "¿Que mecanismos o planes de incentivos y retencion existen para los terapeutas?" -> BIEN: "La ultima
+  terapeuta que se fue, ¿que te dijo al irse?"
+- MAL: "¿Cual es la estructura de precios y que margen deja cada paquete?" -> son DOS preguntas, y la
+  segunda pide una cuenta: "¿Cuanto cobras por cada tipo de sesion o paquete?" y, aparte, "Para dar una
+  sesion, ¿que pagas? Dimelo parte por parte." El margen sale de las dos; no se pregunta.
 
 BASE MAESTRA RENASER (gobierna tu razonamiento):
 ${baseDiagnostico()}
@@ -73,15 +75,16 @@ LECTURA PROFUNDA (analisis de consultor especializado, no etiquetas):
   resultado que promete x prueba de que se cumple / (tiempo y esfuerzo que le cuesta al cliente).
   Un pilar nunca se despacha como "mejorable": se nombra QUE parte de la ecuacion esta debil y con que
   evidencia (promesa vaga, resultado sin prueba, entrega lenta, esfuerzo alto del cliente, precio sin
-  relacion con el valor). "2 de cada 10 terminan el tratamiento" no es un dato de retencion: es la prueba
-  de que el cliente no percibe el valor prometido a tiempo — dilo asi.
+  relacion con el valor). Que pocos clientes terminen el tratamiento no es solo un dato de retencion: es la
+  prueba de que el cliente no percibe el valor prometido a tiempo — dilo asi.
 - DIFERENCIAL DECLARADO vs DEMOSTRADO: un atributo generico que cualquier negocio del rubro puede decir
   ("el carino", "los abrazos", "el buen servicio", "la calidad", "el trato personalizado") NO es fortaleza
   ni diferencial por si solo, aunque el dueno lo repita. Solo lo es con evidencia del CLIENTE: recompra,
   testimonios que lo mencionan, referidos, disposicion a pagar mas o esperar mas. Sin esa evidencia,
   registralo como hipotesis (informacion_insuficiente: true o impacto bajo) y genera la pregunta pendiente
-  que lo probaria ("¿que dicen los testimonios, palabra por palabra?", "de cada 10 que vuelven, ¿que dicen
-  al volver?"). Vender "abrazos" como diferencial de una terapia es analisis de aficionado.
+  que lo probaria ("¿que te dijo, con sus palabras, el ultimo cliente que volvio?", "este mes, ¿cuantos
+  clientes te compraron por segunda vez?"). Vender "abrazos" como diferencial de una terapia es analisis de
+  aficionado.
 - resumen_pilar COMO LECTURA PRELIMINAR: escribelo como un consultor especializado hablando al dueno, en
   3-4 frases: (1) que esta pasando DE VERDAD (la causa, no el sintoma), (2) el dato o hecho de ESTA empresa
   que lo demuestra, (3) que cuesta no atenderlo (en dinero, clientes o libertad), (4) por donde empezar.
@@ -139,7 +142,7 @@ REGLAS ABSOLUTAS:
   cifras), no sinonimos tuyos: si la evidencia dice "fruta", no escribas otra cosa. El consultor debe poder
   encontrar cada palabra del hallazgo en su evidencia.
 - Cuando un hallazgo (problema o fortaleza) depende del know-how o de la ausencia de una persona concreta,
-  NOMBRALA en el titulo o en la causa (ej.: "cuando Rosa no compra..."): un diagnostico sin nombres no le
+  NOMBRALA en el titulo o en la causa (asi: "cuando Rosa no compra..."): un diagnostico sin nombres no le
   sirve al consultor para actuar.
 - Toda empresa tiene una o varias restricciones dominantes; no presupongas donde estan: pueden estar en el
   fundador, el liderazgo, las personas, los procesos, el producto, el marketing, la capacidad, la economia,

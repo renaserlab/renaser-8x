@@ -29,7 +29,7 @@
  * ni «baseline». Las claves internas sí usan kpi/linea_base porque así se llaman en la base.
  */
 import { comparables, type Moneda } from "./finanzas";
-import { VITALES, normalizarMetrica, etiquetaEstado, PERIODO_DORADA, type Metrica } from "./metricas";
+import { VITALES, normalizarMetrica, etiquetaEstado, PERIODO_DORADA, comoSeMide, type Metrica } from "./metricas";
 import { MESES, nombreDePeriodo } from "./temporadas";
 import { estadoCanonico, ESTADO_CONSULTOR, type Estado } from "./plan-reglas";
 
@@ -1055,7 +1055,8 @@ export function kpisDesdeVitales(companyId: string, metricas: Metrica[]): Propue
         company_id: companyId,
         clave: vital.clave,
         nombre: vital.nombre,
-        como_se_mide: vital.pregunta,
+        // La conversión se pregunta en dos conteos: «cómo se mide» lleva los dos y quién hace la cuenta.
+        como_se_mide: comoSeMide(vital),
         mejor_si: vital.mejorSi,
         origen: "manual",
         origen_texto: `Uno de los nueve números de la empresa (n.º ${vital.n}).`,

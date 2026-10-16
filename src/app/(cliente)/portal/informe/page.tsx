@@ -2,7 +2,9 @@ import Link from "next/link";
 import { contextoPortal } from "@/lib/portal";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { empresaHoy, esDeDocumentos, ROTULO_POR_CONFIRMAR, type HallazgoHoy, type PorConfirmarHoy } from "@/lib/hoy";
-import { proyeccionPerdida } from "@/lib/perdida";
+import { bolsasDeFugas, resumenDelInforme } from "@/lib/perdida";
+import { monedaParaFugas } from "@/components/negocio/datos";
+import { BolsasDeFugas, hayAlgoEnLasBolsas } from "@/components/cliente/BolsasDeFugas";
 import type { Metrica } from "@/lib/rules/anomalias";
 import { PILAR_CLIENTE, ESTADO_PILAR } from "@/lib/textos";
 import { documentoQueResuelve } from "@/lib/biblioteca";
@@ -13,25 +15,28 @@ import { usuarioActual } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-const soles = (n: number) => `S/${Math.round(n).toLocaleString("es-PE")}`;
 const ESTADO_COLOR: Record<string, string> = { solido: "var(--confirmado)", mejorable: "var(--caducado)", critico: "var(--contradicho)", desconocido: "var(--grafito)" };
 const ESTADO_TEXTO: Record<string, string> = { solido: "Fortaleza", mejorable: "Requiere atención", critico: "Crítico", desconocido: "Información insuficiente" };
 
 /**
  * INFORME DE DIAGNÓSTICO — el documento formal de hallazgos que el dueño descarga sin depender de
- * que el consultor lo publique (pedido de Kelin: "leí el diagnóstico de Qori pero no hay dónde
+ * que el consultor lo publique (pedido de Kelin: "leí el diagnóstico de la empresa pero no hay dónde
  * descargarlo"). Cada hallazgo trae su evidencia y EL DOCUMENTO QUE LO RESUELVE: el puente del "¿cómo?".
  */
 export default async function Informe() {
   const c = await contextoPortal();
   if (!c.companyId) return <p className="t-cuerpo medida">{c.queFalta}</p>;
   const sb = supabaseAdmin();
-  const [hoy, { data: metricasRaw }, { data: empresa }] = await Promise.all([
+  const [hoy, { data: metricasRaw }, { data: empresa }, monedaFugas] = await Promise.all([
     empresaHoy(c.companyId),
     sb.from("company_metricas").select("clave,periodo,valor,estado").eq("company_id", c.companyId).limit(80),
     sb.from("companies").select("nombre,sector,ficha").eq("id", c.companyId).single(),
+    monedaParaFugas(c.companyId),
   ]);
-  const perdida = proyeccionPerdida((metricasRaw ?? []) as Metrica[]);
+  // Las fugas en sus tres bolsas, que nunca se suman (src/lib/perdida.ts): el resumen dice la caja y, aparte, lo que
+  // podría vender; nunca una sola cifra «en riesgo» que mezcle las dos.
+  const fugas = bolsasDeFugas((metricasRaw ?? []) as Metrica[], { moneda: monedaFugas });
+  const resumenFugas = resumenDelInforme(fugas);
   const ficha = (empresa?.ficha ?? {}) as Record<string, string>;
   const logo = await urlDeLogo(ficha);
   // RASTRO: quién abrió el informe de esta empresa y cuándo (auditoría del 29-08-2026).
@@ -153,9 +158,14 @@ export default async function Informe() {
 
         <section style={{ marginBottom: 24 }}>
           <h3 className="t-seccion mb-2">Resumen</h3>
-          {perdida.totalMensual > 0 && (
+          {resumenFugas.caja && (
             <p className="t-cuerpo">
-              Según los números que la empresa contó, hay del orden de <strong style={{ color: "var(--contradicho)" }}>{soles(perdida.totalMensual)} al mes</strong> en riesgo.
+              {resumenFugas.caja[0]}<strong style={{ color: "var(--contradicho)" }}>{resumenFugas.caja[1]}</strong>{resumenFugas.caja[2]}
+            </p>
+          )}
+          {resumenFugas.oportunidad && (
+            <p className="t-cuerpo mt-1">
+              {resumenFugas.oportunidad[0]}<strong>{resumenFugas.oportunidad[1]}</strong>{resumenFugas.oportunidad[2]}
             </p>
           )}
           <p className="t-cuerpo mt-1">
@@ -186,17 +196,11 @@ export default async function Informe() {
           )}
         </section>
 
-        {perdida.fugas.length > 0 && (
+        {hayAlgoEnLasBolsas(fugas) && (
           <section style={{ marginBottom: 24 }}>
-            <h3 className="t-seccion mb-2">De dónde sale el dinero en riesgo</h3>
-            <ul className="lista-editorial">
-              {perdida.fugas.map((f, i) => (
-                <li key={i}>
-                  <span className="t-cuerpo" style={{ fontWeight: 550 }}>{f.concepto} · {soles(f.monto)}{f.mensual ? "/mes" : ""}</span>
-                  <span className="block t-dato" style={{ color: "var(--grafito)" }}>De dónde sale: {f.base}.</span>
-                </li>
-              ))}
-            </ul>
+            <h3 className="t-seccion mb-2">De dónde sale cada cifra</h3>
+            <p className="t-dato mb-4" style={{ color: "var(--grafito)" }}>Tres cuentas separadas, que no se suman.</p>
+            <BolsasDeFugas fugas={fugas} Encabezado="h4" />
           </section>
         )}
 

@@ -3,7 +3,7 @@
  *
  * Auditoría del 30-08-2026: la Radiografía Mínima exige nueve números, pero nada en el código los
  * verificaba. El extractor inventaba claves libres (`ganancia_mes_western_union`) y el resultado fue
- * que Qori tenía 18 números y solo 3 de los nueve vitales. Sin claves fijas no se puede cerrar la
+ * que una empresa tenía 18 números y solo 3 de los nueve vitales. Sin claves fijas no se puede cerrar la
  * radiografía, ni armar la serie por meses, ni congelar una línea base, ni comparar un corte.
  *
  * Aquí viven las claves canónicas, sus sinónimos y la cuenta de lo que falta.
@@ -22,8 +22,17 @@ export type Vital = {
   n: number;
   /** Cómo se le nombra al dueño. Nunca en jerga. */
   nombre: string;
-  /** La pregunta hablada, con su ancla. La usa el entrevistador y la ve el dueño. */
+  /**
+   * La pregunta hablada, con su ancla: el episodio («el mes pasado», «hoy»), una sola cosa, sin cifras de ejemplo ni
+   * listas dentro (revisión del 16-10-2026). La ve el dueño sobre su caja en Tus números.
+   */
   pregunta: string;
+  /**
+   * Cuando el número es una PROPORCIÓN, no se pregunta: se piden dos conteos y 8X hace la cuenta. `pregunta` pide
+   * cuántos hubo y `seguida`, cuántos de ellos. Preguntar «de cada diez, ¿cuántos…?» sembraba el marco: la respuesta
+   * quedaba grabada en esa unidad aunque la persona hubiera dicho otra cosa.
+   */
+  seguida?: string;
   unidad: "soles" | "dias" | "personas" | "de_cada_10" | "numero";
   /** Si cambia mes a mes, se guarda con periodo YYYY-MM y forma serie. */
   mensual: boolean;
@@ -55,12 +64,14 @@ export const VITALES: Vital[] = [
   },
   {
     n: 4, clave: "gasto_fijo_mes", nombre: "Gastos fijos del mes", unidad: "soles", mensual: true, mejorSi: "baja",
-    pregunta: "¿Cuánto pagas al mes sí o sí, vendas o no vendas? Sueldos, alquiler y servicios juntos.",
+    // Sin lista dentro: se queda corta y el dueño solo nombra lo que ve. Quien lo tiene por partes las anota una por
+    // una en «Tus gastos del mes», y la suma la hace 8X.
+    pregunta: "El mes pasado, sumando todo lo que pagas vendas o no vendas, ¿cuánto pagaste?",
     sinonimos: ["gasto_mes", "costo_fijo_mes", "gastos_fijos", "planilla_mes", "egresos_fijos", "gastos_mensuales", "costos_fijos_mes", "gasto_fijo"],
   },
   {
     n: 5, clave: "precio_producto_estrella", nombre: "Precio de lo que más vendes", unidad: "soles", mensual: false, mejorSi: "neutro",
-    pregunta: "Lo que más vendes, ¿a cuánto lo vendes?",
+    pregunta: "Lo que más vendes, ¿a cuánto lo vendiste la última vez?",
     sinonimos: ["precio_estrella", "precio_venta_principal", "precio_producto_principal", "precio_principal", "precio_venta"],
   },
   {
@@ -70,7 +81,9 @@ export const VITALES: Vital[] = [
   },
   {
     n: 7, clave: "conversion_de_cada_10", nombre: "De cada 10 interesados, cuántos compran", unidad: "de_cada_10", mensual: false, mejorSi: "sube",
-    pregunta: "De cada 10 personas que preguntan por tu producto, ¿cuántas terminan pagando?",
+    // Dos conteos del mismo día, no una proporción: la cuenta la hace 8X (deCadaDiez).
+    pregunta: "El último día que abriste, ¿cuántas personas preguntaron por lo que vendes?",
+    seguida: "De ellas, ¿cuántas compraron?",
     sinonimos: ["conversion_10", "cierre_de_cada_10", "compran_de_cada_10", "tasa_cierre", "conversion", "clientes_de_cada_10", "cierran_de_cada_10"],
   },
   {
@@ -80,7 +93,7 @@ export const VITALES: Vital[] = [
   },
   {
     n: 9, clave: "deuda_propia", nombre: "Lo que tú debes", unidad: "soles", mensual: false, mejorSi: "baja",
-    pregunta: "¿Y cuánto debes tú? Proveedores, banco o préstamos, todo junto.",
+    pregunta: "Hoy, sumando a todos a quienes les debes, ¿cuánto debes tú?",
     sinonimos: ["deuda_proveedores", "cuentas_por_pagar", "prestamos", "deuda_banco", "por_pagar", "cxp", "deuda_total"],
   },
 ];
@@ -104,6 +117,29 @@ export const CLAVES_VITALES = new Set(VITALES.map((v) => v.clave));
 export const CLAVES_RECONOCIDAS = new Set(RECONOCIDAS.map((v) => v.clave));
 export const VITAL_POR_CLAVE = new Map(VITALES.map((v) => [v.clave, v]));
 export const RECONOCIDA_POR_CLAVE = new Map(RECONOCIDAS.map((v) => [v.clave, v]));
+
+/** Las dos cajas de un número que es una proporción: cuántos hubo (`total`) y cuántos de ellos (`parte`). */
+export type ParteDeConteo = "total" | "parte";
+/** La clave con que va en el formulario cada conteo: `conversion_de_cada_10:total`, `conversion_de_cada_10:parte`. */
+export const claveDeConteo = (clave: string, parte: ParteDeConteo) => `${clave}:${parte}`;
+/** La clave del número al que pertenece una caja, sea la suya o la de uno de sus conteos. */
+const claveBase = (clave: string) => clave.split(":")[0]!;
+
+/**
+ * LA CUENTA LA HACE 8X. De los dos conteos (cuántas personas preguntaron, cuántas de ellas compraron) sale el «de
+ * cada diez» con un decimal. Sin los dos, con cero personas o con más compras que personas, no hay cuenta: null,
+ * nunca un cero.
+ */
+export function deCadaDiez(total: number | null | undefined, parte: number | null | undefined): number | null {
+  if (total == null || parte == null || !Number.isFinite(total) || !Number.isFinite(parte)) return null;
+  if (total <= 0 || parte < 0 || parte > total) return null;
+  return Math.round((parte / total) * 100) / 10;
+}
+
+/** Cómo se mide un vital, dicho como se pregunta: la pregunta y, si es una proporción, la seguida y quién hace la cuenta. */
+export function comoSeMide(v: Pick<Vital, "pregunta" | "seguida">): string {
+  return v.seguida ? `${v.pregunta} ${v.seguida} La cuenta la hace 8X: los segundos entre los primeros, por diez.` : v.pregunta;
+}
 
 const PORSINONIMO = new Map<string, string>();
 for (const v of [...VITALES, ...RECONOCIDAS]) {
@@ -723,7 +759,7 @@ export function revisarNumerosEscritos(f: Pick<FormularioNumeros, "valores" | "m
   let perdida = false;
   const noSabe = new Set(f.sinDato ?? []);
   for (const [clave, texto] of Object.entries(f.valores)) {
-    if (noSabe.has(clave)) continue;
+    if (noSabe.has(claveBase(clave))) continue;
     const lectura = lecturaDeCampo(texto);
     if (lectura === "invalido") invalidos.push(campoDeValor(clave));
     else if (lectura === "negativo" && clave === CLAVE_QUE_PUEDE_SER_PERDIDA) perdida = true;
@@ -740,8 +776,26 @@ export function revisarNumerosEscritos(f: Pick<FormularioNumeros, "valores" | "m
     else if (lectura === "negativo") negativos.push(id);
     else if (lectura === "numero" && !ES_MES.test(p.periodo)) sinMes.push(id);
   }
+  // Los dos conteos de una proporción: con uno solo, o con más compras que personas, la cuenta no sale. Se marca la
+  // caja que hay que tocar y la pantalla dice por qué (AVISO_CONTEO); lo mal escrito ya quedó marcado arriba.
+  for (const v of VITALES) {
+    if (!v.seguida || noSabe.has(v.clave)) continue;
+    const total = f.valores[claveDeConteo(v.clave, "total")] ?? "";
+    const parte = f.valores[claveDeConteo(v.clave, "parte")] ?? "";
+    const lt = lecturaDeCampo(total);
+    const lp = lecturaDeCampo(parte);
+    if (lt === "numero" && lp === "numero" && deCadaDiez(aNumero(total), aNumero(parte)) == null) invalidos.push(campoDeValor(claveDeConteo(v.clave, "parte")));
+    else if (lt === "numero" && lp === "vacio") invalidos.push(campoDeValor(claveDeConteo(v.clave, "parte")));
+    else if (lt === "vacio" && lp === "numero") invalidos.push(campoDeValor(claveDeConteo(v.clave, "total")));
+  }
   return { invalidos, negativos, sinMes, perdida, listo: invalidos.length === 0 && negativos.length === 0 && sinMes.length === 0 };
 }
+
+/** ¿Esta caja es uno de los dos conteos de una proporción? Si está bien escrita, su aviso es AVISO_CONTEO. */
+export const esCampoDeConteo = (campo: string) => /^valor:[a-z0-9_]+:(?:total|parte)$/.test(campo);
+/** Lo que se dice bajo un conteo que no deja hacer la cuenta. Sin cifras de muestra. */
+export const AVISO_CONTEO =
+  "Para hacer la cuenta hacen falta las dos cifras, y las que compraron no pueden ser más que las que preguntaron. Si no lo sabes, marca «No lo sé».";
 
 /** Lo que hay escrito en la pantalla Tus números en el momento de guardar. Todo texto, tal como se tecleó. */
 export type FormularioNumeros = {
@@ -820,14 +874,23 @@ export function cuerpoDeNumeros(f: FormularioNumeros): { vitales: Record<string,
   const hayVentaDelMesPasado =
     mesPasado != null && (f.mesesConVenta.includes(mesPasado) || filas.some((x) => x.periodo === mesPasado && x.venta != null));
 
-  // 2. El resto de lo contestado.
+  // 2. El resto de lo contestado. Las cajas de un conteo no viajan solas: se convierten en su número (paso 3).
   for (const clave of Object.keys(f.valores)) {
+    if (clave.includes(":")) continue;
     const n = escrito(clave);
     if (n == null) continue;
     if (clave === "venta_mes" && mesPasado) continue; // ya quedó en su mes
     if (clave === "ganancia_mes" && mesPasado && hayVentaDelMesPasado) filaDe(mesPasado).ganancia = n;
     else if (clave === "costo_variable_mes" && mesPasado) filaDe(mesPasado).costo_variable = n;
     else vitales[clave] = n;
+  }
+
+  // 3. Lo que es una proporción se contó en dos cajas: la cuenta la hace 8X, aquí. Con «No lo sé» no se calcula nada.
+  const noSabe = new Set(f.sinDato);
+  for (const v of VITALES) {
+    if (!v.seguida || noSabe.has(v.clave)) continue;
+    const n = deCadaDiez(escrito(claveDeConteo(v.clave, "total")), escrito(claveDeConteo(v.clave, "parte")));
+    if (n != null) vitales[v.clave] = n;
   }
 
   return {

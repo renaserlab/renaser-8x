@@ -15,18 +15,23 @@ import { destinoDe } from "./NavCliente";
  * vigila que toda pantalla del portal esté en el mapa y tenga nombre en esta lista.
  */
 const NOMBRES: [string, string][] = [
+  // Inicio
   ["/portal/entrada", "Cuéntanos tu negocio"],
   ["/portal/conversacion", "Conversación"],
   ["/portal/pedidos", "Lo que te pidió tu consultora"],
+  ["/portal/activos", "Tus documentos"],
+  ["/portal/documentos", "Archivos aportados"],
+  // Tu diagnóstico
+  ["/portal/hoy", "Todo lo que encontramos"],
+  ["/portal/validar", "Confirmar información"],
   ["/portal/direccion", "Hacia dónde vamos"],
-  ["/portal/numeros", "Tus números"],
+  ["/portal/informe", "Informe"],
+  // Tus números
   ["/portal/producto", "Lo que vendes"],
   ["/portal/costos", "Tus gastos del mes"],
   ["/portal/historia", "Tu historia"],
   ["/portal/cobros", "Cobros y mercadería"],
-  ["/portal/validar", "Confirmar información"],
-  ["/portal/informe", "Informe"],
-  ["/portal/documentos", "Archivos aportados"],
+  // Tu plan
   ["/portal/semana", "Esta semana"],
   ["/portal/kpis", "Tus indicadores"],
   ["/portal/resultados", "Cómo vamos"],

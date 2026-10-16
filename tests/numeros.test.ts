@@ -50,7 +50,7 @@ import { explicarCalculo } from "@/lib/finanzas";
 const m = (clave: string, valor: number | null, periodo = "actual", estado = "contado"): Metrica => ({ clave, periodo, valor, estado });
 
 /**
- * El vocabulario de los números. Auditoría del 30-08-2026: Qori tenía 18 números y solo 3 de los
+ * El vocabulario de los números. Auditoría del 30-08-2026: una empresa tenía 18 números y solo 3 de los
  * nueve vitales porque la IA inventaba una clave distinta cada vez. Estas pruebas son la barrera.
  */
 describe("vocabulario canónico", () => {
@@ -138,7 +138,7 @@ describe("la radiografía: qué falta", () => {
     expect(r.completa).toBe(true);
   });
 
-  it("el caso real de Qori: muchos números, pocos vitales", () => {
+  it("un caso real: muchos números, pocos vitales", () => {
     const r = radiografia([
       m("ganancia_mes_western_union", 5000), m("ganancia_mes_dhl", 1000),
       m("comision_banco_recibo", 5), m("adelanto_emergencia_max", 100),
@@ -651,7 +651,8 @@ describe("el dueño puede dar su costo variable y los números llegan a las deci
   });
 
   it("Tus números tiene el campo de costos variables con su frase de ayuda y su «no lo sé»", () => {
-    expect(PANTALLA).toContain("Lo que te cuesta lo que vendes en el mes (mercadería, insumos, comisiones)");
+    // Sin lista de ejemplo dentro de la pregunta (revisión del 16-10-2026): por el episodio, una sola cosa.
+    expect(PANTALLA).toContain("El mes pasado, ¿cuánto te costó lo que vendiste?");
     expect(PANTALLA).toContain("costo_variable_mes");
     expect(PANTALLA).toMatch(/No lo sé/);
     // La ayuda es UNA frase, y dice que «no lo sé» va en vez de un cero.
@@ -784,20 +785,23 @@ describe("cierre Z3 · lo provisional se rotula junto a la cifra, a la vista", (
     it("equilibrio con la venta leída de un documento sin revisar: el rótulo sale al lado, fuera de «Cómo se calculó»", async () => {
       const html = await pintar(conEquilibrio("extraido"));
       // 12.000 / ((50.000 − 28.000) / 50.000) = 27.272,7
-      expect(html).toContain("S/27,273");
+      // La cifra va en su tarjeta, «Para cubrir tus costos», una sola vez (revisión del 16-10-2026: también salía en una
+      // franja de cifras debajo del tablero, «S/27,273» y «S/ 27,273»).
+      expect(texto(html)).toContain("Para cubrir tus costosLo que necesitas vender al mesS/27,273");
+      expect(texto(html).match(/27,273/g) ?? []).toHaveLength(1); // con un solo mes de venta no hay línea: solo la tarjeta
       // Justo debajo de la cifra y ANTES del desplegable: no hace falta abrir nada para leerlo.
       expect(html).toMatch(/tienes que vender al mes para cubrir tus costos<\/p><p[^>]*>Provisional: sale de un documento que falta revisar\.<\/p><details/);
       expect(html).toMatch(/de cada 100 soles, te queda<\/p><p[^>]*>Provisional: sale de un documento que falta revisar\.<\/p><details/);
       // La caja y los gastos fijos son contados: los días de aguante no llevan rótulo.
       expect(html).toMatch(/aguantas si mañana no entra nada<\/p><details/);
       // Y la frase que antes decía «estás S/X por encima» como si fuera firme.
-      expect(texto(html)).toContain(`Vendiendo lo del último mes estarías S/22,727 por encima de tu punto de equilibrio (${ROTULO}).`);
-      expect(texto(html)).not.toContain("estás S/22,727 por encima");
+      expect(texto(html)).toContain(`Vendiendo lo del último mes estarías S/ 22,727 por encima de tu punto de equilibrio (${ROTULO}).`);
+      expect(texto(html)).not.toContain("estás S/ 22,727 por encima");
     });
 
     it("con los mismos números contados de memoria la página no rotula nada y habla en firme", async () => {
       const html = await pintar(conEquilibrio("contado"));
-      expect(texto(html)).toContain("Vendiendo lo del último mes estás S/22,727 por encima de tu punto de equilibrio.");
+      expect(texto(html)).toContain("Vendiendo lo del último mes estás S/ 22,727 por encima de tu punto de equilibrio.");
       expect(html).not.toMatch(/sale de un documento que falta revisar/);
       expect(html).toMatch(/tienes que vender al mes para cubrir tus costos<\/p><details/);
     });
@@ -1052,7 +1056,7 @@ describe("cierre Z3 · «Tus ventas mes a mes» no pinta como contado lo que sal
     expect(html).toContain("Julio 2026S/30,000");
     // La venta de agosto se descartó al revisar el documento: su cifra no aparece en ninguna parte de la página.
     expect(html).not.toContain("S/38,000");
-    expect(html).toContain(`Tu mejor época vendías S/60,000 al mes. Hoy, S/41,000 (${ROTULO}).`);
+    expect(html).toContain(`Tu mejor época vendías S/ 60,000 al mes. Hoy, S/ 41,000 (${ROTULO}).`);
     // Bajo «Lo que ya nos contaste», lo que solo salió de un documento lleva su rótulo; lo contado, no.
     expect(html).toContain(`Lo que tú debes · ${ROTULO}`);
     expect(html).not.toContain(`Dinero en caja hoy · ${ROTULO}`);

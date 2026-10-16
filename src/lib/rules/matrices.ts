@@ -11,7 +11,11 @@ export type Matriz = {
   senales: string[];
   /** ecuación interna — solo para el contexto de los agentes, jamás para el cliente */
   driver_tree: string;
-  /** preguntas en lenguaje oral, respondibles hablando por alguien que no escribe */
+  /**
+   * Preguntas en lenguaje oral, respondibles hablando por alguien que no escribe. Una cosa por pregunta, por el
+   * episodio («la semana pasada», «tu último trabajo»), sin cifras de ejemplo ni menú de opciones: lo que es una
+   * proporción se pide en dos conteos y la cuenta la hace 8X (revisión del 16-10-2026).
+   */
   preguntas: string[];
 };
 
@@ -22,12 +26,12 @@ export const MATRICES: Matriz[] = [
     senales: ["peluqueria", "barberia", "salon", "spa", "estetica", "clinica", "dental", "odonto", "medico", "consultorio", "psicolog", "terapia", "veterinaria", "masaje", "cita"],
     driver_tree: "Ingresos = Capacidad disponible x Ocupacion x Asistencia x Ticket x Frecuencia",
     preguntas: [
-      "En una semana normal, ¿cuántas citas puedes atender como máximo… y cuántas atiendes de verdad?",
-      "De cada 10 citas agendadas, ¿cuántas se caen — no vienen o cancelan a última hora?",
-      "De cada 10 clientes que vienen por primera vez, ¿cuántos regresan?",
-      "¿Cada cuánto DEBERÍA volver un cliente… y cada cuánto vuelve de verdad?",
-      "¿Qué servicio te toma más tiempo y te deja menos ganancia?",
-      "¿En qué días u horas se queda vacío el local?",
+      "La semana pasada, ¿cuántas citas atendiste?", "Esa semana, ¿cuántos espacios de tu agenda quedaron libres?",
+      "La semana pasada, ¿cuántas citas se agendaron?", "De esas citas, ¿cuántas no vinieron o cancelaron a última hora?",
+      "El mes pasado, ¿cuántos clientes vinieron por primera vez?", "De ellos, ¿cuántos ya regresaron?",
+      "Para que tu servicio funcione, ¿cada cuánto tendría que volver un cliente?", "Tu último cliente que volvió, ¿cuántas semanas pasaron desde su visita anterior?",
+      "¿Qué servicio te toma más tiempo?", "Ese servicio, ¿a cuánto lo cobras?",
+      "La semana pasada, ¿en qué horas estuvo vacío el local?",
     ],
   },
   {
@@ -36,12 +40,12 @@ export const MATRICES: Matriz[] = [
     senales: ["taller", "mecanic", "construc", "arquitect", "reparacion", "mantenimiento", "instalacion", "electric", "gasfiter", "carpint", "soldadura", "imprenta", "proyecto"],
     driver_tree: "Ingresos = Ordenes x Diagnostico x Presupuestos aceptados x Ticket · Capacidad = Puestos x Horas x Utilizacion",
     preguntas: [
-      "Desde que entra un trabajo hasta que sale, ¿cuántos días pasan?",
-      "De esos días, ¿cuántos se está trabajando de verdad… y cuántos está parado esperando?",
-      "¿Qué es lo que más detiene un trabajo: repuestos, aprobación del cliente, gente, dinero?",
-      "De cada 10 presupuestos que pasas, ¿cuántos te aceptan?",
-      "¿Cuántos clientes regresan por el mismo problema que ya les arreglaste?",
-      "¿Qué tipo de trabajo te deja buena ganancia… y cuál te ocupa el taller sin dejar casi nada?",
+      "Tu último trabajo entregado, ¿cuántos días pasaron desde que entró hasta que salió?",
+      "De esos días, ¿cuántos estuvo parado esperando?",
+      "Ese trabajo, ¿qué lo tuvo parado?",
+      "El mes pasado, ¿cuántos presupuestos pasaste?", "De esos presupuestos, ¿cuántos te aceptaron?",
+      "El mes pasado, ¿cuántos clientes regresaron por un problema que ya les habías arreglado?",
+      "¿Qué tipo de trabajo te ocupa el taller más días?", "Ese tipo de trabajo, ¿a cuánto lo cobras?",
     ],
   },
   {
@@ -50,11 +54,11 @@ export const MATRICES: Matriz[] = [
     senales: ["consultor", "abogad", "juridic", "legal", "notari", "contab", "contador", "estudio", "agencia", "asesor", "auditor", "marketing digital", "diseño", "software", "desarrollo"],
     driver_tree: "Ingresos = Oportunidades x Reuniones x Propuestas x Cierre x Honorario",
     preguntas: [
-      "De cada 10 interesados que llegan, ¿con cuántos llegas a reunirte… y cuántos te contratan?",
-      "Un proyecto típico, ¿cuántas horas de trabajo consume de verdad… contra las que cobraste?",
-      "¿Cuánto trabajo se hace de más sin cobrarlo (cambios, favores, alcance que creció)?",
+      "El mes pasado, ¿cuántos interesados te escribieron o llamaron?", "¿Con cuántos de ellos te reuniste?", "¿Cuántos te contrataron?",
+      "Tu último proyecto terminado, ¿cuántas horas de trabajo te tomó?", "¿Cuántas horas le cobraste al cliente?",
+      "En tu último proyecto, ¿qué hiciste que no estaba en lo que cobraste?",
       "De tus clientes del año pasado, ¿cuántos siguen contigo?",
-      "¿Qué parte de la entrega solo puedes hacerla tú (o el socio)?",
+      "¿Qué parte de la entrega solo puedes hacerla tú?",
       "¿Qué hace tu persona más cara que podría hacer alguien más?",
     ],
   },
@@ -64,13 +68,13 @@ export const MATRICES: Matriz[] = [
     senales: ["tienda", "bodega", "minimarket", "market", "fruteria", "ferreteria", "farmacia", "botica", "libreria", "bazar", "abarrotes", "venta de", "comercio", "distribuidora", "mayorista"],
     driver_tree: "Ingresos = Transacciones x Ticket · Utilidad = Ventas x Margen - Merma - Costos",
     preguntas: [
-      "¿Qué compras que después no se vende?",
-      "¿Qué se te malogra o se pierde? ¿Cuánto a la semana, más o menos?",
-      "¿Qué producto sale más rápido… y cuál te deja más ganancia por venta? ¿Son el mismo?",
-      "¿Qué producto suele faltar justo cuando lo piden?",
-      "¿Cómo decides cuánto comprar: por dato o por ojo?",
-      "¿Cuánto dinero tienes parado en mercadería que no se mueve?",
-      "¿Compras al contado o te fían los proveedores? ¿Y tú fías a tus clientes?",
+      "La última mercadería que se te quedó sin vender, ¿cuál fue?",
+      "La semana pasada, ¿qué mercadería se malogró o se perdió?", "Esa semana, ¿cuánto dinero fue eso?",
+      "El mes pasado, ¿qué producto vendiste más veces?",
+      "La semana pasada, ¿qué producto te pidieron y no tenías?",
+      "La última vez que compraste mercadería, ¿cómo decidiste cuánto comprar?",
+      "Hoy, ¿qué mercadería tienes que no se vendió en los últimos tres meses?",
+      "Tu última compra a un proveedor, ¿la pagaste el mismo día?", "La última vez que le fiaste a un cliente, ¿qué día te pagó?",
     ],
   },
   {
@@ -79,12 +83,12 @@ export const MATRICES: Matriz[] = [
     senales: ["restaurante", "cevicheria", "polleria", "chifa", "pizzeria", "cafeteria", "cafe", "juguer", "sangucheria", "menu", "comida", "catering", "panaderia", "pasteleria"],
     driver_tree: "Ingresos = Asientos x Ocupacion x Rotacion x Ticket x Dias + Delivery",
     preguntas: [
-      "¿En qué horario está vacío el local… y en cuál no te das abasto?",
-      "¿Qué plato se vende mucho pero deja poco… y cuál deja buena ganancia pero se pide poco?",
-      "Desde que el cliente pide hasta que le llega el plato, ¿cuánto pasa? ¿Dónde se atora?",
-      "¿Cuánta comida se bota a la semana, más o menos?",
-      "Una mesa, ¿cuánto se demora en desocuparse en hora punta?",
-      "¿El delivery deja ganancia de verdad, contando comisiones?",
+      "Ayer, ¿en qué horas estuvo vacío el local?", "Ayer, ¿en qué hora no te diste abasto?",
+      "La semana pasada, ¿qué plato vendiste más veces?", "Ese plato, ¿cuánto te cuesta prepararlo?",
+      "Ayer, en la hora con más gente, ¿cuántos minutos pasaron desde que un cliente pidió hasta que le llegó el plato?", "Ese pedido, ¿en qué paso se atoró?",
+      "La semana pasada, ¿qué comida se botó?",
+      "Ayer, en hora punta, ¿cuánto tardó en desocuparse una mesa?",
+      "El mes pasado, ¿cuánto pagaste en comisiones de delivery?",
     ],
   },
   {
@@ -93,11 +97,11 @@ export const MATRICES: Matriz[] = [
     senales: ["fabrica", "manufactura", "planta", "produccion", "agroindustria", "agricola", "textil", "confeccion", "mineria", "minera", "pesquer", "maderera", "metalmecanica"],
     driver_tree: "Resultado = Volumen x Precio - Costo · Produccion = Capacidad x Disponibilidad x Utilizacion x Rendimiento",
     preguntas: [
-      "¿Qué es lo que más detiene la producción?",
-      "¿Cuántas horas a la semana está parada la máquina o la línea? ¿Por qué?",
+      "La última vez que se detuvo la producción, ¿qué pasó?",
+      "La semana pasada, ¿cuántas horas estuvo parada la máquina principal?",
       "¿Qué equipo o etapa marca el tope de cuánto puedes producir?",
-      "¿Cuánto te cuesta producir una unidad, más o menos?",
-      "¿Qué se tiene que volver a hacer porque salió mal?",
+      "Para producir una unidad, ¿qué pagas? Dímelo parte por parte.",
+      "El mes pasado, ¿qué se tuvo que volver a hacer porque salió mal?",
       "¿Qué riesgo podría parar TODO de un día para otro?",
     ],
   },
@@ -107,11 +111,11 @@ export const MATRICES: Matriz[] = [
     senales: ["gimnasio", "gym", "academia", "colegio", "instituto", "escuela", "nido", "guarderia", "club", "suscripcion", "membresia", "cursos"],
     driver_tree: "Ingresos = Miembros activos x Cuota x Permanencia + Nuevos x Matricula",
     preguntas: [
-      "¿Cuántos alumnos o miembros activos tienes hoy… y cuántos tenías hace un año?",
-      "De cada 10 que se inscriben, ¿cuántos siguen a los 6 meses?",
-      "¿Cuándo se va la gente: al primer mes, a mitad de año, cuando acaba el ciclo?",
-      "Al que deja de venir, ¿alguien lo llama? ¿Qué le dicen?",
-      "¿Cuántos pagan puntual y a cuántos hay que perseguir?",
+      "Hoy, ¿cuántos alumnos o miembros activos tienes?", "Hace un año, ¿cuántos tenías?",
+      "Hace seis meses, ¿cuántos se inscribieron?", "De ellos, ¿cuántos siguen hoy?",
+      "El último que dejó de venir, ¿cuántos meses estuvo?",
+      "Al último que dejó de venir, ¿alguien lo llamó?",
+      "El mes pasado, ¿a cuántos tuviste que perseguir para que pagaran?",
       "¿Qué haría que un miembro se quede el doble de tiempo?",
     ],
   },

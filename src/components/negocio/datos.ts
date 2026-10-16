@@ -9,7 +9,9 @@
  */
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { listarSolicitudes, nivelEnEmpresa, faltaLaTabla, ErrorDeSolicitud, type Seccion, type Solicitud } from "@/lib/solicitudes";
-import { ErrorDeNegocio, faltaMigracionNegocio } from "@/lib/negocio-datos";
+import { ErrorDeNegocio, faltaMigracionNegocio, leerFichaNegocio, listarOperacionesMoneda } from "@/lib/negocio-datos";
+import { fugaDeMoneda } from "@/lib/rentabilidad";
+import type { MonedaLeida } from "@/lib/perdida";
 import { ErrorDeLinea } from "@/lib/producto";
 import type { Metrica } from "@/lib/metricas";
 
@@ -68,6 +70,20 @@ export async function puedeLlenar(u: QuienMira, companyId: string): Promise<{ pu
     console.error("[negocio] no se pudo leer la membresía", e);
     return { puede: false, comoConsultora: false };
   }
+}
+
+/**
+ * Lo que se queda en el camino al cobrar en otra moneda, para la caja de las fugas (src/lib/perdida.ts). null: la
+ * empresa no cobra en otra moneda, o la base todavía no tiene esa parte (migración sin aplicar: no hay nada que leer).
+ * "no_leido": falló por otra razón, y la caja lo dice en lo que falta en vez de callarlo.
+ */
+export async function monedaParaFugas(companyId: string): Promise<MonedaLeida | null | "no_leido"> {
+  const [ficha, operaciones] = await Promise.all([
+    leer("la ficha del negocio", () => leerFichaNegocio(companyId)),
+    leer("las ventas en otra moneda", () => listarOperacionesMoneda(companyId)),
+  ]);
+  if (!ficha.ok || !operaciones.ok) return (!ficha.ok && !ficha.falta) || (!operaciones.ok && !operaciones.falta) ? "no_leido" : null;
+  return fugaDeMoneda(operaciones.valor, ficha.valor);
 }
 
 /** Los números de la empresa (los 9 y los demás), para comparar con lo que se llena. Tope 300. */

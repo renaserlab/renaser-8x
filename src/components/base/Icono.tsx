@@ -28,6 +28,14 @@ const TRAZOS = {
   persona: <><circle cx="12" cy="8.5" r="3.5" /><path d="M5 19.5a7 7 0 0 1 14 0" /></>,
   reloj: <><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></>,
   numeros: <path d="M5 19V9M10 19V5M15 19v-7M20 19v-4" />,
+  // Las vistas de la empresa (16-10-2026): el pulso dentro de un círculo, la bandera de hacia dónde se va y el escalón que sube.
+  diagnostico: <><circle cx="12" cy="12" r="8.5" /><path d="M6.5 12.5h2.6l1.6-3.5 2.6 7 1.6-3.5h2.6" /></>,
+  estrategia: <path d="M5.5 20.5V4M5.5 4.5h11l-2.5 4 2.5 4h-11" />,
+  avance: <><path d="M3.5 20h5v-4.5h5V11H17" /><path d="M17 11V4.5M14 7.5l3-3 3 3" /></>,
+  abajo: <path d="m6.5 9.5 5.5 5.5 5.5-5.5" />,
+  // El medidor de los indicadores y los tres puntos de un menú de acciones (revisión del 16-10-2026).
+  indicadores: <><path d="M4 16.5a8 8 0 0 1 16 0" /><path d="m12 16.5 4.2-5" /><path d="M4 19.5h16" /></>,
+  mas: <><circle cx="6" cy="12" r="1.1" /><circle cx="12" cy="12" r="1.1" /><circle cx="18" cy="12" r="1.1" /></>,
 } as const;
 
 export type NombreIcono = keyof typeof TRAZOS;

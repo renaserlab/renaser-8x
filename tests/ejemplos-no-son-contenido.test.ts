@@ -1,18 +1,23 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync, statSync } from "fs";
 import path from "path";
-import { EJEMPLOS } from "@/lib/activos";
+import * as activos from "@/lib/activos";
 
 /**
  * UN EJEMPLO JAMÁS ES CONTENIDO DE LA CAJA.
  *
- * El 30-08-2026 la dueña de Qori Home creyó que el aplicativo le estaba metiendo datos de otra
+ * El 30-08-2026 la dueña de una empresa cliente creyó que el aplicativo le estaba metiendo datos de otra
  * empresa —de otro rubro— en sus respuestas, y tuvo que borrarlos letra por letra. No había fuga
  * de datos: era un ejemplo puesto donde va lo que ella escribe. Para quien llena el formulario, un
  * ejemplo dentro de la caja ES un dato ajeno; la diferencia técnica no existe para ella.
  *
  * La regla del producto, desde hoy: los ejemplos viven en `placeholder` —tenue, en cursiva, y se
  * van solos al escribir o al dictar—; nunca en `value` ni en `defaultValue`.
+ *
+ * 16-10-2026: tampoco en `placeholder`. Lo que va dentro de la caja, aunque sea tenue, se devuelve
+ * como respuesta: el dueño repetía la cifra o el nombre del ejemplo. Las 34 respuestas modelo se
+ * quitaron; la caja de cada pregunta lleva una sola pista neutra (PISTA_RESPUESTA) y la pregunta pide
+ * el episodio. Las reglas sobre las preguntas mismas viven en tests/preguntas-sin-eco.test.ts.
  */
 const raiz = path.join(process.cwd(), "src");
 
@@ -28,19 +33,20 @@ const tsx = archivos(raiz);
 const rel = (f: string) => path.relative(process.cwd(), f).split(path.sep).join("/");
 
 describe("un ejemplo jamás va dentro de la caja de respuesta", () => {
-  it("ningún campo se rellena con EJEMPLOS: eso obliga a borrar letra por letra", () => {
+  it("ningún campo se rellena con la pista ni con un ejemplo: eso obliga a borrar letra por letra", () => {
     const culpables = tsx.filter((f) => {
       const src = readFileSync(f, "utf8");
-      // value={...EJEMPLOS...} o defaultValue={...EJEMPLOS...} en la misma expresión.
-      return /(?:value|defaultValue)=\{[^}]*EJEMPLOS/.test(src);
+      // value={...PISTA_RESPUESTA...} o defaultValue={...EJEMPLOS...} en la misma expresión.
+      return /(?:value|defaultValue)=\{[^}]*(?:EJEMPLOS|PISTA_RESPUESTA)/.test(src);
     });
-    expect(culpables.map(rel), "un ejemplo debe ir en placeholder, nunca como contenido").toEqual([]);
+    expect(culpables.map(rel), "la pista va en placeholder, nunca como contenido").toEqual([]);
   });
 
-  it("los ejemplos que se muestran van como placeholder, que es lo que se borra solo", () => {
+  it("las preguntas del levantamiento llevan en la caja la pista neutra, no una respuesta modelo", () => {
     const src = readFileSync(path.join(raiz, "components/cliente/InventarioActivos.tsx"), "utf8");
-    expect(src, "el ejemplo tiene que estar en el placeholder").toMatch(/placeholder=\{[^}]*EJEMPLOS/);
-    expect(src, "y no puede estar además como contenido").not.toMatch(/value=\{[^}]*EJEMPLOS/);
+    expect(src, "la caja de cada pregunta lleva la pista neutra").toMatch(/placeholder=\{PISTA_RESPUESTA\}/);
+    expect(src, "y ya no hay respuestas modelo que mostrar").not.toMatch(/EJEMPLOS|Por ejemplo:/);
+    expect(src, "y no puede estar además como contenido").not.toMatch(/value=\{[^}]*PISTA_RESPUESTA/);
   });
 
   it("el placeholder se ve tenue y en cursiva: no se puede confundir con lo escrito", () => {
@@ -62,19 +68,14 @@ describe("un ejemplo jamás va dentro de la caja de respuesta", () => {
     expect(culpables, "eso es contenido que la persona tendría que borrar").toEqual([]);
   });
 
-  it("los ejemplos del catálogo siguen siendo frases de dueño, no plantillas", () => {
-    const textos = Object.values(EJEMPLOS);
-    expect(textos.length).toBeGreaterThan(10);
-    for (const t of textos) {
-      // Entrecomillado con « »: se lee como algo que alguien dijo, no como una instrucción del sistema.
-      expect(t, `«${t.slice(0, 40)}» debería ir entrecomillado como algo que alguien dijo`).toMatch(/«[^»]+»/);
-      expect(t, "un ejemplo no puede tener huecos por rellenar").not.toMatch(/\[|\]|XXX|___/);
-    }
+  it("no hay catálogo de respuestas modelo: la pista es una sola, neutra, sin cifras ni nombres", () => {
+    expect(activos, "las 34 respuestas modelo se quitaron el 16-10-2026").not.toHaveProperty("EJEMPLOS");
+    expect(activos.PISTA_RESPUESTA).not.toMatch(/\d|«|ejemplo|ej\./i);
   });
 });
 
 /**
- * LA TRANSCRIPCIÓN NO PUEDE INVENTAR (30-08-2026). A la dueña de Qori Home le apareció en su caja
+ * LA TRANSCRIPCIÓN NO PUEDE INVENTAR (30-08-2026). A la dueña de una empresa cliente le apareció en su caja
  * "empezamos con un capital inicial de 25 mil soles" — el ejemplo que estaba escrito en NUESTRO
  * prompt de transcripción. Con el audio inaudible, el modelo no tenía qué transcribir y rellenó el
  * hueco con lo que la instrucción le sugería. Creyó que le metíamos datos de otra empresa.
@@ -219,7 +220,7 @@ describe("lo dictado se puede leer y corregir antes de mandarlo", () => {
 });
 
 /**
- * NADIE DEBERÍA CONFUNDIRSE USANDO ESTO. Cosas que la dueña de Qori Home vivió en su pantalla y que
+ * NADIE DEBERÍA CONFUNDIRSE USANDO ESTO. Cosas que la dueña de una empresa cliente vivió en su pantalla y que
  * no eran fallos técnicos, sino cosas que el aplicativo no explicaba o no dejaba arreglar.
  */
 describe("nada en pantalla queda sin nombre, sin salida ni sin explicación", () => {

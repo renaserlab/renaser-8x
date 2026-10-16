@@ -2,53 +2,54 @@
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-/** Una capa del recorrido de la consultora: su rótulo y las pestañas que viven en ella. */
-export type Capa = { rotulo: string; tabs: [string, string][] };
+import { Icono } from "@/components/base/Icono";
+import { subrutaDe, vistaDe, type Vista } from "@/lib/vistas-empresa";
 
 /**
- * Secciones de la empresa en CAPAS con rótulo visible (Resumen → Evidencia → Intervención): el orden en que
- * la consultora lee una empresa.
- * — Escritorio ancho: una COLUMNA LATERAL de la empresa, a la izquierda de la pantalla, con el rótulo de cada
- *   capa y sus secciones una debajo de otra; se queda a la vista al bajar (sticky).
- * — Celular y pantallas medianas: cada capa es una fila que se desliza en horizontal y la sección activa se trae
- *   a la vista. Ninguna sección queda escondida.
- * Los estilos viven en src/design/tablero.css (.tabs-empresa).
+ * LAS VISTAS DE LA EMPRESA (16-10-2026, pedido de Kelin: «son muchas pestañas que deberían estar en una sola»).
+ * Antes: 20 pestañas en tres capas. Ahora: cinco vistas (Diagnóstico, Números, Indicadores, Estructura, Avance) y, al
+ * final y aparte, el Expediente. Las pantallas de cada vista se enlazan en la fila «En esta vista» (EnEstaVista).
+ * En todos los anchos es una barra horizontal bajo el nombre de la empresa, como la del portal (revisión del
+ * 16-10-2026: la columna fija junto a la barra lateral era una columna de más); la activa es la píldora oscura. En un
+ * celular la barra se desliza y la activa se trae a la vista.
+ * Qué vista está activa lo decide vistaDe() de src/lib/vistas-empresa.ts: /procesos/abc es Estructura, /entrega/x es
+ * Avance. Los estilos viven en src/design/vistas.css (.vistas-empresa).
  */
-export function TabsEmpresa({ base, capas }: { base: string; capas: Capa[] }) {
+export function TabsEmpresa({ base, vistas, expediente }: { base: string; vistas: Vista[]; expediente: Vista }) {
   const ruta = usePathname();
-  const activa = useRef<HTMLAnchorElement | null>(null);
-  const esActiva = (h: string) => (h === "" ? ruta === base : ruta === `${base}${h}` || ruta.startsWith(`${base}${h}/`));
+  const sub = subrutaDe(ruta, base);
+  const activa = sub === null ? null : vistaDe(sub);
+  const enlaceActivo = useRef<HTMLAnchorElement | null>(null);
 
-  // Solo se mueve la fila, nunca la página: en un celular la pestaña activa no puede quedar fuera de la vista.
-  // En la columna de escritorio la fila no desborda en horizontal y esto no hace nada.
+  // Solo se mueve la fila, nunca la página: en un celular la vista activa no puede quedar fuera de la vista.
+  // En escritorio la barra no desborda y esto no hace nada.
   useEffect(() => {
-    const el = activa.current;
-    const fila = el?.parentElement;
+    const el = enlaceActivo.current;
+    const fila = el?.closest<HTMLElement>(".vistas-empresa");
     if (!el || !fila || fila.scrollWidth <= fila.clientWidth) return;
     fila.scrollLeft += el.getBoundingClientRect().left - fila.getBoundingClientRect().left - (fila.clientWidth - el.clientWidth) / 2;
   }, [ruta]);
 
+  const enlace = (v: Vista, discreto = false) => {
+    const aqui = v.clave === activa;
+    return (
+      <Link
+        key={v.clave}
+        ref={aqui ? enlaceActivo : undefined}
+        href={`${base}${v.href}`}
+        aria-current={aqui ? "page" : undefined}
+        data-discreto={discreto ? "" : undefined}
+      >
+        <Icono nombre={v.icono} />
+        <span>{v.nombre}</span>
+      </Link>
+    );
+  };
+
   return (
-    <nav className="tabs-empresa no-imprimir" aria-label="Secciones de la empresa">
-      {capas.map((capa) => {
-        const aqui = capa.tabs.some(([h]) => esActiva(h));
-        return (
-          <div key={capa.rotulo} className="capa-empresa" data-aqui={aqui ? "si" : undefined}>
-            <p className="capa-empresa__rotulo">{capa.rotulo}</p>
-            <div className="capa-empresa__secciones overflow-x-auto">
-              {capa.tabs.map(([h, n]) => {
-                const activo = esActiva(h);
-                return (
-                  <Link key={h} ref={activo ? activa : undefined} href={`${base}${h}`} aria-current={activo ? "page" : undefined}>
-                    {n}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
+    <nav className="vistas-empresa no-imprimir" aria-label="Vistas de la empresa">
+      {vistas.map((v) => enlace(v))}
+      <div className="vistas-empresa__expediente">{enlace(expediente, true)}</div>
     </nav>
   );
 }

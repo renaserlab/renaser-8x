@@ -4,6 +4,7 @@ import { desdeFila, completitud, listo, preparacion, alertas, avance, kpisDesdeV
 import { leerHoraCierre } from "@/lib/negocio-datos";
 import type { Metrica } from "@/lib/metricas";
 import { TableroKpis, type KpiVista, type ValorHistoria } from "@/components/kpis/TableroKpis";
+import { ResumenIndicadores } from "@/components/kpis/ResumenIndicadores";
 import type { Participante, AccionDelPlan, LineaBase } from "@/components/kpis/FormularioKpi";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +19,10 @@ export const dynamic = "force-dynamic";
  *
  * Todo lo que se calcula aquí es determinista (kpis.ts) y se calcula al pedir la página, con la hora de
  * la petición: por eso «dato viejo» cambia solo con el paso de los días.
+ *
+ * Revisión del 16-10-2026: Indicadores es una de las cinco vistas de la empresa (Kelin: «diagnóstico, números,
+ * indicadores y el avance»). Arriba, la tarjeta con la línea del indicador de resultado y cuántos están listos
+ * (ResumenIndicadores, la misma de Avance), con lo que esta página ya leía; debajo, en su hoja, el tablero de siempre.
  */
 export default async function KpisPag({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -83,8 +88,17 @@ export default async function KpisPag({ params }: { params: Promise<{ id: string
 
   return (
     <>
+      <div className="tablero">
+        <ResumenIndicadores
+          activos={activos}
+          valores={historia.map((v) => ({ indicador_id: v.indicador_id, periodo: v.periodo, valor: v.valor, estado_validacion: v.estado_validacion }))}
+          hoy={hoy}
+          zona={zona}
+        />
+      </div>
+      <div className="hoja-suelta">
       <Encabezado
-        titulo="Indicadores"
+        titulo="Cada indicador"
         sub={
           <>
             {kpis.length === 0
@@ -104,6 +118,7 @@ export default async function KpisPag({ params }: { params: Promise<{ id: string
         zona={zona}
         horaCierre={horaCierre}
       />
+      </div>
     </>
   );
 }

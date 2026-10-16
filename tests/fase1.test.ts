@@ -18,7 +18,7 @@ describe("1.1 / 1.4 · cobertura de entrevistas (P1-02, P1-03)", () => {
   });
   it("la entrevista al personal cubre las 15 investigaciones y las 4 preguntas de verdad operativa", () => {
     const todas = BLOQUES.personal.flatMap((b) => b.preguntas).join(" ").toLowerCase();
-    for (const frag of ["cómo haces realmente", "salga de tu trabajo", "lo hiciste bien", "pierdes más tiempo", "esperando", "repites o rehaces", "información te falta", "consultarle al jefe", "aceptan como normal", "whatsapp o sistema paralelo", "escuchas de los clientes", "eliminarías", "conservarías", "dirección no ve", "procedimiento dice una cosa", "cuando hay urgencia", "jefe no está", "resuelve de verdad"]) expect(todas).toContain(frag);
+    for (const frag of ["cómo haces realmente", "salga de tu trabajo", "lo hiciste bien", "pierdes más tiempo", "esperando", "repites o rehaces", "información te falta", "consultarle al jefe", "aceptan como normal", "además del sistema de la empresa", "escuchas de los clientes", "eliminarías", "conservarías", "dirección no ve", "procedimiento dice una cosa", "cuando hay urgencia", "jefe no está", "resuelve de verdad"]) expect(todas).toContain(frag);
   });
   it("una sesión no se cierra con bloques sin cubrir; se cierra cuando todos tienen al menos una respuesta", () => {
     expect(puedeCerrarSesion("sueno_dueno", [{ bloque: "origen" }])).toBe(false);

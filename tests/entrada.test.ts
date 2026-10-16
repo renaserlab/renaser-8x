@@ -301,17 +301,18 @@ describe("el plan: entre 8 y 12 preguntas fijas, en cuatro grupos", () => {
   it("cubre los doce contenidos obligatorios, cada uno con su clave y en su grupo", () => {
     const OBLIGATORIOS: [string, string, "a" | "b" | "c" | "d", RegExp][] = [
       ["el negocio hoy", "entrada.negocio_hoy", "a", /tu negocio hoy/i],
-      ["qué vende, a quién y qué deja más", "entrada.que_vende_estrella", "a", /vendes.*a quién.*deja más/i],
-      ["ventas y lo que queda", "entrada.ventas_y_ganancia", "b", /cuánto vendes.*cuánto te queda/i],
+      // Desde el 16-10-2026 cada contenido se pide en una sola cosa y por el episodio (revisión, sección 3a).
+      ["qué vende", "entrada.que_vende_estrella", "a", /^¿Qué vendes\? Dime los nombres, uno por uno\.$/],
+      ["ventas del mes pasado", "entrada.ventas_y_ganancia", "b", /^El mes pasado, ¿cuánto vendiste en total\?$/],
       ["principal problema", "entrada.principal_problema", "b", /principal problema/i],
-      ["qué se detiene sin el dueño", "entrada.que_se_detiene_sin_mi", "b", /qué se detiene/i],
+      ["qué se queda esperando sin el dueño", "entrada.que_se_detiene_sin_mi", "b", /última vez que faltaste.*se quedó esperando/i],
       ["visión a tres años", "entrada.vision_3_anios", "c", /tres años/i],
-      ["rol futuro y qué ya no haría", "entrada.rol_futuro", "c", /qué haces tú.*qué ya no haces/i],
+      ["rol futuro", "entrada.rol_futuro", "c", /qué haces tú en el negocio/i],
       ["dinero para estar tranquilo", "entrada.dinero_tranquilo", "c", /para estar tranquilo/i],
       ["qué no sacrifica", "entrada.no_sacrifica", "c", /sacrificar/i],
-      ["mejor resultado anterior", "entrada.mejor_resultado_anterior", "d", /mejor mes o la mejor época/i],
+      ["mejor resultado anterior", "entrada.mejor_resultado_anterior", "d", /mejor mes de toda la historia/i],
       ["qué funciona bien", "entrada.que_funciona", "d", /funciona especialmente bien/i],
-      ["recursos desaprovechados", "entrada.recursos_desaprovechados", "d", /no se aprovecha/i],
+      ["recursos desaprovechados", "entrada.recursos_desaprovechados", "d", /semana pasada.*no se usó/i],
     ];
     expect(OBLIGATORIOS.length).toBe(12);
     for (const [que, clave, grupo, dice] of OBLIGATORIOS) {
@@ -326,13 +327,15 @@ describe("el plan: entre 8 y 12 preguntas fijas, en cuatro grupos", () => {
 
   it("las ventas aceptan un «más o menos»; las preguntas de relato no lo ofrecen", () => {
     expect(PLAN_POR_CLAVE.get("entrada.ventas_y_ganancia")!.acepta_aproximado).toBe(true);
-    expect(PLAN_POR_CLAVE.get("entrada.ventas_y_ganancia")!.texto).toContain("«más o menos»");
+    // El «más o menos» lo ofrece la pantalla con su botón («Es aproximado»), no la pregunta: dentro de la
+    // pregunta invitaba al promedio, y lo que se pide es el mes pasado.
+    expect(PLAN_POR_CLAVE.get("entrada.ventas_y_ganancia")!.texto).not.toMatch(/más o menos/);
     expect(PLAN_ENTRADA.filter((p) => p.acepta_aproximado).map((p) => p.clave).sort()).toEqual(["entrada.dinero_tranquilo", "entrada.mejor_resultado_anterior", "entrada.ventas_y_ganancia"]);
   });
 
-  // Lo que esto comprueba es que cada ítem lleva UN signo de pregunta, no que pida un solo dato. Varias piden
-  // dos o tres a la vez («qué vendes, a quién y qué te deja más»): así vienen los doce contenidos que Dirección
-  // hizo obligatorios, y con un tope de doce preguntas no caben separados. Queda para revisar con Dirección.
+  // Lo que esto comprueba es que cada ítem lleva UN signo de pregunta. Desde el 16-10-2026 además pide un solo dato
+  // («¿qué vendes, a quién y qué te deja más?» se volvió «¿Qué vendes?», y lo que más deja sale del precio y el
+  // costo): lo vigila tests/preguntas-sin-eco.test.ts, junto con el resto de los bancos.
   it("cada ítem lleva un solo signo de pregunta, en tuteo y sin palabras de la metodología", () => {
     const JERGA = /pilar|claim|matriz|hallazgo|diagn[oó]stico|kpi|indicador|metodolog|levantamiento|\bIA\b/i;
     for (const p of PLAN_ENTRADA) {
@@ -439,13 +442,13 @@ describe("lo que ya sabíamos se confirma, no se vuelve a preguntar (regla pura)
     expect(e.basta_confirmar).toBe(true);
   });
 
-  it("con la venta sabida y la ganancia no, la venta no se vuelve a pedir: se pregunta solo lo que falta", () => {
+  it("con la venta sabida y la ganancia no, la venta se confirma: lo que queda no se pide de memoria", () => {
+    // Desde el 16-10-2026 lo que queda es una cuenta que hace 8X con las partes (revisión, sección 3a, pregunta 2).
     const e = estadoDePregunta(VENTAS, conExcel({ metricas: [venta(80000)] }));
     expect(e.estado).toBe("sabida");
-    expect(e.texto).toContain("vendes unos S/ 80,000 al mes");
-    expect(e.texto).toMatch(/¿Cuánto de eso te queda después de pagar todo\?$/);
-    expect(e.texto).not.toMatch(/cuánto vendes/i);
-    expect(e.basta_confirmar, "un «sí» no responde cuánto queda").toBe(false);
+    expect(e.texto).toBe(`Por tu archivo «ventas-2026.xlsx» entendimos que vendes unos ${moneda(80000, porDefecto)} al mes. ¿Es así?`);
+    expect(e.texto).not.toMatch(/te queda/i);
+    expect(e.basta_confirmar).toBe(true);
   });
 
   it("la falta de dato no es cero: un número sin valor, o un cero guardado, no se le lee al dueño como sabido", () => {
@@ -495,9 +498,9 @@ describe("lo que ya sabíamos se confirma, no se vuelve a preguntar (regla pura)
     const VENDE = PLAN_POR_CLAVE.get("entrada.que_vende_estrella")!;
     const c = conExcel({ lineas: [{ nombre: "Polos", source_id: EXCEL }, { nombre: "Casacas", source_id: EXCEL }, { nombre: "Jeans", source_id: EXCEL }] });
     const e = estadoDePregunta(VENDE, c);
-    // Es algo que ya sabíamos por otra fuente: va con su origen. Y un «sí» no responde a quién ni qué deja más.
+    // Es algo que ya sabíamos por otra fuente: va con su origen. Y un «sí» no responde cuál se vendió más.
     expect(e).toMatchObject({ estado: "sabida", sabida_por: "tu archivo «ventas-2026.xlsx»", basta_confirmar: false });
-    expect(e.texto).toBe("Por tu archivo «ventas-2026.xlsx» vimos que vendes Polos, Casacas y Jeans. ¿A quién le vendes y qué de eso te deja más dinero?");
+    expect(e.texto).toBe("Por tu archivo «ventas-2026.xlsx» vimos que vendes Polos, Casacas y Jeans. ¿Cuál de esos vendiste más veces el mes pasado?");
   });
 
   it("una respuesta anterior a la misma pregunta se confirma; un «no sé» anterior no cuenta como sabido", () => {
@@ -797,7 +800,7 @@ describe("«no lo sé» es una respuesta completa y no produce ningún número (
     await responderEntrada({ session_id: s.id, company_id: EMP, response_id: (await abierta()).id, modo: "no_lo_se" });
     const frase = armarSintesis(await filasDeSesion(s.id, sb)).grupos.flatMap((g) => g.frases).find((f) => f.clave === "entrada.ventas_y_ganancia")!;
     expect(frase.certeza).toBe("no_lo_se");
-    expect(frase.texto).toBe("Dijiste que todavía no lo sabes: cuánto vendes y cuánto te queda.");
+    expect(frase.texto).toBe("Dijiste que todavía no lo sabes: cuánto vendiste el mes pasado.");
     expect(frase.texto).not.toMatch(/\d/);
     expect(frase.fuente).toBe("Lo dijiste tú en la entrada (pregunta 3). No pusimos ningún número en su lugar.");
   });
@@ -855,25 +858,31 @@ describe("confirmar lo sabido y responder con un documento (con dobles)", () => 
   });
 
   it("si a lo sabido le falta una parte, un «sí» no basta: se rechaza y hay que responder lo que falta", async () => {
-    await conExcelLeido(false);
+    // Lo que vende ya salió del Excel; falta cuál se vendió más. Desde el 16-10-2026 la venta sola se confirma (lo
+    // que queda lo calcula 8X), así que el caso «sabido a medias» es este.
+    tabla("sources").push({ id: EXCEL, company_id: EMP, nombre: "ventas-2026.xlsx", tipo: "dato", origen: "cliente", created_at: "2026-10-12T10:00:00.000Z" });
+    for (const nombre of ["Polos", "Casacas"]) tabla("lineas_producto").push({ company_id: EMP, nombre, source_id: EXCEL, created_at: "2026-10-12T10:00:00.000Z" });
+    await iniciarEntrada({ company_id: EMP, perfil: PERFIL });
+    await responder("uno");
     const s = await sesionDe();
     const p = await abierta();
+    expect(p.clave).toBe("entrada.que_vende_estrella");
     expect(p.basta_confirmar).toBe(false);
-    expect(p.pregunta).toMatch(/¿Cuánto de eso te queda después de pagar todo\?$/);
+    expect(p.pregunta).toMatch(/¿Cuál de esos vendiste más veces el mes pasado\?$/);
     const r = await rechazo(() => responderEntrada({ session_id: s.id, company_id: EMP, response_id: p.id, modo: "confirma" }));
     expect(r.message).toBe("Esta pregunta necesita tu respuesta con palabras.");
-    await responder("Me quedan como 12 mil", { aproximado: true });
-    // En la fila, junto a sus palabras, queda la pregunta del plan: los 80,000 del Excel no van al extractor.
+    await responder("Los polos, de lejos");
+    // En la fila, junto a sus palabras, queda la pregunta del plan: lo leído del Excel no va al extractor.
     const guardada = tabla("interview_responses").find((x) => x.id === p.id)!;
     expect(guardada.pregunta).toBe(PLAN_POR_CLAVE.get(p.clave)!.texto);
-    expect(String(guardada.pregunta)).not.toContain("80,000");
+    expect(String(guardada.pregunta)).not.toContain("ventas-2026");
     const frase = (await sintesis(s.id, sb)).grupos.flatMap((g) => g.frases).find((f) => f.clave === p.clave)!;
-    expect(frase.texto).toBe("Por tu archivo «ventas-2026.xlsx» entendimos que vendes unos S/ 80,000 al mes. Sobre lo que faltaba dijiste: «Me quedan como 12 mil»");
-    expect(frase.fuente).toBe("Tu archivo «ventas-2026.xlsx» y tus palabras en la entrada (pregunta 3), dadas como aproximadas.");
+    expect(frase.texto).toBe("Por tu archivo «ventas-2026.xlsx» vimos que vendes Polos y Casacas. Sobre lo que faltaba dijiste: «Los polos, de lejos»");
+    expect(frase.fuente).toBe("Tu archivo «ventas-2026.xlsx» y tus palabras en la entrada (pregunta 2).");
     // Si lo mostrado se hubiera perdido, la frase no lo reconstruye ni lo inventa: cita la fuente y sus palabras.
     const sinLoMostrado = armarSintesis(await filasDeSesion(s.id, sb)).grupos.flatMap((g) => g.frases).find((f) => f.clave === p.clave)!;
-    expect(sinLoMostrado.texto).toBe("«Me quedan como 12 mil»");
-    expect(sinLoMostrado.fuente).toBe("Tus palabras en la entrada (pregunta 3), dadas como aproximadas, al revisar lo que entendimos por tu archivo «ventas-2026.xlsx».");
+    expect(sinLoMostrado.texto).toBe("«Los polos, de lejos»");
+    expect(sinLoMostrado.fuente).toBe("Tus palabras en la entrada (pregunta 2), al revisar lo que entendimos por tu archivo «ventas-2026.xlsx».");
   });
 
   it("una pregunta que no era confirmación no acepta un «sí» colado", async () => {
@@ -1228,7 +1237,7 @@ describe("las pantallas, pintadas en el servidor con la base falsa (no en un nav
     expect(html).toContain("Pregunta 1 de 12");
     expect(html).toContain('role="progressbar"');
     expect(html).toContain(GRUPOS.a);
-    expect(html).toContain("Cuéntame tu negocio hoy: ¿qué haces, dónde y con cuánta gente?");
+    expect(html).toContain("Cuéntame tu negocio hoy: ¿a qué se dedica?");
     expect(html).toContain('aria-label="Tu respuesta"');
     for (const boton of ["Guardar y seguir", "No lo sé", "Subir un documento en vez de responder"]) expect(html, boton).toContain(`>${boton}</button>`);
     // En una pregunta de relato no se ofrece «Es aproximado», y sin nada sabido no hay «Sí, es así».
