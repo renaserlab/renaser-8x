@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 /**
  * SISTEMA DE QA DE 8X — el viaje crítico completo contra PRODUCCIÓN, con cuenta desechable.
  *   node --env-file=.env.local --import=tsx scripts/qa.mts   (o: npm run qa)
@@ -28,7 +29,8 @@ const paso = async <T,>(nombre: string, limiteMs: number, fn: () => Promise<[boo
 };
 
 const EMAIL = `qa.8x.${Date.now()}@gmail.com`;
-const PASS = "Qa-8x-2026!";
+// Clave de un solo uso, nueva en cada corrida: ninguna contraseña vive escrita en el repositorio (15-10-2026).
+const PASS = `Qa-${randomUUID()}`;
 let cookie = "";
 let companyId = "";
 let userId = "";

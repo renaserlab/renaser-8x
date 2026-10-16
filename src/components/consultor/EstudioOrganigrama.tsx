@@ -20,6 +20,63 @@ export type EstudioIA = {
 const CUANDO: Record<string, string> = { ahora: "ahora", tres_meses: "en 3 meses", al_crecer: "al crecer" };
 
 /**
+ * LA TARJETA VIVE FUERA DEL COMPONENTE, A PROPOSITO.
+ *
+ * Estaba definida dentro del cuerpo de EstudioOrganigrama, y eso la convertia en una funcion NUEVA
+ * en cada render. React compara por identidad: si el tipo de componente cambia, no actualiza el
+ * subarbol — lo DESMONTA y lo vuelve a montar entero. El efecto observable aqui era que al pulsar
+ * «Adoptar esta estructura» el setOcupado provocaba un render, las dos tarjetas se remontaban y el
+ * boton perdia el foco a mitad de la accion.
+ *
+ * Definida afuera, su identidad es estable y React actualiza en lugar de remontar. Recibe por props
+ * lo que antes tomaba del cierre.
+ */
+function TarjetaOpcion({ cual, op, recomendada, adoptada, ocupado, alAdoptar }: {
+  cual: "a" | "b";
+  op: Opcion;
+  recomendada: boolean;
+  adoptada: "a" | "b" | null;
+  ocupado: string | null;
+  alAdoptar: (cual: "a" | "b") => void;
+}) {
+  return (
+      <article className="panel p-5" style={{ borderTop: `2.5px solid ${recomendada ? "var(--marca)" : "var(--linea)"}` }}>
+        <div className="flex items-baseline justify-between gap-3 flex-wrap">
+          <p className="t-etiqueta" style={{ color: recomendada ? "var(--marca)" : "var(--grafito)" }}>OPCIÓN {cual.toUpperCase()}{recomendada ? " · RECOMENDADA" : ""}</p>
+          <span className="t-dato" style={{ color: "var(--grafito)" }}>{op.puestos.length} puestos</span>
+        </div>
+        <h3 className="t-seccion mt-1" style={{ fontSize: 17 }}>{op.nombre}</h3>
+        <p className="t-cuerpo mt-2">{op.logica}</p>
+        <div className="mt-3 flex flex-col gap-1">
+          {op.puestos.map((p) => (
+            <p key={p.nombre} className="t-dato"><b>{p.nombre}</b> <span style={{ color: "var(--grafito)" }}>· {p.mision} · {CUANDO[p.cuando]}</span></p>
+          ))}
+        </div>
+        <div className="grid gap-3 mt-4" style={{ gridTemplateColumns: "1fr 1fr" }}>
+          <div>
+            <p className="t-etiqueta mb-1" style={{ color: "var(--confirmado)" }}>A FAVOR</p>
+            {op.ventajas.map((v, i) => <p key={i} className="t-dato">– {v}</p>)}
+          </div>
+          <div>
+            <p className="t-etiqueta mb-1" style={{ color: "var(--contradicho)" }}>EN CONTRA</p>
+            {op.desventajas.map((v, i) => <p key={i} className="t-dato">– {v}</p>)}
+          </div>
+        </div>
+        <p className="t-dato mt-3" style={{ color: "var(--grafito)" }}><b>Conviene si:</b> {op.conviene_si}</p>
+        <div className="no-imprimir mt-4">
+          {adoptada === cual ? (
+            <p className="t-dato" style={{ color: "var(--confirmado)", fontWeight: 600 }}>Adoptada: sus puestos ya están arriba como vacantes — ponles nombre.</p>
+          ) : (
+            <button className="boton boton--secundario" disabled={!!ocupado} onClick={() => alAdoptar(cual)}>
+              {ocupado === `adoptar-${cual}` ? "Sembrando puestos…" : "Adoptar esta estructura"}
+            </button>
+          )}
+        </div>
+      </article>
+    );
+}
+
+/**
  * EL ESTUDIO v2 (pedido de Kelin): dos opciones de estructura con ventajas y desventajas, la
  * recomendación del motor, ADOPTAR una con un clic (siembra sus puestos como vacantes), y las
  * OBSERVACIONES de levantamiento — lo que falta saber, con la pregunta lista para hacerla.
@@ -62,45 +119,6 @@ export function EstudioOrganigrama({ companyId, estudio, fecha, versiones }: { c
     }
   };
 
-  const TarjetaOpcion = ({ cual, op }: { cual: "a" | "b"; op: Opcion }) => {
-    const recomendada = estudio?.recomendacion.opcion === cual;
-    return (
-      <article className="panel p-5" style={{ borderTop: `2.5px solid ${recomendada ? "var(--marca)" : "var(--linea)"}` }}>
-        <div className="flex items-baseline justify-between gap-3 flex-wrap">
-          <p className="t-etiqueta" style={{ color: recomendada ? "var(--marca)" : "var(--grafito)" }}>OPCIÓN {cual.toUpperCase()}{recomendada ? " · RECOMENDADA" : ""}</p>
-          <span className="t-dato" style={{ color: "var(--grafito)" }}>{op.puestos.length} puestos</span>
-        </div>
-        <h3 className="t-seccion mt-1" style={{ fontSize: 17 }}>{op.nombre}</h3>
-        <p className="t-cuerpo mt-2">{op.logica}</p>
-        <div className="mt-3 flex flex-col gap-1">
-          {op.puestos.map((p) => (
-            <p key={p.nombre} className="t-dato"><b>{p.nombre}</b> <span style={{ color: "var(--grafito)" }}>· {p.mision} · {CUANDO[p.cuando]}</span></p>
-          ))}
-        </div>
-        <div className="grid gap-3 mt-4" style={{ gridTemplateColumns: "1fr 1fr" }}>
-          <div>
-            <p className="t-etiqueta mb-1" style={{ color: "var(--confirmado)" }}>A FAVOR</p>
-            {op.ventajas.map((v, i) => <p key={i} className="t-dato">– {v}</p>)}
-          </div>
-          <div>
-            <p className="t-etiqueta mb-1" style={{ color: "var(--contradicho)" }}>EN CONTRA</p>
-            {op.desventajas.map((v, i) => <p key={i} className="t-dato">– {v}</p>)}
-          </div>
-        </div>
-        <p className="t-dato mt-3" style={{ color: "var(--grafito)" }}><b>Conviene si:</b> {op.conviene_si}</p>
-        <div className="no-imprimir mt-4">
-          {adoptada === cual ? (
-            <p className="t-dato" style={{ color: "var(--confirmado)", fontWeight: 600 }}>Adoptada: sus puestos ya están arriba como vacantes — ponles nombre.</p>
-          ) : (
-            <button className="boton boton--secundario" disabled={!!ocupado} onClick={() => adoptar(cual)}>
-              {ocupado === `adoptar-${cual}` ? "Sembrando puestos…" : "Adoptar esta estructura"}
-            </button>
-          )}
-        </div>
-      </article>
-    );
-  };
-
   return (
     <section className="mb-10">
       <div className="flex items-baseline justify-between gap-4 flex-wrap mb-3">
@@ -133,8 +151,8 @@ export function EstudioOrganigrama({ companyId, estudio, fecha, versiones }: { c
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
-            <TarjetaOpcion cual="a" op={estudio.opcion_a} />
-            <TarjetaOpcion cual="b" op={estudio.opcion_b} />
+            <TarjetaOpcion cual="a" op={estudio.opcion_a} recomendada={estudio.recomendacion.opcion === "a"} adoptada={adoptada} ocupado={ocupado} alAdoptar={adoptar} />
+            <TarjetaOpcion cual="b" op={estudio.opcion_b} recomendada={estudio.recomendacion.opcion === "b"} adoptada={adoptada} ocupado={ocupado} alAdoptar={adoptar} />
           </div>
           <p className="t-cuerpo medida"><b>La recomendación del estudio:</b> {estudio.recomendacion.por_que}</p>
 

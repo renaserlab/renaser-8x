@@ -29,6 +29,8 @@ const csp = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Lectura de Word y Excel en el servidor (src/lib/documentos): se cargan como paquetes de Node, no se empaquetan.
+  serverExternalPackages: ["exceljs", "mammoth"],
   async headers() {
     return [
       {

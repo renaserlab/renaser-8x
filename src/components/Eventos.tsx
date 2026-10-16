@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { pedir } from "@/lib/cliente";
+import { numeroEscrito } from "@/lib/numero-escrito";
 import { TIPOS_EVENTO, FAMILIAS, TIPO_EVENTO, type LineaResumen } from "@/lib/eventos";
 
 /**
@@ -66,8 +67,12 @@ export function Eventos({ companyId, personas, iniciales, resumenInicial }: { co
       for (const c of def.campos) {
         const v = (valores[c.clave] ?? "").trim();
         if (!v) continue;
-        if (c.clave === "monto") cuerpo.monto = Number(v.replace(",", "."));
-        else if (c.clave === "minutos") cuerpo.minutos = Number(v);
+        if (c.clave === "monto") {
+          // «8,500» es ocho mil quinientos: la lectura única del sistema, no un reemplazo de coma por punto.
+          const monto = numeroEscrito(v);
+          if (typeof monto !== "number") throw new Error("El monto no es un número. Escríbelo como 8500, 8,500 u 8 mil.");
+          cuerpo.monto = monto;
+        } else if (c.clave === "minutos") cuerpo.minutos = Number(v);
         else if (c.clave === "persona") cuerpo.persona_id = v;
         else cuerpo[c.clave] = v;
       }

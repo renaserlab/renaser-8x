@@ -1,10 +1,8 @@
 import { protegido, ok, fallo, exigirAcceso } from "@/lib/api";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { encolar, PRIORIDAD, claveIdempotente } from "@/lib/jobs/queue";
-import { validarArchivo, rutaStorage } from "@/lib/archivos";
+import { validarArchivo, rutaStorage, validarTexto } from "@/lib/archivos";
 import { hayTranscriptor } from "@/lib/ai";
-
-const TIPOS_TEXTO = new Set(["documento", "observacion", "dato"]);
 
 /** multipart: company_id, archivo (File) | texto, nombre?, fecha_origen?, tipo?  ·  14.2: MIME, extensión, tamaño, nombre y ruta validados en código. */
 export const POST = protegido({ cupo: "subida" }, async (perfil, req) => {
@@ -49,8 +47,11 @@ export const POST = protegido({ cupo: "subida" }, async (perfil, req) => {
     row = data;
   } else if (texto) {
     if (texto.length > 200_000) return fallo("El texto es demasiado largo. Súbelo como archivo.");
-    const tipoPedido = String(form.get("tipo") ?? "");
-    const tipo = TIPOS_TEXTO.has(tipoPedido) ? tipoPedido : "observacion";
+    // El consultor dice qué es lo que pega (documento, observación de campo o dato): de eso depende
+    // la fuerza de la fuente. Lo que el cliente cuenta de sí mismo sigue siendo su observación.
+    const vt = validarTexto({ tipo: form.get("tipo") as string | null, origen });
+    if (!vt.ok) return fallo(vt.error);
+    const tipo = vt.tipo;
     nombre = nombre || `Nota del ${new Date().toLocaleDateString("es-PE")}`;
     const { data, error } = await sb.from("sources").insert({ company_id: companyId, tipo, nombre, fecha_origen: fecha ?? new Date().toISOString().slice(0, 10), contenido: texto, mime: "text/plain", origen }).select("id").single();
     if (error) return fallo(error.message, 500);

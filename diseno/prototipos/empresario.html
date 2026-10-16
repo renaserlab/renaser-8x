@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>8X · Inicio de Modas Lucero</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+<header class="cabecera">
+  <a class="marca" href="#">8X <small>Modas Lucero</small></a>
+  <nav class="pildora" aria-label="Secciones">
+    <a href="#" aria-current="page" aria-label="Inicio"><svg aria-hidden="true"><use href="iconos.svg#inicio"/></svg><span>Inicio</span></a>
+    <a href="#" aria-label="Mi empresa" title="Mi empresa"><svg aria-hidden="true"><use href="iconos.svg#miempresa"/></svg><span>Mi empresa</span></a>
+    <a href="#" aria-label="Procesos" title="Procesos"><svg aria-hidden="true"><use href="iconos.svg#procesos"/></svg><span>Procesos</span></a>
+    <a href="#" aria-label="Tus documentos" title="Tus documentos"><svg aria-hidden="true"><use href="iconos.svg#carpeta"/></svg><span>Tus documentos</span></a>
+    <a href="#" aria-label="Plan" title="Plan"><svg aria-hidden="true"><use href="iconos.svg#plan"/></svg><span>Plan</span></a>
+  </nav>
+  <div class="acciones-cabecera">
+    <span class="etiqueta-prototipo">Prototipo · datos de ejemplo</span>
+    <button class="boton-redondo" type="button" aria-label="Ayuda"><svg aria-hidden="true"><use href="iconos.svg#ayuda"/></svg></button>
+    <span class="avatar" role="img" aria-label="Lucero">LU</span>
+  </div>
+</header>
+
+<main class="lienzo">
+  <section class="saludo" aria-labelledby="t-hola">
+    <div>
+      <h1 class="hola" id="t-hola">Hola,<strong>Lucero</strong></h1>
+      <p class="bienvenida">Martes 13 de octubre · Kelin te acompaña</p>
+      <a class="accion-hoy" href="#">
+        <span><b>Confirma tu punto de partida</b><small>Revisa 6 números antes del viernes</small></span>
+        <span class="flecha"><svg aria-hidden="true"><use href="iconos.svg#diagonal"/></svg></span>
+      </a>
+    </div>
+    <div class="pendientes">
+      <div class="fila"><h2>Documentos en regla</h2><span class="cifra num">4<small class="de">de 6</small></span></div>
+      <div class="segmentos" role="img" aria-label="3 revisados, 1 en revisión, 2 faltan">
+        <span class="seg-1" style="flex:3"></span><span class="seg-2" style="flex:1"></span><span class="seg-3" style="flex:2"></span>
+      </div>
+      <div class="leyenda">
+        <span><i style="background:var(--tinta)"></i>3 revisados</span>
+        <span><i style="background:#9aa6b8"></i>1 en revisión</span>
+        <span><i class="raya"></i>2 faltan</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="tarjeta medidor" aria-labelledby="t-comp">
+    <div class="cabeza">
+      <div><h2 id="t-comp">Qué tanto entendemos tu negocio</h2><p class="sub">Lo confirmado sobre lo que necesitamos saber</p></div>
+      <a class="ir" href="#" aria-label="Ver qué falta"><svg aria-hidden="true"><use href="iconos.svg#diagonal"/></svg></a>
+    </div>
+    <svg data-medidor="72" role="img" aria-label="72 por ciento"></svg>
+    <div class="lectura"><span class="num">72%</span><p>entendido</p></div>
+    <div class="pie">
+      <div><b class="num">36</b><small>cosas confirmadas</small></div>
+      <div><b class="num">14</b><small>por confirmar</small></div>
+    </div>
+  </section>
+
+  <section class="tarjeta cifra-tarjeta" aria-labelledby="t-ventas">
+    <div class="cabeza">
+      <div><h2 id="t-ventas">Ventas del mes</h2><p class="sub">Setiembre · de tus boletas</p></div>
+      <a class="ir" href="#" aria-label="Ver tus ventas"><svg aria-hidden="true"><use href="iconos.svg#diagonal"/></svg></a>
+    </div>
+    <div class="fila-cifra">
+      <span class="grande"><small class="moneda">S/</small>86,900</span>
+      <div class="barras" data-barras=",,,,,,74200,81500,69800,88300,79100,86900" role="img" aria-label="Ventas por mes; de octubre a marzo no hay datos"></div>
+    </div>
+  </section>
+
+  <section class="tarjeta cifra-tarjeta" aria-labelledby="t-queda">
+    <div class="cabeza">
+      <div><h2 id="t-queda">Lo que te queda</h2><p class="sub">Lo dijiste tú en la entrevista</p></div>
+      <a class="ir" href="#" aria-label="Confirmar lo que te queda"><svg aria-hidden="true"><use href="iconos.svg#diagonal"/></svg></a>
+    </div>
+    <div class="fila-cifra">
+      <span class="grande"><small class="moneda">S/</small>8,000<span class="chip-estado">por confirmar</span></span>
+      <p class="nota">Solo setiembre, y lo dijiste tú: falta comprobarlo con tus números.</p>
+    </div>
+  </section>
+
+  <section class="tarjeta cifra-tarjeta ancha" aria-labelledby="t-equilibrio">
+    <div class="cabeza">
+      <div><h2 id="t-equilibrio">Punto de equilibrio</h2><p class="sub">Lo que tienes que vender para no perder</p></div>
+    </div>
+    <div class="fila-cifra falta">
+      <span class="sin-dato">Todavía no se puede calcular</span>
+      <a class="enlace" href="#">Subir tus costos del mes</a>
+    </div>
+    <p class="nota">Necesitamos tus costos variables de setiembre. Sin ellos no ponemos un número.</p>
+  </section>
+
+  <section class="tarjeta cifra-tarjeta ancha" aria-labelledby="t-tareas">
+    <div class="cabeza">
+      <div><h2 id="t-tareas">Tus tareas del plan</h2><p class="sub">Hechas, en curso y por empezar</p></div>
+      <a class="ir" href="#" aria-label="Ir a tu plan"><svg aria-hidden="true"><use href="iconos.svg#diagonal"/></svg></a>
+    </div>
+    <div class="fila-cifra">
+      <span class="grande">4<small>de 11 hechas</small></span>
+      <div class="puntos" data-puntos="4,3,4" role="img" aria-label="4 hechas, 3 en curso, 4 por empezar"></div>
+    </div>
+  </section>
+
+  <section class="tarjeta linea-tarjeta" aria-labelledby="t-linea">
+    <div class="cabeza">
+      <div><h2 id="t-linea">Tus ventas mes a mes</h2><p class="sub">De tus boletas y facturas</p></div>
+      <a class="ir" href="#" aria-label="Ver el detalle de tus ventas"><svg aria-hidden="true"><use href="iconos.svg#diagonal"/></svg></a>
+    </div>
+    <div class="resumen">
+      <span class="num">S/ 86,900</span>
+      <p>en setiembre, 10% más que en agosto. De marzo no subiste boletas.</p>
+    </div>
+    <div class="grafico" data-unidad="soles"
+      data-linea='[{"e":"Mar","v":null,"l":"Marzo"},{"e":"Abr","v":74200,"l":"Abril"},{"e":"May","v":81500,"l":"Mayo"},{"e":"Jun","v":69800,"l":"Junio"},{"e":"Jul","v":88300,"l":"Julio"},{"e":"Ago","v":79100,"l":"Agosto"},{"e":"Set","v":86900,"l":"Setiembre"}]'>
+      <svg tabindex="0" role="img" aria-label="Ventas por mes de marzo a setiembre. Usa las flechas para recorrer."></svg>
+      <div class="globo" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section class="tarjeta fuentes-tarjeta" aria-labelledby="t-fuentes">
+    <div class="cabeza">
+      <div><h2 id="t-fuentes">Lo que sabemos de tu negocio</h2><p class="sub">Lleno: comprobado. Rayado: lo dijiste, falta comprobarlo.</p></div>
+      <a class="ir" href="#" aria-label="Ver todo lo que sabemos"><svg aria-hidden="true"><use href="iconos.svg#diagonal"/></svg></a>
+    </div>
+    <div class="fuentes">
+      <div class="fuente">
+        <span class="icono"><svg aria-hidden="true"><use href="iconos.svg#miempresa"/></svg></span>
+        <div class="rotulo"><b>Ventas</b><span>12 comprobadas · 2 por comprobar</span></div>
+        <div class="pista"><span class="lleno p1" style="width:85.7%"></span><span class="resto" style="width:14.3%"></span></div>
+      </div>
+      <div class="fuente">
+        <span class="icono"><svg aria-hidden="true"><use href="iconos.svg#persona"/></svg></span>
+        <div class="rotulo"><b>Tu equipo</b><span>10 comprobadas · 2 por comprobar</span></div>
+        <div class="pista"><span class="lleno p2" style="width:71.4%"></span><span class="resto" style="width:14.3%"></span></div>
+      </div>
+      <div class="fuente">
+        <span class="icono"><svg aria-hidden="true"><use href="iconos.svg#procesos"/></svg></span>
+        <div class="rotulo"><b>Cómo trabajan</b><span>8 comprobadas · 4 por comprobar</span></div>
+        <div class="pista"><span class="lleno p4" style="width:57.1%"></span><span class="resto" style="width:28.6%"></span></div>
+      </div>
+      <div class="fuente">
+        <span class="icono"><svg aria-hidden="true"><use href="iconos.svg#documento"/></svg></span>
+        <div class="rotulo"><b>Costos</b><span>6 comprobadas · 6 por comprobar</span></div>
+        <div class="pista"><span class="lleno p3" style="width:42.9%"></span><span class="resto" style="width:42.9%"></span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tarjeta tabla-tarjeta" aria-labelledby="t-plan">
+    <div class="cabeza">
+      <div><h2 id="t-plan">Tu plan esta semana</h2><p class="sub">Lo que toca y quién lo hace</p></div>
+      <a class="ir" href="#" aria-label="Ir a tu plan"><svg aria-hidden="true"><use href="iconos.svg#diagonal"/></svg></a>
+    </div>
+    <div class="tabla-envoltura">
+      <table>
+        <thead><tr><th>Tarea</th><th>Quién</th><th>Vence</th><th>Estado</th><th><span class="solo-lector">Más opciones</span></th></tr></thead>
+        <tbody>
+          <tr><td><a href="#">Pedir dos cotizaciones de tela</a><span class="menor">Para bajar el costo del uniforme</span></td><td>Lucero</td><td>11 oct</td><td><span class="estado alto">Venció hace 2 días</span></td><td><button class="mas" type="button" aria-label="Más opciones"><svg aria-hidden="true"><use href="iconos.svg#mas"/></svg></button></td></tr>
+          <tr><td><a href="#">Anotar las ventas de cada día</a><span class="menor">En el cuaderno de caja</span></td><td>Lucero</td><td>18 oct</td><td><span class="estado neutro">En curso</span></td><td><button class="mas" type="button" aria-label="Más opciones"><svg aria-hidden="true"><use href="iconos.svg#mas"/></svg></button></td></tr>
+          <tr><td><a href="#">Contar el inventario de telas</a><span class="menor">Con foto de cada rollo</span></td><td>Rosa, del taller</td><td>15 oct</td><td><span class="estado espera">Enviado para revisar</span></td><td><button class="mas" type="button" aria-label="Más opciones"><svg aria-hidden="true"><use href="iconos.svg#mas"/></svg></button></td></tr>
+          <tr><td><a href="#">Fijar el precio del uniforme escolar</a><span class="menor">S/ 95 por juego</span></td><td>Lucero y Kelin</td><td>10 oct</td><td><span class="estado ok">Comprobada</span></td><td><button class="mas" type="button" aria-label="Más opciones"><svg aria-hidden="true"><use href="iconos.svg#mas"/></svg></button></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ul class="lista-movil">
+      <li><a href="#">Pedir dos cotizaciones de tela</a><span class="estado alto">Venció</span><small>Lucero · vencía el 11 oct</small></li>
+      <li><a href="#">Anotar las ventas de cada día</a><span class="estado neutro">En curso</span><small>Lucero · vence el 18 oct</small></li>
+      <li><a href="#">Contar el inventario de telas</a><span class="estado espera">Por revisar</span><small>Rosa, del taller · 15 oct</small></li>
+      <li><a href="#">Fijar el precio del uniforme escolar</a><span class="estado ok">Comprobada</span><small>Lucero y Kelin · 10 oct</small></li>
+    </ul>
+  </section>
+
+  <section class="tarjeta lista-tarjeta" aria-labelledby="t-ultimo">
+    <div class="cabeza">
+      <div><h2 id="t-ultimo">Lo último</h2><p class="sub">Lo que pasó con tu empresa</p></div>
+    </div>
+    <ul class="lista">
+      <li><span class="icono-cuadro"><svg aria-hidden="true"><use href="iconos.svg#subida"/></svg></span><div><b>Subiste tus boletas de setiembre</b><small>Ayer, 6:40 p. m.</small></div><div class="derecha"><b>38</b><small>boletas</small></div></li>
+      <li><span class="icono-cuadro"><svg aria-hidden="true"><use href="iconos.svg#ojo"/></svg></span><div><b>Kelin revisó tu inventario</b><small>Lunes 12 oct</small></div><div class="derecha"><small>2 dudas</small></div></li>
+      <li class="pide"><span class="icono-cuadro"><svg aria-hidden="true"><use href="iconos.svg#aviso"/></svg></span><div><b>Falta tu planilla de agosto</b><small>Te la pidieron el 9 oct</small></div><div class="derecha"><a class="enlace" href="#">Subir</a></div></li>
+      <li><span class="icono-cuadro"><svg aria-hidden="true"><use href="iconos.svg#plan"/></svg></span><div><b>Se aprobó tu plan</b><small>7 oct · lo firmaron tú y Kelin</small></div><div class="derecha"><b>11</b><small>tareas</small></div></li>
+    </ul>
+  </section>
+</main>
+<script src="graficos.js"></script>
+</body>
+</html>

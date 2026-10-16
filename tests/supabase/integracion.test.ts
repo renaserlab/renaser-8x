@@ -1,16 +1,42 @@
 /**
- * FASE 5 — Tests reales contra Supabase (local o remoto). Se ejecutan SOLO si existen las variables:
- *   SUPABASE_TEST_URL, SUPABASE_TEST_ANON_KEY, SUPABASE_TEST_SERVICE_ROLE_KEY
- * Sin ellas quedan en skip (BLOCKED_EXTERNAL). Cubren: AUTH, RLS, RPC, VIEWS, STORAGE, TRANSACTION, QUEUE, REALTIME.
+ * FASE 5 — Tests reales contra Supabase. Cubren: AUTH, RLS, RPC, VIEWS, STORAGE, TRANSACTION, QUEUE, REALTIME.
  * Crea dos empresas (A, B), un consultor, un dueño de A, un dueño de B y un participante por enlace, y los borra al final.
+ *
+ * ESCRIBEN DE VERDAD (service role, salta RLS), así que pasan por el candado de entorno (src/lib/entorno.ts): la URL
+ * destino tiene que ser un proyecto listado en DESTINOS_PRUEBA con ENTORNO=prueba o local, nunca producción. Hasta el
+ * 13-10-2026 bastaba con que SUPABASE_TEST_URL existiera… y apuntaba al mismo proyecto que la app.
+ *
+ * Dos modos, elegidos por PRUEBAS_INTEGRACION:
+ *   "1"  → la integración se pidió. Si el destino no está autorizado, la suite FALLA con el motivo (un `it` que lanza).
+ *          Pedir integración y recibir un «todo verde» de pruebas saltadas sería mentir.
+ *   otro → cada bloque se salta con nombre «SALTADA (sin entorno de prueba): <motivo>», para que en el reporte se
+ *          distinga de las aprobadas.
+ * Variables: el trío SUPABASE_TEST_* si SUPABASE_TEST_URL existe; si no, las NEXT_PUBLIC_SUPABASE_* / SERVICE_ROLE del .env.test.
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { generarToken, hashToken, expiracionPorDefecto } from "@/lib/tokens";
+import { comprobarDestinoEscritura } from "@/lib/entorno";
 
-const URL = process.env.SUPABASE_TEST_URL, ANON = process.env.SUPABASE_TEST_ANON_KEY, SERVICE = process.env.SUPABASE_TEST_SERVICE_ROLE_KEY;
-const activo = !!(URL && ANON && SERVICE);
-const d = describe.skipIf(!activo);
+// Se toma un trío completo, nunca una URL de un proyecto con las claves de otro.
+const trio = process.env.SUPABASE_TEST_URL
+  ? { variable: "SUPABASE_TEST_URL", url: process.env.SUPABASE_TEST_URL, anon: process.env.SUPABASE_TEST_ANON_KEY, service: process.env.SUPABASE_TEST_SERVICE_ROLE_KEY, nombres: ["SUPABASE_TEST_ANON_KEY", "SUPABASE_TEST_SERVICE_ROLE_KEY"] }
+  : { variable: "NEXT_PUBLIC_SUPABASE_URL", url: process.env.NEXT_PUBLIC_SUPABASE_URL, anon: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, service: process.env.SUPABASE_SERVICE_ROLE_KEY, nombres: ["NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"] };
+const URL = trio.url, ANON = trio.anon, SERVICE = trio.service;
+
+const pedida = process.env.PRUEBAS_INTEGRACION === "1";
+const veredicto: { ok: true } | { ok: false; motivo: string } = (() => {
+  // Primero el candado: aunque falten claves, lo que importa decir es si el destino es legítimo.
+  const candado = comprobarDestinoEscritura({ url: URL, contexto: "vitest", variable: trio.variable });
+  if (!candado.ok) return { ok: false, motivo: candado.motivo };
+  const faltan = [!ANON && trio.nombres[0], !SERVICE && trio.nombres[1]].filter(Boolean);
+  if (faltan.length) return { ok: false, motivo: `faltan ${faltan.join(" y ")}` };
+  return { ok: true };
+})();
+const activo = veredicto.ok;
+const motivo = veredicto.ok ? "" : veredicto.motivo;
+// Cada bloque saltado lleva el motivo en el nombre: así el reporte no confunde «saltada» con «aprobada».
+const d = (nombre: string, fn: () => void) => (activo ? describe(nombre, fn) : describe.skip(`SALTADA (sin entorno de prueba): ${motivo} · ${nombre}`, fn));
 
 let admin: SupabaseClient, consultor: SupabaseClient, duenoA: SupabaseClient, duenoB: SupabaseClient, anon: SupabaseClient;
 const ids: Record<string, string> = {};
@@ -261,8 +287,16 @@ d("REALTIME", () => {
   }, 15_000);
 });
 
-if (!activo) {
+if (pedida && !activo) {
+  // Se pidió integración y no se puede ejecutar: fallar es la única respuesta honesta. Saltar en silencio
+  // dejaría un reporte verde sobre una base que nunca se tocó.
+  describe("PRUEBAS_INTEGRACION=1 · la integración se pidió y no puede ejecutarse", () => {
+    it("falla con el motivo en vez de saltar", () => {
+      throw new Error(`Integración pedida (PRUEBAS_INTEGRACION=1) pero no hay destino de prueba autorizado: ${motivo} Rellena .env.test (ver supabase/README-ENTORNO.md) o pon PRUEBAS_INTEGRACION=0.`);
+    });
+  });
+} else if (!activo) {
   describe("BLOCKED_EXTERNAL · Supabase", () => {
-    it.todo("Define SUPABASE_TEST_URL, SUPABASE_TEST_ANON_KEY y SUPABASE_TEST_SERVICE_ROLE_KEY para ejecutar los 20 tests de integración (AUTH, RLS, RPC, VIEWS, STORAGE, TRANSACTION, QUEUE, REALTIME)");
+    it.todo(`Sin entorno de prueba (${motivo}). Copia .env.test.example a .env.test con el proyecto de prueba y PRUEBAS_INTEGRACION=1 (ver supabase/README-ENTORNO.md) para ejecutar los 20 tests de integración (AUTH, RLS, RPC, VIEWS, STORAGE, TRANSACTION, QUEUE, REALTIME)`);
   });
 }

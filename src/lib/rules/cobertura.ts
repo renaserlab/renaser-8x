@@ -41,6 +41,14 @@ export const BLOQUES: Record<string, Bloque[]> = {
     { clave: "know_how", nombre: "Lo que solo tú sabes", preguntas: ["¿Qué sabes hacer tú que alguien nuevo tardaría meses en aprender?", "¿Qué notas tú antes que los demás cuando algo va a salir mal?", "¿Qué haces diferente cuando aparece un caso complicado?", "¿Qué cosa importante de tu trabajo nunca quedó escrita?", "Si mañana no pudieras venir, ¿qué se perdería contigo?", "¿Qué error comete siempre un principiante que tú ya no cometes?", "¿Cuándo sabes que un problema te queda grande y hay que avisar?"] },
   ],
   validacion: [{ clave: "validacion", nombre: "Validación", preguntas: [] }],
+  // LA ENTRADA BREVE (Dirección, 13-10-2026, sección 7). Su plan de doce preguntas vive en src/lib/entrada.ts y
+  // once de ellas citan bloques que ya están arriba (hoy, dependencia, empresa_deseada, exito, proposito,
+  // epoca_dorada). Aquí va solo lo que el banco no tenía: los recursos desaprovechados, que Dirección exige
+  // preguntar. Vive bajo su propio tipo de sesión, y no dentro de empresa_dueno, para que ninguna sesión que
+  // ya existe pierda cobertura por un bloque que nadie le había pedido cubrir.
+  entrada_breve: [
+    { clave: "recursos", nombre: "Recursos desaprovechados", preguntas: ["¿Qué tienes hoy en el negocio que no se aprovecha del todo: un local, una máquina, una persona, clientes antiguos, mercadería parada?"] },
+  ],
 };
 
 export const MINIMO_POR_BLOQUE = 1;

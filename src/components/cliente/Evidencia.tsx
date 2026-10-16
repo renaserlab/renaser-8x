@@ -52,14 +52,17 @@ export function Evidencia({
     }
   };
 
-  const darPorHecha = async () => {
+  // «Ya lo hice» AVISA, no comprueba. La acción queda enviada para revisar y la consultora la comprueba con
+  // la prueba delante. Antes este botón llamaba al PATCH de evidencia y la dejaba verificada sin que nadie
+  // la mirara; ahora pasa por la ruta de transición, que es la que dice si se puede y deja el historial.
+  const avisarQueSeHizo = async () => {
     setCerrando(true);
     setError(null);
     try {
-      await pedir(`/api/companies/${companyId}/evidencia`, { method: "PATCH", json: { action_id: actionId } });
+      await pedir(`/api/actions/${actionId}/transicion`, { json: { evento: "reportar" } });
       window.location.reload();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "No pudimos cerrarla.");
+      setError(e instanceof Error ? e.message : "No pudimos enviarla para revisar.");
       setCerrando(false);
     }
   };
@@ -97,8 +100,8 @@ export function Evidencia({
             {pruebas.length ? "Agregar otra prueba" : "Subir la prueba de que se hizo"}
           </button>
           {pruebas.length > 0 && (
-            <button type="button" className="boton boton--secundario" style={{ minHeight: 32, fontSize: 13 }} disabled={cerrando} onClick={darPorHecha}>
-              {cerrando ? "Cerrando" : "Darla por hecha"}
+            <button type="button" className="boton boton--secundario" style={{ minHeight: 32, fontSize: 13 }} disabled={cerrando} onClick={avisarQueSeHizo}>
+              {cerrando ? "Enviando" : "Ya lo hice: enviar para revisar"}
             </button>
           )}
         </div>

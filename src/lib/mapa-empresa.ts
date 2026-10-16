@@ -19,6 +19,7 @@ import { madurezProceso, madurezEmpresa, type Evaluacion } from "./madurez";
 import { normalizarParaConfirmar } from "./confirmacion";
 import { traspasosDe, primerCorte, type Traspaso, type Eslabon } from "./rules/cadena-valor";
 import { leerCultura, type LecturaCultura } from "./rules/cultura";
+import { lineaBaseVigente, type ConVersion } from "./medicion";
 
 /** Un documento de la matriz con el estado real en el que está hoy. */
 export type EstadoDoc = "falta" | "levantado" | "listo";
@@ -67,13 +68,39 @@ const LEVANTADO = new Set(["contado", "lo_tengo", "incompleto"]);
 /** Para cruzar el indicador escrito en un proceso con los números que la empresa anota de verdad. */
 const normalizar = normalizarParaConfirmar;
 
+/** Lo que se lee de `mediciones` para contar anotaciones. Las filas anteriores al versionado no traen `vigente` ni `version`. */
+export type MedicionAnotada = ConVersion & { valores?: unknown };
+
+/**
+ * CUÁNTAS VECES SE ANOTÓ DE VERDAD CADA NÚMERO. Cuenta el punto de partida VIGENTE y los cortes; nada más.
+ *
+ * Desde el 13-10-2026 volver a fijar el punto de partida no borra la versión anterior: queda en la tabla
+ * con `vigente = false`. Contar todas las filas convertía tres correcciones del mismo «antes» en cuatro
+ * anotaciones, y un proceso llegaba a «medido» sin que nadie hubiera vuelto a medir nada. Una corrección
+ * no es una medición nueva: es la misma foto, corregida. La vigente se elige con la regla de siempre
+ * (`lineaBaseVigente`), que también reconoce la única línea base de una base sin versionado.
+ */
+export function vecesAnotado(mediciones: readonly MedicionAnotada[]): Map<string, number> {
+  const vigente = lineaBaseVigente(mediciones);
+  const veces = new Map<string, number>();
+  for (const m of mediciones) {
+    if (m.tipo !== "corte" && m !== vigente) continue;
+    const valores = (m.valores ?? {}) as Record<string, unknown>;
+    for (const [clave, v] of Object.entries(valores)) {
+      if (v == null || v === "" || Number.isNaN(Number(v))) continue;
+      veces.set(clave, (veces.get(clave) ?? 0) + 1);
+    }
+  }
+  return veces;
+}
+
 export async function mapaDe(companyId: string): Promise<MapaEmpresa | null> {
   const sb = supabaseAdmin();
 
   const { data: empresa } = await sb.from("companies").select("id,sector,ficha").eq("id", companyId).single();
   if (!empresa) return null;
 
-  const [{ data: procesos }, { data: activos }, { data: sesiones }, { data: indicadores }, { data: mediciones }] = await Promise.all([
+  const [{ data: procesos }, { data: activos }, { data: sesiones }, { data: indicadores }, medicionesVersionadas] = await Promise.all([
     sb
       .from("processes")
       .select("id,nombre,area,categoria,version,responsable,tiempo,inicio,resultado,proveedor,cliente_proceso,indicador,descripcion_original, process_nodes(count), sops(count)")
@@ -83,8 +110,13 @@ export async function mapaDe(companyId: string): Promise<MapaEmpresa | null> {
     sb.from("company_assets").select("clave,estado,nota").eq("company_id", companyId),
     sb.from("interview_sessions").select("id").eq("company_id", companyId),
     sb.from("indicadores").select("clave,nombre,estado").eq("company_id", companyId).neq("estado", "archivado"),
-    sb.from("mediciones").select("valores").eq("company_id", companyId),
+    sb.from("mediciones").select("tipo,valores,version,vigente").eq("company_id", companyId),
   ]);
+  // Sin las columnas de versión (migración de 13-10 sin aplicar) la consulta falla: se leen las de siempre.
+  // En esa base solo puede haber una línea base por empresa, así que la cuenta sale igual de honesta.
+  const mediciones = (
+    medicionesVersionadas.error ? (await sb.from("mediciones").select("tipo,valores").eq("company_id", companyId)).data : medicionesVersionadas.data
+  ) as MedicionAnotada[] | null;
 
   const ids = (sesiones ?? []).map((s) => s.id);
   const { data: respuestas } = ids.length
@@ -111,15 +143,9 @@ export async function mapaDe(companyId: string): Promise<MapaEmpresa | null> {
     return { clave: d.clave, nombre: d.nombre, prioridad: d.prioridad, porque: d.porque, estado: LISTO.has(e) ? "listo" : LEVANTADO.has(e) ? "levantado" : "falta" };
   });
 
-  // LOS NÚMEROS QUE SE ANOTAN DE VERDAD: cuántas veces aparece cada clave con un valor real.
-  const vecesAnotado = new Map<string, number>();
-  for (const m of mediciones ?? []) {
-    const valores = (m.valores ?? {}) as Record<string, unknown>;
-    for (const [clave, v] of Object.entries(valores)) {
-      if (v == null || v === "" || Number.isNaN(Number(v))) continue;
-      vecesAnotado.set(clave, (vecesAnotado.get(clave) ?? 0) + 1);
-    }
-  }
+  // LOS NÚMEROS QUE SE ANOTAN DE VERDAD: cuántas veces aparece cada clave con un valor real, contando
+  // el punto de partida vigente y los cortes (las versiones reemplazadas no son mediciones nuevas).
+  const anotado = vecesAnotado(mediciones ?? []);
   // El indicador de un proceso es texto libre; solo cuenta si además es un número registrado.
   const claveDeIndicador = new Map<string, string>();
   for (const i of indicadores ?? []) {
@@ -130,7 +156,7 @@ export async function mapaDe(companyId: string): Promise<MapaEmpresa | null> {
     const nodos = (p.process_nodes as unknown as { count: number }[])?.[0]?.count ?? 0;
     const tieneSop = ((p.sops as unknown as { count: number }[])?.[0]?.count ?? 0) > 0;
     const clave = p.indicador ? claveDeIndicador.get(normalizar(p.indicador)) : undefined;
-    const medicionesReales = clave ? (vecesAnotado.get(clave) ?? 0) : 0;
+    const medicionesReales = clave ? (anotado.get(clave) ?? 0) : 0;
     return {
       id: p.id,
       nombre: p.nombre,
@@ -153,7 +179,10 @@ export async function mapaDe(companyId: string): Promise<MapaEmpresa | null> {
     };
   };
 
-  const evaluados = (procesos ?? []).map(evaluar);
+  // Lo que la empresa trajo en su lista y nadie ha dibujado (version 'sin_dibujar', api/…/procesos/importar)
+  // sí alimenta el perfil de arriba —es texto que la empresa ya dio—, pero no es un proceso mapeado: no entra
+  // en «N de M procesos mapeados» ni baja el nivel de lo mapeado.
+  const evaluados = (procesos ?? []).filter((p) => p.version !== "sin_dibujar").map(evaluar);
   const porNombre = new Map(evaluados.map((e) => [normalizar(e.nombre), e]));
 
   const partes: Parte[] = CATEGORIAS.map((c) => ({

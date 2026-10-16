@@ -3,118 +3,84 @@ import { useState } from "react";
 import { pedir } from "@/lib/cliente";
 
 /**
- * El amigo que llega con el enlace crea su empresa y llena la ficha de enrutamiento en ~3 minutos.
- * Paso 1: nombre + a qué se dedica. Paso 2: la ficha (opcional pregunta a pregunta — nada traba).
- * Con la ficha el sistema clasifica el negocio y activa las preguntas de su oficio.
+ * EL REGISTRO PIDE TRES COSAS (R7.1). Hasta el 13-10-2026 quien llegaba con el enlace llenaba una ficha de
+ * diez campos escritos antes de ver nada. Ahora da lo imprescindible para que su empresa exista —cómo se
+ * llama, a qué se dedica dicho con sus palabras y en qué ciudad está— y lo demás se lo preguntamos en la
+ * entrada breve (/portal/entrada), donde puede responder hablando, con un «más o menos» o con un «no lo sé».
+ *
+ * Solo el nombre es obligatorio: lo que aquí quede en blanco lo pregunta la entrada, y lo que aquí se diga
+ * la entrada no lo vuelve a pedir. Al crear la empresa se abre su entrada y se lleva a la persona ahí.
+ *
+ * QUÉ DEJÓ DE LLEGAR A LA FICHA DE LA EMPRESA (companies.ficha), dicho sin adornos. La ficha vieja escribía
+ * once datos; esta escribe dos (a qué se dedica y la ciudad). De los otros nueve:
+ *  · Cuántas personas trabajan → lo da la entrada: de la respuesta a «con cuánta gente» se toma en código,
+ *    solo si se dice sin ambigüedad, y se anota cuando el dueño confirma «lo que entendimos» (personasDichas
+ *    y anotarEnFicha, en src/lib/entrada.ts). Si no lo dijo claro, queda vacío.
+ *  · Cuánto vende al mes → ya no va a la ficha: lo que el dueño responda de sus ventas va a sus números.
+ *  · Los años que tiene el negocio, cuántos locales, si vende a personas o a empresas, si tiene cosas
+ *    escritas, qué es lo principal que vende, por dónde le llegan los clientes y su WhatsApp → NADA los
+ *    escribe en una empresa nueva. La entrada pregunta qué vende y a quién, pero la respuesta queda como
+ *    texto y como afirmaciones, no como dato de la ficha. Consecuencias: la etapa del negocio (sale de los
+ *    años que tiene) nace vacía; el tamaño del perfil no cuenta locales; la consultora no tiene el WhatsApp
+ *    del dueño; y la clasificación del negocio usa solo el rubro. El dueño puede completarlos en «Mi empresa
+ *    → Corregir mis datos», pero nadie se lo pide. Que la entrada los pida es una decisión de Dirección: sus
+ *    doce preguntas ya están ocupadas por los doce contenidos obligatorios.
  */
 export function CrearEmpresa() {
-  const [paso, setPaso] = useState(0);
   const [nombre, setNombre] = useState("");
-  const [f, setF] = useState<Record<string, string>>({});
+  const [actividad, setActividad] = useState("");
+  const [ciudad, setCiudad] = useState("");
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const pon = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF((x) => ({ ...x, [k]: e.target.value }));
 
   const crear = async () => {
     setError(null);
     setCargando(true);
     try {
-      await pedir("/api/portal/empresa", { json: { nombre, ficha: f } });
+      const { company_id } = await pedir<{ company_id: string }>("/api/portal/empresa", { json: { nombre, ficha: { actividad, ciudad } } });
+      // La entrada se abre ahora para que la primera pregunta espere lista. Si este paso falla, la empresa
+      // ya existe y no se detiene a la persona: la pantalla de la entrada la abre con su botón «Empezar».
+      await pedir(`/api/companies/${company_id}/entrada`, { json: { accion: "iniciar" } }).catch(() => {});
       // Recarga COMPLETA: router.refresh() fallaba en silencio en celulares y la persona
       // volvía a enviar el formulario creando empresas duplicadas (caso real de Darren).
-      window.location.assign("/portal");
+      window.location.assign(new URL("/portal/entrada", window.location.origin).toString());
     } catch (err) {
       setError(err instanceof Error ? err.message : "No pudimos crear tu empresa.");
       setCargando(false);
     }
   };
 
-  if (paso === 0)
-    return (
-      <form onSubmit={(e) => { e.preventDefault(); setPaso(1); }} className="flex flex-col gap-5 medida">
-        <label className="flex flex-col gap-2">
-          <span className="t-etiqueta">¿Cómo se llama tu negocio?</span>
-          <input className="campo" required value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="El nombre con el que lo conocen" />
-        </label>
-        <label className="flex flex-col gap-2">
-          <span className="t-etiqueta">¿Qué hace tu negocio?</span>
-          <input className="campo" value={f.actividad ?? ""} onChange={pon("actividad")} placeholder="restaurante, ferretería, taller, estudio contable…" />
-        </label>
-        <button className="boton" disabled={nombre.trim().length < 2}>Continuar</button>
-        <p className="t-dato" style={{ color: "var(--grafito)" }}>
-          En 15–20 minutos tendrás tu primer diagnóstico. No necesitas documentos perfectos: puedes hablar, subir fotos o contarnos cómo lo haces.
-        </p>
-      </form>
-    );
-
   return (
-    <form onSubmit={(e) => { e.preventDefault(); crear(); }} className="flex flex-col gap-5 medida">
-      <p className="t-cuerpo" style={{ color: "var(--grafito)" }}>
-        Unas pocas cosas más para conocer tu negocio. Si algo no lo sabes exacto, un “más o menos” basta — y todo se puede dejar en blanco.
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        crear();
+      }}
+      className="flex flex-col gap-5 medida"
+    >
+      <label className="flex flex-col gap-2">
+        <span className="t-etiqueta">¿Cómo se llama tu negocio?</span>
+        <input className="campo" required value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="El nombre con el que lo conocen" />
+      </label>
+      <label className="flex flex-col gap-2">
+        <span className="t-etiqueta">¿A qué se dedica? Dilo con tus palabras</span>
+        <input className="campo" value={actividad} onChange={(e) => setActividad(e.target.value)} placeholder="restaurante, ferretería, taller, estudio contable…" />
+      </label>
+      <label className="flex flex-col gap-2">
+        <span className="t-etiqueta">¿En qué ciudad está?</span>
+        <input className="campo" value={ciudad} onChange={(e) => setCiudad(e.target.value)} placeholder="p. ej. Lima, Arequipa, Trujillo" />
+      </label>
+      {error && (
+        <p className="t-cuerpo" style={{ color: "var(--contradicho)" }} role="alert">
+          {error}
+        </p>
+      )}
+      <button className="boton" disabled={cargando || nombre.trim().length < 2}>
+        {cargando ? "Un momento…" : "Crear y empezar"}
+      </button>
+      <p className="t-dato" style={{ color: "var(--grafito)" }}>
+        Después te hacemos unas preguntas cortas sobre tu negocio. Puedes responderlas hablando, y dejarlas a medias para seguir otro día. No necesitas documentos perfectos.
       </p>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="flex flex-col gap-2">
-          <span className="t-etiqueta">¿En qué ciudad está tu negocio?</span>
-          <input className="campo" value={f.ciudad ?? ""} onChange={pon("ciudad")} placeholder="p. ej. Lima, Arequipa, Trujillo" />
-        </label>
-        <label className="flex flex-col gap-2">
-          <span className="t-etiqueta">Tu WhatsApp</span>
-          <input className="campo" inputMode="tel" value={f.whatsapp ?? ""} onChange={pon("whatsapp")} placeholder="para avisarte cuando haya avances" />
-        </label>
-        <label className="flex flex-col gap-2">
-          <span className="t-etiqueta">¿Hace cuántos años existe?</span>
-          <input className="campo" inputMode="decimal" value={f.antiguedad ?? ""} onChange={pon("antiguedad")} placeholder="p. ej. 5" />
-        </label>
-        <label className="flex flex-col gap-2">
-          <span className="t-etiqueta">¿Cuántas personas trabajan (contándote)?</span>
-          <input className="campo" inputMode="numeric" value={f.personas ?? ""} onChange={pon("personas")} placeholder="p. ej. 8" />
-        </label>
-        <label className="flex flex-col gap-2">
-          <span className="t-etiqueta">¿Cuántos locales o puntos tiene?</span>
-          <input className="campo" inputMode="numeric" value={f.locales ?? ""} onChange={pon("locales")} placeholder="p. ej. 1" />
-        </label>
-        <label className="flex flex-col gap-2">
-          <span className="t-etiqueta">¿A quién le vendes?</span>
-          <select className="campo" value={f.cliente_tipo ?? ""} onChange={pon("cliente_tipo")}>
-            <option value="">Elige…</option>
-            <option value="personas">A personas</option>
-            <option value="empresas">A empresas</option>
-            <option value="ambos">A los dos</option>
-          </select>
-        </label>
-        <label className="flex flex-col gap-2">
-          <span className="t-etiqueta">¿Cuánto vende al mes, más o menos?</span>
-          <select className="campo" value={f.venta_mensual ?? ""} onChange={pon("venta_mensual")}>
-            <option value="">Elige…</option>
-            <option value="hasta S/10 mil">Hasta S/10 mil</option>
-            <option value="S/10–50 mil">Entre S/10 mil y S/50 mil</option>
-            <option value="S/50–200 mil">Entre S/50 mil y S/200 mil</option>
-            <option value="más de S/200 mil">Más de S/200 mil</option>
-          </select>
-        </label>
-        <label className="flex flex-col gap-2">
-          <span className="t-etiqueta">¿Tienes cosas escritas del negocio?</span>
-          <select className="campo" value={f.documentacion ?? ""} onChange={pon("documentacion")}>
-            <option value="">Elige…</option>
-            <option value="si">Sí (cuadernos, Excel, manuales)</option>
-            <option value="algo">Algo</option>
-            <option value="casi nada">Casi nada</option>
-          </select>
-        </label>
-      </div>
-      <label className="flex flex-col gap-2">
-        <span className="t-etiqueta">¿Qué es lo principal que vendes?</span>
-        <input className="campo" value={f.productos ?? ""} onChange={pon("productos")} placeholder="los 2 o 3 productos o servicios principales" />
-      </label>
-      <label className="flex flex-col gap-2">
-        <span className="t-etiqueta">¿Por dónde te llegan los clientes?</span>
-        <input className="campo" value={f.canales ?? ""} onChange={pon("canales")} placeholder="recomendados, la calle, Facebook, WhatsApp…" />
-      </label>
-      {error && <p className="t-cuerpo" style={{ color: "var(--contradicho)" }} role="alert">{error}</p>}
-      <div className="flex gap-3">
-        <button type="button" className="boton boton--secundario" onClick={() => setPaso(0)} disabled={cargando}>Atrás</button>
-        <button className="boton flex-1" disabled={cargando}>{cargando ? "Un momento…" : "Empezar"}</button>
-      </div>
     </form>
   );
 }

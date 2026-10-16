@@ -44,7 +44,16 @@ benchmark/ultimo-error.txt
 
 .vercel
 .env*
+# la plantilla sin valores sí entra al repo; .env.test con valores reales no
+!.env.test.example
+!.env.example
+!.env.worker-produccion
 scripts/tmp-w.mjs
-branch_structure.json
-temp_auto_push.bat
-temp_interactive_push.bat
+
+# material confidencial de clientes: no entra al historial del repositorio del producto
+/clientes
+
+# diseño: lo generado (HTML pintado, CSS compilado y capturas) se rehace con el arnés; no va al historial
+/diseno/render/salida/
+/diseno/**/capturas/
+/.impeccable/review/

@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { contextoPortal } from "@/lib/portal";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { Plan } from "@/components/Plan";
 import { brechaMercado } from "@/lib/mercado";
+import { cargarPlan } from "@/lib/plan-intervencion";
+import { PlanCliente } from "@/components/cliente/PlanCliente";
+import { CortesPlan, type Corte } from "@/components/plan/CortesPlan";
 
 export const dynamic = "force-dynamic";
 
@@ -44,48 +46,51 @@ function BrechaAfuera({ personas, assets }: { personas: number | null; assets: {
   );
 }
 
-/** Tu implementación: los 45 días, frente por frente, con avance. Visible cuando el plan está publicado. */
-export default async function PlanCliente() {
+/** Lo que el dueño ve: solo lo aprobado y lo que sigue de ahí. Lo propuesto, rechazado o pospuesto es conversación de la consultora. */
+const VISIBLES = ["aprobado", "en_ejecucion", "reportado", "verificado", "bloqueado"];
+
+/**
+ * TU PLAN: las acciones aprobadas, con quién, para cuándo y qué se espera. «Ya lo hice» pide una prueba y la
+ * deja en «Enviado para revisar»; la consultora la comprueba. Visible desde que la consultora aprueba la
+ * primera acción: aprobar es lo que la hace pública para la empresa.
+ */
+export default async function PlanClientePag() {
   const c = await contextoPortal();
   if (!c.companyId) return <p className="t-cuerpo">{c.queFalta}</p>;
   const sb = supabaseAdmin();
-  const [{ data: pub }, { data: empresa }, { data: assets }] = await Promise.all([
-    sb.from("deliverables").select("id").eq("company_id", c.companyId).eq("tipo", "plan_90").eq("publicado", true).limit(1),
+  const [plan, { data: empresa }, { data: assets }, { data: cortes }] = await Promise.all([
+    cargarPlan(c.companyId),
     sb.from("companies").select("ficha").eq("id", c.companyId).single(),
     sb.from("company_assets").select("clave,estado").eq("company_id", c.companyId),
+    sb.from("checkpoints").select("*").eq("company_id", c.companyId).order("numero"),
   ]);
   const personas = Number((empresa?.ficha as { personas?: string } | null)?.personas) || null;
+  const visibles = plan.acciones.filter((a) => VISIBLES.includes(a.estado_canonico));
 
-  if (!pub?.length)
+  if (!visibles.length)
     return (
       <>
-        <p className="t-etiqueta">Tu implementación</p>
+        <p className="t-etiqueta">Tu plan</p>
         <h1 className="t-titulo mt-2 mb-6">Tu plan se está armando</h1>
         <p className="t-cuerpo medida mb-6" style={{ color: "var(--grafito)" }}>
           El punto de partida ya vive en <strong>Mi empresa</strong> (la sección «Por dónde empezaría»). Cuando lo convirtamos
-          juntos en un plan con fechas y responsables, aparece aquí para que marques lo que vas cerrando.
+          juntos en acciones con fechas y responsables, aparecen aquí para que marques lo que vas cerrando.
         </p>
         <Link href="/portal/hoy" className="boton">Ver por dónde empezar</Link>
         <BrechaAfuera personas={personas} assets={assets ?? []} />
       </>
     );
-  const [{ data: acciones }, { data: cortes }, { data: pruebas }] = await Promise.all([
-    sb.from("actions").select("*").eq("company_id", c.companyId).order("semana_inicio").order("prioridad"),
-    sb.from("checkpoints").select("*").eq("company_id", c.companyId).order("numero"),
-    // LAS PRUEBAS de cada frente: sin ellas "hecho" es una casilla marcada.
-    sb.from("evidencias").select("id,action_id,tipo,nombre,nota,created_at").eq("company_id", c.companyId).not("action_id", "is", null).order("created_at"),
-  ]);
-  const pruebasPorAccion: Record<string, { id: string; tipo: string; nombre: string | null; nota: string | null; created_at: string }[]> = {};
-  for (const p of pruebas ?? []) {
-    const k = p.action_id as string;
-    (pruebasPorAccion[k] ??= []).push(p);
-  }
+
+  const enMarcha = visibles.filter((a) => a.estado_canonico === "aprobado" || a.estado_canonico === "en_ejecucion" || a.estado_canonico === "bloqueado").length;
   return (
     <>
-      <p className="t-etiqueta">Tu implementación</p>
-      <h1 className="t-titulo mt-2 mb-2">45 días, frente por frente</h1>
-      <p className="t-cuerpo mb-8 medida" style={{ color: "var(--grafito)" }}>Máximo tres frentes abiertos a la vez. Marca cada uno cuando lo cierres.</p>
-      <Plan companyId={c.companyId} acciones={acciones ?? []} cortes={cortes ?? []} modo="cliente" pruebasPorAccion={pruebasPorAccion} />
+      <p className="t-etiqueta">Tu plan</p>
+      <h1 className="t-titulo mt-2 mb-2">{enMarcha ? `${enMarcha} ${enMarcha === 1 ? "acción en marcha" : "acciones en marcha"}` : "Todo lo acordado está enviado o comprobado"}</h1>
+      <p className="t-cuerpo mb-8 medida" style={{ color: "var(--grafito)" }}>
+        Cada acción dice quién la hace, para cuándo y qué se espera. Cuando la termines, pulsa «Ya lo hice» y sube una foto o una nota: la consultora la comprueba.
+      </p>
+      <PlanCliente companyId={c.companyId} acciones={visibles} />
+      <CortesPlan companyId={c.companyId} cortes={(cortes ?? []) as Corte[]} puedeRegistrar={false} />
       <BrechaAfuera personas={personas} assets={assets ?? []} />
     </>
   );

@@ -1,0 +1,4 @@
+import { supabaseAdmin } from "@/lib/supabase/admin";
+import { configDe } from "@/lib/formato";
+import { ConfiguracionEmpresa } from "@/components/consultor/ConfiguracionEmpresa";
+export default async function Page({params}:{params:Promise<{id:string}>}) {const {id}=await params; const {data,error}=await supabaseAdmin().from("companies").select("pais,moneda,idioma,zona_horaria").eq("id",id).single();if(error)throw new Error("No se pudo leer la configuración de esta empresa.");return <div className="space-y-4"><h1 className="t-titulo">Configuración de la empresa</h1><p>País, moneda, idioma y zona horaria.</p><ConfiguracionEmpresa companyId={id} actual={configDe(data)} /></div>;}

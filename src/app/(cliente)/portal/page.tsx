@@ -2,63 +2,55 @@ import Link from "next/link";
 import { contextoPortal } from "@/lib/portal";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { empresaHoy, type HallazgoHoy } from "@/lib/hoy";
-import { tableroEmpresario, type PuntoVenta } from "@/lib/tablero";
+import { tableroEmpresario, pendientesDelDueno, accionDeEntrada, RUTA_ENTRADA, type PuntoVenta } from "@/lib/tablero";
+import { accionPendiente, accionDeSiempre } from "@/lib/siguiente-accion";
 import { proyeccionPerdida } from "@/lib/perdida";
 import { caminosDesdeHallazgos } from "@/lib/caminos";
 import type { Metrica } from "@/lib/rules/anomalias";
 import { CrearEmpresa } from "@/components/cliente/CrearEmpresa";
-import { Franja, Lectura } from "@/components/base/Franja";
+import { Icono } from "@/components/base/Icono";
+import { Medidor, Barritas, Segmentos, Pista, type Barra } from "@/components/tablero/Piezas";
+import { GraficoLinea, type PuntoLinea } from "@/components/tablero/GraficoLinea";
 
 export const dynamic = "force-dynamic";
 
 /*
-CONTRATO DE DIRECCIÓN — híbrido (elegido por la dueña del producto, 2026-08-27)
-THESIS: el despacho matinal del consultor — tres lecturas de instrumento y UNA voz que dice lo que
-  el dueño no está viendo, con su número. Rechaza el inicio-catálogo de tarjetas equivalentes.
-OWN-WORLD: tokens 8X — fondo gris frío, hairlines, numerales tabulares, serif solo para la voz del
-  agente, un único elemento de acción en color de marca. Sin gauges, sin barras, sin tarjetas por dato.
-STORY: entiendo en 10 segundos qué me está costando, decido si le dedico 10 minutos ahora.
-FIRST VIEWPORT: franja de instrumentos (en riesgo · entendido · sistematizado) → lectura del agente
-  en serif con su fuente → un botón. Debajo, las 3 fases del método y la gráfica real si existe.
-FINISH: nada inventado; "sin dato" invita a contarlo.
+CONTRATO DE DIRECCIÓN — tablero de la imagen de referencia (pedido de Kelin, 13-10-2026; reemplaza el «despacho»
+  híbrido del 27-08 sin gauges ni tarjetas)
+THESIS: el inicio del dueño como el tablero de la imagen: saludo con UNA acción dominante, cuánto entendemos su
+  negocio en un medidor, sus números en tarjetas con barritas, su venta en una línea con peine.
+OWN-WORLD: cielo azul suave, tarjetas blancas de 24px con sombra suave, píldora oscura, Manrope en números.
+STORY: entiendo en 10 segundos cómo va mi empresa y qué me toca hacer hoy.
+FINISH: nada inventado; lo que falta va rayado, con su nombre, e invita a contarlo.
 */
 
-const soles = (n: number) => `S/${Math.round(n).toLocaleString("es-PE")}`;
+const soles = (n: number) => `S/ ${Math.round(n).toLocaleString("es-PE")}`;
 const MES = ["", "ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "set", "oct", "nov", "dic"];
+const MES_LARGO = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Setiembre", "Octubre", "Noviembre", "Diciembre"];
 const mesCorto = (p: string) => MES[Number(p.slice(5, 7))] ?? p;
+const mesLargo = (p: string) => MES_LARGO[Number(p.slice(5, 7))] ?? p;
 
-/** Línea de ventas mes a mes + la referencia de la mejor época. Solo datos contados: nada decorativo. */
-function GraficaVentas({ serie, dorada }: { serie: PuntoVenta[]; dorada: number | null }) {
-  const W = 420, H = 172, X0 = 14, X1 = 406, YTOP = 34, YBASE = 138;
-  const max = Math.max(...serie.map((p) => p.valor), dorada ?? 0) || 1;
-  const min = Math.min(...serie.map((p) => p.valor));
-  const x = (i: number) => (serie.length === 1 ? (X0 + X1) / 2 : X0 + ((X1 - X0) * i) / (serie.length - 1));
-  const y = (v: number) => YBASE - ((YBASE - YTOP) * (v - Math.min(min, 0))) / (max - Math.min(min, 0) || 1);
-  const pts = serie.map((p, i) => `${x(i)},${y(p.valor).toFixed(1)}`).join(" ");
-  const ult = serie[serie.length - 1];
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", maxWidth: 680 }} role="img" aria-label="Ventas por mes">
-      {dorada != null && (
-        <>
-          <line x1={X0} y1={y(dorada)} x2={X1} y2={y(dorada)} stroke="var(--caducado)" strokeWidth="1.5" strokeDasharray="6 5" />
-          <text x={X0 + 2} y={y(dorada) - 6} fontSize="11" fill="var(--caducado)">tu mejor época: {soles(dorada)}</text>
-        </>
-      )}
-      <line x1={X0} y1={YBASE} x2={X1} y2={YBASE} stroke="var(--linea)" />
-      <polyline points={pts} fill="none" stroke="var(--marca)" strokeWidth="2.5" strokeLinejoin="round" />
-      {serie.map((p, i) => (
-        <circle key={p.periodo} cx={x(i)} cy={y(p.valor)} r={i === serie.length - 1 ? 4.5 : 4} fill="var(--marca)" />
-      ))}
-      {serie.map((p, i) => (
-        <text key={p.periodo + "t"} x={x(i)} y={H - 14} fontSize="11" fill="var(--grafito)" textAnchor="middle">{mesCorto(p.periodo)}</text>
-      ))}
-      {ult && <text x={x(serie.length - 1)} y={y(ult.valor) - 10} fontSize="11.5" fontWeight="600" fill="var(--tinta)" textAnchor="end">{soles(ult.valor)}</text>}
-    </svg>
-  );
+/** El periodo AAAA-MM de `p` más `k` meses. */
+function sumarMeses(p: string, k: number): string {
+  const total = Number(p.slice(0, 4)) * 12 + Number(p.slice(5, 7)) - 1 + k;
+  return `${Math.floor(total / 12)}-${String((total % 12) + 1).padStart(2, "0")}`;
 }
 
+/** Lo dicho por el dueño o leído de un documento todavía no está comprobado. */
+const comoSeSabe = (estado: string | undefined) =>
+  estado === "verificado" ? null : estado === "extraido" ? "leído de un documento" : "lo dijiste tú";
 
-/** INICIO DEL EMPRESARIO: el despacho — instrumentos, la voz del agente, una acción. */
+/** Meses seguidos entre el primero y el último con venta: un mes sin venta contada queda como hueco, no como cero. */
+function mesesSeguidos(serie: PuntoVenta[], desde?: string): (PuntoVenta | { periodo: string; valor: null; estado?: undefined })[] {
+  if (!serie.length) return [];
+  const primero = desde ?? serie[0].periodo;
+  const ultimo = serie[serie.length - 1].periodo;
+  const salida: (PuntoVenta | { periodo: string; valor: null })[] = [];
+  for (let p = primero; p <= ultimo; p = sumarMeses(p, 1)) salida.push(serie.find((s) => s.periodo === p) ?? { periodo: p, valor: null });
+  return salida;
+}
+
+/** INICIO DEL EMPRESARIO: el tablero — su acción de hoy, cuánto lo entendemos, sus números. */
 export default async function Portal() {
   const c = await contextoPortal();
   if (!c.companyId)
@@ -69,122 +61,268 @@ export default async function Portal() {
       </>
     );
 
-  const [hoy, t, { data: metricasRaw }] = await Promise.all([
+  const [hoy, t, { data: metricasRaw }, { data: empFicha }, pendientes] = await Promise.all([
     empresaHoy(c.companyId),
     tableroEmpresario(c.companyId),
     supabaseAdmin().from("company_metricas").select("clave,periodo,valor,estado").eq("company_id", c.companyId).limit(80),
+    supabaseAdmin().from("companies").select("ficha").eq("id", c.companyId).single(),
+    // Lo que espera al dueño (confirmaciones, tareas, indicadores, números, informe). Nunca lanza: una tabla que
+    // todavía no existe solo hace que ese aviso no aparezca.
+    pendientesDelDueno(c.companyId, c.u),
   ]);
+  const metaMensual = Number(((empFicha?.ficha as Record<string, string>) ?? {}).meta_venta_mensual ?? 0) || null;
 
-  if (hoy.nivel === 0)
+  // LA ENTRADA BREVE ES LA PUERTA (R7.1): mientras el dueño no confirme lo que entendimos, la siguiente acción
+  // del portal es seguir con sus doce preguntas, donde las dejó. Una empresa sin entrada sigue como siempre.
+  const deEntrada = accionDeEntrada(t.entrada);
+
+  // Sin nada contado todavía, la portada es una invitación. Si el dueño ya confirmó su entrada (aunque haya
+  // respondido «no lo sé» a todo), no se le invita a empezar otra vez: pasa al despacho con su siguiente paso.
+  if (hoy.nivel === 0 && t.entrada?.estado !== "confirmada")
     return (
       <>
         <h1 className="t-titulo mt-2 mb-4 medida">Vamos a entender cómo funciona realmente tu empresa</h1>
         <p className="t-cuerpo medida mb-2" style={{ color: "var(--grafito)" }}>
-          En 15–20 minutos tendrás tu primer diagnóstico. No necesitas documentos perfectos: puedes hablar, subir fotos o simplemente contarnos cómo lo haces.
+          {deEntrada
+            ? `${deEntrada.texto} ${deEntrada.linea ?? ""}`
+            : "Empezamos con doce preguntas cortas. No necesitas documentos perfectos: puedes hablar, escribir, subir una foto o decir «no lo sé»."}
         </p>
         <div className="mt-6">
-          <Link href="/portal/conversacion" className="boton">Empezar</Link>
+          <Link href={RUTA_ENTRADA} className="boton">{deEntrada?.accion ?? "Empezar"}</Link>
         </div>
       </>
     );
 
   const perdida = proyeccionPerdida((metricasRaw ?? []) as Metrica[]);
-  const rutaContinuar = ({ 2: "/portal/activos", 3: "/portal/conversacion", 4: "/portal/validar", 5: "/portal/procesos", 6: "/portal/activos", 7: "/portal/resultados", 8: "/portal/plan" } as Record<number, string>)[c.paso] ?? "/portal/hoy";
   const cosas = hoy.espejo.length + hoy.noVes.length + hoy.fortalezas.length;
 
-  // LA LECTURA DEL AGENTE: lo más valioso que sabe hoy, con su fuente — la restricción manda; si no, la conversación.
-  const caminos = caminosDesdeHallazgos([hoy.restriccion, ...hoy.noVes, ...hoy.secundarias].filter(Boolean) as HallazgoHoy[]);
-  const lectura = hoy.restriccion
-    ? {
-        texto: hoy.restriccion.titulo,
-        linea: hoy.restriccion.costo_posible ?? hoy.restriccion.causa ?? null,
-        fuente: "Visto en tu propia información — nada es inventado.",
-        href: caminos[0]?.href ?? "/portal/hoy",
-        accion: "Resolver esto ahora",
-      }
-    : t.preguntaAbierta
-      ? { texto: t.preguntaAbierta, linea: null, fuente: "Tu conversación está a mitad — cada respuesta afina el diagnóstico.", href: "/portal/conversacion", accion: "Responder ahora" }
-      : { texto: c.queFalta, linea: null, fuente: null, href: rutaContinuar, accion: "Continuar" };
+  // LA SIGUIENTE ACCIÓN: UNA, la más urgente, con su enlace. El orden lo decide src/lib/siguiente-accion.ts
+  // (constante PRIORIDAD); aquí solo se juntan los hechos ya leídos. Primero la entrada sin confirmar. Después lo
+  // que espera al dueño: confirmar hacia dónde va su empresa, aceptar su punto de partida, las tareas de la semana,
+  // el indicador del periodo que cerró, los números que faltan, el informe que nadie abrió todavía. Y si no hay nada
+  // de eso, la lectura de siempre: la restricción manda; si no, la conversación; si no, el paso del recorrido.
+  const hallazgos = [hoy.restriccion, ...hoy.noVes, ...hoy.secundarias].filter(Boolean) as HallazgoHoy[];
+  const caminos = caminosDesdeHallazgos(hallazgos);
+  // El informe se anuncia cuando hay diagnóstico y al menos una conclusión firme que leer; nunca por lo provisional.
+  const informeListo = hoy.nivel >= 3 && hallazgos.filter((h) => !h.provisional).length + hoy.fortalezas.length > 0;
+  const lecturaDeSiempre =
+    accionPendiente({ ...pendientes, informeListo }) ??
+    accionDeSiempre({
+      restriccion: hoy.restriccion
+        ? { titulo: hoy.restriccion.titulo, linea: hoy.restriccion.costo_posible ?? hoy.restriccion.causa ?? null, href: caminos[0]?.href ?? "/portal/hoy" }
+        : null,
+      preguntaAbierta: t.preguntaAbierta,
+      paso: c.paso,
+      queFalta: c.queFalta,
+    });
+  const lectura = deEntrada ?? lecturaDeSiempre;
+  // «más» solo tiene sentido cuando lo que se lee arriba ya es un hallazgo (la restricción).
+  const arribaVaUnHallazgo = !deEntrada && lecturaDeSiempre.estado === "restriccion";
 
   // Las tres fases del método: dónde está parada la empresa.
   const fase = t.biblioteca.listos > 0 ? 3 : cosas > 0 || (c.porValidar ?? 0) > 0 ? 2 : 1;
   const FASES = ["Diagnóstico", "Auditoría profunda", "Sistematización"];
 
+  // ── Lo que pinta el tablero, todo de lo ya leído ──
+  const venta = t.kpis.venta;
+  const ganancia = t.kpis.ganancia;
+  // Seis meses que terminan en el último con venta: los que no tienen venta contada van rayados.
+  const seisMeses: Barra[] = venta
+    ? mesesSeguidos(t.serieVentas, sumarMeses(venta.periodo, -5)).map((m) => ({ valor: m.valor, dicho: m.valor != null && comoSeSabe(m.estado) != null }))
+    : [];
+  const huecos = seisMeses.filter((b) => b.valor == null).length;
+  const linea: PuntoLinea[] = mesesSeguidos(t.serieVentas).map((m) => ({ corto: mesCorto(m.periodo), largo: mesLargo(m.periodo), valor: m.valor }));
+  const anterior = t.serieVentas.length >= 2 ? t.serieVentas[t.serieVentas.length - 2] : null;
+  const cambio = venta && anterior && anterior.valor > 0 && sumarMeses(anterior.periodo, 1) === venta.periodo ? Math.round((100 * (venta.valor - anterior.valor)) / anterior.valor) : null;
+  const numeros = pendientes.numeros;
+  const tareas = pendientes.tareas;
+  const docsFaltan = Math.max(0, t.biblioteca.total - t.biblioteca.listos);
+  const saludoA = c.u.rol === "cliente" ? (c.u.nombre ?? "").trim().split(/\s+/)[0] : "";
+  const fecha = new Intl.DateTimeFormat("es-PE", { weekday: "long", day: "numeric", month: "long", timeZone: "America/Lima" }).format(new Date());
+  const encontrados = [...hallazgos, ...hoy.fortalezas].slice(0, 4);
+
   return (
-    <div className="flex flex-col" style={{ gap: 34, paddingTop: 6 }}>
-      {/* INSTRUMENTOS: tres lecturas vitales en una franja entre líneas — no tarjetas */}
-      <Franja columnas={3}>
-        <Lectura
-          divisor={false}
-          valor={perdida.totalMensual > 0 ? `~${soles(perdida.totalMensual)}` : "—"}
-          unidad={perdida.totalMensual > 0 ? "al mes" : undefined}
-          etiqueta={perdida.totalMensual > 0 ? "en riesgo, según tus números" : "riesgo aún por calcular"}
-          color={perdida.totalMensual > 0 ? "var(--contradicho)" : "var(--grafito)"}
-        />
-        <Lectura valor={`${t.comprension}%`} etiqueta="entendido de tu empresa" />
-        <Lectura valor={`${t.biblioteca.listos} de ${t.biblioteca.total}`} etiqueta="documentos en regla" color={t.biblioteca.listos === t.biblioteca.total && t.biblioteca.total > 0 ? "var(--confirmado)" : undefined} />
-      </Franja>
-
-      {/* LA VOZ DEL AGENTE: serif, con su fuente, y UNA acción */}
-      <section>
-        <p className="t-hero" style={{ fontSize: "clamp(20px, 3.2vw, 26px)", maxWidth: "26ch" }}>{lectura.texto}</p>
-        {lectura.linea && <p className="t-cuerpo mt-3 medida" style={{ color: "var(--grafito)" }}>{lectura.linea}</p>}
-        {lectura.fuente && <p className="t-dato mt-2" style={{ color: "var(--grafito)", fontSize: 13.5 }}>{lectura.fuente}</p>}
-        <div className="flex items-center gap-5 flex-wrap mt-5">
-          <Link href={lectura.href} className="boton boton--grande">{lectura.accion}</Link>
+    <div className="tablero">
+      <section className="saludo" aria-labelledby="t-hola">
+        <div>
+          <h1 className="hola" id="t-hola">Hola,<strong>{saludoA || c.empresa?.nombre || "de nuevo"}</strong></h1>
+          <p className="bienvenida">{fecha.charAt(0).toUpperCase() + fecha.slice(1)}{saludoA && c.empresa?.nombre ? ` · ${c.empresa.nombre}` : ""}</p>
+          {/* LA VOZ: lo que toca hoy, con su fuente, y UNA acción */}
+          <p className="t-hero" style={{ fontSize: 19, marginTop: 18 }}>{lectura.texto}</p>
+          {lectura.linea && <p className="voz" style={{ marginTop: 6 }}>{lectura.linea}</p>}
+          {lectura.fuente && <p className="voz" style={{ marginTop: 4, fontSize: 12.5 }}>{lectura.fuente}</p>}
+          <div style={{ marginTop: 14 }}>
+            <Link href={lectura.href} className="boton boton--grande">{lectura.accion}</Link>
+          </div>
           {cosas > 0 && (
-            <Link href="/portal/hoy" className="t-dato" style={{ textDecoration: "underline", color: "var(--marca)" }}>
-              Ver {cosas} hallazgo{cosas === 1 ? "" : "s"} más
-            </Link>
-          )}
-        </div>
-      </section>
-
-      {/* BARRA DE AVANCE: las tres fases del método con sus flechitas — se ve dónde estás y cuánto falta */}
-      <section aria-label="Avance del método" style={{ borderTop: "1px solid var(--linea)", paddingTop: 16 }}>
-        <div className="flex items-center" style={{ gap: 6 }}>
-          {FASES.map((f, i) => {
-            const hecha = i + 1 < fase;
-            const actual = i + 1 === fase;
-            return (
-              <span key={f} className="flex items-center" style={{ gap: 6, flex: 1, minWidth: 0 }}>
-                <span
-                  style={{
-                    flex: 1, minWidth: 0, textAlign: "center", padding: "8px 6px", borderRadius: "var(--radio)",
-                    background: hecha ? "var(--confirmado)" : actual ? "var(--marca)" : "var(--suave)",
-                    color: hecha || actual ? "var(--papel)" : "var(--grafito)",
-                    fontSize: 12.5, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                  }}
-                >
-                  {f}
-                </span>
-                {i < FASES.length - 1 && (
-                  <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" style={{ flex: "none" }}>
-                    <path d="M9 5l7 7-7 7" fill="none" stroke="var(--grafito)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-              </span>
-            );
-          })}
-        </div>
-        <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>Aquí estás: <strong style={{ color: "var(--tinta)" }}>{FASES[fase - 1]}</strong>{fase < 3 ? ` · sigue ${FASES[fase]}` : " · la última fase"}</p>
-      </section>
-
-      {/* La gráfica real, si hay meses contados */}
-      {t.serieVentas.length >= 2 && (
-        <section>
-          <GraficaVentas serie={t.serieVentas} dorada={t.epocaDorada} />
-          {t.epocaDorada != null && t.serieVentas.length > 0 && t.epocaDorada > t.serieVentas[t.serieVentas.length - 1].valor * 1.25 && (
-            <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>
-              Antes vendías más. La receta ya existió — en <Link href="/portal/conversacion" style={{ textDecoration: "underline" }}>Conversar</Link> la estamos reconstruyendo contigo.
+            <p className="voz">
+              <Link href="/portal/hoy" className="enlace-azul">Ver {cosas} hallazgo{cosas === 1 ? "" : "s"}{arribaVaUnHallazgo ? " más" : ""}</Link>
             </p>
           )}
-        </section>
-      )}
+        </div>
+        <div className="pendientes">
+          <div className="fila">
+            <h2>Documentos en regla</h2>
+            <span className="cifra">{t.biblioteca.listos}<small>de {t.biblioteca.total}</small></span>
+          </div>
+          {t.biblioteca.total > 0 && (
+            <Segmentos
+              etiqueta={`${t.biblioteca.listos} en regla, ${docsFaltan} faltan`}
+              partes={[
+                { n: t.biblioteca.listos, texto: "en regla", tipo: "s1" },
+                { n: docsFaltan, texto: "faltan", tipo: "s3" },
+              ]}
+            />
+          )}
+        </div>
+      </section>
 
-      <p className="t-dato" style={{ color: "var(--grafito)" }}>
-        Todo sale de lo que tu empresa contó o mostró. <Link href="/portal/hoy" style={{ textDecoration: "underline" }}>Mi empresa completa</Link> · <Link href="/portal/activos" style={{ textDecoration: "underline" }}>Tus documentos</Link>
-      </p>
+      <section className="tarjeta medidor" aria-labelledby="t-comp">
+        <div className="cabeza">
+          <div><h2 id="t-comp">Qué tanto entendemos tu negocio</h2><p className="sub">Lo que conversamos y lo que nos mostraste</p></div>
+          <Link className="ir" href="/portal/hoy" aria-label="Ver tu empresa completa"><Icono nombre="diagonal" /></Link>
+        </div>
+        <Medidor pct={t.comprension} etiqueta="Qué tanto entendemos tu negocio" />
+        <div className="lectura"><span className="num">{t.comprension}%</span><p>entendido</p></div>
+        <div className="pie">
+          <div><b>{t.biblioteca.listos} de {t.biblioteca.total}</b><small>documentos</small></div>
+          <div><b className="texto">{FASES[fase - 1]}</b><small>fase de ahora</small></div>
+        </div>
+      </section>
+
+      <section className="tarjeta cifra-tarjeta" aria-labelledby="t-venta">
+        <div className="cabeza">
+          <div><h2 id="t-venta">Ventas del mes</h2><p className="sub">{venta ? `${mesLargo(venta.periodo)}${comoSeSabe(venta.estado) ? ` · ${comoSeSabe(venta.estado)}` : ""}` : "Todavía sin ventas contadas"}</p></div>
+          <Link className="ir" href="/portal/numeros" aria-label="Ver tus números"><Icono nombre="diagonal" /></Link>
+        </div>
+        {venta ? (
+          <>
+            <div className="fila-cifra">
+              <span className="grande"><small className="moneda">S/</small>{Math.round(venta.valor).toLocaleString("es-PE")}</span>
+              <Barritas barras={seisMeses} etiqueta="Ventas de los últimos seis meses" />
+            </div>
+            {huecos > 0 && <p className="pie-barritas">Rayado: {huecos === 1 ? "un mes" : `${huecos} meses`} sin venta contada</p>}
+          </>
+        ) : (
+          <div className="fila-cifra"><span className="sin-dato">Sin dato</span></div>
+        )}
+      </section>
+
+      <section className="tarjeta cifra-tarjeta" aria-labelledby="t-queda">
+        <div className="cabeza">
+          <div><h2 id="t-queda">Lo que te queda</h2><p className="sub">{ganancia ? `${mesLargo(ganancia.periodo)} · ganancia del mes` : "Tu ganancia del mes"}</p></div>
+          <Link className="ir" href="/portal/numeros" aria-label="Ver tus números"><Icono nombre="diagonal" /></Link>
+        </div>
+        <div className="fila-cifra">
+          {ganancia ? (
+            <span className="grande"><small className="moneda">S/</small>{Math.round(ganancia.valor).toLocaleString("es-PE")}</span>
+          ) : (
+            <span className="sin-dato">Todavía no lo contaste</span>
+          )}
+        </div>
+      </section>
+
+      <section className="tarjeta cifra-tarjeta ancha" aria-labelledby="t-riesgo">
+        <div className="cabeza">
+          <div><h2 id="t-riesgo">En riesgo al mes</h2><p className="sub">Lo que se puede estar yendo, según tus números</p></div>
+        </div>
+        <div className="fila-cifra">
+          {perdida.totalMensual > 0 ? (
+            <span className="grande" style={{ color: "var(--contradicho)" }}><small className="moneda" style={{ color: "inherit" }}>~S/</small>{Math.round(perdida.totalMensual).toLocaleString("es-PE")}</span>
+          ) : (
+            <span className="sin-dato">Aún por calcular: faltan números</span>
+          )}
+        </div>
+      </section>
+
+      <section className="tarjeta cifra-tarjeta ancha" aria-labelledby="t-tareas">
+        <div className="cabeza">
+          <div><h2 id="t-tareas">Tareas de esta semana</h2><p className="sub">Las de tu plan, para ti y tu equipo</p></div>
+          <Link className="ir" href="/portal/plan" aria-label="Ir a tu plan"><Icono nombre="diagonal" /></Link>
+        </div>
+        <div className="fila-cifra">
+          {tareas ? (
+            <span className="grande">{tareas.estaSemana}<small>esta semana · {tareas.enMarcha} en marcha</small></span>
+          ) : (
+            <span className="sin-dato">Todavía no hay plan</span>
+          )}
+        </div>
+      </section>
+
+      <section className="tarjeta linea-tarjeta" aria-labelledby="t-linea">
+        <div className="cabeza">
+          <div><h2 id="t-linea">Tus ventas mes a mes</h2><p className="sub">De lo que contaste y de tus documentos</p></div>
+          <Link className="ir" href="/portal/numeros" aria-label="Ver tus números"><Icono nombre="diagonal" /></Link>
+        </div>
+        {linea.filter((p) => p.valor != null).length >= 2 && venta ? (
+          <>
+            <div className="resumen">
+              <span className="num">{soles(venta.valor)}</span>
+              <p>
+                en {mesLargo(venta.periodo).toLowerCase()}
+                {cambio != null ? `, ${Math.abs(cambio)}% ${cambio >= 0 ? "más" : "menos"} que el mes anterior` : ""}.
+                {metaMensual != null ? ` Tu meta: ${soles(metaMensual)} al mes (${Math.round((100 * venta.valor) / metaMensual)}%).` : ""}
+              </p>
+            </div>
+            <GraficoLinea
+              puntos={linea}
+              formato="soles"
+              etiqueta="Ventas por mes"
+              referencia={t.epocaDorada != null ? { valor: t.epocaDorada, texto: `tu mejor época: ${soles(t.epocaDorada)}` } : null}
+            />
+          </>
+        ) : (
+          <p className="sin-dato" style={{ gridColumn: "1 / -1", marginTop: 12 }}>Hacen falta dos meses de ventas para dibujar la línea</p>
+        )}
+      </section>
+
+      <section className="tarjeta fuentes-tarjeta" aria-labelledby="t-falta">
+        <div className="cabeza">
+          <div><h2 id="t-falta">Cómo vamos con tu información</h2><p className="sub">Lleno: ya lo tenemos. Rayado: falta.</p></div>
+        </div>
+        <div className="fuentes">
+          {numeros && (
+            <div className="fuente">
+              <span className="icono"><Icono nombre="numeros" /></span>
+              <div className="rotulo"><b>Tus números del negocio</b><span>{numeros.total - numeros.faltan} de {numeros.total}</span></div>
+              <Pista lleno={numeros.total - numeros.faltan} resto={numeros.faltan} escala={numeros.total} />
+            </div>
+          )}
+          {t.biblioteca.total > 0 && (
+            <div className="fuente">
+              <span className="icono"><Icono nombre="carpeta" /></span>
+              <div className="rotulo"><b>Tus documentos</b><span>{t.biblioteca.listos} de {t.biblioteca.total}</span></div>
+              <Pista lleno={t.biblioteca.listos} resto={docsFaltan} escala={t.biblioteca.total} />
+            </div>
+          )}
+        </div>
+        <div className="pasos" aria-label="Avance del método">
+          {FASES.map((f, i) => <span key={f} className={i + 1 < fase ? "hecho" : i + 1 === fase ? "actual" : undefined}>{f}</span>)}
+        </div>
+        <p className="voz">Aquí estás: <strong style={{ color: "var(--tinta)" }}>{FASES[fase - 1]}</strong>{fase < 3 ? ` · sigue ${FASES[fase]}` : " · la última fase"}</p>
+      </section>
+
+      <section className="tarjeta lista-tarjeta completa" aria-labelledby="t-encontrado">
+        <div className="cabeza">
+          <div><h2 id="t-encontrado">Lo que encontramos</h2><p className="sub">Todo sale de lo que tu empresa contó o mostró</p></div>
+          <Link className="ir" href="/portal/hoy" aria-label="Ver todo lo que encontramos"><Icono nombre="diagonal" /></Link>
+        </div>
+        {encontrados.length === 0 ? (
+          <p className="voz">Todavía nada: aparece cuando terminamos de leer lo que contaste.</p>
+        ) : (
+          <ul className="lista">
+            {encontrados.map((h) => (
+              <li key={h.id}>
+                <Link href="/portal/hoy">
+                  <span className="icono-cuadro"><Icono nombre={h.preserva ? "plan" : "ojo"} /></span>
+                  <span><b>{h.titulo}</b>{h.costo_posible && <small>{h.costo_posible}</small>}</span>
+                  <span className="derecha">{h.provisional ? "por confirmar" : h.preserva ? "lo que funciona" : ""}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

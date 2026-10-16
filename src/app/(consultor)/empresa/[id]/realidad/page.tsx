@@ -1,5 +1,6 @@
 import { Encabezado } from "@/components/base/Vacio";
 import { MatrizRealidad } from "@/components/realidad/MatrizRealidad";
+import { Contradicciones } from "@/components/realidad/Contradicciones";
 
 /** EL ESPEJO: tres columnas. Las diferencias entre la segunda y la tercera son el momento espejo. Capítulo 13. */
 export default async function Realidad({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ estado?: string; vista?: string }> }) {
@@ -18,6 +19,7 @@ export default async function Realidad({ params, searchParams }: { params: Promi
           </>
         }
       />
+      <Contradicciones companyId={id} />
       <MatrizRealidad companyId={id} modo={vista} filtroInicial={{ estado: sp.estado }} />
     </>
   );

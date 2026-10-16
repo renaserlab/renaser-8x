@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { empresaDelCliente } from "@/lib/auth";
 import { clasificarModelo, etapaDe } from "@/lib/rules/matrices";
 import { encolar, PRIORIDAD, claveIdempotente } from "@/lib/jobs/queue";
+import { iniciarEntrada } from "@/lib/entrevista";
 
 type Ficha = { actividad?: string; antiguedad?: string; personas?: string; locales?: string; cliente_tipo?: string; venta_mensual?: string; documentacion?: string; productos?: string; canales?: string; ciudad?: string; whatsapp?: string };
 
@@ -63,6 +64,14 @@ export const POST = protegido({ cupo: "ia" }, async (perfil, req) => {
     if (primera) {
       await encolar({ company_id: c!.id, tipo: "entrevista_siguiente", payload: { session_id: primera.id }, prioridad: PRIORIDAD.entrevista, idempotency_key: claveIdempotente(["siguiente", primera.id, "arranque"]) });
     }
+  }
+  // LA ENTRADA BREVE NACE CON LA EMPRESA. Antes la abría una segunda llamada del navegador que, si fallaba, fallaba
+  // callada. Si aquí no se puede abrir (p. ej. la migración de la entrada aún no está aplicada), la empresa ya
+  // existe y la persona no se detiene: el motivo queda en el registro y la pantalla de la entrada ofrece «Empezar».
+  try {
+    await iniciarEntrada({ company_id: c!.id, perfil: { id: perfil.id, nombre: perfil.nombre ?? null } });
+  } catch (e) {
+    console.error(`[registro] no se pudo abrir la entrada breve de ${c!.id}: ${e instanceof Error ? e.message : String(e)}`);
   }
   return ok({ company_id: c!.id }, 201);
 });

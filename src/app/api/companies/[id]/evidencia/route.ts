@@ -3,6 +3,8 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { registrar, ipDe } from "@/lib/auditoria";
 import { reconocerPorBytes, nombreSeguro, MAX_EVIDENCIA_BYTES } from "@/lib/archivos";
+import { exigirAutoridad } from "@/lib/autoridad";
+import { leerAccion, aplicarTransicion, ReglaDelPlan } from "@/lib/plan-intervencion";
 
 type Ctx = { params: Promise<{ id: string }> };
 export const maxDuration = 60;
@@ -71,23 +73,43 @@ export const POST = protegido<Ctx>({ cupo: "subida" }, async (perfil, req, ctx) 
   return ok({ evidencia: data }, 201);
 });
 
-/** Marcar una acción como verificada: solo con evidencia encima. */
-export const PATCH = protegido<Ctx>({}, async (perfil, req, ctx) => {
+/**
+ * COMPROBAR UNA ACCIÓN CON SU PRUEBA DELANTE, POR LA MÁQUINA DE ESTADOS. Hasta el 13-10-2026 este PATCH lo
+ * llamaba cualquier dueño con una evidencia subida y dejaba SU acción en «hecho» con verificado_at y
+ * verificado_por escritos a mano: sin transición, sin autoridad y sin fila en accion_historial. Era la
+ * puerta trasera de «reportado no es verificado». Ahora la ruta no escribe nada por su cuenta. Hace las
+ * tres preguntas en orden (¿es la consultora?, ¿entra a esta empresa?, ¿tiene autoridad para aprobar el
+ * plan?) y le pide el evento «verificar» a plan-intervencion.ts, que es quien exige la prueba, anota quién
+ * y cuándo y deja el historial.
+ *
+ * El dueño no pasa de aquí (403): lo suyo es REPORTAR, por /api/actions/[id]/transicion. Una regla que no
+ * se cumple vuelve como 409 con su mensaje; la falta de prueba ya no es el 400 «sube al menos una prueba»
+ * de antes sino la regla misma: «reportado no es verificado: falta evidencia».
+ */
+export const PATCH = protegido<Ctx>({ consultor: true, entidad: "accion_verificada" }, async (perfil, req, ctx) => {
   const { id } = await ctx.params;
   await exigirAcceso(perfil, id);
+  await exigirAutoridad(perfil, "aprobar_plan");
   const b = await leerValidado(req, z.object({ action_id: z.string().uuid(), nota: z.string().trim().max(400).optional() }));
-  const sb = supabaseAdmin();
 
-  const { data: a } = await sb.from("actions").select("company_id").eq("id", b.action_id).maybeSingle();
+  const a = await leerAccion(b.action_id);
   if (!a || a.company_id !== id) return fallo("Esa acción no es de esta empresa.", 404);
 
-  const { count } = await sb.from("evidencias").select("id", { count: "exact", head: true }).eq("action_id", b.action_id);
-  if ((count ?? 0) === 0) return fallo("Antes de darla por verificada, sube al menos una prueba de que se hizo.", 400);
-
-  await sb.from("actions").update({
-    estado: "hecho", verificado_at: new Date().toISOString(), verificado_por: perfil.id, verificado_nota: b.nota ?? null,
-  }).eq("id", b.action_id);
-
-  void registrar({ companyId: id, actor: perfil, accion: "aprobar", entidad: "accion_verificada", entidadId: b.action_id, detalle: { pruebas: count }, ruta: "/api/companies/evidencia", ip: ipDe(req) });
-  return ok({ verificada: true, pruebas: count });
+  try {
+    const r = await aplicarTransicion(a, perfil, { evento: "verificar", motivo: b.nota ?? null });
+    // La regla ya exigió prueba: una evidencia subida o un valor del indicador posterior al reporte. Aquí
+    // solo se deja dicho con cuál de las dos pasó. Si el conteo no se puede leer se dice «no se sabe», no cero.
+    const { count, error: sinConteo } = await supabaseAdmin().from("evidencias").select("id", { count: "exact", head: true }).eq("action_id", a.id);
+    const pruebas = sinConteo ? null : count ?? 0;
+    const porIndicador = !sinConteo && (count ?? 0) === 0;
+    void registrar({
+      companyId: id, actor: perfil, accion: "aprobar", entidad: "accion_verificada", entidadId: a.id,
+      detalle: { evento: "verificar", de: a.estado, a: r.estado, pruebas, por_indicador: porIndicador, historial: r.historialIds },
+      ruta: "/api/companies/evidencia", ip: ipDe(req),
+    });
+    return ok({ verificada: true, estado: r.estado, pruebas, accion: r.accion, historial_ids: r.historialIds });
+  } catch (e) {
+    if (e instanceof ReglaDelPlan) return fallo(e.message, 409);
+    throw e;
+  }
 });

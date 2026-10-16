@@ -4,15 +4,31 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { hallazgosAprobadosConEvidencia } from "@/lib/db/queries";
 import { Hallazgo, type HallazgoRow } from "@/components/diagnostico/Hallazgo";
 import { ENTREGABLE, fechaCorta } from "@/lib/textos";
+import { ComoVamos } from "@/components/medicion/ComoVamos";
+import { cargarMediciones, cargarActas, cargarAccionesLigadas } from "@/components/medicion/datos";
 
 export const dynamic = "force-dynamic";
 
-/** Tus resultados: el paquete publicado. Solo hallazgos aprobados con evidencia, solo documentos publicados. Capítulo 34. */
+/**
+ * Tus resultados: cómo vamos (punto de partida, cortes y actas) y el paquete publicado. Solo hallazgos
+ * aprobados con evidencia, solo documentos publicados. Capítulo 34 y sección 14 (13-10-2026).
+ */
 export default async function Resultados() {
   const c = await contextoPortal();
   if (!c.companyId) return <p className="t-cuerpo">{c.queFalta}</p>;
   const sb = supabaseAdmin();
-  const { data: docs } = await sb.from("deliverables").select("id,tipo,version,publicado_at").eq("company_id", c.companyId).eq("publicado", true).order("publicado_at", { ascending: false });
+  const [{ data: docs }, meds, actas, acciones, { data: membresia }] = await Promise.all([
+    sb.from("deliverables").select("id,tipo,version,publicado_at").eq("company_id", c.companyId).eq("publicado", true).order("publicado_at", { ascending: false }),
+    cargarMediciones(sb, c.companyId),
+    cargarActas(sb, c.companyId),
+    cargarAccionesLigadas(sb, c.companyId),
+    // Solo el dueño (membresía «dueno») acepta su punto de partida; el consultor que mira «como el empresario» no acepta por él.
+    c.u.rol === "consultor" ? Promise.resolve({ data: null as { nivel?: string } | null }) : sb.from("memberships").select("nivel").eq("user_id", c.u.id).eq("company_id", c.companyId).maybeSingle(),
+  ]);
+  const puedeAceptar = membresia?.nivel === "dueno";
+  // La aceptación que cuenta es la del dueño: el acta de la consultora se muestra aparte, como constancia, y no le quita el botón.
+  const comoVamos = <ComoVamos companyId={c.companyId} mediciones={meds.mediciones} actas={actas} acciones={acciones} puedeAceptar={puedeAceptar} usuarioId={c.u.id} />;
+
   if (!docs?.length)
     return (
       <>
@@ -22,7 +38,10 @@ export default async function Resultados() {
           No tienes que esperar a nadie: todo lo que vamos entendiendo de tu empresa está en <strong>Mi empresa</strong>,
           y se afina con cada cosa que cuentas. Los informes finales para descargar aparecerán aquí.
         </p>
-        <Link href="/portal/hoy" className="boton">Ver mi empresa hoy</Link>
+        <div className="mb-10">
+          <Link href="/portal/hoy" className="boton">Ver mi empresa hoy</Link>
+        </div>
+        {comoVamos}
       </>
     );
   // P0-03: hacia el cliente nunca viaja el nombre de quien dijo algo; solo puesto/rol.
@@ -36,6 +55,8 @@ export default async function Resultados() {
     <>
       <p className="t-etiqueta">Tus resultados</p>
       <h1 className="t-titulo mt-2 mb-8">Lo que encontramos</h1>
+      {comoVamos}
+      <h2 className="t-seccion mb-4">Tus documentos</h2>
       <ul className="flex flex-col gap-2 mb-10">
         {[...ultimos.values()].map((d) => (
           <li key={d.id}>

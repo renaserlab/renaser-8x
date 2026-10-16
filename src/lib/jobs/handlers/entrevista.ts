@@ -1,13 +1,15 @@
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { comoDato } from "@/lib/rules/patrones";
 import { correrEntrevistador } from "@/lib/ai/agents/entrevistador";
 import { correrMinero } from "@/lib/ai/agents/minero";
-import { claimsDeEmpresa, claimsComoTexto, registrarLlamada } from "@/lib/db/queries";
+import { claimsDeEmpresa, claimsComoTexto, registrarLlamada, registrarErrorLlamada } from "@/lib/db/queries";
 import { TIPOS_CRITICOS } from "@/lib/rules/vigencia";
 import { bloquesSinCubrir, puedeCerrarSesion, BLOQUES } from "@/lib/rules/cobertura";
 import { clasificarModelo, matricesComoTexto } from "@/lib/rules/matrices";
 import { tablaResultadosComoTexto, type Metrica } from "@/lib/rules/anomalias";
-import { encolar, PRIORIDAD, progreso, claveIdempotente } from "../queue";
-import { ai } from "@/lib/ai";
+import { encolar, PRIORIDAD, progreso, claveIdempotente, abrirCircuitoCredito } from "../queue";
+import { ai, AIProviderPausedError } from "@/lib/ai";
+import { abrirSiguientePregunta, asentarLoDicho } from "@/lib/entrada";
 
 type Job = { id: string; company_id: string; payload: Record<string, unknown> };
 
@@ -35,6 +37,16 @@ export async function handleEntrevistaSiguiente(job: Job) {
   const sessionId = String(job.payload.session_id);
   const { data: ses } = await sb.from("interview_sessions").select("*, participants(nombre,puesto,rol,antiguedad)").eq("id", sessionId).single();
   if (!ses) throw new Error("Sesión no encontrada");
+
+  // ENTRADA BREVE (R7.1): la siguiente pregunta la decide el plan fijo de la sesión, no el modelo. Aquí no
+  // se arma contexto ni se llama al entrevistador: se abre la pregunta que toca, o se cierra la sesión con
+  // su síntesis si ya están las doce. El modelo solo extrae de las respuestas (handlers/extraer.ts). Llega
+  // aquí cuando el dueño respondió con un audio y el worker terminó de pasarlo a texto; si respondió
+  // escribiendo, la pregunta ya la abrió la ruta en la misma petición y esto no inserta nada.
+  if (ses.tipo === "entrada_breve") {
+    const r = await abrirSiguientePregunta(sessionId, sb);
+    return { generadas: r.abierta && !r.motivo ? 1 : 0, origen: "plan" as const, cerrada: r.cerrada, ...(r.motivo ? { motivo: r.motivo } : {}) };
+  }
 
   const { data: abiertas } = await sb.from("interview_responses").select("id").eq("session_id", sessionId).is("respuesta", null).limit(1);
   if (abiertas && abiertas.length) return { generadas: 0, motivo: "ya hay pregunta abierta" };
@@ -88,12 +100,9 @@ export async function handleEntrevistaSiguiente(job: Job) {
     matrizTxt ? `PREGUNTAS DEL OFICIO (su modelo de negocio):\n${matrizTxt}` : null,
     ses.tipo === "empresa_dueno" ? `TABLA DE RESULTADOS (lo ya contado — pregunta lo que falta, un mes a la vez):\n${tablaResultadosComoTexto((metricas ?? []) as Metrica[])}` : null,
     `BLOQUES SIN CUBRIR (${sinCubrir.length}): ${sinCubrir.map((b) => `[${b.clave}] ${b.nombre}`).join(", ") || "ninguno"}`,
-    `PREGUNTAS YA RESPONDIDAS POR ESTA PERSONA (${propias.length}):`,
-    propias.map((r) => `- [${r.bloque}] ${r.pregunta}\n  → ${r.respuesta}`).join("\n") || "(ninguna)",
-    `RESPUESTAS DE OTRAS SESIONES (${ajenas.length}, resumen, sin nombres):`,
-    ajenas.slice(-30).map((r) => `- (${(r.interview_sessions as unknown as { tipo: string }).tipo}) ${r.pregunta} → ${String(r.respuesta).slice(0, 240)}`).join("\n") || "(ninguna)",
-    `AFIRMACIONES POR VALIDAR O CONTRADICHAS (${porValidar.length}):`,
-    claimsComoTexto(porValidar.slice(0, 40)) || "(ninguna)",
+    comoDato(`PREGUNTAS YA RESPONDIDAS POR ESTA PERSONA (${propias.length})`, propias.map((r) => `- [${r.bloque}] ${r.pregunta}\n  → ${r.respuesta}`).join("\n") || "(ninguna)"),
+    comoDato(`RESPUESTAS DE OTRAS SESIONES (${ajenas.length}, resumen, sin nombres)`, ajenas.slice(-30).map((r) => `- (${(r.interview_sessions as unknown as { tipo: string }).tipo}) ${r.pregunta} → ${String(r.respuesta).slice(0, 240)}`).join("\n") || "(ninguna)"),
+    comoDato(`AFIRMACIONES POR VALIDAR O CONTRADICHAS (${porValidar.length})`, claimsComoTexto(porValidar.slice(0, 40)) || "(ninguna)"),
     `PILARES CON INFORMACIÓN INSUFICIENTE: ${desconocidos.join(", ") || "ninguno"}`,
     `LO QUE LA EMPRESA YA MOSTRÓ (no vuelvas a preguntar nada de esto):`,
     [
@@ -104,12 +113,32 @@ export async function handleEntrevistaSiguiente(job: Job) {
     `TIPOS CRÍTICOS QUE DEBEN QUEDAR VERIFICADOS: ${TIPOS_CRITICOS.join(", ")}`,
   ].filter(Boolean).join("\n\n");
 
-  const r = await correrEntrevistador(contexto);
-  await registrarLlamada(job.company_id, job.id, "entrevistador", r);
+  // LA PERSONA ESTÁ ESPERANDO DELANTE DE LA PANTALLA. Si el modelo falla —sin crédito, caído, salida
+  // inválida— la entrevista no se detiene: entra la primera pregunta del banco aún no hecha, igual que
+  // cuando el modelo responde vacío. El fallo se registra con su causa para la torre, y si fue por
+  // falta de crédito se abre el circuito para que el resto de la cola espere. El error original se
+  // GUARDA: si el banco tampoco tiene pregunta que servir, se relanza más abajo para que el worker
+  // haga lo suyo (backoff ante 429/5xx, pausa sin consumir intento ante falta de crédito). Lo que
+  // nunca pasa es que el trabajo termine «hecho» con cero preguntas, ni que una sesión se cierre
+  // porque el modelo falló: eso dejaría a la persona sin pregunta y sin trabajo vivo.
+  const t0 = Date.now();
+  let r: Awaited<ReturnType<typeof correrEntrevistador>> | null = null;
+  let motivoBanco: string | null = null;
+  let errorModelo: unknown = null;
+  try {
+    r = await correrEntrevistador(contexto);
+    await registrarLlamada(job.company_id, job.id, "entrevistador", r);
+  } catch (e) {
+    errorModelo = e;
+    const msg = e instanceof Error ? e.message : String(e);
+    motivoBanco = e instanceof AIProviderPausedError ? "el modelo está en pausa (sin crédito)" : `el modelo falló: ${msg.slice(0, 160)}`;
+    await registrarErrorLlamada(job.company_id, job.id, "entrevistador", msg, Date.now() - t0).catch(() => {});
+    if (e instanceof AIProviderPausedError) await abrirCircuitoCredito();
+  }
 
   // El entrevistador puede declarar areas ya comprendidas por lo dicho: se cierran sin preguntar de mas.
   const clavesSesion = new Set((BLOQUES[ses.tipo] ?? []).map((b) => b.clave));
-  const nuevosCubiertos = (r.data.bloques_cubiertos ?? []).filter((c) => clavesSesion.has(c) && !yaCubiertos.includes(c));
+  const nuevosCubiertos = (r?.data.bloques_cubiertos ?? []).filter((c) => clavesSesion.has(c) && !yaCubiertos.includes(c));
   const cubiertos = [...yaCubiertos, ...nuevosCubiertos];
   if (nuevosCubiertos.length) await sb.from("interview_sessions").update({ bloques_cubiertos: cubiertos }).eq("id", sessionId);
 
@@ -131,21 +160,28 @@ export async function handleEntrevistaSiguiente(job: Job) {
   const yaHechas = [...propias.map((x) => String(x.pregunta)), ...(abiertasParticipante ?? []).map((x) => String(x.pregunta))];
   const porBloque = new Map<string, number>();
   for (const x of deEstaSesion) if (x.bloque) porBloque.set(x.bloque, (porBloque.get(x.bloque) ?? 0) + 1);
-  const aceptadas: typeof r.data.preguntas = [];
-  for (const q of r.data.preguntas) {
+  type Pregunta = { texto: string; bloque: string; pilar: string | null; origen_claim_id: string | null };
+  const aceptadas: Pregunta[] = [];
+  for (const q of (r?.data.preguntas ?? []) as Pregunta[]) {
     if (preguntaRepetida(q.texto, [...yaHechas, ...aceptadas.map((x) => x.texto)])) continue;
     if (!q.origen_claim_id && (porBloque.get(q.bloque) ?? 0) >= 2) continue;
     aceptadas.push(q);
   }
-  let preguntas = aceptadas.slice(0, 2);
-  // Cobertura en código: si nada sobrevivió pero faltan bloques, entra la primera pregunta del banco AÚN NO hecha.
+  let preguntas: Pregunta[] = aceptadas.slice(0, 2);
+  let origen: "modelo" | "banco" = "modelo";
+  // Cobertura en código: si nada sobrevivió (el modelo no propuso, repitió, o FALLÓ) pero faltan bloques,
+  // entra la primera pregunta del banco AÚN NO hecha. Con origen=banco queda dicho de dónde salió.
   const faltanTras = bloquesSinCubrir(ses.tipo, deEstaSesion, cubiertos);
   if (preguntas.length === 0 && faltanTras.length) {
     for (const b of faltanTras) {
       const libre = b.preguntas.find((t) => !preguntaRepetida(t, yaHechas));
-      if (libre) { preguntas = [{ texto: libre, bloque: b.clave, pilar: null, origen_claim_id: null }]; break; }
+      if (libre) { preguntas = [{ texto: libre, bloque: b.clave, pilar: null, origen_claim_id: null }]; origen = "banco"; break; }
     }
   }
+  // El modelo falló Y el banco no tiene nada que servir: no hay pregunta para la persona. Se relanza el
+  // error original tal cual, para que el worker decida (reintento con backoff, o pausa sin gastar intento
+  // si fue falta de crédito). Dar el trabajo por hecho con cero preguntas sería mentir.
+  if (errorModelo !== null && preguntas.length === 0) throw errorModelo;
   for (const q of preguntas) {
     await sb.from("interview_responses").insert({
       session_id: sessionId,
@@ -156,7 +192,8 @@ export async function handleEntrevistaSiguiente(job: Job) {
       orden: orden++,
     });
   }
-  const cerrar = preguntas.length === 0 && puedeCerrarSesion(ses.tipo, deEstaSesion, cubiertos);
+  // Una sesión solo se cierra con el modelo RESPONDIENDO: si falló, no sabemos si quería validar algo más.
+  const cerrar = r !== null && preguntas.length === 0 && puedeCerrarSesion(ses.tipo, deEstaSesion, cubiertos);
   if (cerrar) {
     await sb.from("interview_sessions").update({ estado: "completa" }).eq("id", sessionId);
     if (["personal", "lider", "know_how"].includes(ses.tipo)) {
@@ -165,7 +202,7 @@ export async function handleEntrevistaSiguiente(job: Job) {
   } else if (ses.estado === "pendiente") {
     await sb.from("interview_sessions").update({ estado: "en_curso" }).eq("id", sessionId);
   }
-  return { generadas: preguntas.length, bloques_sin_cubrir: sinCubrir.map((b) => b.clave), cerrada: cerrar };
+  return { generadas: preguntas.length, origen, ...(motivoBanco ? { motivo: motivoBanco } : {}), bloques_sin_cubrir: sinCubrir.map((b) => b.clave), cerrada: cerrar };
 }
 
 /** payload: { response_id } → transcribe el audio guardado y dispara extracción. Si no hay transcriptor, libera la pregunta para texto (P1-11). */
@@ -181,8 +218,10 @@ export async function handleTranscribirRespuesta(job: Job) {
   await progreso(job.id, "Escuchando tu respuesta");
   const { data: blob } = await sb.storage.from("fuentes").download(r.respuesta_audio_path);
   if (!blob) throw new Error("No pudimos descargar el audio");
+  let transcrito = "";
   try {
     const t = await ai().transcribe(blob, blob.type || "audio/webm");
+    transcrito = t.texto;
     await sb.from("interview_responses").update({ respuesta: t.texto, respondido_at: new Date().toISOString() }).eq("id", id);
   } catch (e) {
     // Último intento fallido → liberar la pregunta para que la persona responda por texto.
@@ -190,7 +229,16 @@ export async function handleTranscribirRespuesta(job: Job) {
     if (j && j.intentos >= j.max_intentos) await sb.from("interview_responses").update({ respuesta_audio_path: null }).eq("id", id);
     throw e;
   }
-  await encolar({ company_id: job.company_id, tipo: "extraer", payload: { response_id: id }, prioridad: PRIORIDAD.contrastar, idempotency_key: claveIdempotente(["extraer", "resp", id]) });
+  // ENTRADA BREVE (R7.1): lo que la persona dijo en el audio se trata igual que lo que escribe o toca
+  // (asentarLoDicho, src/lib/entrada.ts). Si es solo «no lo sé», queda con certeza no_lo_se y NO va al
+  // extractor: de ahí no sale ningún número, ni un cero. Si es solo un «sí» a algo que ya sabíamos, queda
+  // como confirmación y tampoco va. Y si responde con sus palabras a algo que ya sabíamos, al extractor va la
+  // pregunta del plan, sin las cifras del documento. En cualquier otra entrevista nada cambia: se extrae como siempre.
+  const { data: sesion } = await sb.from("interview_sessions").select("tipo").eq("id", r.session_id).maybeSingle();
+  const extraer = sesion?.tipo === "entrada_breve" ? (await asentarLoDicho(id, transcrito, sb)).extraer : true;
+  if (extraer) {
+    await encolar({ company_id: job.company_id, tipo: "extraer", payload: { response_id: id }, prioridad: PRIORIDAD.contrastar, idempotency_key: claveIdempotente(["extraer", "resp", id]) });
+  }
   await encolar({ company_id: job.company_id, tipo: "entrevista_siguiente", payload: { session_id: r.session_id }, prioridad: PRIORIDAD.entrevista, idempotency_key: claveIdempotente(["siguiente", r.session_id, id]) });
   return { ok: true };
 }

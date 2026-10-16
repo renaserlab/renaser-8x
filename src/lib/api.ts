@@ -1,10 +1,20 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { perfilApi, puedeAcceder, type Perfil } from "./auth";
+import { perfilApi, puedeAcceder, esMiembro, NoAutenticado, AccesoDenegado, type Perfil } from "./auth";
 import { redactarToken } from "./tokens";
-import { registrar, ipDe, accionDeMetodo } from "./auditoria";
+import { registrar, ipDe, accionDeMetodo, type Accion } from "./auditoria";
 import { registrarError } from "./errores";
 import { limitar, CUPO, type Cupo } from "./limite";
+
+export { NoAutenticado, AccesoDenegado };
+
+/**
+ * Acción de auditoría de un intento denegado. `audit_log.accion` es `text` sin check
+ * (migracion-gobierno.sql:14), así que el valor entra tal cual; el tipo `Accion` de auditoria.ts
+ * todavía no lo lista porque ese archivo es de otro encargo (cambio propuesto allí). En cuanto se
+ * añada, esta conversión sobra.
+ */
+const DENEGADO: Accion = "denegado";
 
 export function fallo(mensaje: string, status = 400) {
   return NextResponse.json({ error: mensaje }, { status });
@@ -39,38 +49,60 @@ export function protegido<Ctx>(
   fn: (perfil: Perfil, req: Request, ctx: Ctx) => Promise<Response>
 ) {
   return async (req: Request, ctx: Ctx) => {
-    const perfil = await perfilApi();
-    if (!perfil) return fallo("Tienes que entrar primero.", 401);
-    if (opts.consultor && perfil.rol !== "consultor") return fallo("Solo el consultor puede hacer esto.", 403);
-
     const ruta = new URL(req.url).pathname;
-    const escribe = req.method !== "GET" && req.method !== "HEAD";
-
-    if (escribe && opts.cupo !== "ninguno") {
-      const cual = CUPO[opts.cupo ?? "escritura"];
-      const c = await limitar(`${opts.cupo ?? "escritura"}:${perfil.id}`, cual.max, cual.ventana);
-      if (!c.permitido) return demasiado(c);
-    }
+    const entidad = opts.entidad ?? ruta.split("/")[3] ?? null;
+    let perfil: Perfil | null = null;
 
     try {
+      perfil = await perfilApi();
+      if (!perfil) throw new NoAutenticado();
+      if (opts.consultor && perfil.rol !== "consultor") throw new AccesoDenegado("Solo el consultor puede hacer esto.", "rol");
+
+      const escribe = req.method !== "GET" && req.method !== "HEAD";
+      if (escribe && opts.cupo !== "ninguno") {
+        const cual = CUPO[opts.cupo ?? "escritura"];
+        const c = await limitar(`${opts.cupo ?? "escritura"}:${perfil.id}`, cual.max, cual.ventana);
+        if (!c.permitido) return demasiado(c);
+      }
+
       const res = await fn(perfil, req, ctx);
       const accion = accionDeMetodo(req.method);
       if (accion && res.ok) {
-        void registrar({ actor: perfil, accion, entidad: opts.entidad ?? ruta.split("/")[3] ?? null, ruta, ip: ipDe(req) });
+        void registrar({ actor: perfil, accion, entidad, ruta, ip: ipDe(req) });
       }
       return res;
     } catch (e) {
       if (e instanceof EntradaInvalida) return fallo(e.message, 400);
+      if (e instanceof NoAutenticado) return fallo(e.message, 401);
+      if (e instanceof AccesoDenegado) {
+        // Un acceso denegado no es un fallo del sistema: es un hecho de seguridad y queda en el rastro,
+        // con quién lo intentó y sobre qué. La empresa va en `detalle` y no en `company_id` porque un
+        // identificador inventado rompería la clave foránea y el intento se perdería en silencio.
+        void registrar({
+          actor: perfil, accion: DENEGADO, entidad, ruta, ip: ipDe(req),
+          detalle: { motivo: e.motivo, empresa: e.companyId, metodo: req.method },
+        });
+        return fallo(redactarToken(e.message), 403);
+      }
       const msg = e instanceof Error ? e.message : String(e);
       console.error(redactarToken(`[api ${req.method} ${ruta}] ${msg}`));
-      void registrarError({ ruta, metodo: req.method, mensaje: msg, detalle: e instanceof Error ? e.stack : null, actorId: perfil.id });
+      void registrarError({ ruta, metodo: req.method, mensaje: msg, detalle: e instanceof Error ? e.stack : null, actorId: perfil?.id ?? null });
       return fallo(msg, 500);
     }
   };
 }
 
+/** Pertenencia con el atajo del consultor: la consultora entra a cualquier empresa; el cliente, a las suyas. */
 export async function exigirAcceso(perfil: Perfil, companyId: string) {
-  if (!(await puedeAcceder(perfil, companyId))) throw new Error("No tienes acceso a esta empresa.");
+  if (!(await puedeAcceder(perfil, companyId))) throw new AccesoDenegado("No tienes acceso a esta empresa.", "pertenencia", companyId);
+}
+
+/**
+ * Pertenencia estricta: tampoco el consultor pasa sin membresía. Para lo que es de la persona y no de
+ * la consultora, como elegir SU empresa activa (el consultor tiene su propio modo «ver como»).
+ */
+export async function exigirPertenencia(perfil: Perfil, companyId: string) {
+  if (!(await esMiembro(perfil.id, companyId))) throw new AccesoDenegado("No perteneces a esta empresa.", "pertenencia", companyId);
 }
 
 export async function leerJSON<T = Record<string, unknown>>(req: Request): Promise<T> {

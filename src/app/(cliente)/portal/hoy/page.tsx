@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { contextoPortal } from "@/lib/portal";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { empresaHoy, type HallazgoHoy } from "@/lib/hoy";
+import { empresaHoy, esDeDocumentos, ROTULO_POR_CONFIRMAR, type HallazgoHoy, type PorConfirmarHoy } from "@/lib/hoy";
 import { proyeccionPerdida } from "@/lib/perdida";
 import { caminosDesdeHallazgos } from "@/lib/caminos";
 import type { Metrica } from "@/lib/rules/anomalias";
@@ -92,6 +92,44 @@ function ArbolVentas({ metricas }: { metricas: Metrica[] }) {
   );
 }
 
+/**
+ * LO PROVISIONAL SE VE, PERO NO DECIDE (R10.4): una sección plegable con lo que todavía no es conclusión. Nunca entra en
+ * «lo que te frena» ni en el plan. Si algo sería grave de confirmarse, la sección llega abierta con el aviso arriba:
+ * esconderlo sería maquillar. `conMotivo` añade a cada punto por qué no es conclusión (cuando no todos comparten razón)
+ * y cambia cómo se nombra lo grave: de algo cuyo sustento ya está confirmado no se dice «grave si se confirma».
+ * El porqué de cada punto (`p.porQue`) lo arma hoy.ts con la cuenta real de su evidencia: aquí solo se pinta.
+ */
+function PorConfirmar({ titulo, intro, items, conMotivo }: { titulo: string; intro: string; items: PorConfirmarHoy[]; conMotivo?: boolean }) {
+  if (items.length === 0) return null;
+  const hayGrave = items.some((p) => p.graveSiSeConfirma);
+  const rotuloGrave = conMotivo ? "grave si resulta ser así" : "grave si se confirma";
+  return (
+    <details open={hayGrave}>
+      <summary className="t-seccion" style={{ cursor: "pointer", fontSize: 18 }}>
+        {titulo} · {items.length}
+      </summary>
+      {hayGrave && (
+        <p className="t-dato mt-2 medida" style={{ color: "var(--contradicho)", fontWeight: 600 }}>
+          {conMotivo ? "Hay algo que sería grave si resulta ser así: revísalo con tu consultor." : "Hay algo grave si se confirma: revísalo con tu consultor."}
+        </p>
+      )}
+      <p className="t-dato mt-2 mb-4 medida" style={{ color: "var(--grafito)" }}>{intro}</p>
+      <ul className="flex flex-col gap-3">
+        {items.map((p) => (
+          <li key={p.id} className="panel p-4" style={{ borderStyle: "dashed" }}>
+            <p className="t-etiqueta">
+              {PILAR_CLIENTE[p.pilar] ?? p.pilar} · {ROTULO_POR_CONFIRMAR[p.motivo]}{p.graveSiSeConfirma ? ` · ${rotuloGrave}` : ""}
+            </p>
+            <p className="t-cuerpo mt-1 medida">{p.titulo}</p>
+            {conMotivo && <p className="t-dato mt-1 medida" style={{ color: "var(--grafito)" }}>{p.porQue}</p>}
+            <p className="t-dato mt-1" style={{ color: "var(--grafito)" }}>{p.deDonde}</p>
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+}
+
 /** MI EMPRESA HOY: el diagnóstico vivo. El empresario recibe valor sin esperar a nadie. */
 export default async function Hoy() {
   const c = await contextoPortal();
@@ -134,6 +172,10 @@ export default async function Hoy() {
   const caminos = caminosDesdeHallazgos([hoy.restriccion, ...hoy.noVes, ...hoy.secundarias].filter(Boolean) as HallazgoHoy[]);
   const altos = hoy.noVes.filter((h) => h.impacto === "alto" && h.id !== hoy.restriccion?.id);
   const resto = hoy.noVes.filter((h) => h.impacto !== "alto" && h.id !== hoy.restriccion?.id);
+  // Lo que todavía no es conclusión, separado por lo que el dueño puede hacer con ello: lo visto solo en sus documentos
+  // (se confirma), y lo demás (ya está confirmado y falta saber más del área o volver a revisarlo; o no sale de papeles).
+  const deDocumentos = hoy.porConfirmar.filter(esDeDocumentos);
+  const sinConcluir = hoy.porConfirmar.filter((p) => !esDeDocumentos(p));
 
   if (hoy.nivel === 0)
     return (
@@ -154,12 +196,25 @@ export default async function Hoy() {
 
       <DatosEmpresa nombre={c.empresa?.nombre ?? "Tu empresa"} ficha={fichaEmpresa} bloques={bloquesActivos} faltaLevantar={faltaLevantar} rastro={await rastroDeEmpresa(c.companyId, 40)} />
 
-      {/* ASÍ NOS ORGANIZAMOS HOY: el dueño declara sus puestos — la materia prima del estudio de organigrama. */}
-      <DeclararEquipo puestos={(await supabaseAdmin().from("org_puestos").select("id,nombre,mision,persona,reporta_a,origen").eq("company_id", c.companyId).order("orden").order("created_at")).data as never[] ?? []} />
+      {/* ASÍ NOS ORGANIZAMOS HOY: SOLO los puestos que el dueño declaró (origen cliente).
+          El filtro va en la CONSULTA, no en la pantalla: los puestos que propone la consultora son
+          trabajo interno y no deben llegar siquiera al navegador del cliente. Filtrar al pintar los
+          dejaba en el código de la página y, peor, visibles en el desplegable de «a quién reporta». */}
+      <DeclararEquipo puestos={(await supabaseAdmin().from("org_puestos").select("id,nombre,mision,persona,reporta_a,origen").eq("company_id", c.companyId).eq("origen", "cliente").order("orden").order("created_at")).data as never[] ?? []} />
 
-      {hoy.stats.porValidar > 0 && (
+      {(hoy.stats.porValidar > 0 || hoy.stats.porConfirmar > 0) && (
         <p className="t-dato" style={{ color: "var(--grafito)", marginTop: -28 }}>
-          <Link href="/portal/validar" style={{ textDecoration: "underline", color: "var(--marca)" }}>{hoy.stats.porValidar} punto(s) esperan tu confirmación</Link> — con eso la foto se afina.
+          {hoy.stats.porValidar > 0 && (
+            <>
+              <Link href="/portal/validar" style={{ textDecoration: "underline", color: "var(--marca)" }}>{hoy.stats.porValidar} punto(s) esperan tu confirmación</Link> — con eso la foto se afina.
+            </>
+          )}
+          {hoy.stats.porValidar > 0 && hoy.stats.porConfirmar > 0 && " · "}
+          {/* Lo visto en documentos que nadie confirmó se cuenta aparte: no es lo mismo que una contradicción por resolver. */}
+          {deDocumentos.length > 0 && <>{deDocumentos.length} cosa{deDocumentos.length === 1 ? "" : "s"} vista{deDocumentos.length === 1 ? "" : "s"} en tus documentos, por confirmar.</>}
+          {deDocumentos.length > 0 && sinConcluir.length > 0 && " · "}
+          {/* Y lo que no es conclusión por otra razón no se cuenta como «visto en tus documentos»: no lo es. */}
+          {sinConcluir.length > 0 && <>{sinConcluir.length} punto{sinConcluir.length === 1 ? "" : "s"} que todavía no damos por conclusión.</>}
         </p>
       )}
 
@@ -196,6 +251,21 @@ export default async function Hoy() {
           )}
         </section>
       )}
+
+      {/* LO PROVISIONAL SE VE, PERO NO DECIDE (R10.4), en dos secciones porque no todo lo es por lo mismo: lo que salió
+          solo de documentos que nadie confirmó, y lo que todavía no es conclusión por otra razón (con su porqué en cada
+          punto). A nadie se le dice «sale de tus documentos» de algo que él mismo contó y ya confirmó. */}
+      <PorConfirmar
+        titulo="Lo que vimos en tus documentos y falta confirmar"
+        intro="No son conclusiones: salen de documentos que aún nadie confirmó. Revisarlos contigo es lo que los convierte en certeza o los descarta."
+        items={deDocumentos}
+      />
+      <PorConfirmar
+        titulo="Lo que todavía no damos por conclusión"
+        intro="No son conclusiones todavía. En cada punto te decimos por qué."
+        items={sinConcluir}
+        conMotivo
+      />
 
       {/* EL ÁRBOL DE LA VENTA: gráfico, con lo contado; lo vacío invita a contarlo. */}
       {(metricasRaw ?? []).length > 0 && <ArbolVentas metricas={(metricasRaw ?? []) as Metrica[]} />}
@@ -278,6 +348,15 @@ export default async function Hoy() {
           </div>
         </details>
       )}
+
+      {/* UNA FORTALEZA QUE TODAVÍA NO ES CONCLUSIÓN TAMBIÉN SE VE (R10.4): aparte de «lo que no debes romper», rotulada
+          «por confirmar» y con su porqué. Nunca como tarjeta de hallazgo ni con recomendación. */}
+      <PorConfirmar
+        titulo="Fortalezas por confirmar"
+        intro="Parecen fortalezas de tu empresa, pero todavía no las damos por ciertas. En cada una te decimos por qué."
+        items={hoy.fortalezasPorConfirmar}
+        conMotivo
+      />
 
       {hoy.caleta.length > 0 && (
         <details>

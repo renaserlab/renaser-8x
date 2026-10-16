@@ -1,6 +1,7 @@
 import { RASGOS, tiene, type ClaveRasgo, type Perfil } from "./perfil";
 import { BLOQUES_ACTIVOS } from "./activos";
 import { type ClaveCategoria } from "./pcf";
+import { MATRICES } from "./rules/matrices";
 
 /**
  * LA MATRIZ DE DOCUMENTACIÓN: qué necesita ESTA empresa para diagnosticarse, ordenarse y escalar.
@@ -24,15 +25,30 @@ export const NOMBRE_PRIORIDAD: Record<Prioridad, string> = {
 const CLAVES_DOC = new Set(BLOQUES_ACTIVOS.flatMap((b) => b.activos.map((a) => `${b.clave}.${a.clave}`)));
 const NOMBRE_DOC = new Map<string, string>(BLOQUES_ACTIVOS.flatMap((b) => b.activos.map((a) => [`${b.clave}.${a.clave}`, a.nombre] as [string, string])));
 
-/** Un documento que la empresa necesita, con el rasgo que lo dispara. */
-export type PiezaDoc = { clave: string; nombre: string; prioridad: Prioridad; porque: string; disparado_por: ClaveRasgo | "base" };
+/**
+ * Los modelos operativos que clasifica rules/matrices.ts (citas, orden, profesional, retail, restaurante,
+ * produccion, recurrencia). Se repiten aquí como tipo cerrado para que `POR_MODELO` no pueda nombrar un
+ * modelo que no existe; la prueba de matriz comprueba que cada clave está en MATRICES.
+ */
+export type ClaveModelo = "citas" | "orden" | "profesional" | "retail" | "restaurante" | "produccion" | "recurrencia";
+export const CLAVES_MODELO: readonly ClaveModelo[] = ["citas", "orden", "profesional", "retail", "restaurante", "produccion", "recurrencia"];
+
+/**
+ * Qué disparó una pieza: la base común, un rasgo del negocio o su modelo operativo. El modelo va con
+ * prefijo porque «citas» es a la vez un rasgo (trabaja con agenda) y un modelo (citas / capacidad), y
+ * la pantalla tiene que poder decir cuál de los dos la pidió.
+ */
+export type DisparadoPor = ClaveRasgo | "base" | `modelo:${ClaveModelo}`;
+
+/** Un documento que la empresa necesita, con el rasgo (o el modelo) que lo dispara. */
+export type PiezaDoc = { clave: string; nombre: string; prioridad: Prioridad; porque: string; disparado_por: DisparadoPor };
 
 /** Un proceso que esta empresa debería tener mapeado. */
 export type PiezaProceso = {
   nombre: string;
   prioridad: Prioridad;
   porque: string;
-  disparado_por: ClaveRasgo | "base";
+  disparado_por: DisparadoPor;
   /** A qué parte del negocio pertenece, según el mapa de las 13 categorías (APQC). */
   categoria: ClaveCategoria;
 };
@@ -150,6 +166,110 @@ const POR_RASGO: Partial<Record<ClaveRasgo, { docs: [string, Prioridad, string][
   },
 };
 
+/**
+ * Lo que agrega el MODELO OPERATIVO. Hasta el 13-10-2026 el perfil clasificaba el modelo (p.modelos,
+ * rules/matrices.ts) y la matriz lo ignoraba: una tienda recibía lo mismo que un estudio jurídico salvo
+ * por sus rasgos. El modelo dice de qué vive el negocio —la ecuación interna de cada matriz— y de ahí
+ * salen los procesos que ningún rasgo pide: fijar el precio y la oferta en una tienda, el alcance de un
+ * caso en un estudio, el pedido que llega a cocina en un restaurante.
+ *
+ * Los nombres no repiten los de la base ni los de los rasgos a propósito: dos nombres distintos para el
+ * mismo proceso serían dos filas en la pantalla. Lo que ya pide un rasgo (comprar y abastecer, cuadrar
+ * caja, cobrar lo que deben) no se vuelve a pedir aquí.
+ */
+const POR_MODELO: Record<ClaveModelo, { docs: [string, Prioridad, string][]; procesos: [string, Prioridad, string, ClaveCategoria][] }> = {
+  retail: {
+    docs: [
+      ["producto.catalogo", 1, "Qué vendes, a qué precio y qué te deja cada cosa: en una tienda el margen por producto es la primera cuenta"],
+      ["resultados.margen", 1, "Lo que sale rápido y lo que deja más no siempre es lo mismo: hay que saber cuál es cuál"],
+      ["procesos.indicadores", 2, "Rotación, merma y margen por producto: los tres números que mandan en una tienda"],
+    ],
+    procesos: [
+      ["Cómo se fija el precio y se decide una oferta", 1, "Si cada quien pone el precio, el margen lo decide el ánimo del día", "oferta"],
+      ["Cómo se repone lo que falta en el estante", 1, "El producto que falta justo cuando lo piden es una venta regalada al vecino", "entrega_producto"],
+      ["Qué se hace con lo que no rota", 2, "La mercadería parada es plata parada: liquidar a tiempo cuesta menos que guardarla", "bienes"],
+    ],
+  },
+  citas: {
+    docs: [
+      ["resultados.tiempos", 2, "La agenda llena a medias no se ve en la caja del día: se ve a fin de mes"],
+      ["marketing.proceso_comercial", 2, "Del mensaje a la cita agendada: si nadie responde rápido, la hora se la lleva otro"],
+    ],
+    procesos: [
+      ["Cómo se confirma la cita el día anterior", 1, "La cita que no se confirma es la que se cae", "entrega_servicio"],
+      ["Cómo se llena una hora que quedó libre", 2, "Una hora vacía no se guarda para mañana: se pierde hoy", "venta"],
+      ["Cómo se invita al cliente a volver", 2, "El cliente que no agenda la próxima antes de irse vuelve cuando se acuerda", "postventa"],
+    ],
+  },
+  orden: {
+    docs: [
+      ["producto.calidad", 1, "Qué es un trabajo bien hecho, escrito, para que no vuelva por el mismo problema"],
+      ["resultados.tiempos", 1, "Cuántos días está el trabajo parado esperando repuesto, aprobación o gente: ahí se va el margen"],
+    ],
+    procesos: [
+      ["Cómo se recibe y diagnostica un trabajo", 1, "Lo que entra mal diagnosticado sale mal cobrado", "entrega_servicio"],
+      ["Cómo se presupuesta y se aprueba con el cliente", 1, "El presupuesto sin aprobación escrita termina en discusión al entregar", "venta"],
+      ["Cómo se avisa al cliente del avance", 2, "El cliente que no sabe, llama; el que llama tres veces, desconfía", "postventa"],
+      ["Qué se hace con el trabajo que vuelve por el mismo problema", 2, "La garantía que se repite dos veces señala el paso que falla", "postventa"],
+    ],
+  },
+  profesional: {
+    docs: [
+      ["procesos.indicadores", 1, "Horas por caso y cobrado contra pactado: sin eso nadie sabe qué servicio deja plata"],
+      ["marketing.oferta", 2, "Qué incluye el honorario y qué no: el alcance que no está escrito crece solo"],
+    ],
+    procesos: [
+      ["Cómo se abre un caso y se define su alcance", 1, "El alcance que no se escribe crece solo y nadie lo cobra", "entrega_servicio"],
+      ["Cómo se controlan plazos y vencimientos", 1, "Un plazo vencido no se recupera con horas extra", "entrega_servicio"],
+      ["Cómo se registran las horas por caso", 2, "Sin horas por caso la rentabilidad de cada servicio es una suposición", "dinero"],
+      ["Cómo se cobra la parte final del honorario", 1, "Lo pactado no es lo cobrado: la mitad final entra si alguien la persigue", "dinero"],
+    ],
+  },
+  restaurante: {
+    docs: [
+      ["producto.catalogo", 1, "Cada plato con su costo de receta: sin eso la carta se arma por gusto y no por margen"],
+      ["procesos.controles", 1, "Insumos que entran, salen y se botan: lo que no se pesa se pierde en la cocina"],
+    ],
+    procesos: [
+      ["Cómo se toma el pedido y llega a cocina", 1, "El pedido mal tomado se paga dos veces: en insumo y en cliente", "entrega_servicio"],
+      ["Cómo se controlan los insumos y lo que se bota", 1, "Lo que se bota a la semana es margen que ya se pagó", "bienes"],
+      ["Cómo se atiende el delivery", 2, "El delivery sin control de comisiones vende mucho y deja poco", "entrega_producto"],
+      ["Cómo se arma el turno de hora punta", 2, "La mesa que tarda en desocuparse es un cliente que se fue sin sentarse", "entrega_servicio"],
+    ],
+  },
+  produccion: {
+    docs: [
+      ["procesos.procedimientos", 1, "Cada etapa escrita igual, para que el rendimiento no dependa del turno"],
+      ["producto.calidad", 1, "Lo que sale mal y se rehace cuesta dos veces: el estándar se revisa antes de despachar"],
+    ],
+    procesos: [
+      ["Cómo se planifica la producción de la semana", 1, "Sin plan, la máquina produce lo urgente y no lo que se vende", "entrega_producto"],
+      ["Qué se hace cuando la línea se para", 1, "Cada hora parada tiene una causa con dueño, o se repite la semana siguiente", "bienes"],
+      ["Cómo se controla la calidad antes de despachar", 1, "El defecto que llega al cliente cuesta el flete, la reposición y la confianza", "entrega_producto"],
+      ["Cómo se calcula el costo de producir una unidad", 2, "Sin costo por unidad el precio se pone por comparación y no por margen", "dinero"],
+    ],
+  },
+  recurrencia: {
+    docs: [
+      ["resultados.retencion", 1, "Cuántos de los que entran siguen a los seis meses: el número que dice si el negocio crece o se vacía"],
+      ["procesos.politicas", 2, "Cuotas, mora y congelamientos: la regla escrita evita la excepción de cada mes"],
+    ],
+    procesos: [
+      ["Cómo se inscribe y se recibe a un miembro nuevo", 1, "El primer mes decide si se queda", "venta"],
+      ["Qué se hace cuando alguien deja de venir", 1, "Al que se va sin que nadie lo llame, no vuelve", "postventa"],
+      ["Cómo se cobra la cuota y se persigue la mora", 1, "La cuota que no se cobra a tiempo se vuelve deuda que nadie cobra", "dinero"],
+    ],
+  },
+};
+
+/** Las claves de MATRICES (rules/matrices.ts), para comprobar que POR_MODELO no nombra un modelo que no existe. */
+export const MODELOS_CLASIFICABLES: readonly string[] = MATRICES.map((m) => m.clave);
+
+/** Las piezas que agrega un modelo, de solo lectura: lo usan las pruebas y quien quiera mostrar el catálogo. */
+export function piezasDelModelo(modelo: string): { docs: readonly [string, Prioridad, string][]; procesos: readonly [string, Prioridad, string, ClaveCategoria][] } | null {
+  return (CLAVES_MODELO as readonly string[]).includes(modelo) ? POR_MODELO[modelo as ClaveModelo] : null;
+}
+
 export type Matriz = {
   documentos: PiezaDoc[];
   procesos: PiezaProceso[];
@@ -158,20 +278,22 @@ export type Matriz = {
 };
 
 /**
- * Compone la matriz de ESTA empresa. Los duplicados se resuelven quedándose con la prioridad más
- * alta: si un documento lo piden dos rasgos, es más urgente, no menos.
+ * Compone la matriz de ESTA empresa: la base, lo que agregan sus rasgos y lo que agrega su modelo
+ * operativo. Los duplicados se resuelven quedándose con la prioridad más alta: si un documento lo
+ * piden dos rasgos, es más urgente, no menos. Un perfil sin modelo clasificado recibe exactamente lo
+ * que recibía antes de que el modelo contara: la base y sus rasgos.
  */
 export function matrizDe(p: Perfil): Matriz {
   const docs = new Map<string, PiezaDoc>();
   const procesos = new Map<string, PiezaProceso>();
 
-  const ponerDoc = (clave: string, prioridad: Prioridad, porque: string, por: ClaveRasgo | "base") => {
+  const ponerDoc = (clave: string, prioridad: Prioridad, porque: string, por: DisparadoPor) => {
     if (!CLAVES_DOC.has(clave)) return; // nunca se recomienda un documento que no existe
     const previo = docs.get(clave);
     if (previo && previo.prioridad <= prioridad) return;
     docs.set(clave, { clave, nombre: NOMBRE_DOC.get(clave) ?? clave, prioridad, porque, disparado_por: por });
   };
-  const ponerProceso = (nombre: string, prioridad: Prioridad, porque: string, por: ClaveRasgo | "base", categoria: ClaveCategoria) => {
+  const ponerProceso = (nombre: string, prioridad: Prioridad, porque: string, por: DisparadoPor, categoria: ClaveCategoria) => {
     const previo = procesos.get(nombre);
     if (previo && previo.prioridad <= prioridad) return;
     procesos.set(nombre, { nombre, prioridad, porque, disparado_por: por, categoria });
@@ -185,6 +307,16 @@ export function matrizDe(p: Perfil): Matriz {
     if (!extra) continue;
     for (const [c, pr, pq] of extra.docs) ponerDoc(c, pr, pq, r.clave);
     for (const [n, pr, pq, cat] of extra.procesos) ponerProceso(n, pr, pq, r.clave, cat);
+  }
+
+  // El modelo operativo (p.modelos) viene de clasificarModelo; un modelo que no tiene catálogo aquí
+  // no agrega nada, y se dice en la prueba, no en silencio: CLAVES_MODELO cubre todas las MATRICES.
+  for (const m of p.modelos) {
+    const extra = piezasDelModelo(m);
+    if (!extra) continue;
+    const por: DisparadoPor = `modelo:${m as ClaveModelo}`;
+    for (const [c, pr, pq] of extra.docs) ponerDoc(c, pr, pq, por);
+    for (const [n, pr, pq, cat] of extra.procesos) ponerProceso(n, pr, pq, por, cat);
   }
 
   const orden = (a: { prioridad: Prioridad }, b: { prioridad: Prioridad }) => a.prioridad - b.prioridad;

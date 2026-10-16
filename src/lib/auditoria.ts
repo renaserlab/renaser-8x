@@ -1,7 +1,7 @@
 import { supabaseAdmin } from "./supabase/admin";
 import type { Perfil } from "./auth";
 
-export type Accion = "ver" | "crear" | "editar" | "eliminar" | "publicar" | "aprobar" | "descargar" | "entrar" | "salir";
+export type Accion = "ver" | "crear" | "editar" | "eliminar" | "publicar" | "aprobar" | "descargar" | "entrar" | "salir" | "denegado";
 
 type Entrada = {
   companyId?: string | null;

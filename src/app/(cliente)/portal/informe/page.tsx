@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { contextoPortal } from "@/lib/portal";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { empresaHoy, type HallazgoHoy } from "@/lib/hoy";
+import { empresaHoy, esDeDocumentos, ROTULO_POR_CONFIRMAR, type HallazgoHoy, type PorConfirmarHoy } from "@/lib/hoy";
 import { proyeccionPerdida } from "@/lib/perdida";
 import type { Metrica } from "@/lib/rules/anomalias";
 import { PILAR_CLIENTE, ESTADO_PILAR } from "@/lib/textos";
@@ -37,10 +37,20 @@ export default async function Informe() {
   // RASTRO: quién abrió el informe de esta empresa y cuándo (auditoría del 29-08-2026).
   void registrar({ companyId: c.companyId, actor: await usuarioActual(), accion: "ver", entidad: "informe_diagnostico", ruta: "/portal/informe" });
   const fecha = new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" });
-  const todos = [hoy.restriccion, ...hoy.noVes, ...hoy.secundarias].filter(Boolean) as HallazgoHoy[];
+  // La restricción y las secundarias ya vienen dentro de noVes: sin quitar repetidos, el informe imprimía dos veces el
+  // mismo hallazgo y lo contaba dos veces en el resumen («2 hallazgos» donde había uno). Un número que se le entrega al
+  // dueño no puede estar inflado; se conserva el orden (primero lo que más frena).
+  const todos = [...new Map(([hoy.restriccion, ...hoy.noVes, ...hoy.secundarias].filter(Boolean) as HallazgoHoy[]).map((h) => [h.id, h])).values()];
   const criticos = todos.filter((h) => h.impacto === "alto" && !h.preserva);
   const otros = todos.filter((h) => h.impacto !== "alto" && !h.preserva);
   const fortalezas = hoy.fortalezas ?? [];
+  // Lo que todavía no es conclusión, separado por su razón: lo visto solo en documentos que nadie confirmó, y lo demás
+  // (ya confirmado pero con poca información del área, por revisar de nuevo, o que no sale de papeles). A cada grupo su
+  // texto: un informe impreso no puede decir «sale de documentos» de lo que el dueño contó y ya confirmó.
+  const deDocumentos = hoy.porConfirmar.filter(esDeDocumentos);
+  const sinConcluir = hoy.porConfirmar.filter((p) => !esDeDocumentos(p));
+  /** «1 hallazgo», «2 hallazgos»: un número que se entrega impreso concuerda con su nombre. */
+  const cuantos = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
 
   if (hoy.nivel === 0)
     return (
@@ -53,6 +63,43 @@ export default async function Informe() {
       </>
     );
 
+  // ROTULO PROVISIONAL (R10.4): un hallazgo formado solo con afirmaciones que nadie confirmó no se imprime como
+  // conclusión. empresaHoy ya los aparta en porConfirmar; el rótulo aquí es la segunda barandilla por si uno llega.
+  const ROTULO_PROVISIONAL = "Provisional: pendiente de corroborar";
+  // «Pendiente de corroborar» solo es cierto si algo de lo que lo sostiene sigue sin confirmar. Cuando todo lo que lo
+  // sostiene ya está confirmado, el informe imprimía ese rótulo y debajo «lo que lo sostiene ya está confirmado»: dos
+  // frases que se desmienten. A ese punto se le dice por qué no es conclusión, no que falta corroborarlo.
+  const rotuloDe = (p: PorConfirmarHoy) => (p.sustento.confirmadas > 0 && p.sustento.porConfirmar === 0 ? `Todavía no es conclusión: ${ROTULO_POR_CONFIRMAR[p.motivo]}` : ROTULO_PROVISIONAL);
+  const Rotulo = ({ texto, color, dashed }: { texto: string; color: string; dashed?: boolean }) => (
+    <span className="t-dato" style={{ flex: "none", fontSize: 11.5, fontWeight: 700, color, border: `1px ${dashed ? "dashed" : "solid"} ${color}`, borderRadius: "var(--radio)", padding: "2px 10px" }}>
+      {texto}
+    </span>
+  );
+
+  // LO PROVISIONAL SE IMPRIME COMO LO QUE ES (R10.4): aparte, rotulado, sin número de hallazgo y sin recomendación.
+  // Nunca entra en el resumen ni en «por dónde empezar». `conMotivo` añade a cada punto por qué no es conclusión, y
+  // nombra lo grave sin decir «si se confirma» de algo cuyo sustento ya está confirmado.
+  const seccionProvisional = ({ titulo, intro, items, conMotivo }: { titulo: string; intro: string; items: PorConfirmarHoy[]; conMotivo?: boolean }) =>
+    items.length === 0 ? null : (
+      <section style={{ marginBottom: 24 }}>
+        <h3 className="t-seccion mb-2">{titulo}</h3>
+        <p className="t-dato mb-3" style={{ color: "var(--grafito)" }}>{intro}</p>
+        {items.map((p) => (
+          <article key={p.id} style={{ borderTop: "1px dashed var(--linea)", paddingTop: 12, marginBottom: 12, breakInside: "avoid" }}>
+            <div className="flex items-start justify-between gap-3">
+              <p className="t-cuerpo" style={{ fontWeight: 550, minWidth: 0 }}>{p.titulo}</p>
+              <span className="flex flex-wrap gap-2" style={{ flex: "none" }}>
+                <Rotulo texto={rotuloDe(p)} color="var(--caducado)" dashed />
+                {p.graveSiSeConfirma && <Rotulo texto={conMotivo ? "Grave si resulta ser así" : "Grave si se confirma"} color="var(--contradicho)" dashed />}
+              </span>
+            </div>
+            {conMotivo && <p className="t-dato mt-1" style={{ color: "var(--grafito)" }}>{p.porQue}</p>}
+            <p className="t-dato mt-1" style={{ color: "var(--grafito)" }}>{PILAR_CLIENTE[p.pilar] ?? p.pilar} · {p.deDonde}</p>
+          </article>
+        ))}
+      </section>
+    );
+
   const Hallazgo = ({ h, n }: { h: HallazgoHoy; n: number }) => {
     const doc = documentoQueResuelve(h);
     const color = h.impacto === "alto" ? "var(--contradicho)" : "var(--caducado)";
@@ -61,8 +108,9 @@ export default async function Informe() {
       <article style={{ borderTop: "1px solid var(--linea)", paddingTop: 16, marginBottom: 18, breakInside: "avoid" }}>
         <div className="flex items-start justify-between gap-3">
           <h3 className="t-hero" style={{ fontSize: 18, minWidth: 0 }}>{n}. {h.titulo}</h3>
-          <span className="t-dato" style={{ flex: "none", fontSize: 11.5, fontWeight: 700, color, border: `1px solid ${color}`, borderRadius: "var(--radio)", padding: "2px 10px" }}>
-            {h.impacto === "alto" ? "Crítico" : "Atención"}
+          <span className="flex flex-wrap gap-2" style={{ flex: "none" }}>
+            {h.provisional && <Rotulo texto={ROTULO_PROVISIONAL} color="var(--caducado)" dashed />}
+            <Rotulo texto={h.impacto === "alto" ? "Crítico" : "Atención"} color={color} />
           </span>
         </div>
         {h.causa && <p className="t-cuerpo mt-2"><span style={{ color: "var(--grafito)" }}>Qué vemos: </span>{h.causa}</p>}
@@ -111,7 +159,25 @@ export default async function Informe() {
             </p>
           )}
           <p className="t-cuerpo mt-1">
-            Se encontraron <strong>{criticos.length + otros.length} hallazgos</strong> ({criticos.length} críticos) y <strong>{fortalezas.length} fortalezas</strong> que conviene proteger.
+            Se encontraron <strong>{cuantos(criticos.length + otros.length, "hallazgo", "hallazgos")}</strong> ({cuantos(criticos.length, "crítico", "críticos")}) y <strong>{cuantos(fortalezas.length, "fortaleza", "fortalezas")}</strong> que conviene proteger.
+            {hoy.porConfirmar.length > 0 && (
+              <>
+                {" "}Además hay{" "}
+                {deDocumentos.length > 0 && (
+                  <>
+                    <strong>{cuantos(deDocumentos.length, "señal provisional", "señales provisionales")}</strong>, vista{deDocumentos.length === 1 ? "" : "s"} en documentos que nadie confirmó
+                  </>
+                )}
+                {deDocumentos.length > 0 && sinConcluir.length > 0 && ", y "}
+                {sinConcluir.length > 0 && (
+                  <>
+                    {/* «Por otra razón» solo si antes se dijo una: sin señales de documentos no hay primera razón. */}
+                    <strong>{cuantos(sinConcluir.length, "punto", "puntos")}</strong> que todavía no {sinConcluir.length === 1 ? "es" : "son"} conclusión{deDocumentos.length > 0 ? " por otra razón" : ""}
+                  </>
+                )}
+                {hoy.porConfirmar.length === 1 ? ": se lista aparte y no cuenta como hallazgo." : ": se listan aparte y no cuentan como hallazgos."}
+              </>
+            )}
           </p>
           {hoy.restriccion && (
             <p className="t-cuerpo mt-2">
@@ -166,6 +232,18 @@ export default async function Informe() {
           </section>
         )}
 
+        {seccionProvisional({
+          titulo: "Lo que vimos en los documentos y falta confirmar",
+          intro: "No son conclusiones: salen de documentos que aún nadie confirmó. Se incluyen para que se revisen, no para que se actúe sobre ellas.",
+          items: deDocumentos,
+        })}
+        {seccionProvisional({
+          titulo: "Lo que todavía no se da por conclusión",
+          intro: "No son conclusiones todavía: cada punto dice por qué. Se incluyen para que se sepan, no para que se actúe sobre ellos.",
+          items: sinConcluir,
+          conMotivo: true,
+        })}
+
         {fortalezas.length > 0 && (
           <section style={{ marginBottom: 24 }}>
             <h3 className="t-seccion mb-2">Fortalezas que no se deben romper</h3>
@@ -179,6 +257,14 @@ export default async function Informe() {
             </ul>
           </section>
         )}
+
+        {/* Una fortaleza que todavía no es conclusión se imprime aparte, con su porqué: ni cuenta en el resumen ni se protege todavía. */}
+        {seccionProvisional({
+          titulo: "Fortalezas por confirmar",
+          intro: "Parecen fortalezas, pero todavía no se dan por ciertas: cada una dice por qué. No cuentan entre las fortalezas del resumen.",
+          items: hoy.fortalezasPorConfirmar,
+          conMotivo: true,
+        })}
 
         {hoy.tentativo.length > 0 && (
           <section style={{ marginBottom: 20 }}>

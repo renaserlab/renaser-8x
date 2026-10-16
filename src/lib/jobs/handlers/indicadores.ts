@@ -2,6 +2,8 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { correrMedidor } from "@/lib/ai/agents/medidor";
 import { comoDato } from "@/lib/rules/patrones";
 import { normalizarClave } from "@/lib/metricas";
+import { registrarLlamada, soloConclusionesDeHoy } from "@/lib/db/queries";
+import { propuestaDesdeMedidor } from "@/lib/kpis";
 
 type Job = { id: string; company_id: string; payload: Record<string, unknown> };
 
@@ -16,16 +18,20 @@ type Job = { id: string; company_id: string; payload: Record<string, unknown> };
 export async function handleProponerIndicadores(job: Job) {
   const sb = supabaseAdmin();
 
-  const [{ data: activos }, { data: acciones }, { data: hallazgos }, { data: yaExisten }] = await Promise.all([
+  const [{ data: activos }, { data: acciones }, { data: hallazgosLeidos }, { data: yaExisten }] = await Promise.all([
     sb.from("company_assets").select("clave,borrador,nota").eq("company_id", job.company_id).in("clave", ["procesos.incidencias", "procesos.controles", "procesos.procedimientos"]),
     sb.from("actions").select("accion,kpi").eq("company_id", job.company_id).not("kpi", "is", null).limit(20),
-    sb.from("findings").select("titulo,causa_raiz,costo_posible").eq("company_id", job.company_id).eq("impacto", "alto").limit(12),
+    // Solo conclusiones: ni lo rechazado ni lo provisional proponen un número que vigilar (R10.4). El costo posible
+    // vive dentro de `filtros`; no es una columna, y pedirla como tal hacía fallar la consulta entera sin avisar.
+    sb.from("findings").select("titulo,causa_raiz,filtros,pilar,origen").eq("company_id", job.company_id).eq("impacto", "alto").neq("estado_revision", "rechazado").or("provisional.is.null,provisional.eq.false").limit(12),
     sb.from("indicadores").select("clave").eq("company_id", job.company_id),
   ]);
+  // Lo de la IA en un área que hoy no llega al mínimo de confirmadas tampoco propone un número, aunque su columna aún no lo diga.
+  const hallazgos = await soloConclusionesDeHoy(job.company_id, hallazgosLeidos ?? []);
 
   const incidencias = (activos ?? []).map((a) => `[${a.clave}]\n${a.borrador ?? a.nota ?? ""}`).filter((t) => t.trim().length > 30);
   const kpisDelPlan = (acciones ?? []).map((a) => `- ${a.accion} → se mediría con: ${a.kpi}`);
-  const criticos = (hallazgos ?? []).map((h) => `- ${h.titulo}. Causa: ${h.causa_raiz ?? "sin dato"}. Cuesta: ${h.costo_posible ?? "sin dato"}`);
+  const criticos = hallazgos.map((h) => `- ${h.titulo}. Causa: ${h.causa_raiz ?? "sin dato"}. Cuesta: ${(h.filtros as { costo_posible?: string | null } | null)?.costo_posible ?? "sin dato"}`);
 
   // Sin material no se inventa: es preferible no proponer nada a proponer los típicos del rubro.
   if (incidencias.length === 0 && kpisDelPlan.length === 0 && criticos.length === 0)
@@ -43,6 +49,8 @@ export async function handleProponerIndicadores(job: Job) {
   );
 
   const r = await correrMedidor(contexto);
+  // Lo que no se registra no existe para la torre: sin esta línea el medidor tenía cero filas en token_usage.
+  await registrarLlamada(job.company_id, job.id, "medidor", r);
   const propuestos = r.data.indicadores ?? [];
   const existentes = new Set((yaExisten ?? []).map((x) => x.clave as string));
 
@@ -51,6 +59,10 @@ export async function handleProponerIndicadores(job: Job) {
     const clave = normalizarClave(i.clave);
     // No se pisa un indicador que el dueño ya adoptó ni se duplica uno propuesto antes.
     if (!clave || existentes.has(clave)) continue;
+    // Los doce atributos (R13.1): lo que la IA propone llena definición, fórmula, fuente SUGERIDA y tipo,
+    // todo rotulado como propuesta y de forma determinista (kpis.ts). Nunca valor actual ni punto de
+    // partida: esos se registran con dato y con fecha, no se proponen.
+    const completado = propuestaDesdeMedidor({ clave, nombre: i.nombre, como_se_mide: i.como_se_mide, unidad: i.unidad, origen_texto: i.origen_texto });
     const { error } = await sb.from("indicadores").insert({
       company_id: job.company_id,
       clave,
@@ -64,6 +76,11 @@ export async function handleProponerIndicadores(job: Job) {
       origen: "incidencia",
       origen_texto: i.origen_texto,
       estado: "propuesto",
+      definicion: completado.definicion,
+      formula: completado.formula,
+      fuente: completado.fuente,
+      tipo_indicador: completado.tipo_indicador,
+      moneda: i.unidad === "soles" ? "PEN" : null,
     });
     if (!error) {
       existentes.add(clave);

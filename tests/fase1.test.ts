@@ -77,14 +77,41 @@ describe("7.9 / 13 / 15 · suficiencia (P1-04)", () => {
 });
 
 describe("14.2 · archivos", () => {
-  it("acepta PDF, foto, CSV, texto, audio; rechaza Word y Excel con mensaje útil; rechaza desconocidos", () => {
+  it("acepta PDF, foto, CSV, texto, audio, Word (.docx) y Excel (.xlsx); rechaza .doc/.xls antiguos con mensaje útil; rechaza desconocidos", () => {
     expect(validarArchivo({ nombre: "plan.pdf", mime: "application/pdf", bytes: 1000 })).toMatchObject({ ok: true, tipo: "documento" });
     expect(validarArchivo({ nombre: "cuaderno.jpg", mime: "image/jpeg", bytes: 1000 })).toMatchObject({ ok: true, tipo: "foto" });
     expect(validarArchivo({ nombre: "ventas.csv", mime: "text/csv", bytes: 1000 })).toMatchObject({ ok: true, tipo: "dato" });
     expect(validarArchivo({ nombre: "nota.ogg", mime: "application/octet-stream", bytes: 1000 })).toMatchObject({ ok: true, tipo: "audio", mime: "audio/ogg" });
-    expect((validarArchivo({ nombre: "manual.docx", mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", bytes: 10 }) as { error: string }).error).toMatch(/Word/);
+    // Desde el 13-10-2026 el Word y el Excel modernos se leen en código (src/lib/documentos); ver tests/documentos.test.ts.
+    expect(validarArchivo({ nombre: "manual.docx", mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", bytes: 10 })).toMatchObject({ ok: true, tipo: "documento" });
+    expect(validarArchivo({ nombre: "ventas.xlsx", mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", bytes: 10 })).toMatchObject({ ok: true, tipo: "dato" });
+    expect((validarArchivo({ nombre: "manual.doc", mime: "application/msword", bytes: 10 }) as { error: string }).error).toMatch(/Word.*\.docx/);
+    expect((validarArchivo({ nombre: "ventas.xls", mime: "application/vnd.ms-excel", bytes: 10 }) as { error: string }).error).toMatch(/Excel.*\.xlsx/);
     expect((validarArchivo({ nombre: "x.exe", mime: "application/x-msdownload", bytes: 10 }) as { ok: boolean }).ok).toBe(false);
     expect((validarArchivo({ nombre: "x.html", mime: "text/html", bytes: 10 }) as { ok: boolean }).ok).toBe(false);
+  });
+  it("el MIME genérico de Office que manda Windows (vnd.ms-excel para .csv y .xlsx, msword para .docx) no rechaza: la extensión decide", () => {
+    expect(validarArchivo({ nombre: "ventas.csv", mime: "application/vnd.ms-excel", bytes: 10 })).toMatchObject({ ok: true, tipo: "dato", mime: "text/csv" });
+    expect(validarArchivo({ nombre: "ventas.xlsx", mime: "application/vnd.ms-excel", bytes: 10 })).toMatchObject({ ok: true, tipo: "dato", mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    expect(validarArchivo({ nombre: "manual.docx", mime: "application/msword", bytes: 10 })).toMatchObject({ ok: true, tipo: "documento", mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+    // Solo .xls y .doc de verdad se rechazan, y con el mensaje de su extensión.
+    expect((validarArchivo({ nombre: "ventas.xls", mime: "application/octet-stream", bytes: 10 }) as { error: string }).error).toMatch(/Excel.*\.xls\b.*\.xlsx/);
+    expect((validarArchivo({ nombre: "manual.doc", mime: "application/vnd.ms-excel", bytes: 10 }) as { error: string }).error).toMatch(/Word.*\.doc\b.*\.docx/);
+  });
+  it("con ese MIME y una extensión que no leemos (o ninguna) el rechazo no dice «formato antiguo»: nombra la extensión que se ve", () => {
+    for (const nombre of ["macros.xlsm", "datos.tsv", "ventas"]) {
+      const r = validarArchivo({ nombre, mime: "application/vnd.ms-excel", bytes: 10 }) as { ok: false; error: string };
+      expect(r.ok).toBe(false);
+      expect(r.error).toMatch(/^No pudimos leer ese tipo de archivo/);
+      expect(r.error).not.toMatch(/formato antiguo|\(\.xls\)/);
+    }
+    expect((validarArchivo({ nombre: "macros.xlsm", mime: "application/vnd.ms-excel", bytes: 10 }) as { error: string }).error).toContain("(.xlsm)");
+    expect((validarArchivo({ nombre: "ventas", mime: "application/vnd.ms-excel", bytes: 10 }) as { error: string }).error).toContain("su nombre no termina en ninguna extensión");
+  });
+  it("un .csv que el sistema declara como texto plano entra como dato; un .pdf declarado como texto no", () => {
+    expect(validarArchivo({ nombre: "ventas.csv", mime: "text/plain", bytes: 10 })).toMatchObject({ ok: true, tipo: "dato", mime: "text/csv" });
+    expect(validarArchivo({ nombre: "apuntes.txt", mime: "text/plain", bytes: 10 })).toMatchObject({ ok: true, tipo: "documento", mime: "text/plain" });
+    expect((validarArchivo({ nombre: "plan.pdf", mime: "text/plain", bytes: 10 }) as { ok: boolean }).ok).toBe(false);
   });
   it("tamaño: vacío y > 30 MB se rechazan", () => {
     expect((validarArchivo({ nombre: "a.pdf", mime: "application/pdf", bytes: 0 }) as { ok: boolean }).ok).toBe(false);

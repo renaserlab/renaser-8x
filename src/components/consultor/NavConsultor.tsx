@@ -1,83 +1,114 @@
 "use client";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Icono } from "@/components/base/Icono";
 
 type EmpresaMini = { id: string; nombre: string };
 
 /**
- * Barra lateral del consultor (escritorio ≥1024px): navegación fija estilo aplicativo,
- * con las empresas a un clic. En móvil se oculta y manda la barra superior.
+ * Navegación de la consultora en PÍLDORA (estilo del 13-10-2026, imagen de referencia de Kelin):
+ * — Escritorio: marca a la izquierda, la píldora con los destinos de todos los días al centro, y a la derecha el
+ *   botón que abre el menú completo y las iniciales de quien entró.
+ * — Celular: la misma píldora flota abajo con el nombre bajo cada ícono, más «Más», que abre el menú completo.
+ * El menú completo (panel lateral en PC, hoja inferior en celular) lleva TODAS las pantallas y las empresas
+ * recientes: tests/recorrido-conectado.test.ts vigila que toda pantalla de la consultora esté enlazada aquí.
+ * La Cartera va en la píldora y en el menú: es la pantalla de Dirección y no puede depender de teclear la dirección.
  */
-export function NavConsultor({ empresas, usuario }: { empresas: EmpresaMini[]; usuario: string }) {
+export function NavConsultor({ empresas, usuario, torre }: { empresas: EmpresaMini[]; usuario: string; torre?: React.ReactNode }) {
   const ruta = usePathname();
+  const [abierto, setAbierto] = useState(false);
+
+  // Con Escape se cierra; al elegir una pantalla también (ver el onClick del menú).
+  useEffect(() => {
+    if (!abierto) return;
+    const tecla = (e: KeyboardEvent) => { if (e.key === "Escape") setAbierto(false); };
+    window.addEventListener("keydown", tecla);
+    return () => window.removeEventListener("keydown", tecla);
+  }, [abierto]);
+
   const item = (href: string, nombre: string, exacto = false) => {
     const activo = exacto ? ruta === href : ruta.startsWith(href);
     return (
-      <Link
-        key={href}
-        href={href}
-        aria-current={activo ? "page" : undefined}
-        className="t-dato"
-        style={{
-          display: "block",
-          padding: "9px 14px",
-          borderRadius: "var(--radio)",
-          color: activo ? "var(--tinta)" : "var(--grafito)",
-          background: activo ? "var(--suave)" : "transparent",
-          fontWeight: activo ? 600 : 500,
-          textDecoration: "none",
-        }}
-      >
+      <Link key={href} href={href} aria-current={activo ? "page" : undefined}>
         {nombre}
       </Link>
     );
   };
   const ICONOS: Record<string, React.ReactNode> = {
-    inicio: <path d="M3 10.5 12 3l9 7.5M5.5 9.5V21h13V9.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />,
-    empresas: <path d="M3 21h18M5 21V7l6-3v17M13 21V11l6 3v7M8 9v.01M8 13v.01M8 17v.01" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />,
-    casos: <path d="M12 3a4 4 0 0 1 4 4c0 2-1.5 3-1.5 5h-5C9.5 10 8 9 8 7a4 4 0 0 1 4-4ZM9.5 15h5M10 18h4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />,
+    inicio: <path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1z" />,
+    empresas: <path d="M4 20V6.5L11 4v16M11 9l9 2.5V20M2.5 20h19M7 9h1M7 12.5h1M7 16h1M14.5 14h1.5M14.5 17h1.5" />,
+    cartera: <path d="M5.5 7h13a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2ZM9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7M3.5 12.5h17" />,
+    decisiones: <path d="M12 4v16M6 20h12M5 8h14M5 8l-2.5 6a2.5 2.5 0 0 0 5 0zM19 8l-2.5 6a2.5 2.5 0 0 0 5 0z" />,
   };
-  const abajo: [string, string, string][] = [["/bandeja", "Inicio", "inicio"], ["/empresas", "Empresas", "empresas"], ["/casos", "Aprendizaje", "casos"]];
+  // La píldora: los destinos de todos los días, con ícono. Lo demás vive en el menú completo.
+  const abajo: [string, string, string][] = [
+    ["/bandeja", "Inicio", "inicio"],
+    ["/empresas", "Empresas", "empresas"],
+    ["/cartera", "Cartera", "cartera"],
+    ["/decisiones", "Decisiones", "decisiones"],
+  ];
+  const iniciales = usuario.split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join("") || "8X";
+
   return (
     <>
-      {/* CELULAR Y TABLET: barra inferior fija de app, igual que el lado del cliente */}
-      <nav
-        className="no-imprimir lg:hidden"
-        aria-label="Secciones"
-        style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 30, background: "color-mix(in srgb, var(--papel) 94%, transparent)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", borderTop: "1px solid var(--linea)", paddingBottom: "env(safe-area-inset-bottom)" }}
-      >
-        <div className="flex" style={{ maxWidth: 460, margin: "0 auto" }}>
+      <header className="cabecera-app no-imprimir">
+        <Link href="/bandeja" className="marca-app">
+          8X <small>RENASER</small>
+        </Link>
+        <nav className="pildora" aria-label="Secciones">
           {abajo.map(([href, nombre, icono]) => {
             const a = href === "/bandeja" ? ruta === "/bandeja" : ruta.startsWith(href);
             return (
-              <Link key={href} href={href} aria-current={a ? "page" : undefined} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "9px 2px 7px", textDecoration: "none", color: a ? "var(--marca)" : "var(--grafito)" }}>
-                <svg viewBox="0 0 24 24" width="23" height="23" aria-hidden="true">{ICONOS[icono]}</svg>
-                <span style={{ fontSize: 10.5, fontWeight: a ? 700 : 500 }}>{nombre}</span>
+              <Link key={href} href={href} aria-current={a ? "page" : undefined} aria-label={nombre} title={nombre}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICONOS[icono]}</svg>
+                <span className="rotulo">{nombre}</span>
               </Link>
             );
           })}
+          <button type="button" className="solo-celular" onClick={() => setAbierto(true)} aria-label="Más secciones" aria-expanded={abierto}>
+            <Icono nombre="menu" />
+            <span className="rotulo">Más</span>
+          </button>
+        </nav>
+        <div className="acciones-app">
+          {torre}
+          <button type="button" className="boton-redondo solo-escritorio" onClick={() => setAbierto(true)} aria-label="Todas las secciones" title="Todas las secciones" aria-expanded={abierto}>
+            <Icono nombre="menu" />
+          </button>
+          <span className="avatar-app" role="img" aria-label={usuario} title={usuario}>{iniciales}</span>
         </div>
-      </nav>
-    <aside
-      className="no-imprimir hidden lg:flex"
-      style={{ width: 232, flexDirection: "column", gap: 4, padding: "18px 12px", background: "var(--papel)", borderRight: "1px solid var(--linea)", position: "sticky", top: 0, height: "100vh", overflowY: "auto", flex: "none" }}
-    >
-      <Link href="/bandeja" style={{ color: "var(--tinta)", fontWeight: 700, fontSize: 17, padding: "4px 14px 14px", textDecoration: "none", letterSpacing: "0.04em" }}>
-        8X <span style={{ fontWeight: 500, fontSize: 12, opacity: 0.7 }}>RENASER</span>
-      </Link>
-      {item("/bandeja", "Inicio", true)}
-      {item("/empresas", "Todas las empresas", true)}
-      <p className="t-etiqueta" style={{ color: "var(--grafito)", padding: "16px 14px 6px" }}>Empresas recientes</p>
-      {empresas.map((e) => item(`/empresa/${e.id}`, e.nombre.length > 24 ? e.nombre.slice(0, 23) + "…" : e.nombre))}
-      <div style={{ marginTop: "auto", padding: "12px 14px" }}>
-        <Link href="/casos" className="t-dato" style={{ display: "block", color: "var(--grafito)", marginBottom: 6, textDecoration: "none" }}>Aprendizaje del sistema</Link>
-        <Link href="/salud" className="t-dato" style={{ display: "block", color: "var(--grafito)", marginBottom: 10, textDecoration: "none" }}>Salud del sistema</Link>
-        <p className="t-dato" style={{ color: "var(--grafito)", marginBottom: 8 }}>{usuario}</p>
-        <form action="/api/auth/salir" method="post">
-          <button className="t-dato" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--grafito)", padding: 0, font: "inherit", textDecoration: "underline" }}>Salir</button>
-        </form>
-      </div>
-    </aside>
+      </header>
+
+      {abierto && (
+        <>
+          <button type="button" className="telon no-imprimir" aria-label="Cerrar el menú" onClick={() => setAbierto(false)} />
+          <div className="panel-lateral no-imprimir" role="dialog" aria-modal="true" aria-label="Todas las secciones">
+            <div className="flex items-center justify-between" style={{ marginBottom: 6 }}>
+              <p className="t-seccion">Todo 8X</p>
+              <button type="button" className="boton boton--secundario" onClick={() => setAbierto(false)}>Cerrar</button>
+            </div>
+            <nav className="menu-app" aria-label="Todas las secciones" onClick={(e) => { if ((e.target as HTMLElement).closest("a")) setAbierto(false); }}>
+              {item("/bandeja", "Inicio", true)}
+              {item("/empresas", "Todas las empresas", true)}
+              {item("/cartera", "Cartera", true)}
+              {item("/decisiones", "Decisiones por tomar")}
+              {empresas.length > 0 && <p className="titulo-menu">Empresas recientes</p>}
+              {empresas.map((e) => item(`/empresa/${e.id}`, e.nombre.length > 30 ? e.nombre.slice(0, 29) + "…" : e.nombre))}
+              <p className="titulo-menu">Sistema</p>
+              {item("/casos", "Aprendizaje del sistema")}
+              {item("/torre", "Torre de control")}
+              {item("/salud", "Salud del sistema")}
+            </nav>
+            <div className="flex items-center justify-between gap-3" style={{ marginTop: 18, paddingTop: 14, borderTop: "1px solid var(--linea)" }}>
+              <span className="t-dato" style={{ color: "var(--grafito)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>{usuario}</span>
+              <form action="/api/auth/salir" method="post">
+                <button className="boton boton--secundario">Salir</button>
+              </form>
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 }

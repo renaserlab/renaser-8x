@@ -13,6 +13,7 @@ export function Subir({ companyId, paraCliente = false, transcriptor = false }: 
   const [texto, setTexto] = useState("");
   const [nombre, setNombre] = useState("");
   const [fecha, setFecha] = useState("");
+  const [tipoTexto, setTipoTexto] = useState<"documento" | "observacion" | "dato">("documento");
   const [subiendo, setSubiendo] = useState(false);
   const input = useRef<HTMLInputElement>(null);
 
@@ -49,6 +50,7 @@ export function Subir({ companyId, paraCliente = false, transcriptor = false }: 
     const form = new FormData();
     form.set("texto", texto);
     form.set("nombre", nombre || "Nota");
+    if (!paraCliente) form.set("tipo", tipoTexto);
     await enviar(form, nombre || "Nota");
     setTexto("");
   };
@@ -77,14 +79,31 @@ export function Subir({ companyId, paraCliente = false, transcriptor = false }: 
       </div>
 
       <div className="flex flex-col gap-3">
-        <input ref={input} type="file" multiple accept={transcriptor ? ".pdf,.txt,.md,.csv,image/*,audio/*,.ogg,.opus,.m4a,.mp3" : ".pdf,.txt,.md,.csv,image/*"} className="sr-only" id="archivo" onChange={(e) => archivos(e.target.files)} />
+        <input ref={input} type="file" multiple accept={transcriptor ? ".pdf,.docx,.xlsx,.txt,.md,.csv,image/*,audio/*,.ogg,.opus,.m4a,.mp3" : ".pdf,.docx,.xlsx,.txt,.md,.csv,image/*"} className="sr-only" id="archivo" onChange={(e) => archivos(e.target.files)} />
         <label htmlFor="archivo" className="boton boton--grande" style={{ cursor: "pointer" }}>
-          {subiendo ? "Subiendo" : paraCliente ? "Subir archivo o foto" : "Subir documento, foto, audio o CSV"}
+          {subiendo ? "Subiendo" : paraCliente ? "Subir archivo o foto" : "Subir documento, Excel, foto o audio"}
         </label>
-        <p className="t-dato" style={{ color: "var(--grafito)" }}>PDF, foto, {transcriptor ? "nota de voz (también las de WhatsApp), " : ""}texto o CSV. Hasta 30 MB. Un Word: expórtalo a PDF. Un Excel: guárdalo como CSV.</p>
+        {/* La revisión fila por fila existe solo en la pantalla del consultor: al cliente no se le promete una pantalla que no tiene. */}
+        <p className="t-dato" style={{ color: "var(--grafito)" }}>
+          PDF, Word (.docx), Excel (.xlsx), CSV, foto, {transcriptor ? "nota de voz (también las de WhatsApp) " : ""}o texto. Hasta 30 MB.{" "}
+          {paraCliente
+            ? "Lo que leamos de un Word o un Excel queda rotulado como «extraído»: tu consultor revisa lo que leímos antes de que cuente."
+            : "Lo que leamos de un Word o un Excel queda rotulado como «extraído» y te lo mostramos fila por fila para que lo confirmes, corrijas o descartes."}
+        </p>
       </div>
 
       <BotonGrabar alTexto={(t) => setTexto((p) => (p ? p + " " + t : t))} alAudio={transcriptor ? mandarAudio : undefined} />
+
+      {!paraCliente && (
+        <label className="flex flex-col gap-2">
+          <span className="t-etiqueta">Qué es este texto</span>
+          <select className="campo" value={tipoTexto} onChange={(e) => setTipoTexto(e.target.value as typeof tipoTexto)}>
+            <option value="documento">Un documento de la empresa (manual, acta, contrato, o un Word subido)</option>
+            <option value="observacion">Lo que yo vi en campo (observación del consultor)</option>
+            <option value="dato">Un dato o registro (cifras, lista, tabla)</option>
+          </select>
+        </label>
+      )}
 
       <label className="flex flex-col gap-2">
         <span className="t-etiqueta">{paraCliente ? "O cuéntanos por escrito" : "O pega un texto (transcripción, nota, respuesta dada en reunión)"}</span>

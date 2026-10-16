@@ -11,10 +11,13 @@ import type { MapaEmpresa as Mapa, ProcesoEvaluado, EstadoDoc } from "@/lib/mapa
  * opinión con decimales.
  */
 
-/** Coma decimal, siempre. toLocaleString depende de datos de idioma que el servidor puede no tener,
- *  y un «0.3» donde debe decir «0,3» es de las cosas que hacen dudar de todo lo demás. */
-const conComa = (n: number) => String(n).replace(".", ",");
-
+/**
+ * PERU ESCRIBE LOS NUMEROS COMO 1,500.50: coma para miles, PUNTO para decimales. No es la
+ * convencion espanola. Aqui hubo un error mio: cambie el punto por coma creyendo que toLocaleString
+ * fallaba por falta de datos de idioma, y lo que hice fue romper el formato correcto. Node tiene ICU
+ * completo y es-PE bien soportado; devolvia "0.3" porque ASI se escribe en Peru.
+ */
+const enPeru = (n: number) => n.toLocaleString("es-PE", { maximumFractionDigits: 1 });
 const COLOR_NIVEL = ["var(--linea)", "var(--sin-verificar)", "var(--sin-verificar)", "var(--medida)", "var(--confirmado)", "var(--confirmado)"];
 
 function Barra({ nivel }: { nivel: number }) {
@@ -70,7 +73,7 @@ export function MapaEmpresa({ mapa, base }: { mapa: Mapa; base: string }) {
           <div>
             <div className="t-etiqueta">Nivel de la empresa</div>
             <div className="num-grande">
-              {conComa(empresa.nivel)} <span style={{ fontSize: "0.45em", color: "var(--grafito)" }}>de 5</span>
+              {enPeru(empresa.nivel)} <span style={{ fontSize: "0.45em", color: "var(--grafito)" }}>de 5</span>
             </div>
             <div className="t-dato" style={{ color: "var(--grafito)" }}>
               {empresa.mapeados} de {empresa.esperados} procesos mapeados
@@ -79,7 +82,7 @@ export function MapaEmpresa({ mapa, base }: { mapa: Mapa; base: string }) {
           <div>
             <div className="t-etiqueta">Lo que ya está mapeado</div>
             <div className="num-grande" style={{ color: "var(--grafito)" }}>
-              {conComa(empresa.nivelMapeados)} <span style={{ fontSize: "0.45em" }}>de 5</span>
+              {enPeru(empresa.nivelMapeados)} <span style={{ fontSize: "0.45em" }}>de 5</span>
             </div>
             <div className="t-dato" style={{ color: "var(--grafito)" }}>{empresa.nombreMapeados}</div>
           </div>

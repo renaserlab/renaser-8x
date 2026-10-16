@@ -1,6 +1,6 @@
 import { protegido, ok, fallo, leerJSON, exigirAcceso } from "@/lib/api";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { encolar, PRIORIDAD, claveIdempotente } from "@/lib/jobs/queue";
+import { encolar, PRIORIDAD, claveIdempotente, rondaDe } from "@/lib/jobs/queue";
 import { BLOQUES_ACTIVOS } from "@/lib/activos";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -29,6 +29,10 @@ export const POST = protegido<Ctx>({ cupo: "ia" }, async (perfil, req, ctx) => {
 
   if (!activo?.borrador || !["construido", "en_uso"].includes(activo.estado ?? "")) return fallo("Primero hay que construir y confirmar el documento.");
   await sb.from("company_assets").update({ propuesta_estado: "trabajando", updated_at: new Date().toISOString() }).eq("company_id", id).eq("clave", b.clave);
-  const job = await encolar({ company_id: id, tipo: "sistematizar_activo", payload: { clave: b.clave, comentario: (b.comentario ?? "").trim().slice(0, 600) || undefined }, prioridad: PRIORIDAD.proceso_voz, idempotency_key: claveIdempotente(["sistematizar", id, b.clave, Date.now()]) });
+  const comentario = (b.comentario ?? "").trim().slice(0, 600) || undefined;
+  // La clave es «la sistematización número N de este activo con este comentario», no la hora: una
+  // petición repetida devuelve el mismo trabajo; terminada esa ronda, la siguiente petición abre otra.
+  const ronda = await rondaDe("sistematizar_activo", id, { clave: b.clave });
+  const job = await encolar({ company_id: id, tipo: "sistematizar_activo", payload: { clave: b.clave, comentario }, prioridad: PRIORIDAD.proceso_voz, idempotency_key: claveIdempotente(["sistematizar", id, b.clave, `ronda:${ronda}`, comentario ?? ""]) });
   return ok({ job_id: job.id });
 });

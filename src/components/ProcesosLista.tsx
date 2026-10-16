@@ -84,6 +84,9 @@ export function ProcesosLista({ companyId, procesos, base, paraCliente = false }
   };
 
   const asis = procesos.filter((p) => p.version === "as_is");
+  // Lo que la empresa trajo en su lista y nadie ha dibujado todavía (importación). No es un proceso «vacío» ni
+  // «dibujado a mano»: existe, tiene nombre y responsable, y le falta el dibujo. Sin esta lista, lo importado no se veía.
+  const sinDibujar = procesos.filter((p) => p.version === "sin_dibujar");
 
   return (
     <div className="grid gap-10 lg:grid-cols-[1fr_1.2fr]">
@@ -303,6 +306,29 @@ export function ProcesosLista({ companyId, procesos, base, paraCliente = false }
           </table>
         )}
       </section>
+
+      {/* Solo la consultora: lo importado es trabajo en curso; al dueño se le muestra cuando ya está dibujado. */}
+      {!paraCliente && sinDibujar.length > 0 && (
+        <section>
+          <h2 className="t-seccion mb-2">De la lista de la empresa, sin dibujar</h2>
+          <p className="t-dato mb-3 medida" style={{ color: "var(--grafito)" }}>
+            Vienen de la lista importada. No cuentan como procesos mapeados hasta que tengan su primer paso.
+          </p>
+          <ul className="flex flex-col gap-2">
+            {sinDibujar.map((p) => (
+              <li key={p.id} className="panel p-3 flex items-baseline justify-between gap-3">
+                <span className="t-dato">
+                  {p.nombre}
+                  {p.area ? <span style={{ color: "var(--grafito)" }}> · {p.area}</span> : null}
+                </span>
+                <Link href={`${base}/${p.id}`} className="t-dato" style={{ color: "var(--marca)", flex: "none", fontWeight: 600 }}>
+                  Dibujarlo →
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }

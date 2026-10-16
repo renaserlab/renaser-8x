@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { AIProviderDownError, AIRateLimitError, AIValidationError, type AIProvider, type CompleteParams, type CompleteResult, type Transcripcion } from "./provider";
+import { AIProviderDownError, AIProviderPausedError, AIRateLimitError, AIValidationError, type AIProvider, type CompleteParams, type CompleteResult, type Transcripcion } from "./provider";
 import { aplicarContrato } from "@/lib/agentes/contratos";
 
 const MODEL = process.env.AI_MODEL ?? "claude-sonnet-5";
@@ -45,6 +45,9 @@ export class AnthropicProvider implements AIProvider {
         const status = (e as { status?: number }).status;
         const msg = String((e as Error).message ?? e);
         if (status === 429 || status === 529) throw new AIRateLimitError(msg);
+        // Sin crédito (Anthropic lo devuelve como 400 «credit balance is too low», o como 402): es una
+        // pausa de la cola, no un fallo del trabajo. Mismo tratamiento que el 402 de Gemini.
+        if (AIProviderPausedError.detecta(status, msg)) throw new AIProviderPausedError(`Anthropic ${status ?? "?"}: ${msg}`);
         if (status === undefined || status >= 500 || /timeout|ECONNRESET|fetch failed/i.test(msg)) throw new AIProviderDownError(msg);
         throw e;
       }
@@ -79,6 +82,7 @@ export class AnthropicProvider implements AIProvider {
     form.append("response_format", "verbose_json");
     const r = await fetch("https://api.openai.com/v1/audio/transcriptions", { method: "POST", headers: { Authorization: `Bearer ${key}` }, body: form });
     if (r.status === 429) throw new AIRateLimitError("Transcripción: límite del proveedor");
+    if (r.status === 402) throw new AIProviderPausedError("Transcripción 402: el servicio de transcripción no tiene crédito");
     if (!r.ok) throw new Error(`Transcripción falló: ${r.status}`);
     const j = (await r.json()) as { text: string; segments?: { start: number; end: number; text: string }[] };
     return { texto: j.text, segmentos: (j.segments ?? []).map((s) => ({ desde: Math.floor(s.start), hasta: Math.ceil(s.end), texto: s.text.trim() })) };

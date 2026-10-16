@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { requerirCliente, empresaDelCliente } from "./auth";
+import { requerirCliente, resolverEmpresaActiva } from "./auth";
 import { supabaseAdmin } from "./supabase/admin";
 
 /** Contexto del portal: usuario, empresa y "qué falta ahora" (una sola frase, siempre arriba). Capítulo 19.4 y 32.
@@ -12,7 +12,9 @@ export async function contextoPortal() {
     companyId = (await cookies()).get("ver_como")?.value || null;
     if (!companyId) redirect("/bandeja");
   } else {
-    companyId = await empresaDelCliente(u.id);
+    const r = await resolverEmpresaActiva(u.id);
+    companyId = r.companyId;
+    if (r.estado === "ambigua") redirect("/portal/elegir-empresa");
   }
   if (!companyId) return { u, companyId: null, empresa: null, queFalta: "Cuéntanos de tu empresa para empezar.", paso: 0 as const, stats: null };
   const sb = supabaseAdmin();
@@ -29,7 +31,7 @@ export async function contextoPortal() {
   const [{ data: empresa }, { data: stats }, { data: sesiones }, { data: publicados }, { data: acciones }] = await Promise.all([
     sb.from("companies").select("id,nombre,etapa").eq("id", companyId).single(),
     sb.from("company_stats").select("*").eq("company_id", companyId).maybeSingle(),
-    sb.from("interview_sessions").select("id,tipo,estado, participants!inner(rol)").eq("company_id", companyId).in("participants.rol", ["dueno", "socio"]),
+    sb.from("interview_sessions").select("id,tipo,estado, participants!inner(rol)").eq("company_id", companyId).neq("tipo", "entrada_breve").in("participants.rol", ["dueno", "socio"]),
     sb.from("deliverables").select("id").eq("company_id", companyId).eq("publicado", true),
     sb.from("actions").select("id,estado").eq("company_id", companyId),
   ]);

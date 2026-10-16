@@ -7,10 +7,11 @@ import { confirmacionValida } from "@/lib/confirmacion";
  * ADMINISTRAR EMPRESA (consultor): corregir nombre y sector, y eliminarla con la confirmación
  * seria de las buenas plataformas — escribir el nombre exacto. Nada de borrados por accidente.
  */
-export function AdministrarEmpresa({ companyId, nombre, sector }: { companyId: string; nombre: string; sector: string | null }) {
+export function AdministrarEmpresa({ companyId, nombre, sector, metaVenta }: { companyId: string; nombre: string; sector: string | null; metaVenta?: string | null }) {
   const [abierto, setAbierto] = useState(false);
   const [n, setN] = useState(nombre);
   const [s, setS] = useState(sector ?? "");
+  const [meta, setMeta] = useState(metaVenta ?? "");
   const [confirmacion, setConfirmacion] = useState("");
   const [ocupado, setOcupado] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +31,10 @@ export function AdministrarEmpresa({ companyId, nombre, sector }: { companyId: s
     setOcupado(true);
     setError(null);
     try {
-      await pedir(`/api/companies/${companyId}`, { method: "PATCH", json: { nombre: n.trim(), sector: s.trim() || null } });
+      const cuerpo: Record<string, unknown> = { nombre: n.trim(), sector: s.trim() || null };
+      // La meta solo viaja si cambió: desde pantallas que no la conocen, guardar no debe borrarla.
+      if (meta.trim() !== (metaVenta ?? "")) cuerpo.ficha = { meta_venta_mensual: meta.replace(/[^\d]/g, "") || null };
+      await pedir(`/api/companies/${companyId}`, { method: "PATCH", json: cuerpo });
       window.location.reload();
     } catch (e) {
       setError(e instanceof Error ? e.message : "No pudimos guardar.");
@@ -71,6 +75,11 @@ export function AdministrarEmpresa({ companyId, nombre, sector }: { companyId: s
               <label className="flex flex-col gap-1">
                 <span className="t-etiqueta">Sector o actividad</span>
                 <input className="campo" value={s} onChange={(e) => setS(e.target.value)} />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="t-etiqueta">Meta de venta mensual (S/)</span>
+                <input className="campo" inputMode="numeric" value={meta} onChange={(e) => setMeta(e.target.value)} placeholder="a cuánto quiere llegar la empresa cada mes" />
+                <span className="t-dato" style={{ color: "var(--grafito)" }}>Se muestra junto a la venta real, con el avance del camino. Defínela con la Gerencia.</span>
               </label>
               <button type="button" className="boton" disabled={ocupado || n.trim().length < 2} onClick={guardar}>
                 {ocupado ? "Guardando" : "Guardar cambios"}

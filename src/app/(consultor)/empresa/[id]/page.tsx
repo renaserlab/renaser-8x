@@ -4,16 +4,19 @@ import { Encabezado } from "@/components/base/Vacio";
 import { Admision } from "@/components/consultor/Admision";
 import { Participantes } from "@/components/consultor/Participantes";
 import { Etapa } from "@/components/consultor/Etapa";
-import { PILAR, ESTADO_PILAR, ETAPA, fechaCorta } from "@/lib/textos";
+import { PILAR, ESTADO_PILAR, ETAPA } from "@/lib/textos";
 import { tokensUsados } from "@/lib/db/queries";
 import { cumplimientoLegal, bibliotecaEsperada } from "@/lib/biblioteca";
 import { tableroEmpresario } from "@/lib/tablero";
 import { Franja, Lectura } from "@/components/base/Franja";
-import { comparar, veredicto, nombreMedicion, type Medicion } from "@/lib/medicion";
+import { PanelMediciones } from "@/components/medicion/PanelMediciones";
+import { cargarMediciones, cargarActas, cargarAccionesLigadas } from "@/components/medicion/datos";
 import { radiografia, type Metrica as MetricaVital } from "@/lib/metricas";
 import { AdministrarEmpresa } from "@/components/consultor/AdministrarEmpresa";
+import { ConfiguracionEmpresa } from "@/components/consultor/ConfiguracionEmpresa";
+import { configDe } from "@/lib/formato";
 import { coberturaSesion } from "@/lib/rules/cobertura";
-import { puntajePilar, techoPorEvidencia, procesosEsperados, avanceProcesos } from "@/lib/rules/evidencia";
+import { puntajePilar, techoPorEvidencia, procesosEsperados, avanceProcesos, porCorroborar } from "@/lib/rules/evidencia";
 import { HECHO, A_MEDIO } from "@/lib/mercado";
 import { TIPO_SESION } from "@/lib/textos";
 
@@ -96,14 +99,24 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
   const puntuados = diagnosticados.map((d) => puntajeDe(d.pilar));
   const salud = puntuados.length ? Math.round(puntuados.reduce((a, b) => a + b, 0) / puntuados.length) : null;
   const colorSalud = salud == null ? "var(--grafito)" : salud >= 70 ? "var(--confirmado)" : salud >= 50 ? "var(--caducado)" : "var(--contradicho)";
-  const { data: restricciones } = await sb
+  // UN RIESGO GRAVE PENDIENTE DE CORROBORACIÓN SE MANTIENE VISIBLE COMO TAL (Dirección 13-10-2026). El impacto
+  // rebajado por falta de evidencia ya no es "alto", pero su impacto POTENCIAL sí: entra aquí rotulado "por
+  // corroborar", después de los críticos confirmados. Esconderlo sería maquillar el tablero del consultor.
+  // Y un PROVISIONAL nunca se rotula "Crítico" aunque su impacto haya quedado en alto (un solo dato sin verificar
+  // basta para eso): sin una afirmación confirmada no es conclusión, es algo por corroborar.
+  const { data: restriccionesCrudas } = await sb
     .from("findings")
-    .select("id,titulo,impacto,pilar,patron")
+    .select("id,titulo,impacto,pilar,patron,impacto_potencial,confianza,provisional")
     .eq("company_id", id)
     .neq("estado_revision", "rechazado")
-    .eq("impacto", "alto")
+    .or("impacto.eq.alto,impacto_potencial.eq.alto")
     .order("created_at", { ascending: false })
-    .limit(3);
+    .limit(8);
+  const restricciones = (restriccionesCrudas ?? [])
+    .map((r) => ({ ...r, porCorroborar: porCorroborar(r) }))
+    .filter((r) => r.impacto === "alto" || r.porCorroborar)
+    .sort((a, b) => Number(a.porCorroborar) - Number(b.porCorroborar))
+    .slice(0, 4);
   const porRevisar = stats?.hallazgos_por_revisar ?? 0;
 
   return (
@@ -113,7 +126,9 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
         sub={`${c.sector ?? "sector sin definir"}${ficha?.ciudad ? ` · ${ficha.ciudad}` : ""} · ${ETAPA[c.etapa] ?? c.etapa}`}
         acciones={
           <span className="flex items-center gap-3 flex-wrap">
-            <AdministrarEmpresa companyId={id} nombre={c.nombre} sector={c.sector} />
+            <AdministrarEmpresa companyId={id} nombre={c.nombre} sector={c.sector} metaVenta={(ficha as Record<string, string> | null)?.meta_venta_mensual ?? null} />
+            {/* País, moneda y hora de la empresa (R16.3): se declara aquí; src/lib/formato.ts lo convierte en texto. */}
+            <ConfiguracionEmpresa companyId={id} actual={configDe(c)} />
             {ficha?.whatsapp && (
               <a href={`https://wa.me/${ficha.whatsapp.replace(/\D/g, "").replace(/^9/, "519")}`} target="_blank" rel="noreferrer" className="boton boton--secundario" style={{ minHeight: 40 }}>WhatsApp del dueño</a>
             )}
@@ -132,7 +147,18 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
             divisor={false}
             valor={t.kpis.venta ? soles(t.kpis.venta.valor) : "—"}
             etiqueta={t.kpis.venta ? `ventas · ${t.kpis.venta.estado === "verificado" ? "verificado" : "contado"}` : "ventas sin dato"}
-            extra={t.kpis.venta ? <Sparkline serie={t.serieVentas} /> : undefined}
+            extra={t.kpis.venta ? (
+              <>
+                <Sparkline serie={t.serieVentas} />
+                {/* LA META: a cuánto quieren llegar — pedido de Kelin: la venta sola no dice nada sin su meta. */}
+                {(() => {
+                  const meta = Number((ficha as Record<string, string> | null)?.meta_venta_mensual ?? 0);
+                  if (!meta) return <span className="t-dato" style={{ display: "block", color: "var(--grafito)" }}>meta mensual: por definir (Administrar)</span>;
+                  const pct = Math.round((100 * t.kpis.venta.valor) / meta);
+                  return <span className="t-dato" style={{ display: "block", color: pct >= 100 ? "var(--confirmado)" : "var(--tinta)" }}>meta {soles(meta)} · {pct}% del camino</span>;
+                })()}
+              </>
+            ) : undefined}
           />
           <Lectura valor={salud != null ? String(salud) : "—"} unidad={salud != null ? "/100" : undefined} etiqueta={salud != null ? "salud con evidencia" : "salud sin diagnóstico"} color={colorSalud} />
           <Lectura valor={String(porRevisar)} etiqueta={porRevisar > 0 ? "hallazgos por revisar" : "bandeja al día"} color={porRevisar > 0 ? "var(--contradicho)" : "var(--tinta)"} />
@@ -140,61 +166,19 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
         </Franja>
       </div>
 
-      {/* ¿MEJORÓ? La pregunta que el cliente paga por responder. Sin línea base no se puede
-          contestar, así que se dice qué falta para poder contestarla. */}
+      {/* ¿MEJORÓ? La pregunta que el cliente paga por responder. Sin punto de partida no se puede
+          contestar, así que se dice qué falta. Con versiones (13-10-2026): cada corte se compara con la
+          versión exacta contra la que se midió, y se separa lo observado de lo atribuible. */}
       {await (async () => {
         const sbM = supabaseAdmin();
-        const [{ data: medRaw }, { data: metRaw }] = await Promise.all([
-          sbM.from("mediciones").select("id,tipo,numero,fecha,valores,derivados,nota").eq("company_id", id).order("numero", { ascending: false }),
+        const [meds, actas, acciones, { data: metRaw }] = await Promise.all([
+          cargarMediciones(sbM, id),
+          cargarActas(sbM, id),
+          cargarAccionesLigadas(sbM, id),
           sbM.from("company_metricas").select("clave,periodo,valor,estado").eq("company_id", id).limit(300),
         ]);
-        const meds = (medRaw ?? []) as Medicion[];
-        const base = meds.find((m) => m.tipo === "linea_base") ?? null;
-        const cortes = meds.filter((m) => m.tipo === "corte");
         const radio = radiografia((metRaw ?? []) as MetricaVital[]);
-        const movs = comparar(base, cortes[0] ?? null);
-        const v = veredicto(base, cortes[0] ?? null, movs);
-
-        return (
-          <section className="panel p-5 mb-4">
-            <div className="flex items-baseline justify-between gap-3 flex-wrap mb-2">
-              <h2 className="t-seccion">¿Mejoró?</h2>
-              <span className="t-dato" style={{ color: "var(--grafito)" }}>
-                {radio.listos}/9 números · {cortes.length} corte{cortes.length === 1 ? "" : "s"}
-              </span>
-            </div>
-            {!base ? (
-              <p className="t-cuerpo medida" style={{ color: "var(--grafito)" }}>
-                Sin punto de partida no hay contra qué comparar. {radio.listos < 5
-                  ? `Le faltan ${9 - radio.listos} números: hasta llegar a 5 no se puede fijar.`
-                  : "Ya tiene números suficientes: el dueño puede fijarlo desde Tus números."}
-              </p>
-            ) : cortes.length === 0 ? (
-              <p className="t-cuerpo medida" style={{ color: "var(--grafito)" }}>
-                Punto de partida fijado el {fechaCorta(base.fecha)} con {Object.keys(base.valores).length} números.
-                Falta el primer corte para saber si algo se movió.
-              </p>
-            ) : (
-              <>
-                <p className="t-cuerpo" style={{ fontWeight: 550 }}>{v.titular}</p>
-                <p className="t-dato mt-1" style={{ color: "var(--grafito)" }}>
-                  {nombreMedicion(cortes[0]!)} del {fechaCorta(cortes[0]!.fecha)} contra el punto de partida del {fechaCorta(base.fecha)}
-                  {v.dias != null && v.dias > 0 ? ` · ${v.dias} días` : ""} · {v.mejoraron} mejoraron, {v.empeoraron} empeoraron
-                </p>
-                {movs.filter((m) => m.mejoro === false).slice(0, 3).length > 0 && (
-                  <ul className="lista-editorial mt-3">
-                    {movs.filter((m) => m.mejoro === false).slice(0, 3).map((m) => (
-                      <li key={m.vital.clave} style={{ padding: "5px 0" }}>
-                        <span className="t-dato" style={{ color: "var(--contradicho)" }}>{m.vital.nombre}: </span>
-                        <span className="t-dato" style={{ color: "var(--grafito)" }}>{m.frase}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </>
-            )}
-          </section>
-        );
+        return <PanelMediciones companyId={id} mediciones={meds.mediciones} actas={actas} acciones={acciones} numerosListos={radio.listos} conVersiones={meds.conVersiones} />;
       })()}
 
       {/* FILA 2 · Mapa de la empresa (4P con puntaje y color) + restricciones */}
@@ -228,7 +212,11 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
               {(restricciones ?? []).map((r) => (
                 <li key={r.id} className="flex items-start justify-between gap-3">
                   <Link href={`/empresa/${id}/diagnostico?pilar=${r.pilar}`} className="t-dato" style={{ fontWeight: 550, minWidth: 0 }}>{r.titulo}</Link>
-                  <span className="t-dato" style={{ flex: "none", fontSize: 12, fontWeight: 700, color: "var(--contradicho)", border: "1px solid var(--contradicho)", borderRadius: "var(--radio)", padding: "2px 10px" }}>Crítico</span>
+                  {r.porCorroborar ? (
+                    <span className="t-dato" title="Grave si se corrobora: ninguna de sus afirmaciones está confirmada, o la confianza es baja" style={{ flex: "none", fontSize: 12, fontWeight: 700, color: "var(--caducado)", border: "1px dashed var(--caducado)", borderRadius: "var(--radio)", padding: "2px 10px" }}>Grave · por corroborar</span>
+                  ) : (
+                    <span className="t-dato" style={{ flex: "none", fontSize: 12, fontWeight: 700, color: "var(--contradicho)", border: "1px solid var(--contradicho)", borderRadius: "var(--radio)", padding: "2px 10px" }}>Crítico</span>
+                  )}
                 </li>
               ))}
             </ul>

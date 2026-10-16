@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
+import { readFileSync, readdirSync } from "fs";
+import path from "path";
 import { ordenarCola, estadoTrasFallo, recuperarVencidos, esperaRateLimit, ESPERAS_MS } from "@/lib/jobs/reglas";
-import { claveIdempotente, PRIORIDAD } from "@/lib/jobs/queue";
+import { claveIdempotente, claveDePeticion, canonico, PRIORIDAD } from "@/lib/jobs/queue";
 
 const j = (id: string, prioridad: number, created_at: string, extra: Partial<{ estado: string; intentos: number; max_intentos: number; lease_expira_at: string | null }> = {}) => ({ id, prioridad, created_at, estado: "pendiente", intentos: 0, max_intentos: 3, lease_expira_at: null, ...extra });
 
@@ -42,5 +44,55 @@ describe("cola: prioridad, idempotencia, reintentos, recuperación", () => {
     expect(esperaRateLimit(0)).toBe(1000);
     expect(esperaRateLimit(1)).toBe(4000);
     expect(esperaRateLimit(2)).toBeNull();
+  });
+});
+
+/**
+ * LA CLAVE DE UNA PETICIÓN ES LA PETICIÓN, NO EL MOMENTO. La clave por defecto llevaba la hora, así
+ * que la misma petición repetida (doble clic, recarga, reintento de red) creaba otro trabajo idéntico:
+ * de ahí la «triple pregunta» de la entrevista. Estas pruebas fijan que la clave sale del contenido.
+ */
+describe("clave determinista de una petición", () => {
+  const RAIZ = path.resolve(__dirname, "..");
+  const leer = (rel: string) => readFileSync(path.join(RAIZ, rel), "utf8");
+  const sinComentarios = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+
+  it("misma petición → misma clave; distinta petición → distinta clave", () => {
+    expect(claveDePeticion("diagnosticar", "c1", { pilar: "procesos" })).toBe(claveDePeticion("diagnosticar", "c1", { pilar: "procesos" }));
+    expect(claveDePeticion("diagnosticar", "c1", { pilar: "procesos" })).not.toBe(claveDePeticion("diagnosticar", "c1", { pilar: "personas" }));
+    expect(claveDePeticion("diagnosticar", "c1", { pilar: "procesos" })).not.toBe(claveDePeticion("diagnosticar", "c2", { pilar: "procesos" }));
+    expect(claveDePeticion("diagnosticar", "c1", {})).not.toBe(claveDePeticion("planificar", "c1", {}));
+  });
+
+  it("el payload con las claves en distinto orden es la MISMA petición, también en objetos anidados", () => {
+    const a = claveDePeticion("extraer", "c1", { source_id: "s1", chunk_index: 2, meta: { b: 1, a: [{ y: 2, x: 1 }] } });
+    const b = claveDePeticion("extraer", "c1", { meta: { a: [{ x: 1, y: 2 }], b: 1 }, chunk_index: 2, source_id: "s1" });
+    expect(a).toBe(b);
+    expect(canonico({ b: 1, a: undefined, c: { z: 1, y: 2 } })).toBe('{"b":1,"c":{"y":2,"z":1}}');
+    // Un arreglo conserva su orden: [1,2] y [2,1] no son lo mismo.
+    expect(claveDePeticion("x", null, { lista: [1, 2] })).not.toBe(claveDePeticion("x", null, { lista: [2, 1] }));
+  });
+
+  it("la cola no usa la hora en ninguna clave: Date.now no aparece en queue.ts fuera de comentarios", () => {
+    expect(sinComentarios(leer("src/lib/jobs/queue.ts"))).not.toContain("Date.now");
+  });
+
+  it("los sitios que encolaban con la hora en la clave ya no lo hacen", () => {
+    const archivos = [
+      "src/app/api/companies/[id]/assets/construir/route.ts",
+      "src/app/api/companies/[id]/assets/sistematizar/route.ts",
+      "src/app/api/companies/[id]/plan-estrategico/route.ts",
+      "src/lib/entrevista.ts",
+    ];
+    for (const a of archivos) {
+      const src = sinComentarios(leer(a));
+      expect(src, `${a} sigue metiendo la hora en una clave de idempotencia`).not.toMatch(/claveIdempotente\([^;]*Date\.now/);
+      expect(src, `${a} sigue metiendo azar en una clave de idempotencia`).not.toMatch(/claveIdempotente\([^;]*Math\.random/);
+    }
+    // En todo src/, ninguna clave de idempotencia lleva la hora ni azar.
+    const buscar = (dir: string): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? buscar(path.join(dir, e.name)) : /\.(ts|tsx)$/.test(e.name) ? [path.join(dir, e.name)] : []));
+    const culpables = buscar(path.join(RAIZ, "src")).filter((f) => /claveIdempotente\([^;]*(Date\.now|Math\.random)/.test(sinComentarios(readFileSync(f, "utf8"))));
+    expect(culpables).toEqual([]);
   });
 });

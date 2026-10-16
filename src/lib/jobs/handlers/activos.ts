@@ -169,7 +169,8 @@ export async function handleSistematizarActivo(job: Job) {
 
   const [{ data: empresa }, { data: findings }, { data: kh }] = await Promise.all([
     sb.from("companies").select("nombre,sector,ficha,etapa_negocio,modelo_operativo").eq("id", job.company_id).single(),
-    sb.from("findings").select("titulo,causa_raiz,impacto,pilar,patron").eq("company_id", job.company_id).neq("estado_revision", "rechazado").limit(30),
+    // Lo provisional (sin ninguna afirmación confirmada) no dicta cómo trabajar un documento: no es conclusión (R10.4).
+    sb.from("findings").select("titulo,causa_raiz,impacto,pilar,patron").eq("company_id", job.company_id).neq("estado_revision", "rechazado").or("provisional.is.null,provisional.eq.false").limit(30),
     sb.from("know_how").select("puesto,situacion,senal,regla_practica").eq("company_id", job.company_id).limit(20),
   ]);
   const pilarEstandar = def.bloque === "personas" ? "personas" : def.bloque === "procesos" ? "procesos" : def.bloque === "producto" ? "producto" : "marketing";

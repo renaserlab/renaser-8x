@@ -1,7 +1,8 @@
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { Encabezado } from "@/components/base/Vacio";
 import { Organigrama } from "@/components/consultor/Organigrama";
-import { estudioOrganigrama, type Puesto } from "@/lib/rules/organigrama";
+import { LecturaPersonas } from "@/components/consultor/LecturaPersonas";
+import { estudioOrganigrama, lecturaDePersonas, type Puesto } from "@/lib/rules/organigrama";
 import type { EstudioIA } from "@/components/consultor/EstudioOrganigrama";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +34,8 @@ export default async function PaginaOrganigrama({ params }: { params: Promise<{ 
         estudioFecha={est?.updated_at ?? null}
         versiones={(vers ?? []).map((v) => v.creado_at as string)}
       />
+      {/* Vacíos, duplicidades, sobrecarga y hoy frente al estudio (R9.1): una cuenta sobre lo que ya se leyó arriba. */}
+      <LecturaPersonas lectura={lecturaDePersonas(puestos, est?.contenido ?? null)} />
     </>
   );
 }

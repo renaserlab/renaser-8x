@@ -1,36 +1,63 @@
-/* 8X — única fuente de color, tipo y espacio. Capítulo 17. */
+/* 8X — única fuente de color, tipo y espacio. Capítulo 17.
+   ESTILO DEL 13-10-2026 (pedido de Kelin con su imagen de referencia, «manda la imagen en toda la app»):
+   cielo azul suave de fondo, tarjetas blancas muy redondeadas con sombra suave, navegación en píldora,
+   numerales grandes en Manrope, gráficos finos. Sustituye la paleta «Apple» del 27-08 y la regla de «sin
+   sombras, un solo radio». Lo que NO cambia: lo que no hay se dibuja rayado y se nombra; nada se rellena. */
 :root {
-  /* PALETA APPLE (pedido de Kelin 2026-08-27: "blanco, de lujo, consultoría premium"):
-     fondo casi blanco, tinta casi negra, gris secundario fino, hairlines claras y UN azul sereno. */
   --papel: #ffffff;
-  --fondo: #fbfbfd;
-  --tinta: #1d1d1f;
-  --grafito: #6e6e73;
-  --linea: #e8e8ec;
-  --marca: #0a68c4;
-  --marca-oscura: #0f2a3f; /* el azul institucional queda para acentos puntuales, nunca como fondo dominante */
-  --suave: #f5f5f7;
+  --fondo: #e4ecfb;
+  --tinta: #0e1a2b;
+  --grafito: #56657c;
+  --tenue: #8a97ab;
+  --linea: #e6ecf5;
+  --marca: #2f6fe4;
+  --marca-oscura: #0e1a2b;
+  --suave: #f3f6fc;
 
-  --confirmado: #1f6f4a;
-  --caducado: #8a6d1f;
-  --contradicho: #a3341f;
-  --sin-verificar: #6b7075;
+  --azul-medio: #7ea3ef;
+  --azul-claro: #bcd0f7;
+  --azul-velo: #e3ebfc;
+  --raya: #cbd4e3;
+
+  --confirmado: #127049;
+  --confirmado-velo: #e2f4ec;
+  --caducado: #8d5609;
+  --caducado-velo: #fbf0dc;
+  --contradicho: #bf3b26;
+  --contradicho-velo: #fbe6e2;
+  --sin-verificar: #5f6b7d;
 
   /* ejecutor: pinta el nodo */
-  --ej-humano: #0f2a3f;
+  --ej-humano: #0e1a2b;
   --ej-software: #4a5a68;
-  --ej-ia: #1f6f4a;
-  --ej-hibrido: #8a6d1f;
+  --ej-ia: #127049;
+  --ej-hibrido: #8d5609;
 
-  --font-ui: var(--font-public-sans), "Public Sans", "Instrument Sans", system-ui, sans-serif;
+  --font-ui: var(--font-public-sans), "Public Sans", system-ui, sans-serif;
+  --font-num: var(--font-manrope), "Manrope", var(--font-public-sans), system-ui, sans-serif;
   --font-doc: var(--font-source-serif), "Source Serif 4", Georgia, serif;
 
-  --radio: 14px; /* pedido de Kelin tras demo: "demasiado cuadrado" — un solo radio, más suave */
+  /* Radios: 14px controles, 24px tarjetas, 28px la hoja de página, 999px píldoras (navegación, botones, chips). */
+  --radio: 14px;
+  --radio-tarjeta: 24px;
+  --sombra: 0 1px 2px rgba(17, 41, 92, 0.05), 0 14px 34px -14px rgba(28, 72, 168, 0.22);
+  --sombra-flota: 0 1px 2px rgba(17, 41, 92, 0.08), 0 18px 40px -16px rgba(14, 26, 43, 0.35);
+  --rayado: repeating-linear-gradient(135deg, var(--raya) 0 2px, transparent 2px 6px);
+
   --medida: 68ch;
   --dur: 200ms;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
-html { background: var(--fondo); color: var(--tinta); }
+html {
+  color: var(--tinta);
+  background-color: var(--fondo);
+  background-image:
+    radial-gradient(760px 560px at 0% 0%, #f5f8fe 0%, rgba(245, 248, 254, 0) 70%),
+    linear-gradient(165deg, #edf2fd 0%, #e1e9fb 55%, #d3e0f9 100%);
+  background-attachment: fixed;
+  min-height: 100%;
+}
 @media print { html { background: #fff; } }
 body {
   font-family: var(--font-ui);
@@ -38,12 +65,13 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
+::selection { background: var(--azul-claro); color: var(--tinta); }
 
-/* escala tipográfica — contenida, tipo Apple: la jerarquía viene del peso y el espacio, no del tamaño */
-.t-titulo   { font-size: 26px; font-weight: 600; line-height: 1.2; letter-spacing: -0.015em; }
-.t-seccion  { font-size: 18px; font-weight: 600; line-height: 1.3; }
+/* escala tipográfica: Manrope para títulos y números, Public Sans para leer */
+.t-titulo   { font-family: var(--font-num); font-size: 28px; font-weight: 700; line-height: 1.15; letter-spacing: -0.025em; text-wrap: balance; }
+.t-seccion  { font-family: var(--font-num); font-size: 18px; font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; }
 .t-cuerpo   { font-size: 16px; font-weight: 400; }
-.t-etiqueta { font-size: 12px; font-weight: 550; letter-spacing: 0.02em; color: var(--grafito); }
+.t-etiqueta { font-size: 12px; font-weight: 600; letter-spacing: 0.02em; color: var(--grafito); }
 .t-dato     { font-size: 13.5px; font-weight: 500; font-variant-numeric: tabular-nums; }
 .t-doc      { font-family: var(--font-doc); font-size: 17px; line-height: 1.6; }
 
@@ -58,53 +86,71 @@ body {
   }
 }
 
+/* LA HOJA: toda pantalla vive en una tarjeta blanca grande sobre el cielo. Los tableros (que ya son
+   tarjetas sueltas) la apagan solos: .hoja:has(> .tablero). */
+.hoja {
+  background: var(--papel);
+  border-radius: 28px;
+  box-shadow: var(--sombra);
+  padding: 28px 32px 36px;
+  min-width: 0;
+}
+.hoja:has(> .tablero) { background: none; box-shadow: none; padding: 0; border-radius: 0; }
+@media (max-width: 760px) {
+  .hoja { border-radius: 22px; padding: 20px 16px 26px; }
+}
+@media print { .hoja { box-shadow: none; padding: 0; } }
+
 /* PANEL DE DETALLE: se despliega AL COSTADO (PC) o desde abajo (celular) — nunca empuja el contenido. */
 .telon { position: fixed; inset: 0; background: color-mix(in srgb, var(--tinta) 32%, transparent); z-index: 60; border: none; padding: 0; margin: 0; width: 100%; }
 .panel-lateral {
   position: fixed; z-index: 61; background: var(--papel); overflow-y: auto;
-  right: 0; top: 0; bottom: 0; width: min(440px, 92vw);
-  border-left: 1px solid var(--linea); padding: 24px;
-  animation: entra-lado var(--dur) ease-out;
+  right: 12px; top: 12px; bottom: 12px; width: min(420px, 92vw);
+  border-radius: var(--radio-tarjeta); box-shadow: var(--sombra-flota); padding: 24px;
+  animation: entra-lado 240ms var(--ease-out);
 }
 @media (max-width: 1023px) {
   .panel-lateral {
     top: auto; left: 0; right: 0; bottom: 0; width: auto; max-height: 82dvh;
-    border-left: none; border-top: 1px solid var(--linea);
-    border-radius: var(--radio) var(--radio) 0 0;
-    animation: entra-abajo var(--dur) ease-out;
+    border-radius: var(--radio-tarjeta) var(--radio-tarjeta) 0 0;
+    animation: entra-abajo 260ms var(--ease-out);
     padding-bottom: calc(24px + env(safe-area-inset-bottom));
   }
 }
 @keyframes entra-lado { from { transform: translateX(24px); opacity: 0; } }
-@keyframes entra-abajo { from { transform: translateY(24px); opacity: 0; } }
+@keyframes entra-abajo { from { transform: translateY(32px); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .panel-lateral { animation: none; } }
 
 /* foco visible siempre */
 :focus-visible { outline: 2px solid var(--marca); outline-offset: 2px; }
 
-/* controles: objetivo táctil 44px, radio 6, sin sombra */
+/* controles: objetivo táctil 44px, píldora oscura como la navegación activa */
 .boton {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  min-height: 44px; padding: 0 20px;
-  border: 1px solid var(--marca); border-radius: var(--radio);
-  background: var(--marca); color: var(--papel);
-  font: inherit; font-weight: 500; cursor: pointer;
-  transition: background var(--dur), color var(--dur), border-color var(--dur);
+  min-height: 44px; padding: 0 22px;
+  border: 1px solid var(--tinta); border-radius: 999px;
+  background: var(--tinta); color: var(--papel);
+  font: inherit; font-weight: 600; cursor: pointer; text-decoration: none;
+  transition: transform 160ms var(--ease-out), background-color var(--dur) ease, border-color var(--dur) ease, color var(--dur) ease;
 }
-.boton:hover { background: var(--tinta); border-color: var(--tinta); }
-.boton:disabled { opacity: 0.45; cursor: default; }
-.boton--secundario { background: transparent; color: var(--tinta); border-color: var(--linea); }
-.boton--secundario:hover { background: var(--suave); border-color: var(--grafito); color: var(--tinta); }
-.boton--grande { min-height: 56px; font-size: 19px; padding: 0 28px; width: 100%; }
+.boton:active { transform: scale(0.97); }
+.boton:disabled { opacity: 0.45; cursor: default; transform: none; }
+.boton--secundario { background: var(--papel); color: var(--tinta); border-color: var(--linea); }
+.boton--grande { min-height: 56px; font-size: 18px; padding: 0 28px; width: 100%; }
 .boton--peligro { border-color: var(--contradicho); color: var(--contradicho); background: transparent; }
-.boton--peligro:hover { background: var(--contradicho); color: var(--papel); }
+@media (hover: hover) and (pointer: fine) {
+  .boton:hover { background: #22324d; border-color: #22324d; }
+  .boton--secundario:hover { background: var(--azul-velo); border-color: var(--azul-claro); color: var(--tinta); }
+  .boton--peligro:hover { background: var(--contradicho); border-color: var(--contradicho); color: var(--papel); }
+}
 
 .campo {
-  width: 100%; min-height: 44px; padding: 10px 12px;
+  width: 100%; min-height: 44px; padding: 10px 14px;
   border: 1px solid var(--linea); border-radius: var(--radio);
-  background: #fff; font: inherit; color: var(--tinta);
+  background: var(--papel); font: inherit; color: var(--tinta);
+  transition: border-color var(--dur) ease, box-shadow var(--dur) ease;
 }
-.campo:focus { border-color: var(--marca); outline: none; }
+.campo:focus { border-color: var(--marca); outline: none; box-shadow: 0 0 0 3px var(--azul-velo); }
 textarea.campo { min-height: 120px; resize: vertical; }
 /* EL EJEMPLO NO SE PUEDE CONFUNDIR CON LO ESCRITO (30-08-2026). No había estilo de placeholder: salía
    con el gris por defecto del navegador y la dueña de Qori lo leyó como datos suyos metidos en su
@@ -112,21 +158,23 @@ textarea.campo { min-height: 120px; resize: vertical; }
 .campo::placeholder { color: var(--grafito); opacity: 0.6; font-style: italic; }
 .campo:focus::placeholder { opacity: 0.38; }
 
-/* tablas que respiran */
-.tabla { width: 100%; border-collapse: collapse; }
-.tabla th { text-align: left; padding: 12px 12px; font-size: 13px; font-weight: 550; letter-spacing: 0.02em; color: var(--grafito); border-bottom: 1px solid var(--linea); }
-.tabla td { padding: 16px 12px; border-bottom: 1px solid var(--linea); vertical-align: top; }
-.tabla tr:hover td { background: var(--suave); }
+/* tablas: cabecera en banda azul suave con los extremos redondos, filas con línea fina */
+.tabla { width: 100%; border-collapse: separate; border-spacing: 0; }
+.tabla th { text-align: left; padding: 11px 12px; font-size: 13px; font-weight: 600; color: var(--tinta); background: var(--azul-velo); white-space: nowrap; }
+.tabla th:first-child { border-radius: 12px 0 0 12px; }
+.tabla th:last-child { border-radius: 0 12px 12px 0; }
+.tabla td { padding: 14px 12px; border-bottom: 1px solid var(--linea); vertical-align: top; }
+.tabla tr:last-child td { border-bottom: 0; }
+@media (hover: hover) and (pointer: fine) { .tabla tbody tr:hover td { background: #f7f9fe; } }
 
-/* panel: profundidad por línea, no por sombra */
-.panel { border: 1px solid var(--linea); border-radius: var(--radio); background: #fff; }
+/* panel: tarjeta blanca redonda con sombra suave */
+.panel { border: 0; border-radius: var(--radio-tarjeta); background: var(--papel); box-shadow: var(--sombra); }
+.hoja .panel { box-shadow: none; border: 1px solid var(--linea); }
 .separador { border: 0; border-top: 1px solid var(--linea); margin: 0; }
 
-/* ——— Rediseño editorial (pedido de Kelin: "todas las vistas iguales") ———
-   La caja se reserva para lo ACCIONABLE. Lo demás respira: héroes en serif,
-   listas editoriales con línea fina, números grandes sin marco. */
-.t-hero { font-family: var(--font-doc); font-size: clamp(21px, 3.6vw, 27px); font-weight: 600; line-height: 1.28; letter-spacing: -0.01em; text-wrap: balance; }
-.num-grande { font-family: var(--font-doc); font-size: clamp(26px, 4.5vw, 36px); font-weight: 700; line-height: 1.05; font-variant-numeric: tabular-nums; }
+/* Números y frases grandes: Manrope. La serif queda para los documentos impresos. */
+.t-hero { font-family: var(--font-num); font-size: clamp(21px, 3.4vw, 27px); font-weight: 650; line-height: 1.25; letter-spacing: -0.02em; text-wrap: balance; }
+.num-grande { font-family: var(--font-num); font-size: clamp(26px, 4.5vw, 36px); font-weight: 750; line-height: 1.05; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
 .lista-editorial { list-style: none; padding: 0; margin: 0; }
 .lista-editorial > li { border-top: 1px solid var(--linea); padding: 18px 0; }
 .lista-editorial > li:last-child { border-bottom: 1px solid var(--linea); }
@@ -138,7 +186,7 @@ textarea.campo { min-height: 120px; resize: vertical; }
 .marca-estado svg { flex: none; }
 
 /* movimiento */
-.aparece { animation: aparece var(--dur) ease-out; }
+.aparece { animation: aparece 220ms var(--ease-out); }
 @keyframes aparece { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }

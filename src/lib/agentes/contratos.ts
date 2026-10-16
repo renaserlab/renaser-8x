@@ -18,7 +18,7 @@
  */
 
 export type ClaveAgente =
-  | "admision" | "arquitecto" | "auditor" | "constructor" | "contrastador" | "diagnosticador"
+  | "admision" | "arquitecto" | "auditor" | "constructor" | "contrastador" | "diagnosticador" | "director"
   | "entrevistador" | "estratega" | "extractor" | "investigador" | "medidor" | "minero" | "organizador" | "planificador"
   | "redactor" | "rediseno" | "sistematizador" | "sop";
 
@@ -131,6 +131,18 @@ export const CONTRATOS: Record<ClaveAgente, Contrato> = {
     presupuesto_tokens: 8000, tiempo_max_ms: 180_000, reintentos: 2,
     exito: "Hallazgos con causa, costo posible y evidencia citada.",
     parada: PARADA_COMUN, recuperacion: SEGURO_DE_REPETIR, responsable: "Producto", medido: true,
+  },
+  director: {
+    clave: "director", version: "1.0",
+    proposito: "Leer la Ficha de Dirección Empresarial y proponer, bloque por bloque, qué se puede interpretar de lo que el dueño declaró; y describir la dependencia de la empresa respecto de él en ocho dimensiones: qué se detiene sin él, qué podría delegarse, qué capacidad falta y dónde su participación aporta valor.",
+    disparador: "El consultor pulsa «Proponer interpretaciones» en la pestaña Dirección.",
+    fuentes: ["borrador determinista de la ficha", "afirmaciones confirmadas", "respuestas de la entrada breve", "números con valor", "conteo de procesos del dueño"],
+    entrada: "El borrador con cada declaración citable por su id.", salida: "SalidaDirector",
+    acciones_prohibidas: ["Dar un porcentaje o índice de dependencia", "Juzgar a la persona del propietario", "Inventar datos o citar un id que no está en el material", "Escribir una interpretación sin fuente"],
+    aprobador: "consultor",
+    presupuesto_tokens: 3000, tiempo_max_ms: 120_000, reintentos: 2,
+    exito: "Interpretaciones con claim_ids reales y ocho dimensiones con evidencia o «sin evidencia» explícito; entran como interpretación, nunca como declaración.",
+    parada: PARADA_COMUN, recuperacion: SEGURO_DE_REPETIR, responsable: "Dirección", medido: false,
   },
   entrevistador: {
     clave: "entrevistador", version: "1.0",

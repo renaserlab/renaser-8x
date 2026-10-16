@@ -47,7 +47,7 @@ export const MATRICES: Matriz[] = [
   {
     clave: "profesional",
     nombre: "Servicios profesionales / consultoría",
-    senales: ["consultor", "abogad", "contab", "contador", "estudio", "agencia", "asesor", "auditor", "marketing digital", "diseño", "software", "desarrollo"],
+    senales: ["consultor", "abogad", "juridic", "legal", "notari", "contab", "contador", "estudio", "agencia", "asesor", "auditor", "marketing digital", "diseño", "software", "desarrollo"],
     driver_tree: "Ingresos = Oportunidades x Reuniones x Propuestas x Cierre x Honorario",
     preguntas: [
       "De cada 10 interesados que llegan, ¿con cuántos llegas a reunirte… y cuántos te contratan?",

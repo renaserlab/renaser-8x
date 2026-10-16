@@ -1,0 +1,95 @@
+{
+ "modas_lucero": {
+  "empresa": "Modas Lucero S.A.C. (ficticia)",
+  "sector": "Comercio minorista de ropa",
+  "ciudad": "Lima (Surco)",
+  "antiguedad_anios": 5,
+  "personas": 4,
+  "entrada_breve": {
+   "negocio_hoy": "Tienda de ropa de mujer en Surco, 5 años, somos 4: yo, Rosa, Carmen y Jorge medio tiempo.",
+   "que_vende_estrella": "Blusas y vestidos; lo que más deja son los vestidos de fiesta.",
+   "ventas_mes": 80000,
+   "ganancia_mes": 8000,
+   "meta_venta_mes": 160000,
+   "deuda_clientes": "Casi nada, vendemos al contado y con tarjeta.",
+   "vision_3_anios": "Dos tiendas, una más en Miraflores, y yo ya no en el mostrador.",
+   "rol_futuro": "Comprar, decidir colecciones y ver los números. Ya no cobrar ni doblar ropa.",
+   "dinero_tranquila": 15000,
+   "no_sacrifica": "No despido a nadie; Rosa lleva cinco años conmigo. Y los domingos no trabajo.",
+   "que_se_detiene_sin_mi": "Las compras y los precios. Rosa puede cobrar y cerrar caja; Carmen no.",
+   "decision_postergada": "Contratar a alguien que me reemplace en tienda. Me cuesta cada mes seguir en el mostrador 10 horas.",
+   "principal_problema": "No sé cuánto gano de verdad; el inventario está desordenado.",
+   "que_funciona": "La clientela vuelve; Instagram trae gente nueva.",
+   "recursos_desaprovechados": "Tengo stock parado de la temporada pasada y un almacén que no se usa bien.",
+   "mejor_resultado_anterior": "Diciembre 2025: vendimos 140,000 en el mes con la campaña de fiestas.",
+   "stock_declarado": "Tengo como 40,000 en mercadería."
+  },
+  "archivos": [
+   "funciones-del-personal.docx",
+   "contrato-alquiler.pdf",
+   "ventas-e-inventario.xlsx"
+  ],
+  "contradicciones_deliberadas": [
+   "Stock declarado «como 40,000» vs Excel Inventario: total a costo de los que tienen costo supera 70,000 (y 40 artículos sin costo).",
+   "Declara que fija TODOS los precios vs Word: Rosa fija los precios de las ofertas de fin de temporada.",
+   "Utilidad declarada 8,000 vs Excel: ventas ~80,000 − compras ~52,000 − alquiler 6,500 − planilla 9,000 − otros conocidos ≈ 10,000–12,000 ANTES de los gastos que faltan (transporte, luz de dos meses, mermas, impuestos): la cifra no se puede confirmar ni negar; hay que preguntar."
+  ],
+  "faltantes_deliberados": [
+   "Inventario: 40 de 120 artículos sin costo unitario → margen por producto no calculable para ellos.",
+   "Gastos: planilla y luz sin registrar en julio y agosto; transporte sin registrar en tres meses.",
+   "Word: Jorge sin funciones; Carmen sin horario. Sin manual de caja ni de inventario.",
+   "Ningún registro de clientes → recompra «de cada 10 vuelven 4» no es medible hoy."
+  ]
+ },
+ "estudio_vargas": {
+  "empresa": "Estudio Vargas & Asociados (ficticio)",
+  "sector": "Servicios jurídicos",
+  "ciudad": "Lima (Jesús María)",
+  "antiguedad_anios": 9,
+  "personas": 3,
+  "entrada_breve": {
+   "negocio_hoy": "Estudio jurídico, 9 años, tres personas: yo (socio), la Dra. Paredes y el Sr. Quispe, asistente.",
+   "que_vende_estrella": "Laboral, civil y familia. En número, laboral; en honorarios, civil. No sé cuál deja más.",
+   "ventas_mes": "Entre 18,000 y 25,000 según el mes; no lo tengo exacto.",
+   "ganancia_mes": "No lo sé.",
+   "meta_venta_mes": null,
+   "deuda_clientes": "Varios clientes deben la segunda mitad; no tengo la suma.",
+   "vision_3_anios": "Que el estudio funcione si yo me enfermo un mes. Que nos busquen por laboral, no por baratos.",
+   "rol_futuro": "Estrategia de los casos grandes y relación con clientes. Que la Dra. Paredes lleve laboral de principio a fin.",
+   "dinero_tranquila": 12000,
+   "no_sacrifica": "No bajo honorarios para competir. No tomo casos penales.",
+   "que_se_detiene_sin_mi": "Todo: firmo todos los escritos, llevo la agenda de vencimientos en mi cuaderno y cobro yo.",
+   "decision_postergada": "Contratar otro abogado o darle laboral completo a la Dra. Paredes. Me cuesta que ella no pueda responder al cliente sin preguntarme.",
+   "principal_problema": "No sé qué servicio me deja plata; el seguimiento es informal y se nos han pasado dos plazos este año.",
+   "que_funciona": "Ganamos la mayoría de los laborales; los clientes nos recomiendan.",
+   "recursos_desaprovechados": "La Dra. Paredes podría llevar más; el asistente tiene tiempo libre por las tardes.",
+   "mejor_resultado_anterior": "2024: un caso civil grande que dejó 18,000 en honorarios.",
+   "horas_por_caso_laboral": "Unas 25 horas por caso, calculo."
+  },
+  "archivos": [
+   "tarifario-2025.pdf",
+   "procedimiento-seguimiento.docx",
+   "expedientes-2026-I.xlsx"
+  ],
+  "contradicciones_deliberadas": [
+   "Tarifario laboral 1,800 vs Excel: honorarios pactados entre 1,200 y 2,200 → descuentos no escritos.",
+   "«Unas 25 horas por caso» × 62 laborales en un semestre ≈ 1,550 horas para dos abogados → ~30 h/semana solo laboral, más civil y familia: la estimación o la carga no cuadran; se pregunta, no se concluye.",
+   "Procedimiento dice que el Dr. Vargas lleva vencimientos en su agenda vs declaración «se nos han pasado dos plazos»."
+  ],
+  "faltantes_deliberados": [
+   "Excel: columna horas_estimadas vacía en todos los expedientes → rentabilidad por servicio DESCONOCIDA (resultado válido, se dice).",
+   "Excel: cobrado vacío en parte de los expedientes → cobranza pendiente no sumable.",
+   "Tarifario 2025: vigencia no confirmada en 2026.",
+   "Sin registro de tiempo de respuesta al cliente → estándar «48 horas» no medible hoy."
+  ]
+ },
+ "casos_dificiles": {
+  "informacion_desconocida": "Vargas: ganancia_mes «No lo sé», horas por expediente vacías → el sistema debe guardar «desconocido», no 0.",
+  "documento_incompleto": "Lucero: Inventario con 40 artículos sin costo; Gastos con celdas vacías → se dice qué falta, nunca un promedio inventado.",
+  "contradiccion": "Lucero: stock 40,000 declarado vs >70,000 a costo en Excel → ambas cifras quedan declarado/extraído pendientes.",
+  "falla_proveedor": "Proveedor falso (src/lib/ai/simulador.ts) lanzando AIProviderPausedError (402) en medio de la extracción.",
+  "reintento_misma_operacion": "El mismo POST de subida/extracción dos veces → un solo trabajo (clave de idempotencia determinista).",
+  "usuario_sin_acceso": "El dueño de Vargas pide /api/findings?company_id=<Lucero> → 403 y rastro en auditoría.",
+  "cambio_version_linea_base": "Lucero: línea base v1 con utilidad 8,000 declarada; corrección a v2 tras costos completos; los cortes anteriores siguen refiriendo v1."
+ }
+}

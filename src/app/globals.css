@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "../design/tokens.css";
+@import "../design/tablero.css";
 
 @theme inline {
   --color-papel: var(--papel);
@@ -12,6 +13,7 @@
   --color-caducado: var(--caducado);
   --color-contradicho: var(--contradicho);
   --radius-radio: var(--radio);
+  --radius-tarjeta: var(--radio-tarjeta);
 }
 
 /* PWA / iPhone-iPad: con viewport-fit=cover el contenido respeta las zonas seguras (notch, barra inferior). */

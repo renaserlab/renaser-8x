@@ -15,7 +15,9 @@ export default async function Activos({ searchParams }: { searchParams: Promise<
   const sb = supabaseAdmin();
   const [{ data }, { data: findings }, { data: emp }, { data: emp2 }] = await Promise.all([
     sb.from("company_assets").select("clave,estado,nota,borrador,faltantes,implementacion,propuesta,propuesta_cambios,propuesta_estado").eq("company_id", c.companyId),
-    sb.from("findings").select("patron,pilar,titulo,impacto,estado_revision").eq("company_id", c.companyId).neq("estado_revision", "rechazado").eq("requiere_validacion", false).limit(40),
+    // Solo conclusiones dictan qué construir: sin validación pendiente y NO provisionales (un hallazgo formado con
+    // afirmaciones que nadie confirmó no manda a construir un documento). El filtro va en la consulta, no al pintar.
+    sb.from("findings").select("patron,pilar,titulo,impacto,estado_revision").eq("company_id", c.companyId).neq("estado_revision", "rechazado").eq("requiere_validacion", false).or("provisional.is.null,provisional.eq.false").limit(40),
     sb.from("companies").select("etapa_negocio").eq("id", c.companyId).single(),
     sb.from("companies").select("nombre,ficha").eq("id", c.companyId).single(),
   ]);

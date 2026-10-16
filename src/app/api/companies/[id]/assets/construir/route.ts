@@ -1,6 +1,6 @@
 import { protegido, ok, fallo, leerJSON, exigirAcceso } from "@/lib/api";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { encolar, PRIORIDAD, claveIdempotente } from "@/lib/jobs/queue";
+import { encolar, PRIORIDAD, claveIdempotente, rondaDe, canonico } from "@/lib/jobs/queue";
 import { BLOQUES_ACTIVOS } from "@/lib/activos";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -19,6 +19,10 @@ export const POST = protegido<Ctx>({ cupo: "ia" }, async (perfil, req, ctx) => {
   if (!b.clave || !CLAVES.has(b.clave)) return fallo("Activo desconocido.");
   const sb = supabaseAdmin();
   await sb.from("company_assets").upsert({ company_id: id, bloque: b.clave.split(".")[0], clave: b.clave, estado: "construyendo", updated_at: new Date().toISOString() }, { onConflict: "company_id,clave" });
-  const job = await encolar({ company_id: id, tipo: "construir_activo", payload: { clave: b.clave, respuestas: (b.respuestas ?? []).slice(0, 5) }, prioridad: PRIORIDAD.proceso_voz, idempotency_key: claveIdempotente(["construir", id, b.clave, Date.now()]) });
+  const respuestas = (b.respuestas ?? []).slice(0, 5);
+  // La clave es «la construcción número N de este activo con estas respuestas», no la hora: un doble
+  // clic devuelve el mismo trabajo; cuando esa construcción termina, la siguiente petición abre la N+1.
+  const ronda = await rondaDe("construir_activo", id, { clave: b.clave });
+  const job = await encolar({ company_id: id, tipo: "construir_activo", payload: { clave: b.clave, respuestas }, prioridad: PRIORIDAD.proceso_voz, idempotency_key: claveIdempotente(["construir", id, b.clave, `ronda:${ronda}`, canonico(respuestas)]) });
   return ok({ job_id: job.id });
 });

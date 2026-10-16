@@ -1,0 +1,227 @@
+{
+  "que_es": "Orden en que aplican los archivos SQL de esta carpeta sobre una base vacía: cada archivo solo depende de los anteriores. Lo lee tests/sql/aplicar.ts (Postgres embebido, PGlite). Cuando dos órdenes eran válidos se eligió el cronológico, por la fecha de cabecera de cada migración y, a igual día, por la hora del archivo. Un archivo nuevo en esta carpeta debe entrar aquí: tests/sql/esquema-aplica.test.ts falla si falta.",
+  "archivos": [
+    {
+      "archivo": "schema.sql",
+      "depende_de": [],
+      "por_que": "Esquema base: tablas, funciones de cola, RLS, vistas, storage, realtime. Todo lo demás lo da por hecho."
+    },
+    {
+      "archivo": "migracion-gobierno.sql",
+      "depende_de": [
+        "schema.sql"
+      ],
+      "por_que": "29-08. Crea audit_log, rate_limits, error_log; añade columnas a deliverables, users y participants; usa mis_empresas() y es_consultor()."
+    },
+    {
+      "archivo": "migracion-circuito.sql",
+      "depende_de": [
+        "schema.sql"
+      ],
+      "por_que": "29-08. Tabla circuito y sus tres funciones. Solo necesita los roles."
+    },
+    {
+      "archivo": "migracion-mediciones.sql",
+      "depende_de": [
+        "schema.sql"
+      ],
+      "por_que": "29-08. Tabla mediciones; añade medicion_id a checkpoints."
+    },
+    {
+      "archivo": "migracion-evidencia-indicadores.sql",
+      "depende_de": [
+        "schema.sql"
+      ],
+      "por_que": "29-08. Tablas evidencias, acuses, indicadores; añade columnas a actions."
+    },
+    {
+      "archivo": "migracion-borrado.sql",
+      "depende_de": [
+        "schema.sql"
+      ],
+      "por_que": "30-08. Rehace la clave foránea de cases.company_id."
+    },
+    {
+      "archivo": "migracion-borrado-cascada.sql",
+      "depende_de": [
+        "schema.sql"
+      ],
+      "por_que": "31-08. Rehace diez claves foráneas del esquema base."
+    },
+    {
+      "archivo": "migracion-borrado-cascada2.sql",
+      "depende_de": [
+        "schema.sql",
+        "migracion-gobierno.sql"
+      ],
+      "por_que": "31-08. Rehace deliverables_aprobado_por_fkey y deliverables_reemplaza_a_fkey: esas columnas las crea migracion-gobierno."
+    },
+    {
+      "archivo": "migracion-sipoc-madurez.sql",
+      "depende_de": [
+        "schema.sql"
+      ],
+      "por_que": "05-09. Columnas en processes."
+    },
+    {
+      "archivo": "migracion-sop-materiales.sql",
+      "depende_de": [
+        "schema.sql"
+      ],
+      "por_que": "05-09. Columna en sops."
+    },
+    {
+      "archivo": "migracion-eventos.sql",
+      "depende_de": [
+        "schema.sql"
+      ],
+      "por_que": "12-09. Tabla eventos."
+    },
+    {
+      "archivo": "migracion-eventos-ventana.sql",
+      "depende_de": [
+        "migracion-eventos.sql"
+      ],
+      "por_que": "12-09. eventos_recientes() devuelve setof eventos."
+    },
+    {
+      "archivo": "migracion-torre.sql",
+      "depende_de": [
+        "schema.sql"
+      ],
+      "por_que": "27-09. Funciones de agregación sobre token_usage y jobs."
+    },
+    {
+      "archivo": "migracion-deriva-esquema.sql",
+      "depende_de": [
+        "schema.sql"
+      ],
+      "por_que": "13-10. Lo que producción tiene y el repo no describía (decisión D2): 7 tablas, 12 columnas, políticas inferidas. Requiere es_consultor() y mis_empresas() de schema.sql. Va ANTES de migracion-procedencia.sql porque crea org_puestos, que esa migración altera."
+    },
+    {
+      "archivo": "migracion-procedencia.sql",
+      "depende_de": [
+        "schema.sql",
+        "migracion-deriva-esquema.sql"
+      ],
+      "por_que": "27-09. Columnas en jobs, token_usage, processes y org_puestos; cadena_de_trabajo(). La línea 26 altera org_puestos, tabla que solo migracion-deriva-esquema.sql crea en este repo: sin ella, aquí no aplica."
+    },
+    {
+      "archivo": "migracion-huella-agentes.sql",
+      "depende_de": [
+        "schema.sql"
+      ],
+      "por_que": "27-09. Tabla agente_huella; siembra desde token_usage."
+    },
+    {
+      "archivo": "migracion-decisiones.sql",
+      "depende_de": [
+        "schema.sql"
+      ],
+      "por_que": "27-09. Tablas decisiones y decision_historial; referencia jobs y users."
+    },
+    {
+      "archivo": "migracion-autoridad.sql",
+      "depende_de": [
+        "schema.sql"
+      ],
+      "por_que": "13-10 (R18.2). Columna users.autoridad con su check; aditiva e idempotente."
+    },
+    {
+      "archivo": "migracion-claims-archivo.sql",
+      "depende_de": [
+        "schema.sql"
+      ],
+      "por_que": "13-10. Tabla claims_archivo (referencia sources, companies, users); solo service_role."
+    },
+    {
+      "archivo": "migracion-evidencia-dimensiones.sql",
+      "depende_de": [
+        "schema.sql",
+        "migracion-deriva-esquema.sql"
+      ],
+      "por_que": "13-10 (R10.3, R10.4, R11.4). Columnas aditivas en sources, claims, findings y company_metricas (esta última la crea migracion-deriva-esquema.sql): autor, período, fidelidad, revisión, comprobación, confianza, impacto potencial, provisional, origen del número."
+    },
+    {
+      "archivo": "migracion-entrada-y-direccion.sql",
+      "depende_de": [
+        "schema.sql"
+      ],
+      "por_que": "13-10 (R7.1, R8.1, R9.3, R16.3). Amplía el check de interview_sessions.tipo con entrada_breve; columnas de certeza y síntesis; tabla ficha_direccion versionada; país/moneda/idioma/zona por empresa; tabla lineas_producto para el costeo."
+    },
+    {
+      "archivo": "migracion-jobs-cliente-lectura.sql",
+      "depende_de": [
+        "schema.sql"
+      ],
+      "por_que": "13-10 (sección 17). Política de solo lectura del cliente sobre jobs de sus empresas, para que el progreso en vivo (Realtime) llegue al portal."
+    },
+    {
+      "archivo": "migracion-plan-kpi-linea-base.sql",
+      "depende_de": [
+        "schema.sql",
+        "migracion-mediciones.sql",
+        "migracion-evidencia-indicadores.sql"
+      ],
+      "por_que": "13-10 (R12, R13, R14). Línea base versionada (congelar_medicion ya no borra; los cortes referencian su versión); actas de aceptación; acciones con los 14 campos, estados de Dirección e historial; indicadores completos con historia de valores; revisiones semanales."
+    },
+    {
+      "archivo": "migracion-excelencia-y-cartera.sql",
+      "depende_de": [
+        "schema.sql",
+        "migracion-evidencia-indicadores.sql"
+      ],
+      "por_que": "13-10 (R15.1, R16.1). Tabla iniciativas (Nivel 2: hipotesis, evidencia, fuentes aportadas, criterios continuar/ajustar/detener) con historial; columnas de cartera en companies (consultor responsable, nivel y alcance contratado, proxima decision)."
+    },
+    {
+      "archivo": "migracion-revision-revisada.sql",
+      "depende_de": [
+        "schema.sql",
+        "migracion-plan-kpi-linea-base.sql"
+      ],
+      "por_que": "13-10 (R13.2). Columnas aditivas en revisiones_semanales (tabla que crea migracion-plan-kpi-linea-base.sql): revisada_por y revisada_at, quién marcó la semana como revisada y cuándo; creada_por deja de hacer de marca de revisión."
+    },
+    {
+      "archivo": "migracion-cifra-desplazada.sql",
+      "depende_de": [
+        "schema.sql",
+        "migracion-deriva-esquema.sql"
+      ],
+      "por_que": "13-10 (R10, R19). Columna company_metricas.cifra_desplazada: conserva la cifra declarada o extraída que una escritura pisa, para que el contraste entre ambas exista en producto."
+    },
+    {
+      "archivo": "migracion-acciones-solo-por-la-api.sql",
+      "depende_de": [
+        "schema.sql",
+        "migracion-plan-kpi-linea-base.sql"
+      ],
+      "por_que": "13-10 (R12, R18). Retira la politica cliente_actions_upd y el permiso de escritura del rol del navegador sobre actions y accion_historial: las acciones solo cambian por la aplicacion (maquina de estados, autoridad, historial). No toca datos."
+    },
+    {
+      "archivo": "migracion-procesos-importados.sql",
+      "depende_de": [
+        "schema.sql"
+      ],
+      "por_que": "13-10 (R9.2). processes.version admite sin_dibujar y origen admite importado; el primer paso dibujado lo pasa a as_is (disparador). No borra datos."
+    },
+    {
+      "archivo": "migracion-lineas-producto-cliente.sql",
+      "depende_de": [
+        "schema.sql",
+        "migracion-entrada-y-direccion.sql"
+      ],
+      "por_que": "13-10 (R9.3). El dueño lee lineas_producto por una vista sin decision ni motivo; se retira la politica que dejaba pasar la fila entera."
+    },
+    {
+      "archivo": "migracion-vistas-cliente-solo-lectura.sql",
+      "depende_de": [
+        "schema.sql"
+      ],
+      "por_que": "13-10 (R18). claims_cliente y participants_cliente quedan solo para leer tambien para authenticated: un dueño podia escribir en participants a traves de la vista."
+    }
+  ],
+  "notas": [
+    "Aditivo: ningún archivo de esta lista borra tablas ni datos; los `drop` que hay son de políticas, funciones, vistas y constraints que se recrean en la línea siguiente.",
+    "tests/sql/esquema-aplica.test.ts comprueba que todo archivo .sql de esta carpeta esté en esta lista: un archivo fuera de la lista es un archivo sin verificar."
+  ]
+}

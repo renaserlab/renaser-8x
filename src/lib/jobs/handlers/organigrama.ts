@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { correrOrganizador } from "@/lib/ai/agents/organizador";
 import { comoDato } from "@/lib/rules/patrones";
+import { registrarLlamada } from "@/lib/db/queries";
 
 type Job = { id: string; company_id: string; payload: Record<string, unknown> };
 
@@ -17,7 +18,8 @@ export async function handleEstudioOrganigrama(job: Job) {
     sb.from("claims").select("texto,pilar,estado").eq("company_id", job.company_id).in("estado", ["confirmado", "sin_verificar"]).order("created_at", { ascending: false }).limit(80),
     sb.from("participants").select("nombre,puesto,rol").eq("company_id", job.company_id),
     sb.from("org_puestos").select("nombre,mision,decide,persona,respaldo,reporta_a,origen").eq("company_id", job.company_id),
-    sb.from("findings").select("pilar,titulo,causa_raiz,impacto").eq("company_id", job.company_id).neq("estado_revision", "rechazado").limit(20),
+    // Lo provisional (sin ninguna afirmación confirmada) no entra al estudio: no es conclusión (R10.4).
+    sb.from("findings").select("pilar,titulo,causa_raiz,impacto").eq("company_id", job.company_id).neq("estado_revision", "rechazado").or("provisional.is.null,provisional.eq.false").limit(20),
     sb.from("processes").select("nombre,version,confirmacion").eq("company_id", job.company_id).eq("version", "as_is"),
   ]);
   if (!c) throw new Error("empresa no encontrada");
@@ -53,6 +55,8 @@ export async function handleEstudioOrganigrama(job: Job) {
   );
 
   const r = await correrOrganizador(contexto);
+  // Lo que no se registra no existe para la torre: sin esta línea el organizador tenía cero filas en token_usage.
+  await registrarLlamada(job.company_id, job.id, "organizador", r);
   // El vigente se reemplaza; la historia se conserva: cada estudio es una versión documental.
   const { error } = await sb.from("org_estudio").upsert(
     { company_id: job.company_id, contenido: r.data, updated_at: new Date().toISOString() },

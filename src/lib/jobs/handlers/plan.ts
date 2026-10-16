@@ -1,11 +1,16 @@
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { correrPlanificador, correrRedactor, correrAdmision } from "@/lib/ai/agents/planificador";
 import { correrEstratega } from "@/lib/ai/agents/estratega";
-import { hallazgosAprobadosConEvidencia, procesoComoJSON, registrarLlamada, etiquetaFuente, claimsDeEmpresa } from "@/lib/db/queries";
+import { comoDato } from "@/lib/rules/patrones";
+import { hallazgosAprobadosConEvidencia, soloConclusionesDeHoy, procesoComoJSON, registrarLlamada, etiquetaFuente, claimsDeEmpresa } from "@/lib/db/queries";
 import { detectarAnomalias, tablaResultadosComoTexto, type Metrica } from "@/lib/rules/anomalias";
 import { progreso } from "../queue";
 import { programarFrentes } from "@/lib/rules/plan";
 import type { SalidaRedactor } from "@/lib/schemas";
+import {
+  reconciliarPropuesta, resolverResponsable, fechasDeFrente, transicion, escribirTransicion, leerAccion, lineaBaseVigente,
+  MOTIVO_NO_APARECE, MOTIVO_REAPARECE, type Existente, type Participante, type Actor, type AccionPlan,
+} from "@/lib/plan-intervencion";
 
 type Job = { id: string; company_id: string; payload: Record<string, unknown> };
 
@@ -13,15 +18,17 @@ type Job = { id: string; company_id: string; payload: Record<string, unknown> };
 export async function handlePlanEstrategico(job: Job) {
   const sb = supabaseAdmin();
   await progreso(job.id, "Reuniendo toda la evidencia de la empresa");
-  const [{ data: empresa }, { data: findings }, { data: metricasRaw }, { data: sueno }, { data: activos }, { data: participantes }] = await Promise.all([
+  const [{ data: empresa }, { data: hallazgosLeidos }, { data: metricasRaw }, { data: sueno }, { data: activos }, { data: participantes }] = await Promise.all([
     sb.from("companies").select("nombre,sector,ficha,modelo_operativo,etapa_negocio").eq("id", job.company_id).single(),
-    sb.from("findings").select("titulo,causa_raiz,impacto,pilar,patron,recomendacion,filtros").eq("company_id", job.company_id).neq("estado_revision", "rechazado").limit(40),
+    sb.from("findings").select("titulo,causa_raiz,impacto,pilar,patron,recomendacion,filtros,origen").eq("company_id", job.company_id).neq("estado_revision", "rechazado").or("provisional.is.null,provisional.eq.false").limit(40),
     sb.from("company_metricas").select("clave,periodo,valor,valor_texto,estado,nota").eq("company_id", job.company_id).limit(80),
     sb.from("interview_responses").select("bloque,pregunta,respuesta, interview_sessions!inner(tipo,company_id)").eq("interview_sessions.company_id", job.company_id).not("respuesta", "is", null).limit(80),
     sb.from("company_assets").select("clave,estado,borrador,propuesta").eq("company_id", job.company_id).not("borrador", "is", null),
     sb.from("participants").select("nombre,puesto,rol").eq("company_id", job.company_id),
   ]);
-  if (!findings?.length) throw new Error("Todavía no hay hallazgos: corre el diagnóstico antes de pedir el plan estratégico.");
+  // Lo de la IA en un área que hoy no llega al mínimo de confirmadas tampoco entra, aunque su columna aún no lo diga.
+  const findings = await soloConclusionesDeHoy(job.company_id, hallazgosLeidos ?? []);
+  if (!findings.length) throw new Error("Todavía no hay hallazgos: corre el diagnóstico antes de pedir el plan estratégico.");
   const metricas = (metricasRaw ?? []) as Metrica[];
   const senales = detectarAnomalias(metricas);
   const ficha = (empresa?.ficha ?? {}) as Record<string, string>;
@@ -30,11 +37,11 @@ export async function handlePlanEstrategico(job: Job) {
   const contexto = [
     `EMPRESA: ${empresa?.nombre} · ${empresa?.sector ?? ""} · ${ficha.personas ?? "?"} personas · etapa ${empresa?.etapa_negocio ?? "?"} · modelo ${((empresa?.modelo_operativo as string[]) ?? []).join(",") || "?"}`,
     `PERSONAS REALES (para responsables): ${(participantes ?? []).map((p) => `${p.nombre} (${p.puesto ?? p.rol})`).join(" · ") || "solo el dueño"}`,
-    `HALLAZGOS (${findings.length}):\n${findings.map((f) => `- [${f.impacto} · ${f.pilar}${(f.filtros as { preserva?: boolean })?.preserva ? " · FORTALEZA" : ""}] ${f.titulo}. Causa: ${f.causa_raiz ?? ""}${f.recomendacion ? `. Rec: ${f.recomendacion}` : ""}`).join("\n")}`,
-    `NÚMEROS CON ESTADO:\n${tablaResultadosComoTexto(metricas)}`,
-    senales.length ? `SEÑALES DEL MOTOR:\n${senales.map((s) => `- ${s.titulo}: ${s.detalle}`).join("\n")}` : "",
-    `LO QUE EL DUEÑO CONTÓ (sueño, historia, números):\n${(sueno ?? []).slice(0, 60).map((s) => `- ${s.pregunta} → ${String(s.respuesta).slice(0, 200)}`).join("\n")}`,
-    (activos ?? []).length ? `DOCUMENTOS YA CONSTRUIDOS:\n${(activos ?? []).map((a) => `## ${a.clave}\n${String(a.propuesta ?? a.borrador).slice(0, 1200)}`).join("\n\n")}` : "",
+    comoDato(`HALLAZGOS (${findings.length})`, findings.map((f) => `- [${f.impacto} · ${f.pilar}${(f.filtros as { preserva?: boolean })?.preserva ? " · FORTALEZA" : ""}] ${f.titulo}. Causa: ${f.causa_raiz ?? ""}${f.recomendacion ? `. Rec: ${f.recomendacion}` : ""}`).join("\n")),
+    comoDato("NÚMEROS CON ESTADO", tablaResultadosComoTexto(metricas)),
+    senales.length ? comoDato("SEÑALES DEL MOTOR", senales.map((s) => `- ${s.titulo}: ${s.detalle}`).join("\n")) : "",
+    comoDato("LO QUE EL DUEÑO CONTÓ (sueño, historia, números)", (sueno ?? []).slice(0, 60).map((s) => `- ${s.pregunta} → ${String(s.respuesta).slice(0, 200)}`).join("\n")),
+    (activos ?? []).length ? comoDato("DOCUMENTOS YA CONSTRUIDOS", (activos ?? []).map((a) => `## ${a.clave}\n${String(a.propuesta ?? a.borrador).slice(0, 1200)}`).join("\n\n")) : "",
   ].filter(Boolean).join("\n\n");
 
   const r = await correrEstratega(contexto);
@@ -45,7 +52,10 @@ export async function handlePlanEstrategico(job: Job) {
   return { version: (prev?.[0]?.version ?? 0) + 1, prioridades: r.data.prioridades.length };
 }
 
-/** PLANIFICADOR → actions (45 días en 7 semanas, máx. 3 abiertos). */
+/**
+ * PLANIFICADOR → actions (45 días en 7 semanas, máx. 3 abiertos). Las acciones nacen PROPUESTAS y las
+ * aprueba la consultora; nada se borra: lo que ya no se propone se pospone con motivo (plan-intervencion.ts).
+ */
 export async function handlePlanificar(job: Job) {
   const sb = supabaseAdmin();
   const hallazgos = await hallazgosAprobadosConEvidencia(job.company_id);
@@ -58,10 +68,8 @@ export async function handlePlanificar(job: Job) {
     partes.push(`TO-BE "${p.nombre}":\n${procesoComoJSON(n ?? [], e ?? [])}`);
   }
   const contexto = [
-    `HALLAZGOS APROBADOS:`,
-    hallazgos.map((h) => `[${h.id}] (${h.pilar}, impacto ${h.impacto}${(h.filtros as { preserva?: boolean })?.preserva ? ", FORTALEZA A PRESERVAR" : ""}) ${h.titulo}. Causa: ${h.causa_raiz}. Recomendación: ${h.recomendacion ?? "(bloqueada por filtro)"}`).join("\n"),
-    `PROCESOS TO-BE:`,
-    partes.join("\n\n") || "(ninguno)",
+    comoDato("HALLAZGOS APROBADOS", hallazgos.map((h) => `[${h.id}] (${h.pilar}, impacto ${h.impacto}${(h.filtros as { preserva?: boolean })?.preserva ? ", FORTALEZA A PRESERVAR" : ""}) ${h.titulo}. Causa: ${h.causa_raiz}. Recomendación: ${h.recomendacion ?? "(bloqueada por filtro)"}`).join("\n")),
+    comoDato("PROCESOS TO-BE", partes.join("\n\n") || "(ninguno)"),
   ].join("\n\n");
   const r = await correrPlanificador(contexto);
   await registrarLlamada(job.company_id, job.id, "planificador", r);
@@ -69,13 +77,64 @@ export async function handlePlanificar(job: Job) {
   const validos = new Set(hallazgos.map((h) => h.id));
   const frentes = programarFrentes(r.data.frentes, validos);
   const inicio = new Date();
-  await sb.from("actions").delete().eq("company_id", job.company_id).eq("fase", "implementacion").eq("estado", "pendiente");
-  for (const f of frentes) {
-    const vence = new Date(inicio);
-    vence.setDate(vence.getDate() + f.semana_cierre * 7);
-    await sb.from("actions").insert({ company_id: job.company_id, finding_id: f.finding_id, prioridad: f.prioridad, fase: "implementacion", semana_inicio: f.semana_inicio, semana_cierre: f.semana_cierre, accion: f.accion, responsable: f.responsable, kpi: f.kpi, evidencia: f.evidencia, impacto: f.impacto, vence_at: vence.toISOString().slice(0, 10) });
+
+  // EL PLANIFICADOR NO BORRA (sección 12). Lo que la consultora ya decidió (aprobado, en ejecución, reportado,
+  // verificado, rechazado, bloqueado) no se toca. Lo propuesto que ya no viene se pospone con motivo y
+  // queda en el historial; lo idéntico no se duplica; lo pospuesto que reaparece se vuelve a proponer.
+  const [{ data: existentes }, { data: participantes }, base] = await Promise.all([
+    sb.from("actions").select("id,finding_id,accion,estado,verificado_at").eq("company_id", job.company_id).eq("fase", "implementacion"),
+    sb.from("participants").select("id,nombre,puesto,rol").eq("company_id", job.company_id),
+    lineaBaseVigente(job.company_id),
+  ]);
+  const plan = reconciliarPropuesta((existentes ?? []) as Existente[], frentes);
+  const sistema: Actor = { id: null, rol: "sistema" };
+
+  for (const e of plan.posponer) {
+    const accion = await leerAccion(e.id);
+    if (!accion) continue;
+    const t = transicion(accion, "posponer", sistema, { motivo: MOTIVO_NO_APARECE, implica: "deja de estar en la propuesta; la consultora puede volver a proponerla", ahora: inicio });
+    if (t.ok) await escribirTransicion(accion, t);
   }
-  return { frentes: frentes.length };
+  for (const e of plan.reproponer) {
+    const accion = await leerAccion(e.id);
+    if (!accion) continue;
+    const t = transicion(accion, "proponer", sistema, { motivo: MOTIVO_REAPARECE, ahora: inicio });
+    if (t.ok) await escribirTransicion(accion, t);
+  }
+
+  // Lo que el planificador puede llenar hoy: acción, responsable (texto y, si coincide, la persona), indicador
+  // en texto, prueba esperada (que es el criterio de aceptación), impacto, semanas y fechas, y la versión
+  // exacta de la línea base vigente. Si el contrato del planificador algún día trae objetivo, resultado
+  // esperado, riesgos, supuestos, recursos u obligaciones, entran aquí tal cual, rotulados como propuesta.
+  let sinResponsable = 0;
+  for (const f of plan.crear) {
+    const extra = f as Partial<Pick<AccionPlan, "objetivo_empresarial" | "resultado_esperado" | "riesgos" | "supuestos" | "recursos" | "obligaciones_cliente" | "obligaciones_renaser" | "restriccion_oportunidad" | "entregable">>;
+    const persona = resolverResponsable(f.responsable, (participantes ?? []) as Participante[]);
+    if (!persona) sinResponsable++;
+    const fechas = fechasDeFrente(inicio, f.semana_inicio, f.semana_cierre);
+    const { data: creada, error } = await sb
+      .from("actions")
+      .insert({
+        company_id: job.company_id, finding_id: f.finding_id, prioridad: f.prioridad, fase: "implementacion",
+        semana_inicio: f.semana_inicio, semana_cierre: f.semana_cierre, accion: f.accion, responsable: f.responsable, kpi: f.kpi,
+        evidencia: f.evidencia, impacto: f.impacto, vence_at: fechas.vence_at, fecha_inicio: fechas.fecha_inicio,
+        estado: "propuesto", es_prioridad: true, responsable_participant_id: persona?.id ?? null, linea_base_id: base?.id ?? null,
+        criterio_aceptacion: f.evidencia || null,
+        objetivo_empresarial: extra.objetivo_empresarial ?? null, resultado_esperado: extra.resultado_esperado ?? null,
+        restriccion_oportunidad: extra.restriccion_oportunidad ?? null, entregable: extra.entregable ?? null,
+        riesgos: extra.riesgos ?? null, supuestos: extra.supuestos ?? null, recursos: extra.recursos ?? null,
+        obligaciones_cliente: extra.obligaciones_cliente ?? null, obligaciones_renaser: extra.obligaciones_renaser ?? null,
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(`No se pudo guardar un frente del plan: ${error.message}`);
+    await sb.from("accion_historial").insert({
+      action_id: creada.id, accion: "proponer", antes: null,
+      despues: { estado: "propuesto", responsable_participant_id: persona?.id ?? null, linea_base_id: base?.id ?? null },
+      motivo: `propuesta del planificador (trabajo ${job.id})`, actor_id: null, actor_rol: "sistema",
+    });
+  }
+  return { frentes: plan.crear.length, pospuestas: plan.posponer.length, repropuestas: plan.reproponer.length, iguales: plan.iguales, sin_responsable: sinResponsable };
 }
 
 const TIPOS_DOC = [
@@ -134,7 +193,9 @@ export async function handleRedactarEntregables(job: Job) {
   const { data: empresa } = await sb.from("companies").select("nombre,sector").eq("id", job.company_id).single();
 
   const mapaProcesos: string[] = [];
-  for (const p of procs ?? []) {
+  // Solo lo dibujado y lo rediseñado: un proceso de la lista de la empresa que nadie ha dibujado (version
+  // 'sin_dibujar') no tiene mapa que redactar.
+  for (const p of (procs ?? []).filter((x) => x.version === "as_is" || x.version === "to_be")) {
     const [{ data: n }, { data: e }] = await Promise.all([sb.from("process_nodes").select("*").eq("process_id", p.id), sb.from("process_edges").select("*").eq("process_id", p.id)]);
     mapaProcesos.push(`${p.version.toUpperCase()} "${p.nombre}":\n${procesoComoJSON(n ?? [], e ?? [])}`);
   }
@@ -162,7 +223,7 @@ export async function handleRedactarEntregables(job: Job) {
   const problemas: string[] = [];
   for (const d of TIPOS_DOC) {
     await progreso(job.id, `Redactando: ${d.titulo}`);
-    const r = await correrRedactor(`DOCUMENTO A REDACTAR: ${d.titulo}. ${d.guia}\n\n${base}`);
+    const r = await correrRedactor(`DOCUMENTO A REDACTAR: ${d.titulo}. ${d.guia}\n\n${comoDato("EVIDENCIA DE LA EMPRESA", base)}`);
     await registrarLlamada(job.company_id, job.id, "redactor", r);
     const v = verificarDocumento(r.data);
     problemas.push(...v.problemas);

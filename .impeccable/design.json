@@ -1,0 +1,171 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-13T00:00:00-05:00",
+  "title": "Design System: 8X · RENASER Consulting",
+  "extensions": {
+    "colorMeta": {
+      "marca": { "role": "primary", "displayName": "Azul Acción", "canonical": "#2f6fe4", "tonalRamp": ["#0b1d45", "#14306f", "#1d4499", "#2f6fe4", "#7ea3ef", "#bcd0f7", "#e3ebfc", "#f3f6fc"] },
+      "tinta": { "role": "primary", "displayName": "Tinta Noche", "canonical": "#0e1a2b", "tonalRamp": ["#0e1a2b", "#22324d", "#3a4a63", "#56657c", "#8a97ab", "#b9c4d6", "#e6ecf5", "#f3f6fc"] },
+      "tinta-hover": { "role": "primary", "displayName": "Tinta Hover", "canonical": "#22324d" },
+      "azul-medio": { "role": "secondary", "displayName": "Azul Medio", "canonical": "#7ea3ef" },
+      "azul-claro": { "role": "secondary", "displayName": "Azul Claro", "canonical": "#bcd0f7" },
+      "azul-velo": { "role": "secondary", "displayName": "Velo Azul", "canonical": "#e3ebfc" },
+      "confirmado": { "role": "tertiary", "displayName": "Verde Confirmado", "canonical": "#127049", "tonalRamp": ["#0a3d28", "#0e5537", "#127049", "#2f8d63", "#5fae8a", "#9dd0b7", "#c9e8d9", "#e2f4ec"] },
+      "confirmado-velo": { "role": "tertiary", "displayName": "Velo Confirmado", "canonical": "#e2f4ec" },
+      "caducado": { "role": "tertiary", "displayName": "Ámbar Caducado", "canonical": "#8d5609", "tonalRamp": ["#4a2d04", "#6b4107", "#8d5609", "#b0741f", "#d09a4c", "#e6c189", "#f3dcb6", "#fbf0dc"] },
+      "caducado-velo": { "role": "tertiary", "displayName": "Velo Caducado", "canonical": "#fbf0dc" },
+      "contradicho": { "role": "tertiary", "displayName": "Rojo Contradicho", "canonical": "#bf3b26", "tonalRamp": ["#5e1a10", "#8a2819", "#bf3b26", "#d5604c", "#e48b7b", "#efb4a9", "#f6d2cb", "#fbe6e2"] },
+      "contradicho-velo": { "role": "tertiary", "displayName": "Velo Contradicho", "canonical": "#fbe6e2" },
+      "sin-verificar": { "role": "tertiary", "displayName": "Gris Sin Verificar", "canonical": "#5f6b7d" },
+      "papel": { "role": "neutral", "displayName": "Papel", "canonical": "#ffffff" },
+      "fondo-cielo": { "role": "neutral", "displayName": "Cielo", "canonical": "#e4ecfb", "tonalRamp": ["#5a7bc4", "#86a3dd", "#b3c7ee", "#d3e0f9", "#e1e9fb", "#e4ecfb", "#edf2fd", "#f5f8fe"] },
+      "grafito": { "role": "neutral", "displayName": "Grafito", "canonical": "#56657c" },
+      "tenue": { "role": "neutral", "displayName": "Tenue", "canonical": "#8a97ab" },
+      "linea": { "role": "neutral", "displayName": "Línea", "canonical": "#e6ecf5" },
+      "suave": { "role": "neutral", "displayName": "Suave", "canonical": "#f3f6fc" },
+      "raya": { "role": "neutral", "displayName": "Raya (sin dato)", "canonical": "#cbd4e3" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Saludo", "purpose": "Saludo del tablero; el nombre en 750." },
+      "headline": { "displayName": "Título de pantalla", "purpose": "Título dentro de la hoja." },
+      "numeral": { "displayName": "Numeral", "purpose": "La cifra protagonista; Manrope con cifras tabulares." },
+      "title": { "displayName": "Sección", "purpose": "Sección dentro de una hoja." },
+      "card-title": { "displayName": "Título de tarjeta", "purpose": "Cabeza de cada tarjeta del tablero." },
+      "body": { "displayName": "Cuerpo", "purpose": "Texto de lectura, máximo 68ch." },
+      "data": { "displayName": "Dato", "purpose": "Celdas y datos en línea, tabulares." },
+      "label": { "displayName": "Rótulo", "purpose": "Rótulos de campo, leyendas, títulos del menú; nunca en mayúsculas." },
+      "document": { "displayName": "Documento", "purpose": "Solo entregables impresos." }
+    },
+    "shadows": [
+      { "name": "sombra", "value": "0 1px 2px rgba(17, 41, 92, 0.05), 0 14px 34px -14px rgba(28, 72, 168, 0.22)", "purpose": "Hojas, tarjetas, marca de cabecera, pestaña activa." },
+      { "name": "sombra-flota", "value": "0 1px 2px rgba(17, 41, 92, 0.08), 0 18px 40px -16px rgba(14, 26, 43, 0.35)", "purpose": "Panel lateral y píldora inferior del celular." },
+      { "name": "globo", "value": "0 8px 22px -10px rgba(14, 26, 43, 0.35)", "purpose": "Globo de lectura del gráfico de línea." },
+      { "name": "foco-campo", "value": "0 0 0 3px var(--azul-velo)", "purpose": "Anillo de foco de los campos." },
+      { "name": "vidrio-pildora", "value": "background: rgba(255,255,255,0.86); backdrop-filter: saturate(1.4) blur(14px)", "purpose": "Único vidrio: la píldora flotante del celular." },
+      { "name": "rayado", "value": "repeating-linear-gradient(135deg, var(--raya) 0 2px, transparent 2px 6px)", "purpose": "Sin dato, y solo eso." },
+      { "name": "cielo", "value": "radial-gradient(760px 560px at 0% 0%, #f5f8fe 0%, rgba(245,248,254,0) 70%), linear-gradient(165deg, #edf2fd 0%, #e1e9fb 55%, #d3e0f9 100%)", "purpose": "Fondo fijo de html." }
+    ],
+    "motion": [
+      { "name": "ease-out", "value": "cubic-bezier(0.23, 1, 0.32, 1)", "purpose": "Curva de toda entrada y de la escala al presionar." },
+      { "name": "presionar", "value": "transform 160ms var(--ease-out); scale(0.94 a 0.98)", "purpose": "Respuesta al toque en botones, píldoras, filas y tarjetas enlazadas." },
+      { "name": "dur", "value": "200ms", "purpose": "Cambios de color de fondo, borde y texto." },
+      { "name": "aparece", "value": "220ms var(--ease-out), translateY(4px) y opacidad", "purpose": "Entrada de contenido." },
+      { "name": "panel-lateral", "value": "240ms al costado / 260ms desde abajo, var(--ease-out)", "purpose": "Apertura del panel de detalle." },
+      { "name": "movimiento-reducido", "value": "prefers-reduced-motion: reduce apaga animaciones y transiciones", "purpose": "Accesibilidad; ninguna animación pasa de 300ms." }
+    ],
+    "breakpoints": [
+      { "name": "telefono-chico", "value": "400px" },
+      { "name": "telefono", "value": "760px" },
+      { "name": "pildora-abajo", "value": "1023px" },
+      { "name": "lienzo-ancho", "value": "1120px" },
+      { "name": "tablero-compacto", "value": "1180px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Botón principal",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Píldora oscura de 44px; la acción de la pantalla.",
+      "html": "<button class=\"ds-boton\">Revisar y aceptar</button>",
+      "css": ".ds-boton { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 22px; border: 1px solid #0e1a2b; border-radius: 999px; background: #0e1a2b; color: #fff; font: 600 16px 'Public Sans', system-ui, sans-serif; cursor: pointer; transition: transform 160ms cubic-bezier(0.23,1,0.32,1), background-color 200ms ease, border-color 200ms ease; } .ds-boton:active { transform: scale(0.97); } .ds-boton:focus-visible { outline: 2px solid #2f6fe4; outline-offset: 2px; } @media (hover: hover) and (pointer: fine) { .ds-boton:hover { background: #22324d; border-color: #22324d; } }"
+    },
+    {
+      "name": "Botón secundario",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Píldora blanca con borde de línea.",
+      "html": "<button class=\"ds-boton-sec\">Ver detalle</button>",
+      "css": ".ds-boton-sec { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 22px; border: 1px solid #e6ecf5; border-radius: 999px; background: #fff; color: #0e1a2b; font: 600 16px 'Public Sans', system-ui, sans-serif; cursor: pointer; transition: transform 160ms cubic-bezier(0.23,1,0.32,1), background-color 200ms ease, border-color 200ms ease; } .ds-boton-sec:active { transform: scale(0.97); } .ds-boton-sec:focus-visible { outline: 2px solid #2f6fe4; outline-offset: 2px; } @media (hover: hover) and (pointer: fine) { .ds-boton-sec:hover { background: #e3ebfc; border-color: #bcd0f7; } }"
+    },
+    {
+      "name": "Campo",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Campo de 44px, radio 14px, ejemplo en cursiva tenue.",
+      "html": "<input class=\"ds-campo\" placeholder=\"Por ejemplo: 3 vendedoras\" />",
+      "css": ".ds-campo { width: 100%; min-height: 44px; padding: 10px 14px; border: 1px solid #e6ecf5; border-radius: 14px; background: #fff; color: #0e1a2b; font: 400 16px 'Public Sans', system-ui, sans-serif; transition: border-color 200ms ease, box-shadow 200ms ease; } .ds-campo::placeholder { color: #56657c; opacity: 0.6; font-style: italic; } .ds-campo:focus { border-color: #2f6fe4; outline: none; box-shadow: 0 0 0 3px #e3ebfc; } .ds-campo:focus::placeholder { opacity: 0.38; }"
+    },
+    {
+      "name": "Navegación en píldora",
+      "kind": "nav",
+      "refersTo": "nav-pill-active",
+      "description": "Destinos como círculos blancos con ícono de trazo; el activo es píldora tinta con su nombre.",
+      "html": "<nav class=\"ds-pildora\"><a href=\"#\" aria-current=\"page\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1z\"/></svg><span>Inicio</span></a><a href=\"#\" aria-label=\"Mi empresa\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 20V10M10 20V5M16 20v-7M21 20H3\"/></svg></a><a href=\"#\" aria-label=\"Tus documentos\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3.5 7.5a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z\"/></svg></a></nav>",
+      "css": ".ds-pildora { display: inline-flex; align-items: center; gap: 6px; padding: 5px; border-radius: 999px; background: rgba(255,255,255,0.55); border: 1px solid rgba(255,255,255,0.9); box-shadow: 0 1px 2px rgba(17,41,92,0.05); } .ds-pildora a { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; min-width: 40px; padding: 0 11px; border-radius: 999px; background: #fff; color: #0e1a2b; text-decoration: none; font: 600 13.5px 'Public Sans', system-ui, sans-serif; transition: transform 160ms cubic-bezier(0.23,1,0.32,1), background-color 200ms ease; } .ds-pildora a span { display: none; } .ds-pildora a[aria-current=page] { background: #0e1a2b; color: #fff; padding: 0 17px 0 13px; } .ds-pildora a[aria-current=page] span { display: inline; } .ds-pildora a:active { transform: scale(0.96); } .ds-pildora a:focus-visible { outline: 2px solid #2f6fe4; outline-offset: 2px; } .ds-pildora svg { width: 19px; height: 19px; } @media (hover: hover) and (pointer: fine) { .ds-pildora a:not([aria-current=page]):hover { background: #e3ebfc; } }"
+    },
+    {
+      "name": "Chips de estado",
+      "kind": "chip",
+      "refersTo": "chip-ok",
+      "description": "Píldora con punto; el único lugar donde el color dice estado.",
+      "html": "<span class=\"ds-estado ds-ok\">Al día</span> <span class=\"ds-estado ds-espera\">Por confirmar</span> <span class=\"ds-estado ds-alto\">Trabado</span> <span class=\"ds-estado ds-neutro\">Sin empezar</span>",
+      "css": ".ds-estado { white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; font: 650 12.5px 'Public Sans', system-ui, sans-serif; padding: 3px 10px; border-radius: 999px; } .ds-estado::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; } .ds-ok { color: #127049; background: #e2f4ec; } .ds-espera { color: #8d5609; background: #fbf0dc; } .ds-alto { color: #bf3b26; background: #fbe6e2; } .ds-neutro { color: #56657c; background: #f3f6fc; }"
+    },
+    {
+      "name": "Tarjeta de cifra",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Tarjeta blanca de 24px con cabeza, botón ir y cifra en Manrope.",
+      "html": "<div class=\"ds-tarjeta\"><div class=\"ds-cabeza\"><div><h2>Ventas del mes</h2><p>Setiembre</p></div><a class=\"ds-ir\" href=\"#\" aria-label=\"Ver\"><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M7 17 17 7M9 7h8v8\"/></svg></a></div><span class=\"ds-grande\"><small>S/</small>86,900</span></div>",
+      "css": ".ds-tarjeta { background: #fff; border-radius: 24px; box-shadow: 0 1px 2px rgba(17,41,92,0.05), 0 14px 34px -14px rgba(28,72,168,0.22); padding: 18px 20px; display: flex; flex-direction: column; gap: 28px; max-width: 320px; font-family: 'Public Sans', system-ui, sans-serif; color: #0e1a2b; } .ds-cabeza { display: flex; justify-content: space-between; gap: 12px; } .ds-cabeza h2 { margin: 0; font: 700 15.5px Manrope, sans-serif; letter-spacing: -0.01em; } .ds-cabeza p { margin: 2px 0 0; font-size: 13px; color: #56657c; } .ds-ir { width: 34px; height: 34px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: #f3f6fc; color: #0e1a2b; transition: transform 160ms cubic-bezier(0.23,1,0.32,1), background-color 200ms ease; } .ds-ir:active { transform: scale(0.94); } .ds-ir:focus-visible { outline: 2px solid #2f6fe4; outline-offset: 2px; } @media (hover: hover) and (pointer: fine) { .ds-ir:hover { background: #e3ebfc; } } .ds-grande { font: 750 30px/1 Manrope, sans-serif; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; } .ds-grande small { font-size: 16px; color: #56657c; margin-right: 4px; }"
+    },
+    {
+      "name": "Barritas con sin dato",
+      "kind": "custom",
+      "refersTo": "card",
+      "description": "Una barra por periodo; sin dato es el carril rayado entero, cero es una raya en la base, dicho sin confirmar es contorno.",
+      "html": "<div><div class=\"ds-barritas\"><span style=\"height:40%\"></span><span style=\"height:55%\"></span><span class=\"ds-vacia\"></span><span class=\"ds-cero\"></span><span class=\"ds-dicho\" style=\"height:70%\"></span><span class=\"ds-fuerte\" style=\"height:80%\"></span><span class=\"ds-fuerte\" style=\"height:100%\"></span></div><p class=\"ds-sin-dato\">Rayado: un mes sin venta contada</p></div>",
+      "css": ".ds-barritas { display: flex; align-items: flex-end; gap: 3px; height: 34px; } .ds-barritas span { width: 5px; border-radius: 3px; background: #bcd0f7; } .ds-barritas .ds-fuerte { background: #2f6fe4; } .ds-barritas .ds-vacia { height: 100%; background: repeating-linear-gradient(135deg, #b9c4d6 0 1.5px, #edf1f8 1.5px 3.5px); } .ds-barritas .ds-cero { height: 2px; background: #56657c; } .ds-barritas .ds-dicho { background: transparent; box-shadow: inset 0 0 0 1.5px #2f6fe4; } .ds-sin-dato { display: inline-flex; align-items: center; gap: 8px; margin: 8px 0 0; font: 400 13px 'Public Sans', system-ui, sans-serif; color: #56657c; } .ds-sin-dato::before { content: ''; width: 26px; height: 12px; border-radius: 4px; background: repeating-linear-gradient(135deg, #cbd4e3 0 2px, transparent 2px 6px); }"
+    },
+    {
+      "name": "Tabla con banda",
+      "kind": "custom",
+      "refersTo": "table-header",
+      "description": "Cabecera en banda de velo azul con extremos redondos; filas con línea fina.",
+      "html": "<table class=\"ds-tabla\"><thead><tr><th>Empresa</th><th>Fase</th><th>Estado</th></tr></thead><tbody><tr><td>Modas Lucero</td><td>Sistematización</td><td>Al día</td></tr><tr><td>Taller Rojas</td><td>Diagnóstico</td><td>Por confirmar</td></tr></tbody></table>",
+      "css": ".ds-tabla { width: 100%; border-collapse: separate; border-spacing: 0; font: 400 14px 'Public Sans', system-ui, sans-serif; color: #0e1a2b; } .ds-tabla th { text-align: left; padding: 11px 12px; font-size: 13px; font-weight: 600; background: #e3ebfc; } .ds-tabla th:first-child { border-radius: 12px 0 0 12px; } .ds-tabla th:last-child { border-radius: 0 12px 12px 0; } .ds-tabla td { padding: 13px 12px; border-bottom: 1px solid #e6ecf5; } .ds-tabla tr:last-child td { border-bottom: 0; } @media (hover: hover) and (pointer: fine) { .ds-tabla tbody tr:hover td { background: #f7f9fe; } }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Hojas blancas sobre el cielo",
+    "overview": "8X vive sobre un cielo azul suave que no se mueve, y todo lo que se lee está en hojas blancas muy redondeadas que flotan sobre él con una sombra azulada y difusa. Los tableros (portal del dueño y bandeja de la consultora) son una cuadrícula de tarjetas blancas sueltas; el resto de las pantallas viven dentro de una sola hoja grande. La navegación es una píldora: arriba y centrada en PC, flotando abajo en el celular.\n\nEl mundo lo pidió la usuaria con su imagen de referencia («manda la imagen en toda la app»), pero la regla de la casa no cambió con el estilo: cada trazo de un gráfico sale de un dato real de la empresa, y lo que no hay se dibuja rayado y se nombra. El tablero rechaza el tablero SaaS que rellena con números de adorno. Los números grandes van en Manrope; el texto para leer, en Public Sans; la serif queda para los documentos impresos.\n\nLa densidad es media: tarjetas con aire, una cifra protagonista por tarjeta, gráficos finos. El color dice estado solo en las marcas de estado; en los gráficos, el azul dice «cuál es cuál», no «bien o mal».",
+    "keyCharacteristics": [
+      "Cielo azul en degradado fijo sobre `html`; en tableros, una esquina azul más intensa abajo a la derecha.",
+      "Hojas y tarjetas blancas (24px tarjetas, 28px hoja) con sombra suave azulada.",
+      "Navegación en píldora; el destino activo es la píldora oscura con su nombre.",
+      "Numerales en Manrope con cifras tabulares; texto en Public Sans.",
+      "Rayado diagonal = sin dato, y solo eso.",
+      "Íconos de trazo propios (grosor 1.6, puntas redondas), nunca emoji."
+    ],
+    "rules": [
+      { "name": "The Rayado Rule", "body": "El rayado diagonal significa «sin dato» y nada más. Lo que no hay nunca se dibuja como cero ni como una altura cualquiera: es un carril rayado entero y lleva su nombre («sin dato», «aún por calcular», «rayado: un mes sin venta contada»). Un cero contado sí es cero: una raya fina en la base. Lo dicho pero sin confirmar es solo contorno, sin relleno.", "section": "colors" },
+      { "name": "The Una Rampa Rule", "body": "En gráficos, el azul (de azul claro a marca) distingue series y recencia, nunca estado. El estado solo lo dicen los tres colores de estado, en chips y marcas.", "section": "colors" },
+      { "name": "The Manrope-para-Cifras Rule", "body": "Todo número que se quiere ver de lejos va en Manrope con cifras tabulares; el texto que lo explica va en Public Sans debajo, en grafito.", "section": "typography" },
+      { "name": "The Serif-Impresa Rule", "body": "Source Serif 4 aparece solo en documentos y en la impresión; nunca en la interfaz en pantalla.", "section": "typography" },
+      { "name": "The Profundidad-en-el-Sistema Rule", "body": "Degradados, sombras y desenfoque viven solo en `src/design/*.css`, nunca en componentes ni páginas (lo vigila `tests/visual.test.ts`). Un componente pide profundidad con una clase del sistema; no la escribe.", "section": "elevation" },
+      { "name": "The Una-Sombra-por-Capa Rule", "body": "Una tarjeta o panel dentro de una hoja no lleva sombra: lleva borde de línea.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do dibujar lo que falta como carril rayado entero y nombrarlo («sin dato», «aún por calcular»); un cero contado es una raya en la base.",
+      "Do sacar cada trazo de un dato real de la empresa; si faltan datos para un gráfico, decir cuántos faltan en lugar de dibujarlo.",
+      "Do poner sombras, degradados y desenfoque solo en `src/design/*.css` y aplicarlos por clase.",
+      "Do usar los íconos de trazo de `Icono.tsx` (grosor 1.6, puntas redondas).",
+      "Do limitar los efectos de hover a `(hover: hover) and (pointer: fine)`.",
+      "Do dar respuesta al presionar con una escala pequeña (0.94 a 0.98, 160ms, cubic-bezier(0.23, 1, 0.32, 1)).",
+      "Do mantener toda animación por debajo de 300ms y apagarla con `prefers-reduced-motion`.",
+      "Do mantener objetivos táctiles de 44px como mínimo.",
+      "Do envolver toda pantalla que no sea tablero en la hoja blanca."
+    ],
+    "donts": [
+      "Don't usar el rayado para nada que no sea «sin dato»: ni decoración, ni fondo, ni énfasis.",
+      "Don't dibujar un dato ausente como cero ni con una altura arbitraria.",
+      "Don't escribir `box-shadow`, `gradient(` o `backdrop-filter` en componentes o páginas.",
+      "Don't usar emoji como íconos.",
+      "Don't agregar un sexto destino a la píldora del portal del dueño; las pantallas nuevas van al mapa de grupos.",
+      "Don't usar el color de los gráficos para decir estado; el estado va en los chips.",
+      "Don't usar Source Serif 4 en la interfaz en pantalla.",
+      "Don't apilar sombra dentro de sombra: una tarjeta dentro de la hoja lleva borde, no sombra."
+    ]
+  }
+}

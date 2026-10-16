@@ -1,6 +1,6 @@
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { z } from "zod";
-import { AIProviderDownError, AIRateLimitError, AIValidationError, type AIProvider, type CompleteParams, type CompleteResult, type Transcripcion } from "./provider";
+import { AIProviderDownError, AIProviderPausedError, AIRateLimitError, AIValidationError, type AIProvider, type CompleteParams, type CompleteResult, type Transcripcion } from "./provider";
 import { aplicarContrato } from "@/lib/agentes/contratos";
 
 /**
@@ -207,6 +207,12 @@ export class GeminiProvider implements AIProvider {
         intento--;
         continue;
       }
+      if (res.status === 402) {
+        // SIN CRÉDITO (28-09-2026: «prepayment credits depleted»). No es un fallo del trabajo ni del
+        // modelo: es una pausa. Se conserva el prefijo «Gemini 402» porque la torre y el reencolado
+        // reconocen por él los trabajos perdidos aquel día.
+        throw new AIProviderPausedError(`Gemini 402: ${(await res.text()).slice(0, 300)}`);
+      }
       if (res.status >= 500) throw new AIProviderDownError(`Gemini ${res.status}: ${(await res.text()).slice(0, 300)}`);
       if (res.status === 400 && jsonSchema) {
         // Esquemas grandes (p. ej. el plan estratégico completo) exceden el límite de responseJsonSchema
@@ -219,7 +225,12 @@ export class GeminiProvider implements AIProvider {
         intento--;
         continue;
       }
-      if (!res.ok) throw new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 300)}`);
+      if (!res.ok) {
+        const txt = (await res.text()).slice(0, 300);
+        // Un 400/403 que habla de facturación o créditos también es falta de crédito, no un error del trabajo.
+        if (AIProviderPausedError.detecta(res.status, txt)) throw new AIProviderPausedError(`Gemini ${res.status}: ${txt}`);
+        throw new Error(`Gemini ${res.status}: ${txt}`);
+      }
       const j = (await res.json()) as Respuesta;
       entrada += j.usageMetadata?.promptTokenCount ?? 0;
       salida += (j.usageMetadata?.candidatesTokenCount ?? 0) + (j.usageMetadata?.thoughtsTokenCount ?? 0);
@@ -289,7 +300,12 @@ export class GeminiProvider implements AIProvider {
         continue;
       }
       if (res.status === 429) throw new AIRateLimitError(`Transcripción 429`);
-      if (!res.ok) throw new Error(`Transcripción falló: ${res.status}`);
+      if (!res.ok) {
+        const txt = (await res.text()).slice(0, 300);
+        // Sin crédito tampoco se transcribe: el trabajo espera en vez de gastar sus intentos.
+        if (AIProviderPausedError.detecta(res.status, txt)) throw new AIProviderPausedError(`Gemini ${res.status}: ${txt}`);
+        throw new Error(`Transcripción falló: ${res.status}`);
+      }
       const j = (await res.json()) as Respuesta;
       const texto = (j.candidates?.[0]?.content?.parts ?? []).map((x) => x.text ?? "").join("").trim();
       if (!texto) throw new Error("No pudimos entender el audio. Intenta de nuevo o escribe la respuesta.");

@@ -128,7 +128,12 @@ export function perfilDe(e: EntradaPerfil): Perfil {
     else sinDatos.push(RASGOS[clave]);
   }
 
-  return { rasgos, modelos: clasificarModelo([corpus]), personas, sedes, sinDatos };
+  // EL MODELO OPERATIVO SALE DE LO QUE LA EMPRESA DECLARA DE SÍ MISMA (rubro y ficha), no de cualquier frase del
+  // levantamiento. Con todo el corpus, «necesita capacitación» daba el modelo «citas» y «Recursos humanos» daba
+  // «recurrencia» (sonda del verificador, 13-10-2026): desde que matrizDe usa p.modelos, un falso positivo agrega
+  // procesos esperados que la empresa no tiene y le baja la madurez. Los rasgos sí se siguen leyendo de todo.
+  const declarado = [e.sector, String(ficha.actividad ?? ""), String(ficha.productos ?? ""), String(ficha.canales ?? "")].filter(Boolean).join(". ");
+  return { rasgos, modelos: declarado.trim() ? clasificarModelo([declarado]) : [], personas, sedes, sinDatos };
 }
 
 export const tiene = (p: Perfil, r: ClaveRasgo) => p.rasgos.some((x) => x.clave === r);

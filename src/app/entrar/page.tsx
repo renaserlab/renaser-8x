@@ -42,6 +42,8 @@ function Formulario() {
       <button className="boton boton--grande" disabled={cargando}>{cargando ? "Entrando" : "Entrar"}</button>
       <p className="t-cuerpo" style={{ color: "var(--grafito)" }}>
         ¿Primera vez? <Link href="/registro" className="underline">Crea tu cuenta</Link>
+        <span style={{ margin: "0 8px" }}>·</span>
+        <Link href="/recuperar" className="underline">¿Olvidaste tu contraseña?</Link>
       </p>
     </form>
   );

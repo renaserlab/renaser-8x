@@ -1,0 +1,2963 @@
+{
+ "definitions": {
+  "org_estudio_versiones": {
+   "required": [
+    "id",
+    "company_id",
+    "contenido"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "contenido": {
+     "format": "jsonb"
+    },
+    "creado_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "users": {
+   "required": [
+    "id",
+    "rol"
+   ],
+   "properties": {
+    "id": {
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "nombre": {
+     "format": "text",
+     "type": "string"
+    },
+    "email": {
+     "format": "text",
+     "type": "string"
+    },
+    "rol": {
+     "default": "cliente",
+     "format": "text",
+     "type": "string"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "acepto_privacidad_at": {
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "acepto_privacidad_version": {
+     "format": "text",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "claims_cliente": {
+   "properties": {
+    "id": {
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "texto": {
+     "format": "text",
+     "type": "string"
+    },
+    "fecha_afirmacion": {
+     "format": "date",
+     "type": "string"
+    },
+    "fuente_nombre": {
+     "format": "text",
+     "type": "string"
+    },
+    "fuente_tipo": {
+     "format": "text",
+     "type": "string"
+    },
+    "requiere_validacion": {
+     "format": "boolean",
+     "type": "boolean"
+    },
+    "pregunta": {
+     "format": "text",
+     "type": "string"
+    },
+    "opciones": {
+     "format": "text[]",
+     "items": {
+      "type": "string"
+     },
+     "type": "array"
+    }
+   },
+   "type": "object"
+  },
+  "decision_historial": {
+   "required": [
+    "id",
+    "decision_id",
+    "accion",
+    "motivo",
+    "created_at"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "decision_id": {
+     "description": "Note:\nThis is a Foreign Key to `decisiones.id`.<fk table='decisiones' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "accion": {
+     "format": "text",
+     "type": "string"
+    },
+    "antes": {
+     "format": "jsonb"
+    },
+    "despues": {
+     "format": "jsonb"
+    },
+    "motivo": {
+     "format": "text",
+     "type": "string"
+    },
+    "actor_id": {
+     "description": "Note:\nThis is a Foreign Key to `users.id`.<fk table='users' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "actor_rol": {
+     "format": "text",
+     "type": "string"
+    },
+    "resultado": {
+     "format": "text",
+     "type": "string"
+    },
+    "resultado_at": {
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "eval_runs": {
+   "required": [
+    "id"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "case_id": {
+     "description": "Note:\nThis is a Foreign Key to `cases.id`.<fk table='cases' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "version_prompt": {
+     "format": "text",
+     "type": "string"
+    },
+    "cobertura": {
+     "format": "double precision",
+     "type": "number"
+    },
+    "precision": {
+     "format": "double precision",
+     "type": "number"
+    },
+    "detalle": {
+     "format": "jsonb"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "claim_relations": {
+   "required": [
+    "id",
+    "tipo"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "claim_id": {
+     "description": "Note:\nThis is a Foreign Key to `claims.id`.<fk table='claims' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "related_id": {
+     "description": "Note:\nThis is a Foreign Key to `claims.id`.<fk table='claims' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "tipo": {
+     "format": "text",
+     "type": "string"
+    },
+    "explicacion": {
+     "format": "text",
+     "type": "string"
+    },
+    "origen": {
+     "default": "ia",
+     "format": "text",
+     "type": "string"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "claims": {
+   "required": [
+    "id",
+    "source_id",
+    "texto"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "source_id": {
+     "description": "Note:\nThis is a Foreign Key to `sources.id`.<fk table='sources' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "fragment_id": {
+     "description": "Note:\nThis is a Foreign Key to `source_fragments.id`.<fk table='source_fragments' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "participant_id": {
+     "description": "Note:\nThis is a Foreign Key to `participants.id`.<fk table='participants' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "texto": {
+     "format": "text",
+     "type": "string"
+    },
+    "pilar": {
+     "format": "text",
+     "type": "string"
+    },
+    "tipo": {
+     "format": "text",
+     "type": "string"
+    },
+    "temporalidad": {
+     "format": "text",
+     "type": "string"
+    },
+    "fecha_afirmacion": {
+     "format": "date",
+     "type": "string"
+    },
+    "estado": {
+     "default": "sin_verificar",
+     "format": "text",
+     "type": "string"
+    },
+    "contradice_a": {
+     "description": "Note:\nThis is a Foreign Key to `claims.id`.<fk table='claims' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "explicacion_contradiccion": {
+     "format": "text",
+     "type": "string"
+    },
+    "pregunta_sugerida": {
+     "format": "text",
+     "type": "string"
+    },
+    "prioridad_validacion": {
+     "default": false,
+     "format": "boolean",
+     "type": "boolean"
+    },
+    "response_id": {
+     "format": "uuid",
+     "type": "string"
+    },
+    "idempotency_key": {
+     "format": "text",
+     "type": "string"
+    },
+    "validado_por": {
+     "description": "Note:\nThis is a Foreign Key to `users.id`.<fk table='users' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "validado_at": {
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "rate_limits": {
+   "required": [
+    "clave",
+    "ventana_inicio",
+    "conteo"
+   ],
+   "properties": {
+    "clave": {
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "text",
+     "type": "string"
+    },
+    "ventana_inicio": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "conteo": {
+     "default": 0,
+     "format": "integer",
+     "type": "integer"
+    }
+   },
+   "type": "object"
+  },
+  "agent_specs": {
+   "required": [
+    "id",
+    "nombre"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "process_node_id": {
+     "description": "Note:\nThis is a Foreign Key to `process_nodes.id`.<fk table='process_nodes' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "nombre": {
+     "format": "text",
+     "type": "string"
+    },
+    "mision": {
+     "format": "text",
+     "type": "string"
+    },
+    "trigger_desc": {
+     "format": "text",
+     "type": "string"
+    },
+    "inputs": {
+     "format": "jsonb"
+    },
+    "outputs": {
+     "format": "jsonb"
+    },
+    "conocimiento": {
+     "format": "jsonb"
+    },
+    "herramientas": {
+     "format": "jsonb"
+    },
+    "reglas": {
+     "format": "jsonb"
+    },
+    "autoridad": {
+     "format": "text",
+     "type": "string"
+    },
+    "acciones_prohibidas": {
+     "format": "jsonb"
+    },
+    "escalamiento": {
+     "format": "text",
+     "type": "string"
+    },
+    "aprobacion_humana": {
+     "default": true,
+     "format": "boolean",
+     "type": "boolean"
+    },
+    "version": {
+     "default": 1,
+     "format": "integer",
+     "type": "integer"
+    },
+    "estado": {
+     "default": "borrador",
+     "format": "text",
+     "type": "string"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "eventos": {
+   "required": [
+    "id",
+    "company_id",
+    "tipo",
+    "fecha",
+    "datos",
+    "created_at"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "tipo": {
+     "format": "text",
+     "type": "string"
+    },
+    "fecha": {
+     "default": "((now() AT TIME ZONE 'America/Lima'::text))",
+     "format": "date",
+     "type": "string"
+    },
+    "monto": {
+     "format": "numeric",
+     "type": "number"
+    },
+    "minutos": {
+     "format": "integer",
+     "type": "integer"
+    },
+    "persona_id": {
+     "description": "Note:\nThis is a Foreign Key to `participants.id`.<fk table='participants' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "datos": {
+     "format": "jsonb"
+    },
+    "creado_por": {
+     "description": "Note:\nThis is a Foreign Key to `users.id`.<fk table='users' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "memberships": {
+   "required": [
+    "user_id",
+    "company_id"
+   ],
+   "properties": {
+    "user_id": {
+     "description": "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `users.id`.<fk table='users' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "nivel": {
+     "default": "dueno",
+     "format": "text",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "acuses": {
+   "required": [
+    "id",
+    "company_id",
+    "asset_clave",
+    "created_at"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "asset_clave": {
+     "format": "text",
+     "type": "string"
+    },
+    "participant_id": {
+     "description": "Note:\nThis is a Foreign Key to `participants.id`.<fk table='participants' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "nombre": {
+     "format": "text",
+     "type": "string"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "diagnoses": {
+   "required": [
+    "id",
+    "pilar"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "pilar": {
+     "format": "text",
+     "type": "string"
+    },
+    "estado": {
+     "format": "text",
+     "type": "string"
+    },
+    "resumen": {
+     "format": "text",
+     "type": "string"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "audit_log": {
+   "required": [
+    "id",
+    "accion"
+   ],
+   "properties": {
+    "id": {
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "bigint",
+     "type": "integer"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "actor_id": {
+     "description": "Note:\nThis is a Foreign Key to `users.id`.<fk table='users' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "actor_rol": {
+     "format": "text",
+     "type": "string"
+    },
+    "accion": {
+     "format": "text",
+     "type": "string"
+    },
+    "entidad": {
+     "format": "text",
+     "type": "string"
+    },
+    "entidad_id": {
+     "format": "text",
+     "type": "string"
+    },
+    "detalle": {
+     "format": "jsonb"
+    },
+    "ruta": {
+     "format": "text",
+     "type": "string"
+    },
+    "ip": {
+     "format": "text",
+     "type": "string"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "processes": {
+   "required": [
+    "id",
+    "nombre",
+    "fuentes_usadas"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "nombre": {
+     "format": "text",
+     "type": "string"
+    },
+    "area": {
+     "format": "text",
+     "type": "string"
+    },
+    "pilar": {
+     "default": "procesos",
+     "format": "text",
+     "type": "string"
+    },
+    "version": {
+     "default": "as_is",
+     "format": "text",
+     "type": "string"
+    },
+    "origen": {
+     "default": "dibujado",
+     "format": "text",
+     "type": "string"
+    },
+    "padre_id": {
+     "description": "Note:\nThis is a Foreign Key to `processes.id`.<fk table='processes' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "confirmacion": {
+     "default": "borrador",
+     "format": "text",
+     "type": "string"
+    },
+    "deseo": {
+     "format": "text",
+     "type": "string"
+    },
+    "responsable": {
+     "format": "text",
+     "type": "string"
+    },
+    "objetivo": {
+     "format": "text",
+     "type": "string"
+    },
+    "inicio": {
+     "format": "text",
+     "type": "string"
+    },
+    "resultado": {
+     "format": "text",
+     "type": "string"
+    },
+    "tiempo": {
+     "format": "text",
+     "type": "string"
+    },
+    "herramientas": {
+     "format": "text",
+     "type": "string"
+    },
+    "sale_mal": {
+     "format": "text",
+     "type": "string"
+    },
+    "como_bien": {
+     "format": "text",
+     "type": "string"
+    },
+    "descripcion_original": {
+     "format": "text",
+     "type": "string"
+    },
+    "audio_original_path": {
+     "format": "text",
+     "type": "string"
+    },
+    "comentario": {
+     "format": "text",
+     "type": "string"
+    },
+    "indicador": {
+     "format": "text",
+     "type": "string"
+    },
+    "meta": {
+     "format": "text",
+     "type": "string"
+    },
+    "medicion_donde": {
+     "format": "text",
+     "type": "string"
+    },
+    "proveedor": {
+     "format": "text",
+     "type": "string"
+    },
+    "cliente_proceso": {
+     "format": "text",
+     "type": "string"
+    },
+    "categoria": {
+     "format": "text",
+     "type": "string"
+    },
+    "fuentes_usadas": {
+     "format": "jsonb"
+    }
+   },
+   "type": "object"
+  },
+  "evidencias": {
+   "required": [
+    "id",
+    "company_id",
+    "tipo",
+    "created_at"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "action_id": {
+     "description": "Note:\nThis is a Foreign Key to `actions.id`.<fk table='actions' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "asset_clave": {
+     "format": "text",
+     "type": "string"
+    },
+    "tipo": {
+     "format": "text",
+     "type": "string"
+    },
+    "ruta": {
+     "format": "text",
+     "type": "string"
+    },
+    "nombre": {
+     "format": "text",
+     "type": "string"
+    },
+    "mime": {
+     "format": "text",
+     "type": "string"
+    },
+    "bytes": {
+     "format": "integer",
+     "type": "integer"
+    },
+    "nota": {
+     "format": "text",
+     "type": "string"
+    },
+    "subido_por": {
+     "description": "Note:\nThis is a Foreign Key to `users.id`.<fk table='users' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "decisiones": {
+   "required": [
+    "id",
+    "company_id",
+    "titulo",
+    "por_que_ahora",
+    "evidencia",
+    "faltantes",
+    "supuestos",
+    "alternativas",
+    "riesgos",
+    "origen",
+    "estado",
+    "requiere_aprobacion",
+    "created_at",
+    "updated_at"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "titulo": {
+     "format": "text",
+     "type": "string"
+    },
+    "por_que_ahora": {
+     "format": "text",
+     "type": "string"
+    },
+    "evidencia": {
+     "format": "jsonb"
+    },
+    "faltantes": {
+     "format": "jsonb"
+    },
+    "supuestos": {
+     "format": "jsonb"
+    },
+    "alternativas": {
+     "format": "jsonb"
+    },
+    "recomendacion": {
+     "format": "text",
+     "type": "string"
+    },
+    "recomendacion_por_que": {
+     "format": "text",
+     "type": "string"
+    },
+    "impacto_esperado": {
+     "format": "text",
+     "type": "string"
+    },
+    "riesgos": {
+     "format": "jsonb"
+    },
+    "confianza": {
+     "format": "text",
+     "type": "string"
+    },
+    "confianza_por_que": {
+     "format": "text",
+     "type": "string"
+    },
+    "que_pasa_si_se_aprueba": {
+     "format": "text",
+     "type": "string"
+    },
+    "origen": {
+     "default": "agente",
+     "format": "text",
+     "type": "string"
+    },
+    "agente": {
+     "format": "text",
+     "type": "string"
+    },
+    "agente_version": {
+     "format": "text",
+     "type": "string"
+    },
+    "job_id": {
+     "description": "Note:\nThis is a Foreign Key to `jobs.id`.<fk table='jobs' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "estado": {
+     "default": "pendiente",
+     "format": "text",
+     "type": "string"
+    },
+    "requiere_aprobacion": {
+     "default": true,
+     "format": "boolean",
+     "type": "boolean"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "updated_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "company_stats": {
+   "properties": {
+    "company_id": {
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "fuentes": {
+     "format": "bigint",
+     "type": "integer"
+    },
+    "afirmaciones": {
+     "format": "bigint",
+     "type": "integer"
+    },
+    "confirmadas": {
+     "format": "bigint",
+     "type": "integer"
+    },
+    "contradichas": {
+     "format": "bigint",
+     "type": "integer"
+    },
+    "sin_verificar": {
+     "format": "bigint",
+     "type": "integer"
+    },
+    "preguntas_abiertas": {
+     "format": "bigint",
+     "type": "integer"
+    },
+    "hallazgos_por_revisar": {
+     "format": "bigint",
+     "type": "integer"
+    },
+    "trabajos_fallidos": {
+     "format": "bigint",
+     "type": "integer"
+    },
+    "frentes_vencidos": {
+     "format": "bigint",
+     "type": "integer"
+    },
+    "ultima_actividad": {
+     "format": "timestamp with time zone",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "conocimiento_base": {
+   "required": [
+    "id",
+    "fuente",
+    "seccion",
+    "ejes",
+    "contenido",
+    "orden",
+    "version",
+    "created_at"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "fuente": {
+     "format": "text",
+     "type": "string"
+    },
+    "seccion": {
+     "format": "text",
+     "type": "string"
+    },
+    "ejes": {
+     "format": "text[]",
+     "items": {
+      "type": "string"
+     },
+     "type": "array"
+    },
+    "contenido": {
+     "format": "text",
+     "type": "string"
+    },
+    "orden": {
+     "format": "integer",
+     "type": "integer"
+    },
+    "version": {
+     "default": "agosto-2026",
+     "format": "text",
+     "type": "string"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "corrections": {
+   "required": [
+    "id"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "finding_id": {
+     "description": "Note:\nThis is a Foreign Key to `findings.id`.<fk table='findings' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "user_id": {
+     "description": "Note:\nThis is a Foreign Key to `users.id`.<fk table='users' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "accion": {
+     "format": "text",
+     "type": "string"
+    },
+    "texto_corregido": {
+     "format": "text",
+     "type": "string"
+    },
+    "motivo": {
+     "format": "text",
+     "type": "string"
+    },
+    "comentario": {
+     "format": "text",
+     "type": "string"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "interview_responses": {
+   "required": [
+    "id",
+    "pregunta"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "session_id": {
+     "description": "Note:\nThis is a Foreign Key to `interview_sessions.id`.<fk table='interview_sessions' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "bloque": {
+     "format": "text",
+     "type": "string"
+    },
+    "pilar": {
+     "format": "text",
+     "type": "string"
+    },
+    "pregunta": {
+     "format": "text",
+     "type": "string"
+    },
+    "origen_claim_id": {
+     "description": "Note:\nThis is a Foreign Key to `claims.id`.<fk table='claims' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "respuesta": {
+     "format": "text",
+     "type": "string"
+    },
+    "respuesta_audio_path": {
+     "format": "text",
+     "type": "string"
+    },
+    "orden": {
+     "format": "integer",
+     "type": "integer"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "respondido_at": {
+     "format": "timestamp with time zone",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "jobs": {
+   "required": [
+    "id",
+    "tipo",
+    "fuentes_usadas"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "tipo": {
+     "format": "text",
+     "type": "string"
+    },
+    "payload": {
+     "format": "jsonb"
+    },
+    "prioridad": {
+     "default": 5,
+     "format": "integer",
+     "type": "integer"
+    },
+    "estado": {
+     "default": "pendiente",
+     "format": "text",
+     "type": "string"
+    },
+    "intentos": {
+     "default": 0,
+     "format": "integer",
+     "type": "integer"
+    },
+    "max_intentos": {
+     "default": 3,
+     "format": "integer",
+     "type": "integer"
+    },
+    "lease_expira_at": {
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "idempotency_key": {
+     "format": "text",
+     "type": "string"
+    },
+    "progreso": {
+     "format": "text",
+     "type": "string"
+    },
+    "resultado": {
+     "format": "jsonb"
+    },
+    "error": {
+     "format": "text",
+     "type": "string"
+    },
+    "tomado_at": {
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "terminado_at": {
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "origen_job_id": {
+     "description": "Note:\nThis is a Foreign Key to `jobs.id`.<fk table='jobs' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "fuentes_usadas": {
+     "format": "jsonb"
+    }
+   },
+   "type": "object"
+  },
+  "modelo_alto_rendimiento": {
+   "required": [
+    "company_id",
+    "contenido"
+   ],
+   "properties": {
+    "company_id": {
+     "description": "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "contenido": {
+     "format": "jsonb"
+    },
+    "updated_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "error_log": {
+   "required": [
+    "id"
+   ],
+   "properties": {
+    "id": {
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "bigint",
+     "type": "integer"
+    },
+    "ruta": {
+     "format": "text",
+     "type": "string"
+    },
+    "metodo": {
+     "format": "text",
+     "type": "string"
+    },
+    "mensaje": {
+     "format": "text",
+     "type": "string"
+    },
+    "detalle": {
+     "format": "text",
+     "type": "string"
+    },
+    "actor_id": {
+     "description": "Note:\nThis is a Foreign Key to `users.id`.<fk table='users' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "process_nodes": {
+   "required": [
+    "id",
+    "etiqueta"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "process_id": {
+     "description": "Note:\nThis is a Foreign Key to `processes.id`.<fk table='processes' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "tipo": {
+     "format": "text",
+     "type": "string"
+    },
+    "etiqueta": {
+     "format": "text",
+     "type": "string"
+    },
+    "responsable": {
+     "format": "text",
+     "type": "string"
+    },
+    "ejecutor": {
+     "format": "text",
+     "type": "string"
+    },
+    "tiempo": {
+     "format": "text",
+     "type": "string"
+    },
+    "herramienta": {
+     "format": "text",
+     "type": "string"
+    },
+    "problema": {
+     "format": "text",
+     "type": "string"
+    },
+    "veredicto": {
+     "format": "text",
+     "type": "string"
+    },
+    "rol": {
+     "format": "text",
+     "type": "string"
+    },
+    "espera": {
+     "format": "text",
+     "type": "string"
+    },
+    "entrada": {
+     "format": "text",
+     "type": "string"
+    },
+    "salida": {
+     "format": "text",
+     "type": "string"
+    },
+    "evidencia": {
+     "format": "text",
+     "type": "string"
+    },
+    "estandar": {
+     "format": "text",
+     "type": "string"
+    },
+    "know_how_id": {
+     "description": "Note:\nThis is a Foreign Key to `know_how.id`.<fk table='know_how' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "pos_x": {
+     "default": 0,
+     "format": "double precision",
+     "type": "number"
+    },
+    "pos_y": {
+     "default": 0,
+     "format": "double precision",
+     "type": "number"
+    },
+    "comentario": {
+     "format": "text",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "token_usage": {
+   "required": [
+    "id"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "job_id": {
+     "description": "Note:\nThis is a Foreign Key to `jobs.id`.<fk table='jobs' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "agente": {
+     "format": "text",
+     "type": "string"
+    },
+    "tokens_entrada": {
+     "format": "integer",
+     "type": "integer"
+    },
+    "tokens_salida": {
+     "format": "integer",
+     "type": "integer"
+    },
+    "modelo": {
+     "format": "text",
+     "type": "string"
+    },
+    "version_prompt": {
+     "format": "text",
+     "type": "string"
+    },
+    "latencia_ms": {
+     "format": "integer",
+     "type": "integer"
+    },
+    "error": {
+     "format": "text",
+     "type": "string"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "contrato_version": {
+     "format": "text",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "actions": {
+   "required": [
+    "id",
+    "accion"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "finding_id": {
+     "description": "Note:\nThis is a Foreign Key to `findings.id`.<fk table='findings' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "prioridad": {
+     "format": "integer",
+     "type": "integer"
+    },
+    "fase": {
+     "default": "implementacion",
+     "format": "text",
+     "type": "string"
+    },
+    "semana_inicio": {
+     "format": "integer",
+     "type": "integer"
+    },
+    "semana_cierre": {
+     "format": "integer",
+     "type": "integer"
+    },
+    "accion": {
+     "format": "text",
+     "type": "string"
+    },
+    "responsable": {
+     "format": "text",
+     "type": "string"
+    },
+    "kpi": {
+     "format": "text",
+     "type": "string"
+    },
+    "evidencia": {
+     "format": "text",
+     "type": "string"
+    },
+    "impacto": {
+     "format": "text",
+     "type": "string"
+    },
+    "estado": {
+     "default": "pendiente",
+     "format": "text",
+     "type": "string"
+    },
+    "nota": {
+     "format": "text",
+     "type": "string"
+    },
+    "vence_at": {
+     "format": "date",
+     "type": "string"
+    },
+    "updated_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "verificado_at": {
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "verificado_por": {
+     "description": "Note:\nThis is a Foreign Key to `users.id`.<fk table='users' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "verificado_nota": {
+     "format": "text",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "modelo_versiones": {
+   "required": [
+    "id",
+    "company_id",
+    "contenido"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "contenido": {
+     "format": "jsonb"
+    },
+    "creado_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "checkpoints": {
+   "required": [
+    "id"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "numero": {
+     "format": "integer",
+     "type": "integer"
+    },
+    "fecha": {
+     "default": "CURRENT_DATE",
+     "format": "date",
+     "type": "string"
+    },
+    "que_se_hizo": {
+     "format": "text",
+     "type": "string"
+    },
+    "que_se_trabo": {
+     "format": "text",
+     "type": "string"
+    },
+    "indicadores": {
+     "format": "jsonb"
+    },
+    "regresiones": {
+     "format": "jsonb"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "medicion_id": {
+     "description": "Note:\nThis is a Foreign Key to `mediciones.id`.<fk table='mediciones' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "org_estudio": {
+   "required": [
+    "company_id",
+    "contenido"
+   ],
+   "properties": {
+    "company_id": {
+     "description": "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "contenido": {
+     "format": "jsonb"
+    },
+    "updated_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "findings": {
+   "required": [
+    "id",
+    "pilar",
+    "titulo"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "pilar": {
+     "format": "text",
+     "type": "string"
+    },
+    "patron": {
+     "format": "text",
+     "type": "string"
+    },
+    "titulo": {
+     "format": "text",
+     "type": "string"
+    },
+    "causa_raiz": {
+     "format": "text",
+     "type": "string"
+    },
+    "impacto": {
+     "format": "text",
+     "type": "string"
+    },
+    "veredicto": {
+     "format": "text",
+     "type": "string"
+    },
+    "recomendacion": {
+     "format": "text",
+     "type": "string"
+    },
+    "filtros": {
+     "format": "jsonb"
+    },
+    "auditoria": {
+     "format": "jsonb"
+    },
+    "origen": {
+     "default": "ia",
+     "format": "text",
+     "type": "string"
+    },
+    "estado_revision": {
+     "default": "pendiente",
+     "format": "text",
+     "type": "string"
+    },
+    "requiere_validacion": {
+     "default": false,
+     "format": "boolean",
+     "type": "boolean"
+    },
+    "motivo_validacion": {
+     "format": "text",
+     "type": "string"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "participants_cliente": {
+   "properties": {
+    "id": {
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "nombre": {
+     "format": "text",
+     "type": "string"
+    },
+    "puesto": {
+     "format": "text",
+     "type": "string"
+    },
+    "rol": {
+     "format": "text",
+     "type": "string"
+    },
+    "created_at": {
+     "format": "timestamp with time zone",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "source_fragments": {
+   "required": [
+    "id"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "source_id": {
+     "description": "Note:\nThis is a Foreign Key to `sources.id`.<fk table='sources' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "pagina": {
+     "format": "integer",
+     "type": "integer"
+    },
+    "seccion": {
+     "format": "text",
+     "type": "string"
+    },
+    "celda": {
+     "format": "text",
+     "type": "string"
+    },
+    "audio_desde": {
+     "format": "integer",
+     "type": "integer"
+    },
+    "audio_hasta": {
+     "format": "integer",
+     "type": "integer"
+    },
+    "texto": {
+     "format": "text",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "process_edges": {
+   "required": [
+    "id"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "process_id": {
+     "description": "Note:\nThis is a Foreign Key to `processes.id`.<fk table='processes' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "origen": {
+     "description": "Note:\nThis is a Foreign Key to `process_nodes.id`.<fk table='process_nodes' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "destino": {
+     "description": "Note:\nThis is a Foreign Key to `process_nodes.id`.<fk table='process_nodes' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "etiqueta": {
+     "format": "text",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "agente_huella": {
+   "required": [
+    "agente",
+    "llamadas",
+    "con_error"
+   ],
+   "properties": {
+    "agente": {
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "text",
+     "type": "string"
+    },
+    "llamadas": {
+     "default": 0,
+     "format": "bigint",
+     "type": "integer"
+    },
+    "con_error": {
+     "default": 0,
+     "format": "bigint",
+     "type": "integer"
+    },
+    "primera": {
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "ultima": {
+     "format": "timestamp with time zone",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "deliverables": {
+   "required": [
+    "id"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "tipo": {
+     "format": "text",
+     "type": "string"
+    },
+    "contenido": {
+     "format": "jsonb"
+    },
+    "version": {
+     "default": 1,
+     "format": "integer",
+     "type": "integer"
+    },
+    "publicado": {
+     "default": false,
+     "format": "boolean",
+     "type": "boolean"
+    },
+    "publicado_at": {
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "publicado_por": {
+     "description": "Note:\nThis is a Foreign Key to `users.id`.<fk table='users' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "estado": {
+     "default": "borrador",
+     "format": "text",
+     "type": "string"
+    },
+    "aprobado_por": {
+     "description": "Note:\nThis is a Foreign Key to `users.id`.<fk table='users' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "aprobado_at": {
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "aprobado_nombre": {
+     "format": "text",
+     "type": "string"
+    },
+    "reemplaza_a": {
+     "description": "Note:\nThis is a Foreign Key to `deliverables.id`.<fk table='deliverables' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "motivo_cambio": {
+     "format": "text",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "finding_evidence": {
+   "required": [
+    "finding_id",
+    "claim_id"
+   ],
+   "properties": {
+    "finding_id": {
+     "description": "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `findings.id`.<fk table='findings' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "claim_id": {
+     "description": "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `claims.id`.<fk table='claims' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "relacion": {
+     "default": "sustenta",
+     "format": "text",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "participants": {
+   "required": [
+    "id",
+    "nombre"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "user_id": {
+     "description": "Note:\nThis is a Foreign Key to `users.id`.<fk table='users' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "nombre": {
+     "format": "text",
+     "type": "string"
+    },
+    "puesto": {
+     "format": "text",
+     "type": "string"
+    },
+    "rol": {
+     "format": "text",
+     "type": "string"
+    },
+    "antiguedad": {
+     "format": "text",
+     "type": "string"
+    },
+    "token_hash": {
+     "format": "text",
+     "type": "string"
+    },
+    "token_expira_at": {
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "token_revocado_at": {
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "token_usos": {
+     "default": 0,
+     "format": "integer",
+     "type": "integer"
+    },
+    "token_max_usos": {
+     "default": 200,
+     "format": "integer",
+     "type": "integer"
+    },
+    "token_canjeado_at": {
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "consentimiento_at": {
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "consentimiento_texto": {
+     "format": "text",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "know_how": {
+   "required": [
+    "id"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "participant_id": {
+     "description": "Note:\nThis is a Foreign Key to `participants.id`.<fk table='participants' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "puesto": {
+     "format": "text",
+     "type": "string"
+    },
+    "situacion": {
+     "format": "text",
+     "type": "string"
+    },
+    "senal": {
+     "format": "text",
+     "type": "string"
+    },
+    "decision": {
+     "format": "text",
+     "type": "string"
+    },
+    "excepcion": {
+     "format": "text",
+     "type": "string"
+    },
+    "estandar": {
+     "format": "text",
+     "type": "string"
+    },
+    "error_frecuente": {
+     "format": "text",
+     "type": "string"
+    },
+    "regla_practica": {
+     "format": "text",
+     "type": "string"
+    },
+    "escalamiento": {
+     "format": "text",
+     "type": "string"
+    },
+    "destino": {
+     "default": "pendiente",
+     "format": "text",
+     "type": "string"
+    },
+    "rol": {
+     "format": "text",
+     "type": "string"
+    },
+    "process_id": {
+     "description": "Note:\nThis is a Foreign Key to `processes.id`.<fk table='processes' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "process_node_id": {
+     "description": "Note:\nThis is a Foreign Key to `process_nodes.id`.<fk table='process_nodes' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "criterio_experto": {
+     "format": "text",
+     "type": "string"
+    },
+    "criticidad": {
+     "default": "media",
+     "format": "text",
+     "type": "string"
+    },
+    "documentado": {
+     "default": false,
+     "format": "boolean",
+     "type": "boolean"
+    },
+    "sop_id": {
+     "format": "uuid",
+     "type": "string"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "indicadores": {
+   "required": [
+    "id",
+    "company_id",
+    "clave",
+    "nombre",
+    "como_se_mide",
+    "unidad",
+    "mejor_si",
+    "frecuencia",
+    "origen",
+    "estado",
+    "created_at"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "clave": {
+     "format": "text",
+     "type": "string"
+    },
+    "nombre": {
+     "format": "text",
+     "type": "string"
+    },
+    "como_se_mide": {
+     "format": "text",
+     "type": "string"
+    },
+    "unidad": {
+     "default": "numero",
+     "format": "text",
+     "type": "string"
+    },
+    "mejor_si": {
+     "default": "baja",
+     "format": "text",
+     "type": "string"
+    },
+    "meta_valor": {
+     "format": "numeric",
+     "type": "number"
+    },
+    "meta_texto": {
+     "format": "text",
+     "type": "string"
+    },
+    "frecuencia": {
+     "default": "mensual",
+     "format": "text",
+     "type": "string"
+    },
+    "origen": {
+     "default": "incidencia",
+     "format": "text",
+     "type": "string"
+    },
+    "origen_texto": {
+     "format": "text",
+     "type": "string"
+    },
+    "estado": {
+     "default": "propuesto",
+     "format": "text",
+     "type": "string"
+    },
+    "creado_por": {
+     "description": "Note:\nThis is a Foreign Key to `users.id`.<fk table='users' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "sources": {
+   "required": [
+    "id",
+    "nombre"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "tipo": {
+     "format": "text",
+     "type": "string"
+    },
+    "nombre": {
+     "format": "text",
+     "type": "string"
+    },
+    "fecha_origen": {
+     "format": "date",
+     "type": "string"
+    },
+    "contenido": {
+     "format": "text",
+     "type": "string"
+    },
+    "storage_path": {
+     "format": "text",
+     "type": "string"
+    },
+    "mime": {
+     "format": "text",
+     "type": "string"
+    },
+    "origen": {
+     "default": "cliente",
+     "format": "text",
+     "type": "string"
+    },
+    "estado": {
+     "default": "subido",
+     "format": "text",
+     "type": "string"
+    },
+    "error": {
+     "format": "text",
+     "type": "string"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "process_id": {
+     "description": "Note:\nThis is a Foreign Key to `processes.id`.<fk table='processes' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "process_node_id": {
+     "description": "Note:\nThis is a Foreign Key to `process_nodes.id`.<fk table='process_nodes' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "company_assets": {
+   "required": [
+    "id",
+    "bloque",
+    "clave"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "bloque": {
+     "format": "text",
+     "type": "string"
+    },
+    "clave": {
+     "format": "text",
+     "type": "string"
+    },
+    "estado": {
+     "format": "text",
+     "type": "string"
+    },
+    "nota": {
+     "format": "text",
+     "type": "string"
+    },
+    "source_id": {
+     "description": "Note:\nThis is a Foreign Key to `sources.id`.<fk table='sources' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "updated_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "borrador": {
+     "format": "text",
+     "type": "string"
+    },
+    "faltantes": {
+     "format": "jsonb"
+    },
+    "confirmado_at": {
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "implementacion": {
+     "format": "jsonb"
+    },
+    "propuesta": {
+     "format": "text",
+     "type": "string"
+    },
+    "propuesta_cambios": {
+     "format": "jsonb"
+    },
+    "propuesta_estado": {
+     "format": "text",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "org_puestos": {
+   "required": [
+    "id",
+    "company_id",
+    "nombre",
+    "origen",
+    "fuentes_usadas"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "nombre": {
+     "format": "text",
+     "type": "string"
+    },
+    "mision": {
+     "format": "text",
+     "type": "string"
+    },
+    "decide": {
+     "format": "text",
+     "type": "string"
+    },
+    "persona": {
+     "format": "text",
+     "type": "string"
+    },
+    "respaldo": {
+     "format": "text",
+     "type": "string"
+    },
+    "reporta_a": {
+     "description": "Note:\nThis is a Foreign Key to `org_puestos.id`.<fk table='org_puestos' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "por_que": {
+     "format": "text",
+     "type": "string"
+    },
+    "orden": {
+     "default": 0,
+     "format": "integer",
+     "type": "integer"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "updated_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "origen": {
+     "default": "consultor",
+     "format": "text",
+     "type": "string"
+    },
+    "fuentes_usadas": {
+     "format": "jsonb"
+    }
+   },
+   "type": "object"
+  },
+  "cases": {
+   "required": [
+    "id"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "perfil": {
+     "format": "jsonb"
+    },
+    "hallazgos_validados": {
+     "format": "jsonb"
+    },
+    "plan_aplicado": {
+     "format": "jsonb"
+    },
+    "resultado_90d": {
+     "format": "jsonb"
+    },
+    "cerrado_at": {
+     "format": "timestamp with time zone",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "mediciones": {
+   "required": [
+    "id",
+    "company_id",
+    "tipo",
+    "numero",
+    "fecha",
+    "valores",
+    "derivados",
+    "created_at"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "tipo": {
+     "format": "text",
+     "type": "string"
+    },
+    "numero": {
+     "default": 0,
+     "format": "integer",
+     "type": "integer"
+    },
+    "fecha": {
+     "default": "CURRENT_DATE",
+     "format": "date",
+     "type": "string"
+    },
+    "valores": {
+     "format": "jsonb"
+    },
+    "derivados": {
+     "format": "jsonb"
+    },
+    "nota": {
+     "format": "text",
+     "type": "string"
+    },
+    "creado_por": {
+     "description": "Note:\nThis is a Foreign Key to `users.id`.<fk table='users' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "interview_sessions": {
+   "required": [
+    "id",
+    "participant_id"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "participant_id": {
+     "description": "Note:\nThis is a Foreign Key to `participants.id`.<fk table='participants' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "tipo": {
+     "format": "text",
+     "type": "string"
+    },
+    "estado": {
+     "default": "pendiente",
+     "format": "text",
+     "type": "string"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "bloques_cubiertos": {
+     "format": "jsonb"
+    }
+   },
+   "type": "object"
+  },
+  "invitations": {
+   "required": [
+    "id",
+    "email"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "email": {
+     "format": "text",
+     "type": "string"
+    },
+    "nivel": {
+     "default": "dueno",
+     "format": "text",
+     "type": "string"
+    },
+    "aceptada_at": {
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "company_metricas": {
+   "required": [
+    "id",
+    "company_id",
+    "clave",
+    "periodo",
+    "estado",
+    "created_at",
+    "updated_at"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "company_id": {
+     "description": "Note:\nThis is a Foreign Key to `companies.id`.<fk table='companies' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "clave": {
+     "format": "text",
+     "type": "string"
+    },
+    "periodo": {
+     "default": "actual",
+     "format": "text",
+     "type": "string"
+    },
+    "valor": {
+     "format": "numeric",
+     "type": "number"
+    },
+    "valor_texto": {
+     "format": "text",
+     "type": "string"
+    },
+    "estado": {
+     "default": "contado",
+     "format": "text",
+     "type": "string"
+    },
+    "nota": {
+     "format": "text",
+     "type": "string"
+    },
+    "response_id": {
+     "description": "Note:\nThis is a Foreign Key to `interview_responses.id`.<fk table='interview_responses' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "source_id": {
+     "description": "Note:\nThis is a Foreign Key to `sources.id`.<fk table='sources' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "updated_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "sops": {
+   "required": [
+    "id",
+    "materiales"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "process_id": {
+     "description": "Note:\nThis is a Foreign Key to `processes.id`.<fk table='processes' column='id'/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "objetivo": {
+     "format": "text",
+     "type": "string"
+    },
+    "disparador": {
+     "format": "text",
+     "type": "string"
+    },
+    "responsable": {
+     "format": "text",
+     "type": "string"
+    },
+    "pasos": {
+     "format": "jsonb"
+    },
+    "entradas": {
+     "format": "jsonb"
+    },
+    "salidas": {
+     "format": "jsonb"
+    },
+    "estandar": {
+     "format": "text",
+     "type": "string"
+    },
+    "indicador": {
+     "format": "text",
+     "type": "string"
+    },
+    "excepciones": {
+     "format": "jsonb"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "materiales": {
+     "format": "jsonb"
+    }
+   },
+   "type": "object"
+  },
+  "circuito": {
+   "required": [
+    "clave",
+    "fallos",
+    "actualizado_at"
+   ],
+   "properties": {
+    "clave": {
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "text",
+     "type": "string"
+    },
+    "fallos": {
+     "default": 0,
+     "format": "integer",
+     "type": "integer"
+    },
+    "cortado_hasta": {
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "actualizado_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "companies": {
+   "required": [
+    "id",
+    "nombre"
+   ],
+   "properties": {
+    "id": {
+     "default": "gen_random_uuid()",
+     "description": "Note:\nThis is a Primary Key.<pk/>",
+     "format": "uuid",
+     "type": "string"
+    },
+    "nombre": {
+     "format": "text",
+     "type": "string"
+    },
+    "sector": {
+     "format": "text",
+     "type": "string"
+    },
+    "estado_admision": {
+     "default": "candidata",
+     "format": "text",
+     "type": "string"
+    },
+    "motivo_rechazo": {
+     "format": "text",
+     "type": "string"
+    },
+    "admision": {
+     "format": "jsonb"
+    },
+    "fase_actual": {
+     "default": 1,
+     "format": "integer",
+     "type": "integer"
+    },
+    "etapa": {
+     "default": "admision",
+     "format": "text",
+     "type": "string"
+    },
+    "tope_tokens": {
+     "default": 2000000,
+     "format": "integer",
+     "type": "integer"
+    },
+    "created_at": {
+     "default": "now()",
+     "format": "timestamp with time zone",
+     "type": "string"
+    },
+    "ficha": {
+     "format": "jsonb"
+    },
+    "modelo_operativo": {
+     "format": "text[]",
+     "items": {
+      "type": "string"
+     },
+     "type": "array"
+    },
+    "mapa_motores": {
+     "format": "jsonb"
+    },
+    "etapa_negocio": {
+     "format": "text",
+     "type": "string"
+    },
+    "aspiracion": {
+     "format": "text",
+     "type": "string"
+    }
+   },
+   "type": "object"
+  }
+ },
+ "rpc": [
+  "aprobar_documento",
+  "archivos_de_empresa",
+  "cadena_de_trabajo",
+  "circuito_abierto",
+  "circuito_exito",
+  "circuito_fallo",
+  "congelar_medicion",
+  "consumir_cupo",
+  "es_consultor",
+  "eventos_recientes",
+  "guardar_proceso",
+  "heartbeat_jobs",
+  "limpiar_rate_limits",
+  "marcar_agente",
+  "mis_empresas",
+  "recover_stale_jobs",
+  "refresh_company_stats",
+  "take_job",
+  "tokens_de_empresa",
+  "torre_por_agente",
+  "torre_totales"
+ ]
+}

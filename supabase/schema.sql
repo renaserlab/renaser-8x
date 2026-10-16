@@ -543,8 +543,8 @@ create table if not exists company_assets (
   unique (company_id, clave)
 );
 alter table company_assets enable row level security;
-create policy company_assets_cliente on company_assets for all using (company_id in (select mis_empresas())) with check (company_id in (select mis_empresas()));
-create policy company_assets_consultor on company_assets for all using (es_consultor()) with check (es_consultor());
+-- Las políticas de company_assets van en la sección RLS, después de definir mis_empresas() y es_consultor():
+-- sobre una base vacía fallaban aquí (comprobado con Postgres embebido, 13-10-2026).
 
 -- Constructor de activos y procesos ricos (fase de cierre autoservicio)
 alter table company_assets add column if not exists borrador text;
@@ -600,6 +600,11 @@ create policy cliente_users on users for select using (id = auth.uid());
 
 drop policy if exists cliente_companies on companies;
 create policy cliente_companies on companies for select using (id in (select mis_empresas()));
+
+drop policy if exists company_assets_cliente on company_assets;
+create policy company_assets_cliente on company_assets for all using (company_id in (select mis_empresas())) with check (company_id in (select mis_empresas()));
+drop policy if exists company_assets_consultor on company_assets;
+create policy company_assets_consultor on company_assets for all using (es_consultor()) with check (es_consultor());
 
 drop policy if exists cliente_memberships on memberships;
 create policy cliente_memberships on memberships for select using (user_id = auth.uid());
@@ -715,7 +720,7 @@ grant select on participants_cliente to authenticated;
 -- Si una conexión apunta a un nodo inexistente → exception → rollback completo.
 
 create or replace function guardar_proceso(p_process_id uuid, p_nombre text, p_area text, p_nodos jsonb, p_edges jsonb)
-returns jsonb language plpgsql security definer set search_path = public as $
+returns jsonb language plpgsql security definer set search_path = public as $$
 declare
   n jsonb; e jsonb;
   mapa jsonb := '{}'::jsonb;
@@ -761,7 +766,7 @@ begin
   end loop;
 
   return mapa;
-end $;
+end $$;
 
 -- ============ PERMISOS DE FUNCIONES (P0-01) ============
 -- Las RPC de la cola y el guardado solo las llama el servidor con la service role. Nunca el navegador.

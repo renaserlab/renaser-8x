@@ -1,4 +1,5 @@
 import { protegido, ok, fallo, leerJSON } from "@/lib/api";
+import { exigirAutoridad } from "@/lib/autoridad";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { encolar, PRIORIDAD } from "@/lib/jobs/queue";
 import { construirSnapshot } from "@/lib/jobs/handlers/plan";
@@ -10,6 +11,8 @@ type Ctx = { params: Promise<{ id: string }> };
 export const POST = protegido<Ctx>({ consultor: true, cupo: "ia" }, async (perfil, req, ctx) => {
   const { id } = await ctx.params;
   const b = await leerJSON<{ generar?: boolean; publicar?: string[]; despublicar?: string[] }>(req);
+  // Publicar es la aprobación final de la consultora: lo que sale llega al dueño. Generar un borrador no.
+  if (b.publicar?.length || b.despublicar?.length) await exigirAutoridad(perfil, "aprobar_plan");
   const sb = supabaseAdmin();
   if (b.generar) {
     const job = await encolar({ company_id: id, tipo: "redactar_entregables", payload: {}, prioridad: PRIORIDAD.lote });

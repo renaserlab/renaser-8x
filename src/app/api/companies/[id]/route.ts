@@ -16,7 +16,13 @@ export const PATCH = protegido<Ctx>({ consultor: true }, async (_p, req, ctx) =>
   const b = await leerJSON<Record<string, unknown>>(req);
   const permitidos = ["nombre", "sector", "etapa", "estado_admision", "motivo_rechazo", "fase_actual", "tope_tokens", "admision"];
   const cambios = Object.fromEntries(Object.entries(b).filter(([k]) => permitidos.includes(k)));
-  const { data, error } = await supabaseAdmin().from("companies").update(cambios).eq("id", id).select("*").single();
+  const sb = supabaseAdmin();
+  // La ficha se FUSIONA, nunca se reemplaza: el consultor puede fijar la meta mensual sin pisar lo del cliente.
+  if (b.ficha && typeof b.ficha === "object") {
+    const { data: actual } = await sb.from("companies").select("ficha").eq("id", id).single();
+    cambios.ficha = { ...((actual?.ficha as Record<string, unknown>) ?? {}), ...(b.ficha as Record<string, unknown>) };
+  }
+  const { data, error } = await sb.from("companies").update(cambios).eq("id", id).select("*").single();
   if (error) return fallo(error.message, 500);
   return ok(data);
 });

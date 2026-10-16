@@ -1,24 +1,39 @@
 import Link from "next/link";
-import type { Radiografia } from "@/lib/metricas";
+import { ROTULO_CIFRA_PROVISIONAL, type Radiografia, type Derivados } from "@/lib/metricas";
 
 const soles = (n: number) => `S/${Math.round(n).toLocaleString("es-PE")}`;
+
+/** El rótulo va PEGADO a la cifra, a la vista: una cifra que sale de un documento sin revisar no se lee como firme. */
+function Provisional() {
+  return <span style={{ color: "var(--caducado)", fontWeight: 600 }}> ({ROTULO_CIFRA_PROVISIONAL})</span>;
+}
 
 /**
  * LOS NÚMEROS, en Mi empresa. No es un sexto botón en la barra —Kelin fue clara: ni un botón de
  * más—, es lo primero que el dueño ve de su propia empresa, porque sin estos nueve números
  * cualquier diagnóstico es opinión.
+ *
+ * LO PROVISIONAL SE DICE AQUÍ MISMO (13-10-2026). El margen y los días de aguante salían como cifras firmes
+ * aunque se apoyaran en un número leído de un documento que nadie revisó. Qué cifra es provisional viaja con
+ * la radiografía (`cifrasProvisionales`, que es `derivados(...).provisional`); quien quiera puede pasarlo
+ * también en `provisional`, que manda si viene.
  */
 export function TarjetaNumeros({
   radiografia: r,
   margen,
   diasAguante,
+  provisional,
 }: {
   radiografia: Radiografia;
   margen: number | null;
   diasAguante: number | null;
+  /** `derivados(...).provisional`. Opcional: sin él se usa lo que trae la radiografía. */
+  provisional?: Partial<Derivados["provisional"]> | null;
 }) {
   const faltan = r.faltan.length;
   const urgente = faltan >= 5;
+  const margenProvisional = provisional?.margen ?? r.cifrasProvisionales?.margen ?? false;
+  const aguanteProvisional = provisional?.diasAguante ?? r.cifrasProvisionales?.diasAguante ?? false;
 
   return (
     <section className="panel p-5">
@@ -57,8 +72,18 @@ export function TarjetaNumeros({
         </p>
       ) : (
         <p className="t-cuerpo medida">
-          {margen != null && `De cada 100 soles que vendes te quedan ${margen.toFixed(0)}. `}
-          {diasAguante != null && `Con la caja de hoy aguantas ${Math.round(diasAguante)} días sin vender.`}
+          {margen != null && (
+            <>
+              De cada 100 soles que vendes te quedan {margen.toFixed(0)}
+              {margenProvisional && <Provisional />}.{" "}
+            </>
+          )}
+          {diasAguante != null && (
+            <>
+              Con la caja de hoy aguantas {Math.round(diasAguante)} días sin vender
+              {aguanteProvisional && <Provisional />}.
+            </>
+          )}
         </p>
       )}
 

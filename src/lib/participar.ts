@@ -41,7 +41,7 @@ export async function estadoParticipante(token: string) {
   const p = await participantePorToken(token);
   if (!p) return INVALIDO();
   const sb = supabaseAdmin();
-  const { data: sesiones } = await sb.from("interview_sessions").select("id,tipo,estado").eq("participant_id", p.id).order("created_at");
+  const { data: sesiones } = await sb.from("interview_sessions").select("id,tipo,estado").eq("participant_id", p.id).neq("tipo", "entrada_breve").order("created_at");
   const activa = (sesiones ?? []).find((s) => s.estado !== "completa") ?? null;
   let estado = null;
   if (activa) {

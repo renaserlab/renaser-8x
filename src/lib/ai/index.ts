@@ -23,3 +23,5 @@ export function hayTranscriptor(): boolean {
 
 /** Versión de los prompts. Cambia cuando cambia cualquier prompt: entra en idempotencia y en token_usage. */
 export const VERSION_PROMPT = "v4.2";
+
+export { AIProviderPausedError } from "./provider";

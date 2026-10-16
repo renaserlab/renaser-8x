@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { comoDato } from "@/lib/rules/patrones";
 import { correrArquitecto, correrToBe, correrSop } from "@/lib/ai/agents/arquitecto";
 import { procesoCompleto, procesoComoJSON, registrarLlamada } from "@/lib/db/queries";
 import { autoLayout } from "@/lib/layout";
@@ -120,16 +121,16 @@ export async function handleGenerarToBe(job: Job) {
   if (!proceso) throw new Error("Proceso no encontrado");
   await progreso(job.id, `Rediseñando "${proceso.nombre}"`);
   const [{ data: hallazgos }, { data: kh }] = await Promise.all([
-    sb.from("findings").select("titulo,causa_raiz,recomendacion,veredicto,impacto").eq("company_id", job.company_id).in("estado_revision", ["aprobado", "corregido"]).eq("requiere_validacion", false),
+    // Aprobado no basta: un hallazgo provisional (sin ninguna afirmación confirmada) no rediseña un proceso (R10.4).
+    sb.from("findings").select("titulo,causa_raiz,recomendacion,veredicto,impacto").eq("company_id", job.company_id).in("estado_revision", ["aprobado", "corregido"]).eq("requiere_validacion", false).or("provisional.is.null,provisional.eq.false"),
     sb.from("know_how").select("puesto,situacion,senal,decision,regla_practica,criticidad,documentado").eq("company_id", job.company_id).or(`process_id.eq.${pid},process_id.is.null`),
   ]);
   const contexto = [
     `PROCESO AS-IS: ${proceso.nombre} (área: ${proceso.area ?? "—"})`,
-    procesoComoJSON(nodos, edges),
+    comoDato("EL PROCESO TAL COMO LO DIBUJÓ LA EMPRESA", procesoComoJSON(nodos, edges)),
     `HALLAZGOS APROBADOS (${hallazgos?.length ?? 0}):`,
     (hallazgos ?? []).map((h) => `- [${h.impacto}] ${h.titulo}. Causa: ${h.causa_raiz}. Recomendación: ${h.recomendacion ?? "—"}`).join("\n") || "(ninguno)",
-    `KNOW-HOW MINADO (${kh?.length ?? 0}):`,
-    (kh ?? []).map((k) => `- ${k.puesto} [criticidad ${k.criticidad}${k.documentado ? ", documentado" : ", NO documentado"}]: ${k.situacion ?? ""} | señal: ${k.senal ?? ""} | decisión: ${k.decision ?? ""} | regla: ${k.regla_practica ?? ""}`).join("\n") || "(ninguno — si un puesto se va a automatizar, es un riesgo)",
+    comoDato(`KNOW-HOW MINADO (${kh?.length ?? 0})`, (kh ?? []).map((k) => `- ${k.puesto} [criticidad ${k.criticidad}${k.documentado ? ", documentado" : ", NO documentado"}]: ${k.situacion ?? ""} | señal: ${k.senal ?? ""} | decisión: ${k.decision ?? ""} | regla: ${k.regla_practica ?? ""}`).join("\n") || "(ninguno — si un puesto se va a automatizar, es un riesgo)"),
   ].join("\n\n");
   const r = await correrToBe(contexto);
   await registrarLlamada(job.company_id, job.id, "rediseno", r);
@@ -153,7 +154,7 @@ export async function handleGenerarSop(job: Job) {
   await progreso(job.id, `Escribiendo cómo se hace "${proceso.nombre}"`);
   const padre = proceso.padre_id ?? pid;
   const { data: kh } = await sb.from("know_how").select("id,puesto,situacion,senal,decision,excepcion,estandar,error_frecuente,regla_practica,escalamiento,criterio_experto").eq("company_id", job.company_id).or(`process_id.eq.${pid},process_id.eq.${padre},process_id.is.null`);
-  const contexto = [`PROCESO: ${proceso.nombre} (${proceso.version})`, procesoComoJSON(nodos, edges), `KNOW-HOW:`, JSON.stringify((kh ?? []).map((x) => ({ ...x, id: undefined })), null, 1)].join("\n\n");
+  const contexto = [`PROCESO: ${proceso.nombre} (${proceso.version})`, comoDato("EL PROCESO TAL COMO LO DIBUJÓ LA EMPRESA", procesoComoJSON(nodos, edges)), comoDato("KNOW-HOW DEL EQUIPO", JSON.stringify((kh ?? []).map((x) => ({ ...x, id: undefined })), null, 1))].join("\n\n");
   const r = await correrSop(contexto);
   await registrarLlamada(job.company_id, job.id, "sop", r);
   await sb.from("sops").delete().eq("process_id", pid);

@@ -106,6 +106,7 @@ export function EditarMiEmpresa({ nombre, ficha }: { nombre: string; ficha: Fich
                 {campo("Tu WhatsApp", "whatsapp", "")}
               </div>
               {campo("Lo principal que vendes", "productos", "")}
+              {campo("Tu meta de venta mensual (S/)", "meta_venta_mensual", "¿a cuánto quieren llegar cada mes?")}
               {campo("Por dónde llegan tus clientes", "canales", "")}
               {error && <p className="t-cuerpo" style={{ color: "var(--contradicho)" }} role="alert">{error}</p>}
               <button type="button" className="boton" disabled={guardando || n.trim().length < 2} onClick={guardar}>

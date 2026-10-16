@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>8X · Panel de la consultora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+<header class="cabecera">
+  <a class="marca" href="#">8X <small>RENASER</small></a>
+  <nav class="pildora" aria-label="Secciones">
+    <a href="#" aria-current="page" aria-label="Inicio"><svg aria-hidden="true"><use href="iconos.svg#inicio"/></svg><span>Inicio</span></a>
+    <a href="#" aria-label="Empresas" title="Empresas"><svg aria-hidden="true"><use href="iconos.svg#empresas"/></svg><span>Empresas</span></a>
+    <a href="#" aria-label="Cartera" title="Cartera"><svg aria-hidden="true"><use href="iconos.svg#cartera"/></svg><span>Cartera</span></a>
+    <a href="#" aria-label="Decisiones" title="Decisiones"><svg aria-hidden="true"><use href="iconos.svg#decisiones"/></svg><span>Decisiones</span></a>
+    <a href="#" aria-label="Torre de control" title="Torre de control"><svg aria-hidden="true"><use href="iconos.svg#torre"/></svg><span>Torre</span></a>
+    <a href="#" aria-label="Salud del sistema" title="Salud del sistema"><svg aria-hidden="true"><use href="iconos.svg#salud"/></svg><span>Salud</span></a>
+  </nav>
+  <div class="acciones-cabecera">
+    <span class="etiqueta-prototipo">Prototipo · datos de ejemplo</span>
+    <button class="boton-redondo" type="button" aria-label="Buscar una empresa"><svg aria-hidden="true"><use href="iconos.svg#buscar"/></svg></button>
+    <span class="avatar" role="img" aria-label="Kelin Merma">KM</span>
+  </div>
+</header>
+
+<main class="lienzo">
+  <section class="saludo" aria-labelledby="t-hola">
+    <div>
+      <h1 class="hola" id="t-hola">Hola,<strong>Kelin Merma</strong></h1>
+      <p class="bienvenida">Martes 13 de octubre · 5 empresas en tu cartera</p>
+    </div>
+    <div class="pendientes">
+      <div class="fila"><h2>Pendientes</h2><span class="cifra num">7</span></div>
+      <div class="segmentos" role="img" aria-label="3 urgentes, 2 para esta semana, 2 sin fecha">
+        <span class="seg-1" style="flex:3"></span><span class="seg-2" style="flex:2"></span><span class="seg-3" style="flex:2"></span>
+      </div>
+      <div class="leyenda">
+        <span><i style="background:var(--tinta)"></i>3 urgentes</span>
+        <span><i style="background:#9aa6b8"></i>2 esta semana</span>
+        <span><i class="raya"></i>2 sin fecha</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="tarjeta medidor" aria-labelledby="t-comp">
+    <div class="cabeza">
+      <div><h2 id="t-comp">Comprensión de la cartera</h2><p class="sub">Afirmaciones confirmadas sobre las que pide la radiografía</p></div>
+      <a class="ir" href="#" aria-label="Ver detalle de comprensión"><svg aria-hidden="true"><use href="iconos.svg#diagonal"/></svg></a>
+    </div>
+    <svg data-medidor="68" role="img" aria-label="68 por ciento"></svg>
+    <div class="lectura"><span class="num">68%</span><p>comprendido</p></div>
+    <div class="pie">
+      <div><b class="num">142</b><small>confirmadas</small></div>
+      <div><b class="num">67</b><small>por confirmar</small></div>
+    </div>
+  </section>
+
+  <section class="tarjeta cifra-tarjeta" aria-labelledby="t-dec">
+    <div class="cabeza">
+      <div><h2 id="t-dec">Decisiones por tomar</h2><p class="sub">Esperan tu firma o la del dueño</p></div>
+      <a class="ir" href="#" aria-label="Ir a decisiones"><svg aria-hidden="true"><use href="iconos.svg#diagonal"/></svg></a>
+    </div>
+    <div class="fila-cifra">
+      <span class="grande">4</span>
+      <div class="barras" data-barras="2,3,1,4,2,5,3,2,4,3,5,4" role="img" aria-label="Decisiones abiertas por semana, últimas 12 semanas"></div>
+    </div>
+  </section>
+
+  <section class="tarjeta cifra-tarjeta" aria-labelledby="t-ver">
+    <div class="cabeza">
+      <div><h2 id="t-ver">Acciones verificadas</h2><p class="sub">Con evidencia, últimas 12 semanas</p></div>
+      <a class="ir" href="#" aria-label="Ver acciones verificadas"><svg aria-hidden="true"><use href="iconos.svg#diagonal"/></svg></a>
+    </div>
+    <div class="fila-cifra">
+      <span class="grande">14<small>de 40</small></span>
+      <div class="barras" data-barras="1,0,2,1,1,,2,1,2,1,2,1" role="img" aria-label="Acciones verificadas por semana; una semana sin revisión"></div>
+    </div>
+  </section>
+
+  <section class="tarjeta cifra-tarjeta ancha" aria-labelledby="t-fase">
+    <div class="cabeza">
+      <div><h2 id="t-fase">Empresas por fase</h2><p class="sub">Dónde está cada una del recorrido</p></div>
+      <a class="ir" href="#" aria-label="Ir a la cartera"><svg aria-hidden="true"><use href="iconos.svg#diagonal"/></svg></a>
+    </div>
+    <div class="fila-cifra">
+      <span class="grande">5<small>activas</small></span>
+      <div class="franja" role="img" aria-label="2 en implementación, 2 en diagnóstico, 1 en la entrada sin datos todavía">
+        <div class="marcas"><span style="flex:2">Implementa</span><span style="flex:2">Diagnóstico</span><span style="flex:1">Entrada</span></div>
+        <div class="barra-rayas"><span class="r1" style="flex:2"></span><span class="r2" style="flex:2"></span><span class="r3" style="flex:1"></span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tarjeta cifra-tarjeta ancha" aria-labelledby="t-plan">
+    <div class="cabeza">
+      <div><h2 id="t-plan">Acciones de los planes</h2><p class="sub">Hechas, en curso y por empezar</p></div>
+      <a class="ir" href="#" aria-label="Ver acciones de los planes"><svg aria-hidden="true"><use href="iconos.svg#diagonal"/></svg></a>
+    </div>
+    <div class="fila-cifra">
+      <span class="grande">18<small>de 40</small></span>
+      <div class="puntos" data-puntos="18,9,13" role="img" aria-label="18 hechas, 9 en curso, 13 por empezar"></div>
+    </div>
+  </section>
+
+  <section class="tarjeta linea-tarjeta" aria-labelledby="t-linea">
+    <div class="cabeza">
+      <div><h2 id="t-linea">Afirmaciones confirmadas</h2><p class="sub">Por semana, toda la cartera</p></div>
+      <a class="ir" href="#" aria-label="Ver afirmaciones"><svg aria-hidden="true"><use href="iconos.svg#diagonal"/></svg></a>
+    </div>
+    <div class="resumen">
+      <span class="num">24</span>
+      <p>esta semana. La del 8 de setiembre no tuvo revisión: va rayada.</p>
+    </div>
+    <div class="grafico" data-unidad="afirmaciones" data-sufijo="confirmadas"
+      data-linea='[{"e":"18 ago","v":9,"l":"Semana del 18 ago"},{"e":"25 ago","v":14,"l":"Semana del 25 ago"},{"e":"1 set","v":11,"l":"Semana del 1 set"},{"e":"8 set","v":null,"l":"Semana del 8 set"},{"e":"15 set","v":17,"l":"Semana del 15 set"},{"e":"22 set","v":21,"l":"Semana del 22 set"},{"e":"29 set","v":16,"l":"Semana del 29 set"},{"e":"6 oct","v":24,"l":"Semana del 6 oct"}]'>
+      <svg tabindex="0" role="img" aria-label="Afirmaciones confirmadas por semana. Usa las flechas para recorrer."></svg>
+      <div class="globo" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section class="tarjeta fuentes-tarjeta" aria-labelledby="t-fuentes">
+    <div class="cabeza">
+      <div><h2 id="t-fuentes">De dónde sale la evidencia</h2><p class="sub">Lleno: confirmado. Rayado: espera confirmación.</p></div>
+      <a class="ir" href="#" aria-label="Ver evidencia por fuente"><svg aria-hidden="true"><use href="iconos.svg#diagonal"/></svg></a>
+    </div>
+    <div class="fuentes">
+      <div class="fuente">
+        <span class="icono"><svg aria-hidden="true"><use href="iconos.svg#voz"/></svg></span>
+        <div class="rotulo"><b>Entrevistas</b><span>58 confirmadas · 16 por confirmar</span></div>
+        <div class="pista"><span class="lleno p1" style="width:78.4%"></span><span class="resto" style="width:21.6%"></span></div>
+      </div>
+      <div class="fuente">
+        <span class="icono"><svg aria-hidden="true"><use href="iconos.svg#documento"/></svg></span>
+        <div class="rotulo"><b>Documentos</b><span>47 confirmadas · 21 por confirmar</span></div>
+        <div class="pista"><span class="lleno p2" style="width:63.5%"></span><span class="resto" style="width:28.4%"></span></div>
+      </div>
+      <div class="fuente">
+        <span class="icono"><svg aria-hidden="true"><use href="iconos.svg#tabla"/></svg></span>
+        <div class="rotulo"><b>Datos y cifras</b><span>25 confirmadas · 18 por confirmar</span></div>
+        <div class="pista"><span class="lleno p4" style="width:33.8%"></span><span class="resto" style="width:24.3%"></span></div>
+      </div>
+      <div class="fuente">
+        <span class="icono"><svg aria-hidden="true"><use href="iconos.svg#ojo"/></svg></span>
+        <div class="rotulo"><b>Observación</b><span>12 confirmadas · 12 por confirmar</span></div>
+        <div class="pista"><span class="lleno p3" style="width:16.2%"></span><span class="resto" style="width:16.2%"></span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tarjeta tabla-tarjeta" aria-labelledby="t-cartera">
+    <div class="cabeza">
+      <div><h2 id="t-cartera">Tu cartera</h2><p class="sub">Primero lo que necesita atención</p></div>
+      <div class="botones-cabeza">
+        <button class="ir" type="button" aria-label="Filtrar la cartera"><svg aria-hidden="true"><use href="iconos.svg#filtro"/></svg></button>
+        <a class="ir" href="#" aria-label="Ir a la cartera completa"><svg aria-hidden="true"><use href="iconos.svg#diagonal"/></svg></a>
+      </div>
+    </div>
+    <div class="tabla-envoltura">
+      <table>
+        <thead><tr><th>Empresa</th><th>Fase</th><th>Responsable</th><th>Estado</th><th>Próxima decisión</th><th><span class="solo-lector">Más opciones</span></th></tr></thead>
+        <tbody>
+          <tr><td><a href="#">Taller Rojas</a><span class="menor">Mecánica automotriz</span></td><td>Implementación</td><td>Ana Torres</td><td><span class="estado alto">Indicador caído</span></td><td>Revisar el tiempo de entrega<span class="menor">Hoy</span></td><td><button class="mas" type="button" aria-label="Más opciones para Taller Rojas"><svg aria-hidden="true"><use href="iconos.svg#mas"/></svg></button></td></tr>
+          <tr><td><a href="#">Estudio Vargas &amp; Asociados</a><span class="menor">Contabilidad</span></td><td>Plan</td><td>Kelin Merma</td><td><span class="estado espera">Espera al dueño</span></td><td>Firmar el plan<span class="menor">18 oct</span></td><td><button class="mas" type="button" aria-label="Más opciones para Estudio Vargas"><svg aria-hidden="true"><use href="iconos.svg#mas"/></svg></button></td></tr>
+          <tr><td><a href="#">Panadería Flor de Mayo</a><span class="menor">Panificación</span></td><td>Entrada breve</td><td>Ana Torres</td><td><span class="estado alto">Bloqueada</span></td><td><span class="sin-dato">Sin fecha</span></td><td><button class="mas" type="button" aria-label="Más opciones para Panadería Flor de Mayo"><svg aria-hidden="true"><use href="iconos.svg#mas"/></svg></button></td></tr>
+          <tr><td><a href="#">Modas Lucero</a><span class="menor">Confección y venta de ropa</span></td><td>Implementación</td><td>Kelin Merma</td><td><span class="estado espera">Tarea vencida</span></td><td>Revisar las cotizaciones de tela<span class="menor">15 oct</span></td><td><button class="mas" type="button" aria-label="Más opciones para Modas Lucero"><svg aria-hidden="true"><use href="iconos.svg#mas"/></svg></button></td></tr>
+          <tr><td><a href="#">Clínica Dental Sonríe</a><span class="menor">Salud dental</span></td><td>Línea base</td><td>Kelin Merma</td><td><span class="estado ok">Al día</span></td><td>Congelar la línea base<span class="menor">21 oct</span></td><td><button class="mas" type="button" aria-label="Más opciones para Clínica Dental Sonríe"><svg aria-hidden="true"><use href="iconos.svg#mas"/></svg></button></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ul class="lista-movil">
+      <li><a href="#">Taller Rojas</a><span class="estado alto">Indicador caído</span><small>Implementación · Revisar el tiempo de entrega, hoy</small></li>
+      <li><a href="#">Estudio Vargas &amp; Asociados</a><span class="estado espera">Espera al dueño</span><small>Plan · Firmar el plan, 18 oct</small></li>
+      <li><a href="#">Panadería Flor de Mayo</a><span class="estado alto">Bloqueada</span><small>Entrada breve · sin documentos todavía</small></li>
+      <li><a href="#">Modas Lucero</a><span class="estado espera">Tarea vencida</span><small>Implementación · Revisar las cotizaciones de tela, 15 oct</small></li>
+      <li><a href="#">Clínica Dental Sonríe</a><span class="estado ok">Al día</span><small>Línea base · Congelar la línea base, 21 oct</small></li>
+    </ul>
+  </section>
+
+  <section class="tarjeta lista-tarjeta" aria-labelledby="t-recientes">
+    <div class="cabeza">
+      <div><h2 id="t-recientes">Decisiones recientes</h2><p class="sub">Lo que se acordó y cuánto hay en juego</p></div>
+      <a class="ir" href="#" aria-label="Ver todas las decisiones"><svg aria-hidden="true"><use href="iconos.svg#diagonal"/></svg></a>
+    </div>
+    <ul class="lista">
+      <li><span class="icono-cuadro"><svg aria-hidden="true"><use href="iconos.svg#decisiones"/></svg></span><div><b>Subir el precio del uniforme escolar</b><small>Modas Lucero · 10 oct</small></div><div class="derecha"><b>S/ 6,400</b><small>en juego</small></div></li>
+      <li><span class="icono-cuadro"><svg aria-hidden="true"><use href="iconos.svg#persona"/></svg></span><div><b>Contratar un segundo mecánico</b><small>Taller Rojas · 8 oct</small></div><div class="derecha"><b>S/ 3,200</b><small>al mes</small></div></li>
+      <li><span class="icono-cuadro"><svg aria-hidden="true"><use href="iconos.svg#documento"/></svg></span><div><b>Cobrar por adelantado los trámites</b><small>Estudio Vargas · 29 set</small></div><div class="derecha"><b>S/ 2,150</b><small>en juego</small></div></li>
+      <li><span class="icono-cuadro"><svg aria-hidden="true"><use href="iconos.svg#aviso"/></svg></span><div><b>Dejar las tortas por pedido</b><small>Panadería Flor de Mayo · 3 oct</small></div><div class="derecha"><span class="sin-dato">Sin cifra</span></div></li>
+    </ul>
+  </section>
+</main>
+<script src="graficos.js"></script>
+</body>
+</html>

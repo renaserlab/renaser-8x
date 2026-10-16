@@ -10,6 +10,30 @@
       ],
       "port": 3000,
       "autoPort": true
+    },
+    {
+      "name": "prototipos",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "4173",
+        "--directory",
+        "diseno/prototipos"
+      ],
+      "port": 4173
+    },
+    {
+      "name": "render-app",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "4174",
+        "--directory",
+        "diseno/render/salida"
+      ],
+      "port": 4174
     }
   ]
 }

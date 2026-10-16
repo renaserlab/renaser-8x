@@ -1,5 +1,11 @@
 // Ingesta de la Base Maestra al RAG: tabla conocimiento_base, troceada por sección con su eje.
 import { readFileSync } from "fs";
+// CANDADO (13-10-2026): este script crea tablas y BORRA filas en producción por la Management API, sin pasar por
+// src/lib/entorno.ts. Solo corre si quien lo lanza lo declara dos veces; si no, se detiene antes de leer nada.
+if (process.env.ENTORNO !== "produccion" || process.env.CONFIRMO_ESCRITURA_PRODUCCION !== "si") {
+  console.error("Detenido: este script escribe en producción. Para correrlo a propósito: ENTORNO=produccion CONFIRMO_ESCRITURA_PRODUCCION=si node scripts/ingestar-base-maestra.mjs");
+  process.exit(2);
+}
 const env = Object.fromEntries(readFileSync(".env.local", "utf8").split("\n").filter((l) => l.includes("=") && !l.startsWith("#")).map((l) => [l.slice(0, l.indexOf("=")), l.slice(l.indexOf("=") + 1).trim()]));
 const q = async (query) => {
   const r = await fetch("https://api.supabase.com/v1/projects/otqfqafstrohugvgbkmd/database/query", { method: "POST", headers: { Authorization: `Bearer ${env.SUPABASE_ACCESS_TOKEN}`, "Content-Type": "application/json" }, body: JSON.stringify({ query }) });

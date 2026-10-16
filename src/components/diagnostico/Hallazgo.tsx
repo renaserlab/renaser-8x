@@ -5,12 +5,22 @@ import { pedir } from "@/lib/cliente";
 import { MarcaEstado } from "@/components/base/MarcaEstado";
 import { VerFuente } from "@/components/realidad/VerFuente";
 import { MOTIVO_CORRECCION, VEREDICTO, PILAR, fechaCorta } from "@/lib/textos";
+import { nivelConfianza, esRiesgoGravePendiente } from "@/lib/rules/evidencia";
 
 export type Evid = { claim_id: string; relacion: string; claims: { id: string; texto: string; estado?: string; fecha_afirmacion: string | null; source_id?: string; fragment_id?: string | null; sources: { nombre: string; tipo: string; fecha_origen: string | null } | null; participants: { nombre: string; rol: string | null; puesto: string | null } | null } };
-export type HallazgoRow = { id: string; pilar: string; patron: string | null; titulo: string; causa_raiz: string | null; impacto: string | null; veredicto: string | null; recomendacion: string | null; filtros: (Record<string, { resultado: string; nota: string; respuestas?: string[] }> & { bloqueada?: boolean; tension?: string | null; preserva?: boolean; dimension?: string | null; fuerza_maxima?: string; fuentes_independientes?: number }) | null; auditoria: { sustentado: boolean; es_sintoma: boolean; observacion: string; culpa_persona_sin_auditar?: boolean; benchmark_como_hecho?: boolean } | null; origen: string; estado_revision: string; requiere_validacion?: boolean | null; motivo_validacion?: string | null; finding_evidence: Evid[] };
+export type HallazgoRow = {
+  id: string; pilar: string; patron: string | null; titulo: string; causa_raiz: string | null; impacto: string | null; veredicto: string | null; recomendacion: string | null;
+  filtros: (Record<string, { resultado: string; nota: string; respuestas?: string[] }> & { bloqueada?: boolean; tension?: string | null; preserva?: boolean; dimension?: string | null; fuerza_maxima?: string; fuentes_independientes?: number }) | null;
+  auditoria: { sustentado: boolean; es_sintoma: boolean; observacion: string; culpa_persona_sin_auditar?: boolean; benchmark_como_hecho?: boolean } | null;
+  origen: string; estado_revision: string; requiere_validacion?: boolean | null; motivo_validacion?: string | null;
+  // Dimensiones separadas (migracion-evidencia-dimensiones.sql): qué tan grave sería ≠ qué tan seguro es; provisional = nadie lo confirmó.
+  impacto_potencial?: string | null; confianza?: number | null; confianza_motivo?: string | null; provisional?: boolean | null;
+  finding_evidence: Evid[];
+};
 
 const COLOR_IMPACTO: Record<string, string> = { alto: "var(--contradicho)", medio: "var(--caducado)", bajo: "var(--grafito)" };
 const FUERZA: Record<string, string> = { strong: "fuente fuerte", medium: "fuente media", weak: "fuente débil" };
+const COLOR_CONFIANZA: Record<string, string> = { alta: "var(--confirmado)", media: "var(--caducado)", baja: "var(--contradicho)", desconocida: "var(--grafito)" };
 
 function fuenteDe(c: Evid["claims"]) {
   if (c.participants) return `${c.participants.rol === "dueno" ? "el dueño" : c.participants.rol === "socio" ? "un socio" : c.participants.puesto ?? c.participants.rol} (entrevista)`;
@@ -55,12 +65,22 @@ export function Hallazgo({ h, modo }: { h: HallazgoRow; modo: "consultor" | "cli
   const esCliente = modo === "cliente";
   const preserva = !!h.filtros?.preserva;
   const necesitaValidacion = !!h.requiere_validacion && !validacionLevantada;
+  // IMPACTO POTENCIAL ≠ CONFIANZA (Dirección, R10.4). El impacto que se muestra ya viene rebajado por la evidencia;
+  // el potencial dice qué pasaría si todo fuera cierto. Un riesgo grave sin corroborar se dice, no se esconde.
+  const provisional = !!h.provisional && !preserva;
+  const nivel = nivelConfianza(h.confianza);
+  const potencialDistinto = !preserva && !!h.impacto_potencial && h.impacto_potencial !== h.impacto;
+  const riesgoGravePendiente = !preserva && esRiesgoGravePendiente(h);
 
   return (
     // La severidad ya vive en la etiqueta coloreada — sin borde lateral (piso de calidad).
     <article className="panel p-5 aparece">
       <div className="flex flex-wrap items-baseline gap-3 mb-2">
         {preserva ? <span className="t-etiqueta" style={{ color: "var(--confirmado)" }}>fortaleza · se conserva</span> : <span className="t-etiqueta" style={{ color: COLOR_IMPACTO[h.impacto ?? "bajo"] }}>impacto {h.impacto}</span>}
+        {/* "Corrobora" y no "confirma": el potencial también aparece en hallazgos ya confirmados que bajaron por tener una sola fuente. */}
+        {potencialDistinto && <span className="t-etiqueta" style={{ color: COLOR_IMPACTO[h.impacto_potencial ?? "bajo"] }}>si se corrobora: {h.impacto_potencial}</span>}
+        {nivel !== "desconocida" && <span className="t-etiqueta" style={{ color: COLOR_CONFIANZA[nivel] }}>confianza: {nivel}{!esCliente && h.confianza != null ? ` (${Math.round(h.confianza * 100)}%)` : ""}</span>}
+        {provisional && <span className="t-etiqueta" style={{ color: "var(--sin-verificar)" }}>{esCliente ? "Por confirmar" : "Provisional: pendiente de corroborar"}</span>}
         {!esCliente && <span className="t-etiqueta">{PILAR[h.pilar]}{h.filtros?.dimension ? ` · ${h.filtros.dimension}` : ""}</span>}
         {!esCliente && h.patron && <span className="t-etiqueta">{h.patron.replace(/_/g, " ")}</span>}
         {!esCliente && <span className="t-etiqueta" style={{ color: estado === "aprobado" || estado === "corregido" ? "var(--confirmado)" : estado === "rechazado" ? "var(--contradicho)" : "var(--caducado)" }}>{estado}</span>}
@@ -68,6 +88,21 @@ export function Hallazgo({ h, modo }: { h: HallazgoRow; modo: "consultor" | "cli
         {!esCliente && h.filtros?.fuerza_maxima && <span className="t-etiqueta">{FUERZA[h.filtros.fuerza_maxima] ?? h.filtros.fuerza_maxima} · {h.filtros.fuentes_independientes ?? 0} fuente(s)</span>}
         {!esCliente && h.origen === "consultor" && <span className="t-etiqueta">creado por el consultor</span>}
       </div>
+      {riesgoGravePendiente && (
+        <p className="t-dato mb-2" style={{ color: "var(--contradicho)", fontWeight: 600 }}>
+          {esCliente
+            ? "Podría ser grave, pero todavía está por confirmar: sale de tu información y falta que lo revisemos contigo."
+            : "Riesgo grave pendiente de corroboración: si lo que dice la evidencia es cierto, el impacto es alto; nadie lo ha confirmado todavía."}
+        </p>
+      )}
+      {provisional && (
+        <p className="t-dato mb-2" style={{ color: "var(--grafito)" }}>
+          {esCliente
+            ? "Esto lo vimos en lo que nos compartiste, pero aún no lo confirmamos contigo. No es una conclusión: es algo que conviene revisar juntos."
+            : `Se formó solo con afirmaciones sin confirmar${h.confianza_motivo ? ` (${h.confianza_motivo})` : ""}. Al confirmar sus afirmaciones y rediagnosticar deja de ser provisional.`}
+        </p>
+      )}
+      {!esCliente && !provisional && h.confianza_motivo && <p className="t-dato mb-2" style={{ color: "var(--grafito)" }}>Por qué esta confianza: {h.confianza_motivo}.</p>}
       {!esCliente && necesitaValidacion && h.motivo_validacion && <p className="t-dato mb-2" style={{ color: "var(--contradicho)" }}>{h.motivo_validacion}. No llega al cliente hasta que se valide con otra fuente o se baje el impacto.</p>}
 
       {modoCorregir ? (

@@ -83,6 +83,7 @@ export const TIPO_SESION: Record<string, string> = {
   personal: "Tu trabajo",
   know_how: "Lo que solo tú sabes hacer",
   validacion: "Confirmar lo encontrado",
+  entrada_breve: "Conocer tu negocio",
 };
 
 export const ENTREGABLE: Record<string, string> = {

@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Public_Sans, Source_Serif_4 } from "next/font/google";
+import { Manrope, Public_Sans, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 
 const publicSans = Public_Sans({ subsets: ["latin"], variable: "--font-public-sans", display: "swap" });
+const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope", display: "swap" });
 const sourceSerif = Source_Serif_4({ subsets: ["latin"], variable: "--font-source-serif", display: "swap" });
 
 export const metadata: Metadata = {
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
 
 /** PWA: color de barra, escala 1, sin bloquear el zoom (accesibilidad), safe areas de iPhone/iPad (viewport-fit=cover). */
 export const viewport: Viewport = {
-  themeColor: "#0f2a3f",
+  themeColor: "#e4ecfb",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -24,7 +25,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={`${publicSans.variable} ${sourceSerif.variable}`}>
+    <html lang="es" className={`${publicSans.variable} ${manrope.variable} ${sourceSerif.variable}`}>
       <body>{children}</body>
     </html>
   );

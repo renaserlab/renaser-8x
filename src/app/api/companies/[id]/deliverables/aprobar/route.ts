@@ -1,4 +1,5 @@
 import { protegido, ok, fallo, leerJSON, exigirAcceso } from "@/lib/api";
+import { exigirAutoridad } from "@/lib/autoridad";
 import { aprobarDocumento } from "@/lib/documental";
 import { registrar, ipDe } from "@/lib/auditoria";
 
@@ -11,6 +12,8 @@ type Ctx = { params: Promise<{ id: string }> };
 export const POST = protegido<Ctx>({}, async (perfil, req, ctx) => {
   const { id } = await ctx.params;
   await exigirAcceso(perfil, id);
+  // Pertenecer a la empresa no basta para comprometerla: aprobar un documento exige la autoridad.
+  await exigirAutoridad(perfil, "aprobar_plan");
   const b = await leerJSON<{ deliverable_id?: string; motivo?: string }>(req);
   if (!b.deliverable_id) return fallo("Falta el documento a aprobar.");
 

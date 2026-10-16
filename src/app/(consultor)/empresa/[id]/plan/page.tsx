@@ -1,40 +1,46 @@
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { Encabezado, Vacio } from "@/components/base/Vacio";
-import { Plan } from "@/components/Plan";
 import { BotonJob } from "@/components/consultor/BotonJob";
 import { CerrarCaso } from "@/components/consultor/CerrarCaso";
+import { PlanConsultor } from "@/components/plan/PlanConsultor";
+import { CortesPlan, type Corte } from "@/components/plan/CortesPlan";
+import { cargarPlan } from "@/lib/plan-intervencion";
 import { VACIO } from "@/lib/textos";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * EL PLAN DE INTERVENCIÓN DE LA CONSULTORA. Cada acción se propone, se aprueba (con los 14 campos llenos y
+ * dentro del límite de frentes), se ejecuta, se reporta y se comprueba con prueba. Lo que se decide queda
+ * en el historial con quién, por qué y qué implica.
+ */
 export default async function PlanPag({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const sb = supabaseAdmin();
-  const [{ data: acciones }, { data: cortes }, { data: c }, { data: pruebas }] = await Promise.all([
-    sb.from("actions").select("*, findings(titulo)").eq("company_id", id).order("semana_inicio").order("prioridad"),
+  const [plan, { data: cortes }, { data: c }] = await Promise.all([
+    cargarPlan(id),
     sb.from("checkpoints").select("*").eq("company_id", id).order("numero"),
     sb.from("companies").select("etapa").eq("id", id).single(),
-    // LAS PRUEBAS de cada frente: es lo que convierte "hecho" en verificado.
-    sb.from("evidencias").select("id,action_id,tipo,nombre,nota,created_at").eq("company_id", id).not("action_id", "is", null).order("created_at"),
   ]);
-  const pruebasPorAccion: Record<string, { id: string; tipo: string; nombre: string | null; nota: string | null; created_at: string }[]> = {};
-  for (const p of pruebas ?? []) {
-    const k = p.action_id as string;
-    (pruebasPorAccion[k] ??= []).push(p);
-  }
+  const hay = plan.acciones.length > 0;
   return (
     <>
       <Encabezado
-        titulo="Plan de implementación 45 + 45"
-        sub="Frentes semanales, máximo 3 abiertos. Cada frente con dueño, indicador y semana de cierre."
+        titulo="Plan de intervención"
+        sub={`Propuesta → aprobada → en ejecución → reportada → verificada. Hasta ${plan.limiteFrentes} prioridades abiertas a la vez. Verificar exige prueba; el resultado se lee en el corte.`}
         acciones={
           <>
-            <BotonJob url={`/api/companies/${id}/plan`} texto={acciones?.length ? "Regenerar plan" : "Generar plan"} confirmar={acciones?.length ? "Se reemplazan los frentes pendientes. Los en curso o hechos se conservan. ¿Continuar?" : undefined} />
+            <BotonJob
+              url={`/api/companies/${id}/plan`}
+              texto={hay ? "Pedir otra propuesta" : "Generar propuesta"}
+              confirmar={hay ? "Las propuestas que ya no aparezcan pasan a pospuestas con su motivo; lo aprobado, en ejecución o verificado no se toca. Nada se borra. ¿Continuar?" : undefined}
+            />
             <CerrarCaso companyId={id} etapa={c?.etapa ?? ""} />
           </>
         }
       />
-      {!acciones?.length ? <Vacio texto={VACIO.plan} accion="Ir al diagnóstico" href={`/empresa/${id}/diagnostico`} /> : <Plan companyId={id} acciones={acciones} cortes={cortes ?? []} modo="consultor" pruebasPorAccion={pruebasPorAccion} />}
+      {!hay ? <Vacio texto={VACIO.plan} accion="Ir al diagnóstico" href={`/empresa/${id}/diagnostico`} /> : <PlanConsultor companyId={id} plan={plan} />}
+      <CortesPlan companyId={id} cortes={(cortes ?? []) as Corte[]} puedeRegistrar />
     </>
   );
 }
