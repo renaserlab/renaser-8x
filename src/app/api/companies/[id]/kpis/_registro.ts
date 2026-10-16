@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { registrarValor, zonaDe, granularidad, nombreDePeriodoKpi, type Kpi, type EstadoValidacionValor } from "@/lib/kpis";
+import { registrarValor, zonaDe, granularidad, nombreDePeriodoKpi, horaCierreValida, type Kpi, type EstadoValidacionValor } from "@/lib/kpis";
 import { etiquetaEstado, normalizarMetrica, VITAL_POR_CLAVE, type Vital } from "@/lib/metricas";
 import { conCifraDesplazada, declaradoAlLado, escribirConservando, faltaUnaColumna, formatoCifra, type MetricaGuardada } from "@/lib/rules/contradiccion-numerica";
 
@@ -100,6 +100,8 @@ export type OpcionesDeRegistro = {
   /** companies.zona_horaria tal como venga; vacía o desconocida cae a America/Lima. */
   zona?: unknown;
   hoy?: Date;
+  /** companies.hora_cierre («19:00»): el valor de HOY de un indicador diario se anota desde esa hora. Sin ella, desde mañana. */
+  horaCierre?: unknown;
 };
 
 /** Lo que se le dice a quien registra cuando la base falla antes de escribir nada. El mensaje de la base no es para él. */
@@ -118,6 +120,19 @@ export const TEXTO_AL_LADO = " También quedó guardado junto a esa cifra, como 
 export async function zonaDeEmpresa(sb: SupabaseClient, companyId: string): Promise<string> {
   const { data } = await sb.from("companies").select("zona_horaria").eq("id", companyId).maybeSingle();
   return zonaDe((data as { zona_horaria?: unknown } | null)?.zona_horaria);
+}
+
+/**
+ * A qué hora cierra el negocio («19:00»), o null. Va en su propia consulta: si la columna todavía no existe
+ * (migracion-entrar-hoy.sql sin aplicar), esta lectura falla sola y la zona horaria se sigue leyendo bien.
+ */
+export async function horaCierreDeEmpresa(sb: Pick<SupabaseClient, "from">, companyId: string): Promise<string | null> {
+  try {
+    const { data, error } = await sb.from("companies").select("hora_cierre").eq("id", companyId).maybeSingle();
+    return error ? null : horaCierreValida((data as { hora_cierre?: unknown } | null)?.hora_cierre);
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -227,7 +242,7 @@ export async function guardarValor(sb: SupabaseClient, kpi: Kpi, pedido: PedidoD
   }
 
   const hoy = opciones.hoy ?? new Date();
-  const plan = registrarValor(kpi, { periodo: pedido.periodo, valor: pedido.valor, fuente: pedido.fuente, estado_validacion, nota: pedido.nota }, hoy, zonaDe(opciones.zona));
+  const plan = registrarValor(kpi, { periodo: pedido.periodo, valor: pedido.valor, fuente: pedido.fuente, estado_validacion, nota: pedido.nota }, hoy, zonaDe(opciones.zona), horaCierreValida(opciones.horaCierre));
   if (!plan.ok) return { ok: false, status: 400, motivo: plan.motivo };
   const periodo = pedido.periodo.trim();
   const donde = `${kpi.clave}/${periodo}`;

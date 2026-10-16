@@ -19,7 +19,10 @@
  *  5. Ejecución (qué se hizo) y resultado (qué cambió en el negocio) son dos clases distintas de
  *     indicador y nunca se suman ni se confunden: cumplir tareas no es mejora financiera.
  *  6. Un periodo cierra en el reloj de la empresa (su zona horaria), no en UTC: a las 19:00 de Lima del
- *     último día del mes, el mes sigue abierto.
+ *     último día del mes, el mes sigue abierto. UNA excepción, y solo para lo diario (16-10-2026): si la empresa
+ *     dice a qué hora cierra el negocio (companies.hora_cierre), el valor de HOY se anota desde esa hora. Una
+ *     tienda que cierra a las 19:00 ya sabe cuánto vendió hoy; pedirle que espere a medianoche era pedirle que lo
+ *     anote mañana, de memoria. Sin hora de cierre, todo sigue como antes.
  *  7. Nada se archiva sin motivo: quien deja de vigilar un número dice por qué.
  *
  * Vocabulario: el cliente ve «indicador», «punto de partida», «meta» y «cómo se cuenta». Nunca «KPI»
@@ -109,13 +112,13 @@ export const TEXTO_SIN_DATO_MISMO_PERIODO = "de este mismo periodo se anotó des
  */
 export function textoValidacion(
   k: { estado_validacion: EstadoValidacion | null; valor_actual: number | null; valor_actual_periodo?: string | null; frecuencia?: Frecuencia },
-  reloj?: { zona: string; hoy?: Date }
+  reloj?: { zona: string; hoy?: Date; horaCierre?: string | null }
 ): string {
   if (!k.estado_validacion) return "sin rotular";
   if (k.estado_validacion === "sin_dato" && k.valor_actual != null) {
     const mismo =
       !!reloj && !!k.frecuencia && !!k.valor_actual_periodo &&
-      periodoCerradoMasReciente(k.frecuencia, reloj.hoy ?? new Date(), zonaDe(reloj.zona)) === k.valor_actual_periodo;
+      periodoCerradoMasReciente(k.frecuencia, reloj.hoy ?? new Date(), zonaDe(reloj.zona), reloj.horaCierre) === k.valor_actual_periodo;
     return mismo ? TEXTO_SIN_DATO_MISMO_PERIODO : TEXTO_SIN_DATO_DESPUES;
   }
   return VALIDACION_TEXTO[k.estado_validacion];
@@ -435,6 +438,40 @@ function inicioDeDiaEn(a: number, m0: number, d: number, zona: string): Date {
   return new Date(Math.max(t1, t2));
 }
 
+/**
+ * El instante en que el reloj de la zona marca HH:MM de ese día. Mismo método que inicioDeDiaEn: si esa hora no
+ * existe ese día porque el reloj salta, es el primer instante después del salto.
+ */
+function instanteEnZona(a: number, m0: number, d: number, h: number, min: number, zona: string): Date {
+  const comoUtc = Date.UTC(a, m0, d, h, min);
+  if (zona === ZONA_CALENDARIO) return new Date(comoUtc);
+  const desfase = (t: number) => {
+    const r = relojEn(new Date(t), zona);
+    return Date.UTC(r.a, r.m - 1, r.d, r.h, r.min, r.s) - t;
+  };
+  const t1 = comoUtc - desfase(comoUtc);
+  if (t1 + desfase(t1) === comoUtc) return new Date(t1);
+  const t2 = comoUtc - desfase(t1);
+  if (t2 + desfase(t2) === comoUtc) return new Date(t2);
+  return new Date(Math.max(t1, t2));
+}
+
+// ─── La hora de cierre: el valor de hoy de un indicador diario ───────────────────────────────────
+
+const RE_HORA = /^([01][0-9]|2[0-3]):([0-5][0-9])$/;
+
+/** companies.hora_cierre tal como viene: «HH:MM» de 00:00 a 23:59, o null. Lo demás no es una hora y vale null. */
+export function horaCierreValida(v: unknown): string | null {
+  if (typeof v !== "string") return null;
+  const t = v.trim().slice(0, 5);
+  return RE_HORA.test(t) ? t : null;
+}
+
+const minutosDe = (hora: string): number => {
+  const [, h, m] = RE_HORA.exec(hora)!;
+  return +h * 60 + +m;
+};
+
 /** Semana ISO de una fecha (la semana empieza el lunes; la 1 es la que contiene el primer jueves). */
 export function semanaISO(fecha: Date): { anio: number; semana: number } {
   const d = utc(fecha.getUTCFullYear(), fecha.getUTCMonth(), fecha.getUTCDate());
@@ -480,8 +517,17 @@ export function periodoValido(periodo: string, frecuencia: Frecuencia): boolean 
  * El primer instante DESPUÉS del periodo. Un periodo está cerrado cuando ese instante ya pasó. Con la zona
  * de la empresa es el instante real: setiembre termina en Lima el 1 de octubre a las 05:00 UTC, no a las
  * 00:00. Sin zona devuelve el día siguiente como día de calendario (medianoche UTC).
+ *
+ * `horaCierre` (companies.hora_cierre) cambia SOLO los días: el día P se puede anotar desde el inicio del día P
+ * en la zona más HH:MM, y eso es lo que se devuelve. Las semanas, quincenas, meses y trimestres no cambian.
  */
-export function finDePeriodo(periodo: string, zona: string = ZONA_CALENDARIO): Date | null {
+export function finDePeriodo(periodo: string, zona: string = ZONA_CALENDARIO, horaCierre?: string | null): Date | null {
+  const hora = horaCierreValida(horaCierre);
+  if (hora && granularidad(periodo) === "dia") {
+    const [, a, m, d] = RE_DIA.exec(periodo.trim())!;
+    const minutos = minutosDe(hora);
+    return instanteEnZona(+a, +m - 1, +d, Math.floor(minutos / 60), minutos % 60, zona);
+  }
   const dia = diaSiguienteAlPeriodo(periodo);
   return dia ? inicioDeDiaEn(dia.getUTCFullYear(), dia.getUTCMonth(), dia.getUTCDate(), zona) : null;
 }
@@ -528,13 +574,16 @@ export function terminaAntes(periodo: string | null | undefined, otro: string | 
  * terminó. Qué día es «hoy» lo dice el reloj de la zona: el 30 de setiembre a las 19:00 de Lima ya es 1 de
  * octubre en UTC, y setiembre todavía no cerró. Sin zona, `hoy` se lee como día de calendario.
  */
-export function periodoCerradoMasReciente(frecuencia: Frecuencia, hoy: Date = new Date(), zona: string = ZONA_CALENDARIO): string {
+export function periodoCerradoMasReciente(frecuencia: Frecuencia, hoy: Date = new Date(), zona: string = ZONA_CALENDARIO, horaCierre?: string | null): string {
   const reloj = relojEn(hoy, zona);
   const a = reloj.a;
   const m = reloj.m - 1;
   const d = reloj.d;
   switch (frecuencia) {
     case "diaria": {
+      // Con hora de cierre, desde esa hora el día de hoy ya se puede anotar.
+      const hora = horaCierreValida(horaCierre);
+      if (hora && reloj.h * 60 + reloj.min >= minutosDe(hora)) return `${a}-${dos(m + 1)}-${dos(d)}`;
       const ayer = utc(a, m, d - 1);
       return `${ayer.getUTCFullYear()}-${dos(ayer.getUTCMonth() + 1)}-${dos(ayer.getUTCDate())}`;
     }
@@ -590,9 +639,9 @@ export function periodoAnterior(periodo: string): string | null {
 }
 
 /** Los últimos N periodos cerrados, del más reciente al más antiguo: lo que se le ofrece elegir a quien registra. */
-export function periodosRecientes(frecuencia: Frecuencia, cantidad = 6, hoy: Date = new Date(), zona: string = ZONA_CALENDARIO): string[] {
+export function periodosRecientes(frecuencia: Frecuencia, cantidad = 6, hoy: Date = new Date(), zona: string = ZONA_CALENDARIO, horaCierre?: string | null): string[] {
   const salida: string[] = [];
-  let p: string | null = periodoCerradoMasReciente(frecuencia, hoy, zona);
+  let p: string | null = periodoCerradoMasReciente(frecuencia, hoy, zona, horaCierre);
   while (p && salida.length < cantidad) {
     salida.push(p);
     p = periodoAnterior(p);
@@ -693,6 +742,9 @@ export type RegistroValor =
 
 export const TEXTO_SIN_DATO = (periodo: string) => `sin dato en ${nombreDePeriodoKpi(periodo)}`;
 
+/** Lo que se le dice a quien quiere anotar el valor de hoy antes de la hora de cierre del negocio. */
+export const textoHoySeAnotaDesde = (hora: string) => `Hoy se anota desde las ${hora}, cuando cierra el negocio.`;
+
 /**
  * Qué hay que escribir para registrar un valor. No toca la base: devuelve la fila a insertar en
  * `indicador_valores` y los campos a actualizar en `indicadores`, o el motivo por el que no se puede.
@@ -704,20 +756,26 @@ export const TEXTO_SIN_DATO = (periodo: string) => `sin dato en ${nombreDePeriod
  * sin dato no desmiente un mes ya comprobado. Y si el hueco es del MISMO periodo que el valor actual, se
  * refleja, pero el texto lo dice con sus palabras: ese periodo ya tenía un valor y la historia lo conserva.
  *
- * `hoy` es un instante y `zona` la de la empresa: el periodo cierra en su reloj, no en UTC.
+ * `hoy` es un instante y `zona` la de la empresa: el periodo cierra en su reloj, no en UTC. `horaCierre` (solo para lo
+ * diario): el día de hoy se puede anotar desde esa hora; antes, se dice desde qué hora.
  */
 export function registrarValor(
   k: Pick<Kpi, "id" | "frecuencia" | "fuente" | "valor_actual_periodo">,
   dato: DatoRegistro,
   hoy: Date = new Date(),
-  zona: string = ZONA_POR_DEFECTO
+  zona: string = ZONA_POR_DEFECTO,
+  horaCierre?: string | null
 ): RegistroValor {
   const periodo = (dato.periodo ?? "").trim();
   if (!periodoValido(periodo, k.frecuencia)) {
     return { ok: false, motivo: `Este indicador se registra ${FRECUENCIA_TEXTO[k.frecuencia]}: el periodo se escribe ${FORMA_PERIODO[GRANULARIDAD_DE[k.frecuencia]]}.` };
   }
-  const fin = finDePeriodo(periodo, zonaDe(zona));
+  const hora = horaCierreValida(horaCierre);
+  const fin = finDePeriodo(periodo, zonaDe(zona), hora);
   if (fin && fin.getTime() > hoy.getTime()) {
+    if (hora && granularidad(periodo) === "dia" && periodo === diaEnZona(hoy, zonaDe(zona))) {
+      return { ok: false, motivo: textoHoySeAnotaDesde(hora) };
+    }
     return { ok: false, motivo: `${nombreDePeriodoKpi(periodo)} todavía no terminó: se registra cuando cierre.` };
   }
 

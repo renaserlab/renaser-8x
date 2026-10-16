@@ -4,6 +4,7 @@ import { registrar, ipDe } from "@/lib/auditoria";
 import { validarArchivo } from "@/lib/archivos";
 import { MIME_EXCEL, firmaDe, leerExcel } from "@/lib/documentos";
 import { letraColumna, type Hoja, type ValorCelda } from "@/lib/documentos/excel";
+import { exigirLlenado } from "@/lib/solicitudes";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -224,10 +225,15 @@ function vistaPrevia(hoja: Hoja, existentes: { nombre: string; version?: string 
  * Vista previa: { archivo, hoja, hojas, columnas, faltantes, nuevos, omitidos, total_filas }.
  * Confirmar: además { creados, ids } y, si se creó algo, { origen, version }. 409 si la base todavía no
  * admite un proceso «sin dibujar» (migración sin aplicar): no se crea ninguno.
+ *
+ * QUIÉN (desde el 16-10-2026). La consultora, siempre. El cliente también, pero solo el dueño o un líder de la empresa
+ * y solo mientras la consultora tenga abierta «subir_procesos» (exigirLlenado): es ella quien decide cuándo la empresa
+ * trae su lista. Si no, 403 con el texto de sección cerrada y el intento en el rastro; el archivo ni se lee.
  */
-export const POST = protegido<Ctx>({ consultor: true, cupo: "subida", entidad: "processes" }, async (perfil, req, ctx) => {
+export const POST = protegido<Ctx>({ cupo: "subida", entidad: "processes" }, async (perfil, req, ctx) => {
   const { id } = await ctx.params;
   await exigirAcceso(perfil, id);
+  if (perfil.rol !== "consultor") await exigirLlenado(perfil, id, "subir_procesos");
   const form = await req.formData();
   const archivo = form.get("archivo");
   if (!(archivo instanceof File)) return fallo("Sube el Excel (.xlsx) o el CSV con la lista de procesos.");

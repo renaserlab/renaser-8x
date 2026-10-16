@@ -89,10 +89,24 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: () => {}, push:
 // La página del consultor pide la lista con listarProcesos (PostgREST, con cuentas embebidas). Aquí esa
 // lista la da la prueba, armada con SQL sobre PGlite: se ejerce la página, no la consulta a PostgREST.
 vi.mock("@/lib/procesos", () => ({ listarProcesos: vi.fn(async () => estado.procesos) }));
+// Desde el 16-10-2026 el cliente también importa, pero solo con «subir_procesos» abierta (exigirLlenado). Aquí esa
+// sección está siempre CERRADA: el doble de la base no sabe de membresías ni de pedidos. Con la sección abierta lo
+// prueba tests/subir-por-seccion.test.ts, sobre la base en memoria.
+vi.mock("@/lib/solicitudes", async (original) => {
+  const { AccesoDenegado } = await import("@/lib/auth");
+  const real = await original<typeof import("@/lib/solicitudes")>();
+  return {
+    ...real,
+    exigirLlenado: vi.fn(async (perfil: { rol: string }, companyId: string) => {
+      if (perfil.rol !== "consultor") throw new AccesoDenegado(real.TEXTO_SECCION_CERRADA, "autoridad", companyId);
+    }),
+  };
+});
 
 import { perfilApi, type Perfil } from "@/lib/auth";
 import { registrar } from "@/lib/auditoria";
 import { VACIO } from "@/lib/textos";
+import { TEXTO_SECCION_CERRADA } from "@/lib/secciones";
 import type { ProcesoResumen } from "@/components/ProcesosLista";
 
 const EMP = "0000000a-0000-4000-8000-00000000000a"; // Modas Lucero (ficticia)
@@ -444,12 +458,12 @@ describe("lo que se rechaza · con dobles · con la explicación y el siguiente 
     expect(base.inserciones).toEqual([]);
   });
 
-  it("el dueño no importa procesos: 403, y la base ni se consulta", async () => {
+  it("el dueño sin «subir_procesos» abierta no importa: 403 con el texto de sección cerrada, y la base ni se consulta", async () => {
     const base = baseDoble({ leer: sinProcesos, insertar: admiteTodo });
     estado.base = base;
     vi.mocked(perfilApi).mockResolvedValue(DUENA);
     const r = await importar(EXCEL_CINCO, { modo: "confirmar" });
-    expect(r).toMatchObject({ status: 403, body: { error: "Solo el consultor puede hacer esto." } });
+    expect(r).toMatchObject({ status: 403, body: { error: TEXTO_SECCION_CERRADA } });
     expect(base.tablas).toEqual([]);
     vi.mocked(perfilApi).mockResolvedValue(null);
     expect((await importar(EXCEL_CINCO)).status).toBe(401);
@@ -478,7 +492,7 @@ describe("ImportarProcesos · renderizado a HTML en Node (no abierto en un naveg
     ];
     const html = renderToStaticMarkup(createElement(ImportarProcesos, { companyId: EMP, enLista, base: `/empresa/${EMP}/procesos` }));
     expect(html).toContain("De la lista de la empresa, sin dibujar (2)");
-    expect(html).toContain("No cuentan en el avance ni entran al diagnóstico, y el dueño no los ve en su lista.");
+    expect(html).toContain("No cuentan en el avance ni entran al diagnóstico. El dueño los ve solo mientras le tengas abierta «Subir o dibujar los procesos».");
     expect(html).toContain("Apertura de caja");
     expect(html).toContain("sin área"); // lo que el archivo no trajo se dice, no se rellena
     expect(html).toContain(`href="/empresa/${EMP}/procesos/11111111-1111-4111-8111-111111111111"`);

@@ -3,6 +3,7 @@ import { registrar, ipDe } from "@/lib/auditoria";
 import { validarArchivo } from "@/lib/archivos";
 import { MIME_EXCEL, firmaDe } from "@/lib/documentos";
 import { lineasDesdeExcel, vistaPreviaLineas, listarLineas, importarLineas, periodoValido, ErrorDeLinea, FORMA_PERIODO, TIPOS_LINEA, type TipoLinea } from "@/lib/producto";
+import { refrescarRuta } from "@/lib/ruta-datos";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -77,6 +78,7 @@ export const POST = protegido<Ctx>({ consultor: true, cupo: "subida", entidad: "
       ruta: "/api/companies/producto/importar",
       ip: ipDe(req),
     });
+    refrescarRuta(id, "negocio");
     return ok({ ...base, ...r, omitidas: vista.omitidas }, 201);
   } catch (e) {
     if (e instanceof ErrorDeLinea) return fallo(e.message, 500);

@@ -1,37 +1,33 @@
 "use client";
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Icono } from "@/components/base/Icono";
+import { Icono, type NombreIcono } from "@/components/base/Icono";
+import { Lateral } from "@/components/navegacion/Lateral";
 
 type EmpresaMini = { id: string; nombre: string };
 
 /**
- * Navegación de la consultora en PÍLDORA (estilo del 13-10-2026, imagen de referencia de Kelin):
- * — Escritorio: marca a la izquierda, la píldora con los destinos de todos los días al centro, y a la derecha el
- *   botón que abre el menú completo y las iniciales de quien entró.
- * — Celular: la misma píldora flota abajo con el nombre bajo cada ícono, más «Más», que abre el menú completo.
- * El menú completo (panel lateral en PC, hoja inferior en celular) lleva TODAS las pantallas y las empresas
- * recientes: tests/recorrido-conectado.test.ts vigila que toda pantalla de la consultora esté enlazada aquí.
- * La Cartera va en la píldora y en el menú: es la pantalla de Dirección y no puede depender de teclear la dirección.
+ * Navegación de la consultora AL COSTADO (pedido de Kelin, 16-10-2026). Una sola barra (Lateral.tsx):
+ * fija a la izquierda en escritorio, que se puede ocultar a un riel de íconos; en celular entra desde la izquierda.
+ * Grupos, en este orden:
+ *   1. los destinos de todos los días, con ícono (`principales`): lo único que se ve en el riel;
+ *   2. «Empresas recientes», una por fila;
+ *   3. «Sistema»: aprendizaje, torre de control y salud;
+ *   4. al pie, quién entró y «Salir».
+ * Esta barra ES el menú completo: tests/recorrido-conectado.test.ts vigila que toda pantalla de la consultora
+ * esté enlazada aquí. La Cartera va entre los principales: es la pantalla de Dirección y no puede depender de
+ * teclear la dirección.
  */
 export function NavConsultor({ empresas, usuario, torre }: { empresas: EmpresaMini[]; usuario: string; torre?: React.ReactNode }) {
   const ruta = usePathname();
-  const [abierto, setAbierto] = useState(false);
+  const dentro = (href: string) => ruta === href || ruta.startsWith(`${href}/`);
 
-  // Con Escape se cierra; al elegir una pantalla también (ver el onClick del menú).
-  useEffect(() => {
-    if (!abierto) return;
-    const tecla = (e: KeyboardEvent) => { if (e.key === "Escape") setAbierto(false); };
-    window.addEventListener("keydown", tecla);
-    return () => window.removeEventListener("keydown", tecla);
-  }, [abierto]);
-
-  const item = (href: string, nombre: string, exacto = false) => {
-    const activo = exacto ? ruta === href : ruta.startsWith(href);
+  const item = (href: string, nombre: string, icono?: NombreIcono) => {
+    const activo = dentro(href);
     return (
-      <Link key={href} href={href} aria-current={activo ? "page" : undefined}>
-        {nombre}
+      <Link key={href} href={href} aria-current={activo ? "page" : undefined} title={nombre}>
+        {icono ? <Icono nombre={icono} /> : <span className="punto" aria-hidden="true" />}
+        <span className="rotulo">{nombre}</span>
       </Link>
     );
   };
@@ -41,8 +37,8 @@ export function NavConsultor({ empresas, usuario, torre }: { empresas: EmpresaMi
     cartera: <path d="M5.5 7h13a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2ZM9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7M3.5 12.5h17" />,
     decisiones: <path d="M12 4v16M6 20h12M5 8h14M5 8l-2.5 6a2.5 2.5 0 0 0 5 0zM19 8l-2.5 6a2.5 2.5 0 0 0 5 0z" />,
   };
-  // La píldora: los destinos de todos los días, con ícono. Lo demás vive en el menú completo.
-  const abajo: [string, string, string][] = [
+  // Los destinos de todos los días, con ícono. Son los únicos que quedan a la vista con la barra oculta en riel.
+  const principales: [string, string, string][] = [
     ["/bandeja", "Inicio", "inicio"],
     ["/empresas", "Empresas", "empresas"],
     ["/cartera", "Cartera", "cartera"],
@@ -51,64 +47,53 @@ export function NavConsultor({ empresas, usuario, torre }: { empresas: EmpresaMi
   const iniciales = usuario.split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join("") || "8X";
 
   return (
-    <>
-      <header className="cabecera-app no-imprimir">
+    <Lateral
+      etiqueta="Menú de 8X"
+      marca={
         <Link href="/bandeja" className="marca-app">
           8X <small>RENASER</small>
         </Link>
-        <nav className="pildora" aria-label="Secciones">
-          {abajo.map(([href, nombre, icono]) => {
-            const a = href === "/bandeja" ? ruta === "/bandeja" : ruta.startsWith(href);
-            return (
-              <Link key={href} href={href} aria-current={a ? "page" : undefined} aria-label={nombre} title={nombre}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICONOS[icono]}</svg>
-                <span className="rotulo">{nombre}</span>
-              </Link>
-            );
-          })}
-          <button type="button" className="solo-celular" onClick={() => setAbierto(true)} aria-label="Más secciones" aria-expanded={abierto}>
-            <Icono nombre="menu" />
-            <span className="rotulo">Más</span>
-          </button>
-        </nav>
-        <div className="acciones-app">
-          {torre}
-          <button type="button" className="boton-redondo solo-escritorio" onClick={() => setAbierto(true)} aria-label="Todas las secciones" title="Todas las secciones" aria-expanded={abierto}>
-            <Icono nombre="menu" />
-          </button>
-          <span className="avatar-app" role="img" aria-label={usuario} title={usuario}>{iniciales}</span>
-        </div>
-      </header>
-
-      {abierto && (
+      }
+      enMovil={torre}
+      pie={
         <>
-          <button type="button" className="telon no-imprimir" aria-label="Cerrar el menú" onClick={() => setAbierto(false)} />
-          <div className="panel-lateral no-imprimir" role="dialog" aria-modal="true" aria-label="Todas las secciones">
-            <div className="flex items-center justify-between" style={{ marginBottom: 6 }}>
-              <p className="t-seccion">Todo 8X</p>
-              <button type="button" className="boton boton--secundario" onClick={() => setAbierto(false)}>Cerrar</button>
-            </div>
-            <nav className="menu-app" aria-label="Todas las secciones" onClick={(e) => { if ((e.target as HTMLElement).closest("a")) setAbierto(false); }}>
-              {item("/bandeja", "Inicio", true)}
-              {item("/empresas", "Todas las empresas", true)}
-              {item("/cartera", "Cartera", true)}
-              {item("/decisiones", "Decisiones por tomar")}
-              {empresas.length > 0 && <p className="titulo-menu">Empresas recientes</p>}
-              {empresas.map((e) => item(`/empresa/${e.id}`, e.nombre.length > 30 ? e.nombre.slice(0, 29) + "…" : e.nombre))}
-              <p className="titulo-menu">Sistema</p>
-              {item("/casos", "Aprendizaje del sistema")}
-              {item("/torre", "Torre de control")}
-              {item("/salud", "Salud del sistema")}
-            </nav>
-            <div className="flex items-center justify-between gap-3" style={{ marginTop: 18, paddingTop: 14, borderTop: "1px solid var(--linea)" }}>
-              <span className="t-dato" style={{ color: "var(--grafito)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>{usuario}</span>
-              <form action="/api/auth/salir" method="post">
-                <button className="boton boton--secundario">Salir</button>
-              </form>
-            </div>
-          </div>
+          <span className="avatar-app" role="img" aria-label={usuario} title={usuario}>{iniciales}</span>
+          <span className="lateral__quien rotulo" title={usuario}>{usuario}</span>
+          <form action="/api/auth/salir" method="post">
+            <button className="boton-redondo" aria-label="Salir" title="Salir">
+              <Icono nombre="salir" />
+            </button>
+          </form>
         </>
-      )}
-    </>
+      }
+    >
+      <nav className="menu-lateral" aria-label="Secciones">
+        {principales.map(([href, nombre, icono]) => {
+          const a = href === "/bandeja" ? ruta === "/bandeja" : dentro(href);
+          // Dentro de una empresa, «Empresas» queda señalada (sin ser la página actual): con la barra en riel las
+          // empresas recientes no se ven, y así se sabe dónde se está.
+          const enUnaEmpresa = href === "/empresas" && ruta.startsWith("/empresa/");
+          return (
+            <Link key={href} href={href} aria-current={a ? "page" : undefined} data-dentro={enUnaEmpresa ? "si" : undefined} aria-label={nombre} title={nombre}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICONOS[icono]}</svg>
+              <span className="rotulo">{nombre}</span>
+            </Link>
+          );
+        })}
+        {empresas.length > 0 && (
+          <div className="grupo-lateral" data-grupo="secundario">
+            <p className="titulo-menu">Empresas recientes</p>
+            {/* El nombre largo se corta con «…» en pantalla (CSS) y se lee entero en el title. */}
+            {empresas.map((e) => item(`/empresa/${e.id}`, e.nombre))}
+          </div>
+        )}
+        <div className="grupo-lateral" data-grupo="secundario">
+          <p className="titulo-menu">Sistema</p>
+          {item("/casos", "Aprendizaje del sistema", "aprendizaje")}
+          {item("/torre", "Torre de control", "torre")}
+          {item("/salud", "Salud del sistema", "salud")}
+        </div>
+      </nav>
+    </Lateral>
   );
 }

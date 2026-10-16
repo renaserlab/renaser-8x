@@ -1,6 +1,7 @@
 import { contextoPortal } from "@/lib/portal";
 import { claimsDeEmpresa, etiquetaFuente } from "@/lib/db/queries";
 import { Validar, type PorValidar } from "@/components/cliente/Validar";
+import { pedidoDeSecciones, AvisoPedido, ListoPedido } from "@/components/negocio/PedidoDeConsultora";
 
 export const dynamic = "force-dynamic";
 
@@ -8,7 +9,8 @@ export const dynamic = "force-dynamic";
 export default async function ValidarPag() {
   const c = await contextoPortal();
   if (!c.companyId) return <p className="t-cuerpo">{c.queFalta}</p>;
-  const todas = await claimsDeEmpresa(c.companyId);
+  // Lo que pidió la consultora («Confirmar lo que encontramos») va arriba, con su nota; «Listo» al final.
+  const [todas, pedido] = await Promise.all([claimsDeEmpresa(c.companyId), pedidoDeSecciones(c.companyId, ["corroborar_diagnostico"], c.u)]);
   const porId = new Map(todas.map((x) => [x.id, x]));
   // Primero contradicciones (una sola por par), luego las antiguas por validar. Máximo 20 por sesión: una cosa a la vez.
   const vistos = new Set<string>();
@@ -27,7 +29,9 @@ export default async function ValidarPag() {
     <>
       <p className="t-etiqueta">Confirmar lo encontrado</p>
       <h1 className="t-titulo mt-2 mb-8">¿Esto sigue siendo verdad?</h1>
+      <AvisoPedido p={pedido} que="Son los puntos de aquí abajo." />
       <Validar items={items.slice(0, 20)} />
+      <ListoPedido p={pedido} />
     </>
   );
 }

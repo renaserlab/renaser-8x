@@ -218,6 +218,15 @@
         "schema.sql"
       ],
       "por_que": "13-10 (R18). claims_cliente y participants_cliente quedan solo para leer tambien para authenticated: un dueño podia escribir en participants a traves de la vista."
+    },
+    {
+      "archivo": "migracion-entrar-hoy.sql",
+      "depende_de": [
+        "schema.sql",
+        "migracion-entrada-y-direccion.sql",
+        "migracion-lineas-producto-cliente.sql"
+      ],
+      "por_que": "16-10. Lo que el cliente llena hoy: columnas de producto y de empresa, costos_mes, ficha_negocio, operaciones_moneda, solicitudes_cliente, ruta_marcas, process_versiones (la copia de un proceso antes de volver a dibujarlo); rehace lineas_producto_cliente con las columnas nuevas."
     }
   ],
   "notas": [

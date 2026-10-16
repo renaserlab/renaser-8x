@@ -11,7 +11,12 @@
  *   y se enlaza, con nombre de empresario, en la fila «En esta sección» (EnEstaSeccion), montada una sola
  *   vez en el layout. Cualquier pantalla queda a dos toques como máximo.
  * — CONSULTORA: las pestañas de /empresa/[id] van en tres capas con rótulo: Resumen, Evidencia, Intervención.
- *   Las pantallas generales (Inicio, Empresas, Cartera…) se enlazan en las barras de NavConsultor.
+ *   Las pantallas generales (Inicio, Empresas, Cartera…) se enlazan en la barra lateral de NavConsultor.
+ *
+ * 16-10-2026: la navegación pasó AL COSTADO (pedido de Kelin). Antes había dos barras (la lateral de escritorio y
+ * la inferior del celular); ahora hay una sola, que en celular entra como cajón. La lista que se llamaba `abajo`
+ * es `principales`: el grupo de los destinos de todos los días. Las reglas no cambian (cinco como máximo, con
+ * ícono, sin repetir); cambia dónde se pintan.
  *
  * Una pantalla nueva sin enlazar hace fallar esta prueba. Ese es el punto.
  *
@@ -113,7 +118,7 @@ describe("portal del cliente: cinco destinos, y toda pantalla a dos toques", () 
 
   it("la barra tiene exactamente cinco destinos, y son esos cinco", () => {
     expect(pares(cuerpoDe(layoutCliente, "enlaces")), "la lista `enlaces` del layout (barra lateral de escritorio)").toEqual(CINCO);
-    expect(pares(cuerpoDe(navCliente, "PRINCIPALES")), "la lista PRINCIPALES de NavCliente (barra inferior del celular)").toEqual(CINCO);
+    expect(pares(cuerpoDe(navCliente, "PRINCIPALES")), "la lista PRINCIPALES de NavCliente (de donde sale el ícono de cada destino)").toEqual(CINCO);
     expect(navCliente).toMatch(/PRINCIPALES\.map\(/);
     expect(navCliente).toMatch(/enlaces\.map\(/);
   });
@@ -231,16 +236,26 @@ const layoutConsultor = leer("app/(consultor)/layout.tsx");
 /** Las pantallas generales de la consultora: el primer tramo de cada ruta con page.tsx (/torre/mapa cuenta como /torre). */
 const SECCIONES_CONSULTORA = [...new Set(rutasConPagina(path.join(SRC, "app/(consultor)")).map((r) => `/${r.split("/")[1]}`))].sort();
 
-/** La barra inferior del celular: ruta, nombre e ícono de cada destino. */
-const ABAJO = [...cuerpoDe(navConsultor, "abajo").matchAll(/\[\s*"([^"]*)"\s*,\s*"([^"]*)"\s*,\s*"([^"]*)"\s*\]/g)].map((m) => ({ href: m[1]!, nombre: m[2]!, icono: m[3]! }));
+/**
+ * El grupo principal de la barra lateral (antes, «la barra inferior del celular»): ruta, nombre e ícono de cada
+ * destino de todos los días. Desde el 16-10-2026 hay una sola barra, al costado; este grupo es lo único que queda
+ * a la vista cuando se oculta en riel.
+ */
+const PRINCIPALES_C = [...cuerpoDe(navConsultor, "principales").matchAll(/\[\s*"([^"]*)"\s*,\s*"([^"]*)"\s*,\s*"([^"]*)"\s*\]/g)].map((m) => ({ href: m[1]!, nombre: m[2]!, icono: m[3]! }));
 
-/** Los enlaces de la barra lateral de escritorio: los que pinta `item(...)` y los escritos como <Link href="…">. */
-const LATERAL = [...navConsultor.matchAll(/item\("(\/[^"]*)"\s*,\s*"([^"]*)"/g), ...navConsultor.matchAll(/<Link href="(\/[^"]*)"[^>]*>([^<{]*)</g)].map((m) => ({ href: m[1]!, nombre: m[2]!.trim() }));
+/**
+ * Todos los enlaces de la barra lateral: los que pinta `item(...)`, los escritos como <Link href="…"> y, después,
+ * el grupo principal (en ese orden: así «/cartera» sigue justo después de «/empresas»).
+ */
+const LATERAL = [
+  ...[...navConsultor.matchAll(/item\("(\/[^"]*)"\s*,\s*"([^"]*)"/g), ...navConsultor.matchAll(/<Link href="(\/[^"]*)"[^>]*>([^<{]*)</g)].map((m) => ({ href: m[1]!, nombre: m[2]!.trim() })),
+  ...PRINCIPALES_C.map(({ href, nombre }) => ({ href, nombre })),
+];
 
-describe("barras de la consultora: las pantallas generales, y la Cartera en las dos", () => {
+describe("barra lateral de la consultora: las pantallas generales, y la Cartera en el grupo principal", () => {
   it("se encontraron pantallas y enlaces (si esto falla, la prueba no mira nada)", () => {
     expect(SECCIONES_CONSULTORA.length).toBeGreaterThan(5);
-    expect(ABAJO.length).toBeGreaterThan(2);
+    expect(PRINCIPALES_C.length).toBeGreaterThan(2);
     expect(LATERAL.length).toBeGreaterThan(5);
   });
 
@@ -254,29 +269,29 @@ describe("barras de la consultora: las pantallas generales, y la Cartera en las 
   });
 
   it("ningún enlace de las barras apunta a una pantalla que no existe", () => {
-    for (const { href } of [...ABAJO, ...LATERAL]) expect(SECCIONES_CONSULTORA, `NavConsultor enlaza ${href}, que no tiene page.tsx`).toContain(href);
+    for (const { href } of [...PRINCIPALES_C, ...LATERAL]) expect(SECCIONES_CONSULTORA, `NavConsultor enlaza ${href}, que no tiene page.tsx`).toContain(href);
   });
 
-  it("lo nuevo de esta tanda: «Cartera» está en la barra lateral y en la barra del celular", () => {
+  it("lo nuevo de esta tanda: «Cartera» está en la barra lateral, en su grupo principal", () => {
     expect(existsSync(path.join(SRC, "app/(consultor)/cartera/page.tsx")), "la pantalla de cartera no existe: no se enlaza lo que no está construido").toBe(true);
     expect(LATERAL).toContainEqual({ href: "/cartera", nombre: "Cartera" });
-    expect(ABAJO.map((e) => [e.href, e.nombre])).toContainEqual(["/cartera", "Cartera"]);
+    expect(PRINCIPALES_C.map((e) => [e.href, e.nombre])).toContainEqual(["/cartera", "Cartera"]);
     // Va junto a la lista de empresas: es otra manera de mirarlas todas, no una herramienta del sistema.
     const orden = LATERAL.map((e) => e.href);
     expect(orden.indexOf("/cartera")).toBe(orden.indexOf("/empresas") + 1);
   });
 
-  it("la barra del celular no se llena: cinco destinos como máximo, cada uno con su ícono dibujado", () => {
-    expect(ABAJO.length).toBeLessThanOrEqual(5);
-    expect(new Set(ABAJO.map((e) => e.href)).size, "un destino repetido en la barra del celular").toBe(ABAJO.length);
-    const iconos = navConsultor.slice(navConsultor.indexOf("const ICONOS"), navConsultor.indexOf("const abajo"));
-    for (const { nombre, icono } of ABAJO) expect(iconos, `«${nombre}» pide el ícono «${icono}», que no está dibujado: saldría un hueco`).toMatch(new RegExp(`\\b${icono}: <path `));
-    expect(navConsultor).toMatch(/abajo\.map\(/);
+  it("el grupo principal de la barra lateral no se llena: cinco destinos como máximo, cada uno con su ícono dibujado", () => {
+    expect(PRINCIPALES_C.length).toBeLessThanOrEqual(5);
+    expect(new Set(PRINCIPALES_C.map((e) => e.href)).size, "un destino repetido en el grupo principal de la barra lateral").toBe(PRINCIPALES_C.length);
+    const iconos = navConsultor.slice(navConsultor.indexOf("const ICONOS"), navConsultor.indexOf("const principales"));
+    for (const { nombre, icono } of PRINCIPALES_C) expect(iconos, `«${nombre}» pide el ícono «${icono}», que no está dibujado: saldría un hueco`).toMatch(new RegExp(`\\b${icono}: <path `));
+    expect(navConsultor).toMatch(/principales\.map\(/);
     // Los íconos son trazos, nunca emoji.
     expect(navConsultor).not.toMatch(/\p{Extended_Pictographic}/u);
   });
 
-  it("lo que en un celular no cabe abajo tiene otra entrada: la torre va en la barra superior", () => {
+  it("en un celular la torre está a un toque: va en la franja de arriba, además de en la barra lateral", () => {
     expect(layoutConsultor).toMatch(/lg:hidden[\s\S]*href="\/torre"/);
   });
 });

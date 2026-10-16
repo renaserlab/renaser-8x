@@ -4,7 +4,8 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { registrar, ipDe } from "@/lib/auditoria";
 import { registrarError } from "@/lib/errores";
 import { desdeFila, ESTADOS_VALIDACION_VALOR } from "@/lib/kpis";
-import { guardarValor, zonaDeEmpresa, rastroDeValor } from "../../_registro";
+import { guardarValor, zonaDeEmpresa, horaCierreDeEmpresa, rastroDeValor } from "../../_registro";
+import { refrescarRuta } from "@/lib/ruta-datos";
 
 type Ctx = { params: Promise<{ id: string; kid: string }> };
 
@@ -42,8 +43,8 @@ export const POST = protegido<Ctx>({}, async (perfil, req, ctx) => {
   if (!fila || fila.company_id !== id) return fallo("Ese indicador no es de esta empresa.", 404);
   const kpi = desdeFila(fila as Record<string, unknown>);
 
-  const zona = await zonaDeEmpresa(sb, id);
-  const r = await guardarValor(sb, kpi, b, perfil, { zona });
+  const [zona, horaCierre] = await Promise.all([zonaDeEmpresa(sb, id), horaCierreDeEmpresa(sb, id)]);
+  const r = await guardarValor(sb, kpi, b, perfil, { zona, horaCierre });
   if (!r.ok) {
     if (r.tecnico) void registrarError({ ruta: RUTA, metodo: "POST", mensaje: "No se guardó el valor de un indicador", detalle: r.tecnico, actorId: perfil.id, companyId: id });
     return fallo(r.motivo, r.status);
@@ -52,6 +53,7 @@ export const POST = protegido<Ctx>({}, async (perfil, req, ctx) => {
   const rastro = { companyId: id, actor: perfil, entidad: "indicador_valor", entidadId: kid, ...rastroDeValor(kpi, r), ruta: RUTA, ip: ipDe(req) };
   if (r.sin_dato) {
     void registrar(rastro);
+    refrescarRuta(id, "ruta");
     return ok({ sin_dato: true, texto: r.texto, es_periodo_anterior: r.es_periodo_anterior });
   }
   if (r.pendiente) {
@@ -62,5 +64,6 @@ export const POST = protegido<Ctx>({}, async (perfil, req, ctx) => {
   }
 
   void registrar(rastro);
+  refrescarRuta(id, "ruta");
   return ok({ sin_dato: false, texto: r.texto, corregido: r.corregido, es_periodo_anterior: r.es_periodo_anterior, aviso: r.aviso }, r.corregido ? 200 : 201);
 });

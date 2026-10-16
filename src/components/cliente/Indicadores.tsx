@@ -65,6 +65,7 @@ export function Indicadores({
   indicadores,
   valores,
   zona,
+  horaCierre,
 }: {
   companyId: string;
   indicadores: Indicador[];
@@ -76,6 +77,8 @@ export function Indicadores({
   periodoActual?: string;
   /** companies.zona_horaria. Si la página no la pasa, o viene vacía o inventada, America/Lima: nunca UTC. */
   zona?: string | null;
+  /** companies.hora_cierre («19:00»). Hoy esta pantalla anota meses y no la usa para el periodo; viaja para que la regla sea una sola. */
+  horaCierre?: string | null;
 }) {
   const [anotando, setAnotando] = useState<string | null>(null);
   const [descartando, setDescartando] = useState<string | null>(null);
@@ -85,7 +88,7 @@ export function Indicadores({
   const [aviso, setAviso] = useState<string | null>(null);
 
   // Sin fecha explícita: «ahora», leído en el reloj de la empresa. Es el mismo mes que la ruta va a aceptar.
-  const periodoActual = periodoCerradoMasReciente("mensual", undefined, zonaDe(zona));
+  const periodoActual = periodoCerradoMasReciente("mensual", undefined, zonaDe(zona), horaCierre);
 
   const propuestos = indicadores.filter((i) => i.estado === "propuesto");
   const activos = indicadores.filter((i) => i.estado === "activo");

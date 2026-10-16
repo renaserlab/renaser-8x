@@ -13,21 +13,23 @@
  * EL ORDEN, Y POR QUÉ. Es la constante PRIORIDAD; gana el primero que tenga algo que decir.
  *
  *    1 · entrada            La puerta: sin confirmar lo que entendimos no hay con qué trabajar. (ya existía)
- *    2 · direccion          Espera la palabra del dueño: lo acordado no rige hasta que él lo confirma.
- *    3 · punto_de_partida   Espera la palabra del dueño: sin aceptarlo, ningún avance tiene contra qué compararse.
- *    4 · tareas_semana      Tiene fecha: lo que empieza o vence esta semana, y lo que venció y sigue abierto.
- *    5 · indicador          Tiene fecha: el periodo ya cerró y falta su valor.
- *    6 · numeros            Falta un dato del dueño, sin fecha.
- *    7 · tareas_en_marcha   Trabajo aprobado que esta semana no empieza ni vence.
- *    8 · informe            Para leer: el informe tiene conclusiones y nadie de la empresa lo abrió todavía.
- *    9 · restriccion        La lectura de siempre: lo que más frena a la empresa. (ya existía)
- *   10 · pregunta_abierta   La conversación quedó a mitad. (ya existía)
- *   11 · paso               El paso del recorrido en que está la empresa. (ya existía)
+ *    2 · pedidos            La consultora abrió algo para que el dueño lo llene (16-10-2026): es lo que ella espera hoy.
+ *    3 · direccion          Espera la palabra del dueño: lo acordado no rige hasta que él lo confirma.
+ *    4 · punto_de_partida   Espera la palabra del dueño: sin aceptarlo, ningún avance tiene contra qué compararse.
+ *    5 · tareas_semana      Tiene fecha: lo que empieza o vence esta semana, y lo que venció y sigue abierto.
+ *    6 · indicador          Tiene fecha: el periodo ya cerró y falta su valor.
+ *    7 · numeros            Falta un dato del dueño, sin fecha.
+ *    8 · tareas_en_marcha   Trabajo aprobado que esta semana no empieza ni vence.
+ *    9 · informe            Para leer: el informe tiene conclusiones y nadie de la empresa lo abrió todavía.
+ *   10 · restriccion        La lectura de siempre: lo que más frena a la empresa. (ya existía)
+ *   11 · pregunta_abierta   La conversación quedó a mitad. (ya existía)
+ *   12 · paso               El paso del recorrido en que está la empresa. (ya existía)
  *
  * Los cuatro estados que ya existían conservan su orden entre ellos. Los nuevos van entre la entrada y la
  * lectura de siempre porque son cosas concretas que esperan al dueño; la restricción no se pierde: sigue en
  * «Mi empresa», a un toque. Primero lo que se resuelve con una confirmación (destraba el trabajo de otros),
- * después lo que tiene fecha, después lo que no la tiene.
+ * después lo que tiene fecha, después lo que no la tiene. Lo que pidió la consultora va primero entre los pendientes:
+ * es un pedido explícito, con su nota, y el resto del trabajo de esa semana suele depender de que se llene.
  */
 import { aceptacionDelDueno } from "./actas";
 import { nombreDePeriodoKpi, periodoCerradoMasReciente, zonaDe, FRECUENCIAS, type Frecuencia } from "./kpis";
@@ -99,6 +101,8 @@ export type IndicadorPendiente = { nombre: string; periodo: string };
 export type Pendientes = {
   /** Quien mira es el dueño, o la consultora viendo el portal como él. Un líder o un participante no confirma por la empresa. */
   comoDueno: boolean;
+  /** Lo que la consultora activó para que la empresa lo llene y sigue abierto (solicitudes_cliente activas). */
+  pedidos: { abiertas: number } | null;
   /** La versión acordada de «Hacia dónde va tu empresa» que el dueño todavía no confirmó. */
   direccion: { version: number } | null;
   /** El punto de partida vigente que el dueño todavía no aceptó. */
@@ -117,6 +121,7 @@ export type Pendientes = {
 /** Nada pendiente y nada sabido: de aquí parte quien lee, y es lo que queda si no se pudo leer nada. */
 export const SIN_PENDIENTES: Readonly<Pendientes> = Object.freeze({
   comoDueno: false,
+  pedidos: null,
   direccion: null,
   puntoDePartida: null,
   tareas: null,
@@ -141,7 +146,7 @@ export type Hechos = Partial<Pendientes> & { entrada?: EntradaTablero | null; de
 // ───────────────────────── EL ORDEN ─────────────────────────
 
 /** Lo que espera al dueño, en orden de urgencia. */
-export const ESTADOS_PENDIENTES = ["direccion", "punto_de_partida", "tareas_semana", "indicador", "numeros", "tareas_en_marcha", "informe"] as const;
+export const ESTADOS_PENDIENTES = ["pedidos", "direccion", "punto_de_partida", "tareas_semana", "indicador", "numeros", "tareas_en_marcha", "informe"] as const;
 /** La lectura de siempre, en el orden que ya tenía. */
 export const ESTADOS_DE_SIEMPRE = ["restriccion", "pregunta_abierta", "paso"] as const;
 /** EL ORDEN COMPLETO. La decisión se recorre con esta lista: cambiar la prioridad es cambiar el orden de estas tres listas. */
@@ -171,6 +176,18 @@ const accionDePaso = (d: DeSiempre): SiguienteAccion => ({ texto: d.queFalta, li
 
 const PELDANOS: Record<EstadoSiguiente, (h: Hechos) => SiguienteAccion | null> = {
   entrada: (h) => accionDeEntrada(h.entrada ?? null),
+
+  pedidos: (h) => {
+    const n = h.pedidos?.abiertas;
+    if (!positivo(n)) return null;
+    return {
+      texto: `Tu consultora te pidió ${cuantas(n, "cosa", "cosas")}.`,
+      linea: "Ahí está qué es y dónde se llena. Si no sabes un número, dilo: también sirve.",
+      fuente: null,
+      href: "/portal/pedidos",
+      accion: "Ver lo que te pidió",
+    };
+  },
 
   direccion: (h) =>
     h.comoDueno === true && h.direccion
@@ -292,12 +309,12 @@ export function siguienteAccion(h: Hechos): Decision | null {
   return recorrer(PRIORIDAD, h);
 }
 
-/** Solo lo que espera al dueño (estados 2 a 8). null = nada pendiente: toca la lectura de siempre. */
+/** Solo lo que espera al dueño (estados 2 a 9). null = nada pendiente: toca la lectura de siempre. */
 export function accionPendiente(p: Partial<Pendientes>): Decision | null {
   return recorrer(ESTADOS_PENDIENTES, p);
 }
 
-/** La lectura de siempre (estados 9 a 11). Nunca es null: el paso del recorrido siempre existe. */
+/** La lectura de siempre (estados 10 a 12). Nunca es null: el paso del recorrido siempre existe. */
 export function accionDeSiempre(d: DeSiempre): Decision {
   return recorrer(ESTADOS_DE_SIEMPRE, { deSiempre: d }) ?? { ...accionDePaso(d), estado: "paso" };
 }
@@ -379,8 +396,8 @@ export function frecuenciaDe(valor: unknown): Frecuencia {
  * El periodo que se le pide a un indicador: el último que cerró en el reloj de la empresa (el mismo que ofrece
  * el botón «Registrar el valor de…» en «Tus indicadores»). Lo usa quien lee para pedir solo esos valores.
  */
-export function periodoQueToca(k: Pick<IndicadorBreve, "frecuencia">, ahora: Date = new Date(), zona?: string | null): string {
-  return periodoCerradoMasReciente(frecuenciaDe(k.frecuencia), ahora, zonaDe(zona));
+export function periodoQueToca(k: Pick<IndicadorBreve, "frecuencia">, ahora: Date = new Date(), zona?: string | null, horaCierre?: string | null): string {
+  return periodoCerradoMasReciente(frecuenciaDe(k.frecuencia), ahora, zonaDe(zona), horaCierre);
 }
 
 /**
@@ -395,13 +412,14 @@ export function indicadoresSinValor(
   indicadores: readonly IndicadorBreve[],
   valores: readonly { indicador_id: string; periodo: string }[],
   ahora: Date = new Date(),
-  zona?: string | null
+  zona?: string | null,
+  horaCierre?: string | null
 ): IndicadorPendiente[] {
   const conValor = new Set(valores.map((v) => `${v.indicador_id}|${v.periodo}`));
   const faltan: IndicadorPendiente[] = [];
   for (const k of indicadores) {
     if (k.estado !== "activo" || k.estado_validacion === "sin_dato") continue;
-    const periodo = periodoQueToca(k, ahora, zona);
+    const periodo = periodoQueToca(k, ahora, zona, horaCierre);
     if (!conValor.has(`${k.id}|${periodo}`)) faltan.push({ nombre: k.nombre, periodo });
   }
   return faltan;

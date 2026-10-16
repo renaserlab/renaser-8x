@@ -11,6 +11,7 @@ import { planDe, preguntaAbiertaDe, progresoEntrada } from "./entrada";
 import { registrarError } from "./errores";
 import type { Metrica } from "./metricas";
 import { zonaDeEmpresa } from "./revision-semanal";
+import { horaCierreValida } from "./kpis";
 import {
   direccionSinConfirmar, puntoDePartidaSinAceptar, tareasDelEquipo, indicadoresSinValor, periodoQueToca, numerosQueFaltan, SIN_PENDIENTES,
   type EntradaTablero, type Pendientes, type IndicadorPendiente, type ActaBreve, type MedicionBreve, type AccionBreve, type IndicadorBreve,
@@ -163,7 +164,7 @@ export async function pendientesDelDueno(companyId: string, quien: QuienMira, op
       return null;
     };
 
-    const [membresias, fichas, mediciones, actas, acciones, indicadores, metricas, aperturas, zona] = await Promise.all([
+    const [membresias, fichas, mediciones, actas, acciones, indicadores, metricas, aperturas, zona, cierre, pedidos] = await Promise.all([
       // Solo el dueño confirma por la empresa. La consultora que mira «como el empresario» ve lo que vería él.
       quien.rol === "consultor"
         ? Promise.resolve(null)
@@ -188,21 +189,29 @@ export async function pendientesDelDueno(companyId: string, quien: QuienMira, op
       ),
       // Las semanas y los periodos se cuentan con el reloj de la empresa; sin zona, America/Lima.
       zonaDeEmpresa(companyId, sb).catch(() => null),
+      // A qué hora cierra el negocio: desde esa hora el valor de HOY de un indicador diario ya se puede anotar.
+      // Lectura aparte: si la columna todavía no existe (migración pendiente) esto queda null y lo demás sigue igual.
+      filas<{ hora_cierre: string | null }>("la hora de cierre", () => sb.from("companies").select("hora_cierre").eq("id", companyId).limit(1)),
+      // Lo que la consultora activó para que la empresa lo llene y sigue abierto. Una sección tiene a lo sumo un pedido
+      // activo (índice único), así que el tope no recorta nada. Sin la tabla (migración pendiente), ese aviso no aparece.
+      filas<{ id: string }>("lo que pidió la consultora", () => sb.from("solicitudes_cliente").select("id").eq("company_id", companyId).eq("estado", "activa").limit(20)),
     ]);
+    const horaCierre = horaCierreValida(cierre?.[0]?.hora_cierre);
 
     // De cada indicador activo solo hace falta saber si el periodo que cerró tiene valor: se piden esos y nada más.
     let sinValor: IndicadorPendiente[] = [];
     if (indicadores?.length) {
-      const periodos = [...new Set(indicadores.map((k) => periodoQueToca(k, ahora, zona)))];
+      const periodos = [...new Set(indicadores.map((k) => periodoQueToca(k, ahora, zona, horaCierre)))];
       const valores = await filas<{ indicador_id: string; periodo: string }>("los valores de los indicadores", () =>
         sb.from("indicador_valores").select("indicador_id,periodo").in("indicador_id", indicadores.map((k) => k.id)).in("periodo", periodos)
       );
-      if (valores) sinValor = indicadoresSinValor(indicadores, valores, ahora, zona);
+      if (valores) sinValor = indicadoresSinValor(indicadores, valores, ahora, zona, horaCierre);
     }
 
     const ficha = fichas?.[0] ? { id: String(fichas[0].id), version: Number(fichas[0].version) } : null;
     leido = {
       comoDueno: quien.rol === "consultor" || membresias?.[0]?.nivel === "dueno",
+      pedidos: pedidos ? { abiertas: pedidos.length } : null,
       direccion: fichas && actas ? direccionSinConfirmar(ficha, actas) : null,
       puntoDePartida: mediciones && actas ? puntoDePartidaSinAceptar(mediciones, actas) : null,
       tareas: acciones ? tareasDelEquipo(acciones, ahora, zona) : null,

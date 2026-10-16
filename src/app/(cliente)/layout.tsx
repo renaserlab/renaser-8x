@@ -4,6 +4,9 @@ import { requerirCliente, resolverEmpresaActiva } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { NavCliente } from "@/components/cliente/NavCliente";
 import { EnEstaSeccion } from "@/components/cliente/EnEstaSeccion";
+import { BarraRutaCliente } from "@/components/cliente/BarraRutaCliente";
+import { seccionesAbiertas, pantallasOcultas } from "@/lib/solicitudes";
+import { negocioDeEmpresa } from "@/lib/ruta-datos";
 import { ElegirEmpresa } from "./portal/elegir-empresa/ElegirEmpresa";
 
 export default async function LayoutCliente({ children }: { children: React.ReactNode }) {
@@ -41,7 +44,19 @@ export default async function LayoutCliente({ children }: { children: React.Reac
       );
     }
   }
-  const empresa = companyId ? (await supabaseAdmin().from("companies").select("nombre").eq("id", companyId).single()).data : null;
+  // La empresa, qué pedidos de la consultora siguen abiertos y qué tiene guardado, a la vez. Lo abierto da el contador
+  // junto a «Inicio» y, con lo guardado, qué pantallas de «Mi empresa» le tocan hoy al dueño: las que su consultora
+  // abrió o en las que ya guardó algo (pantallasOcultas). Lo guardado sale de la caché de la ruta (negocioDeEmpresa),
+  // no de otra lectura. Si algo no se pudo leer, no hay contador (nunca un cero inventado) y no se esconde nada.
+  const [empresa, abiertasAhora, negocio] = companyId
+    ? await Promise.all([
+        supabaseAdmin().from("companies").select("nombre").eq("id", companyId).single().then((r) => r.data),
+        seccionesAbiertas(companyId).catch(() => null),
+        negocioDeEmpresa(companyId).catch(() => null),
+      ])
+    : [null, null, null];
+  const abiertas = abiertasAhora ? abiertasAhora.length : null;
+  const ocultar = pantallasOcultas(abiertasAhora, negocio?.guardado ?? null);
   // CINCO DESTINOS, NO OCHO (pedido de Kelin: "que no salga lo mismo en todos lados").
   // Conversar sale de la barra: es la ACCIÓN principal (el botón de Inicio), no un lugar.
   // Procesos entra como destino propio. Las demás pantallas viven DENTRO de uno de los cinco y se
@@ -55,29 +70,32 @@ export default async function LayoutCliente({ children }: { children: React.Reac
     ["/portal/plan", "Plan"],
   ];
   return (
-    <div className="min-h-screen flex flex-col">
-      {companyId && <NavCliente enlaces={enlaces as [string, string][]} empresa={empresa?.nombre} />}
-      {!companyId && (
-        <header className="cabecera-app sin-pildora no-imprimir">
-          <span className="marca-app">8X <small>Tu empresa</small></span>
-          <div className="acciones-app">
-            <form action="/api/auth/salir" method="post">
-              <button className="boton boton--secundario">Salir</button>
-            </form>
+    <div className="marco-app">
+      {companyId && <NavCliente enlaces={enlaces as [string, string][]} empresa={empresa?.nombre} avisos={abiertas ? { "/portal": abiertas } : undefined} />}
+      <div className="columna-app">
+        {!companyId && (
+          <header className="cabecera-app sin-pildora no-imprimir">
+            <span className="marca-app">8X <small>Tu empresa</small></span>
+            <div className="acciones-app">
+              <form action="/api/auth/salir" method="post">
+                <button className="boton boton--secundario">Salir</button>
+              </form>
+            </div>
+          </header>
+        )}
+        {vistaConsultor && (
+          <div className="aviso-vista no-imprimir">
+            <span>Estás viendo el portal como lo ve el empresario</span>
+            <a href="/api/consultor/ver-portal?salir=1">Volver a mi bandeja</a>
           </div>
-        </header>
-      )}
-      {vistaConsultor && (
-        <div className="aviso-vista no-imprimir">
-          <span>Estás viendo el portal como lo ve el empresario</span>
-          <a href="/api/consultor/ver-portal?salir=1">Volver a mi bandeja</a>
-        </div>
-      )}
-      {/* En celular la píldora flota abajo: .contenido-app deja aire debajo (con la zona segura del iPhone). */}
-      <main className="contenido-app flex-1">
-        {companyId && <EnEstaSeccion variasEmpresas={variasEmpresas} />}
-        <div className="hoja">{children}</div>
-      </main>
+        )}
+        {/* Arriba, el avance de la empresa en su ruta (no es navegación). Sin tipo de trabajo elegido no se pinta. */}
+        {companyId && <BarraRutaCliente companyId={companyId} />}
+        <main className="contenido-app">
+          {companyId && <EnEstaSeccion variasEmpresas={variasEmpresas} ocultar={ocultar} />}
+          <div className="hoja">{children}</div>
+        </main>
+      </div>
     </div>
   );
 }

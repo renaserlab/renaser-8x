@@ -7,6 +7,7 @@ import { valoresActuales, derivadosActuales, nombresProvisionales, fechaDia, COL
 import { radiografia, type Metrica } from "@/lib/metricas";
 import { cargarMediciones } from "@/components/medicion/datos";
 import { Fecha, CondicionesZ, validarPeriodo } from "./esquemas";
+import { refrescarRuta } from "@/lib/ruta-datos";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -125,6 +126,7 @@ export const POST = protegido<Ctx>({}, async (perfil, req, ctx) => {
     ruta: "/api/companies/medicion", ip: ipDe(req),
   });
   const aviso = [avisoGuardado, avisoProvisional].filter((a): a is string => Boolean(a)).join(" ");
+  refrescarRuta(id, "ruta");
   return ok(
     {
       medicion,

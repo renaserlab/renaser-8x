@@ -126,7 +126,7 @@ import {
   desdeFila, periodoValido, periodoCerradoMasReciente, periodosRecientes, nombreDePeriodoKpi, granularidad, textoValor,
   finDePeriodo, zonaDe, diaEnZona, preparacion, textoValidacion, letrasDe, motivoSuficiente, terminaAntes,
   LIMITE_DIAS, ATRIBUTOS, ATRIBUTOS_DE_REGISTRO, IMPRESCINDIBLES, TEXTO_SIN_DATO, TEXTO_FALTA_MOTIVO, FRECUENCIAS, ZONA_POR_DEFECTO, MIN_LETRAS_MOTIVO,
-  TEXTO_SIN_DATO_DESPUES, TEXTO_SIN_DATO_MISMO_PERIODO,
+  TEXTO_SIN_DATO_DESPUES, TEXTO_SIN_DATO_MISMO_PERIODO, horaCierreValida, textoHoySeAnotaDesde,
   type Kpi, type Frecuencia,
 } from "@/lib/kpis";
 import type { Metrica } from "@/lib/metricas";
@@ -136,7 +136,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { perfilApi, type Perfil } from "@/lib/auth";
 import { registrar } from "@/lib/auditoria";
 import { registrarError } from "@/lib/errores";
-import { guardarValor, zonaDeEmpresa, dejarMotivoDeArchivo, rastroDeValor, TEXTO_NO_SE_GUARDO, TEXTO_PENDIENTE, TEXTO_AL_LADO } from "@/app/api/companies/[id]/kpis/_registro";
+import { guardarValor, zonaDeEmpresa, horaCierreDeEmpresa, dejarMotivoDeArchivo, rastroDeValor, TEXTO_NO_SE_GUARDO, TEXTO_PENDIENTE, TEXTO_AL_LADO } from "@/app/api/companies/[id]/kpis/_registro";
 import { PATCH as patchViejo } from "@/app/api/companies/[id]/indicadores/route";
 import { PATCH as patchIndicador } from "@/app/api/companies/[id]/kpis/[kid]/route";
 import { GET as getIndicadores, POST as postIndicador } from "@/app/api/companies/[id]/kpis/route";
@@ -904,26 +904,27 @@ describe("(d) un periodo cierra en el reloj de la empresa, no en UTC", () => {
   });
 
   it("lectura del código · quien pregunta «qué periodo cerró» pasa la zona de la empresa", () => {
-    expect(leerFuente("components/kpis/TusIndicadores.tsx")).toContain("periodoCerradoMasReciente(i.frecuencia, undefined, zona)");
-    expect(leerFuente("components/kpis/RegistrarValor.tsx")).toContain("periodosRecientes(kpi.frecuencia, 6, undefined, zona)");
+    expect(leerFuente("components/kpis/TusIndicadores.tsx")).toContain("periodoCerradoMasReciente(i.frecuencia, undefined, zona, horaCierre)");
+    expect(leerFuente("components/kpis/RegistrarValor.tsx")).toContain("periodosRecientes(kpi.frecuencia, 6, undefined, zona, horaCierre)");
     // Ninguna pantalla de indicadores pregunta por el periodo cerrado sin decir en qué reloj.
     let llamadas = 0;
     for (const archivo of ["TusIndicadores.tsx", "RegistrarValor.tsx", "FormularioKpi.tsx", "TableroKpis.tsx"]) {
       for (const m of leerFuente(`components/kpis/${archivo}`).matchAll(/(?:periodoCerradoMasReciente|periodosRecientes)\(([^)]*)\)/g)) {
         llamadas += 1;
-        expect(m[1], `${archivo}: ${m[0]}`).toMatch(/, zona$/);
+        // Y con la hora de cierre de la empresa, que decide desde cuándo se anota lo diario de hoy (16-10-2026).
+        expect(m[1], `${archivo}: ${m[0]}`).toMatch(/, zona, horaCierre$/);
       }
     }
     expect(llamadas).toBe(3);
-    expect(leerFuente("app/api/companies/[id]/kpis/_registro.ts")).toMatch(/registrarValor\(kpi, [^;]*, hoy, zonaDe\(opciones\.zona\)\)/);
+    expect(leerFuente("app/api/companies/[id]/kpis/_registro.ts")).toMatch(/registrarValor\(kpi, [^;]*, hoy, zonaDe\(opciones\.zona\), horaCierreValida\(opciones\.horaCierre\)\)/);
     // El bloque viejo de «Tus números» ya no usa el mes que le calcula la página con el reloj del servidor.
     const bloque = leerFuente("components/cliente/Indicadores.tsx");
-    expect(bloque).toContain('const periodoActual = periodoCerradoMasReciente("mensual", undefined, zonaDe(zona));');
+    expect(bloque).toContain('const periodoActual = periodoCerradoMasReciente("mensual", undefined, zonaDe(zona), horaCierre);');
     expect(bloque).not.toContain("mesCerradoMasReciente");
     expect(bloque).toMatch(/periodoActual\?: string;/); // se sigue aceptando, pero ya no decide
     // Y la etiqueta junto al valor pregunta con el reloj de la empresa.
-    expect(leerFuente("components/kpis/TusIndicadores.tsx")).toContain("textoValidacion(i, { zona })");
-    expect(leerFuente("components/kpis/TableroKpis.tsx")).toContain("textoValidacion(k, { zona: ctx.zona })");
+    expect(leerFuente("components/kpis/TusIndicadores.tsx")).toContain("textoValidacion(i, { zona, horaCierre })");
+    expect(leerFuente("components/kpis/TableroKpis.tsx")).toContain("textoValidacion(k, { zona: ctx.zona, horaCierre: ctx.horaCierre })");
     expect(leerFuente("app/api/companies/[id]/kpis/[kid]/valor/route.ts")).toContain("zonaDeEmpresa(sb, id)");
     expect(leerFuente("app/api/companies/[id]/indicadores/route.ts")).toContain("zonaDeEmpresa(sb, id)");
     for (const pagina of ["app/(cliente)/portal/kpis/page.tsx", "app/(consultor)/empresa/[id]/kpis/page.tsx"]) {
@@ -937,6 +938,84 @@ describe("(d) un periodo cierra en el reloj de la empresa, no en UTC", () => {
     expect(lib).not.toMatch(/from "\.\/formato"/);
   });
 });
+
+describe("(e) lo diario de HOY se anota desde la hora de cierre del negocio (16-10-2026)", () => {
+  // La tienda cierra a las 19:00 de Lima. El 30 de setiembre a las 18:59 todavía vende; a las 19:00 ya sabe cuánto hizo.
+  const diario = completo({ frecuencia: "diaria", valor_actual: null, valor_actual_periodo: null, valor_actual_at: null, estado_validacion: null });
+  const mensual = completo({ valor_actual: null, valor_actual_periodo: null, valor_actual_at: null, estado_validacion: null });
+  const LIMA = "America/Lima";
+
+  it("la hora de cierre: HH:MM de 00:00 a 23:59; lo demás no es una hora", () => {
+    expect(horaCierreValida("19:00")).toBe("19:00");
+    expect(horaCierreValida(" 07:30 ")).toBe("07:30");
+    expect(horaCierreValida("19:00:00")).toBe("19:00"); // como lo devuelve Postgres si alguna vez fuera time
+    for (const v of ["25:00", "7:00", "7pm", "", null, undefined, 1900, "19-00"]) expect(horaCierreValida(v), String(v)).toBeNull();
+  });
+
+  it("el día P se puede anotar desde el inicio de P en Lima más HH:MM; sin hora, al terminar el día, como siempre", () => {
+    expect(finDePeriodo("2026-09-30", LIMA, "19:00")?.toISOString()).toBe("2026-10-01T00:00:00.000Z");
+    expect(finDePeriodo("2026-09-30", LIMA)?.toISOString()).toBe("2026-10-01T05:00:00.000Z");
+    expect(finDePeriodo("2026-09-30", LIMA, null)?.toISOString()).toBe("2026-10-01T05:00:00.000Z");
+    // Solo los días: un mes, una semana o un trimestre cierran igual con o sin hora de cierre.
+    expect(finDePeriodo("2026-09", LIMA, "19:00")?.toISOString()).toBe("2026-10-01T05:00:00.000Z");
+    expect(finDePeriodo("2026-S40", LIMA, "19:00")?.toISOString()).toBe("2026-10-05T05:00:00.000Z");
+  });
+
+  it("antes de las 19:00 de Lima el último día cerrado es ayer; desde las 19:00, hoy", () => {
+    expect(periodoCerradoMasReciente("diaria", LIMA_18_59, LIMA, "19:00")).toBe("2026-09-29");
+    expect(periodoCerradoMasReciente("diaria", LIMA_19_00, LIMA, "19:00")).toBe("2026-09-30");
+    expect(periodoCerradoMasReciente("diaria", LIMA_21_30, LIMA, "19:00")).toBe("2026-09-30");
+    expect(periodosRecientes("diaria", 3, LIMA_21_30, LIMA, "19:00")).toEqual(["2026-09-30", "2026-09-29", "2026-09-28"]);
+    // Sin hora de cierre, igual que hoy: a las 21:30 el 30 todavía no cerró.
+    expect(periodoCerradoMasReciente("diaria", LIMA_21_30, LIMA)).toBe("2026-09-29");
+    expect(periodoCerradoMasReciente("diaria", LIMA_21_30, LIMA, null)).toBe("2026-09-29");
+    // Lo mensual no cambia con la hora de cierre: setiembre sigue abierto hasta las 24:00 del 30.
+    expect(periodoCerradoMasReciente("mensual", LIMA_21_30, LIMA, "19:00")).toBe("2026-08");
+  });
+
+  it("registrar el valor de hoy: antes de las 19:00 se dice desde qué hora; desde las 19:00 entra, y es el valor actual", () => {
+    const antes = registrarValor(diario, { periodo: "2026-09-30", valor: 1450 }, LIMA_18_59, LIMA, "19:00");
+    expect(antes).toEqual({ ok: false, motivo: "Hoy se anota desde las 19:00, cuando cierra el negocio." });
+    expect(textoHoySeAnotaDesde("19:00")).toBe("Hoy se anota desde las 19:00, cuando cierra el negocio.");
+    const despues = registrarValor(diario, { periodo: "2026-09-30", valor: 1450 }, LIMA_19_00, LIMA, "19:00");
+    if (!despues.ok || despues.sin_dato) throw new Error("debió guardarse");
+    expect(despues.actualizar).toMatchObject({ valor_actual: 1450, valor_actual_periodo: "2026-09-30" });
+    // Mañana todavía no terminó, con o sin hora de cierre.
+    const manana = registrarValor(diario, { periodo: "2026-10-01", valor: 900 }, LIMA_21_30, LIMA, "19:00");
+    expect(manana).toEqual({ ok: false, motivo: "1 de octubre de 2026 todavía no terminó: se registra cuando cierre." });
+    // Un «sin dato» de hoy también espera a la hora de cierre: no se anota un hueco de un día que sigue abierto.
+    expect(registrarValor(diario, { periodo: "2026-09-30", valor: null }, LIMA_18_59, LIMA, "19:00").ok).toBe(false);
+  });
+
+  it("sin hora de cierre, todo igual que hoy; y lo mensual no se adelanta por tenerla", () => {
+    expect(registrarValor(diario, { periodo: "2026-09-30", valor: 1450 }, LIMA_21_30, LIMA)).toEqual({ ok: false, motivo: "30 de setiembre de 2026 todavía no terminó: se registra cuando cierre." });
+    expect(registrarValor(diario, { periodo: "2026-09-30", valor: 1450 }, LIMA_00_00, LIMA).ok).toBe(true);
+    expect(registrarValor(mensual, { periodo: "2026-09", valor: 3 }, LIMA_21_30, LIMA, "19:00")).toEqual({ ok: false, motivo: "Setiembre 2026 todavía no terminó: se registra cuando cierre." });
+  });
+
+  it("«de este mismo periodo se anotó sin dato» usa la misma regla: desde las 19:00, hoy es el último día cerrado", () => {
+    const conHueco = { estado_validacion: "sin_dato" as const, valor_actual: 1200, valor_actual_periodo: "2026-09-30", frecuencia: "diaria" as const };
+    expect(textoValidacion(conHueco, { zona: LIMA, hoy: LIMA_21_30, horaCierre: "19:00" })).toBe(TEXTO_SIN_DATO_MISMO_PERIODO);
+    expect(textoValidacion(conHueco, { zona: LIMA, hoy: LIMA_21_30 })).toBe(TEXTO_SIN_DATO_DESPUES);
+  });
+
+  it("la hora de cierre de la empresa se lee aparte: si la columna no existe, null, y la zona no se toca", async () => {
+    const sb = (respuesta: { data: unknown; error: unknown } | Error) =>
+      ({
+        from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => { if (respuesta instanceof Error) throw respuesta; return respuesta; } }) }) }),
+      }) as unknown as Parameters<typeof horaCierreDeEmpresa>[0];
+    expect(await horaCierreDeEmpresa(sb({ data: { hora_cierre: "19:00" }, error: null }), EMP_HORA)).toBe("19:00");
+    expect(await horaCierreDeEmpresa(sb({ data: { hora_cierre: null }, error: null }), EMP_HORA)).toBeNull();
+    expect(await horaCierreDeEmpresa(sb({ data: null, error: { code: "42703", message: "column companies.hora_cierre does not exist" } }), EMP_HORA)).toBeNull();
+    expect(await horaCierreDeEmpresa(sb(new Error("fetch failed")), EMP_HORA)).toBeNull();
+    // Los que registran pasan la hora a la regla; la ruta vieja y la nueva la leen con su propia consulta.
+    expect(leerFuente("app/api/companies/[id]/kpis/[kid]/valor/route.ts")).toContain("horaCierreDeEmpresa(sb, id)");
+    expect(leerFuente("app/api/companies/[id]/indicadores/route.ts")).toContain("horaCierreDeEmpresa(sb, id)");
+    expect(leerFuente("lib/tablero.ts")).toContain("indicadoresSinValor(indicadores, valores, ahora, zona, horaCierre)");
+  });
+});
+
+const EMP_HORA = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
 
 // ─── Lo que sigue toca la base (un doble en memoria) ─────────────────────────────────────────────
 

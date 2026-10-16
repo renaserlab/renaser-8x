@@ -20,7 +20,7 @@ export type UltimosValores = { indicador_id: string; periodo: string; valor: num
  * «Este no me sirve» no archiva nada por sí solo: abre la pregunta del motivo, y sin motivo (al menos
  * ocho letras) no hay botón que archive. `zona` es la zona horaria de la empresa: decide qué periodo ya cerró.
  */
-export function TusIndicadores({ companyId, indicadores, valores, zona }: { companyId: string; indicadores: IndicadorCliente[]; valores: UltimosValores; zona: string }) {
+export function TusIndicadores({ companyId, indicadores, valores, zona, horaCierre }: { companyId: string; indicadores: IndicadorCliente[]; valores: UltimosValores; zona: string; horaCierre?: string | null }) {
   const router = useRouter();
   const [registrando, setRegistrando] = useState<string | null>(null);
   const [descartando, setDescartando] = useState<string | null>(null);
@@ -93,7 +93,7 @@ export function TusIndicadores({ companyId, indicadores, valores, zona }: { comp
           <ul className="flex flex-col gap-3">
             {activos.map((i) => {
               // Sin fecha explícita: «ahora», leído en el reloj de la empresa.
-              const periodo = periodoCerradoMasReciente(i.frecuencia, undefined, zona);
+              const periodo = periodoCerradoMasReciente(i.frecuencia, undefined, zona, horaCierre);
               const serie = valores.filter((v) => v.indicador_id === i.id).sort((a, b) => b.periodo.localeCompare(a.periodo)).slice(0, 4);
               const yaEste = serie.some((v) => v.periodo === periodo);
               return (
@@ -113,7 +113,7 @@ export function TusIndicadores({ companyId, indicadores, valores, zona }: { comp
                         <>
                           <p style={{ fontSize: 20, fontWeight: 700, fontVariantNumeric: "tabular-nums", lineHeight: 1.1 }}>{textoValor(i.unidad, i.valor_actual, i.moneda)}</p>
                           <p className="t-dato" style={{ color: "var(--grafito)" }}>
-                            {nombreDePeriodoKpi(i.valor_actual_periodo)}{i.estado_validacion ? ` · ${textoValidacion(i, { zona })}` : ""}
+                            {nombreDePeriodoKpi(i.valor_actual_periodo)}{i.estado_validacion ? ` · ${textoValidacion(i, { zona, horaCierre })}` : ""}
                           </p>
                         </>
                       ) : (
@@ -136,7 +136,7 @@ export function TusIndicadores({ companyId, indicadores, valores, zona }: { comp
                   )}
 
                   {registrando === i.id ? (
-                    <RegistrarValor companyId={companyId} kpi={i} modo="cliente" zona={zona} alCerrar={() => setRegistrando(null)} />
+                    <RegistrarValor companyId={companyId} kpi={i} modo="cliente" zona={zona} horaCierre={horaCierre} alCerrar={() => setRegistrando(null)} />
                   ) : (
                     <button type="button" className="boton boton--secundario mt-3" style={{ minHeight: 34, fontSize: 13 }} onClick={() => { setRegistrando(i.id); setError(null); }}>
                       {yaEste ? `Corregir el de ${nombreDePeriodoKpi(periodo)}` : `Registrar el valor de ${nombreDePeriodoKpi(periodo)}`}

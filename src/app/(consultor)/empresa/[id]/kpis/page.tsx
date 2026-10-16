@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { Encabezado } from "@/components/base/Vacio";
 import { desdeFila, completitud, listo, preparacion, alertas, avance, kpisDesdeVitales, zonaDe } from "@/lib/kpis";
+import { leerHoraCierre } from "@/lib/negocio-datos";
 import type { Metrica } from "@/lib/metricas";
 import { TableroKpis, type KpiVista, type ValorHistoria } from "@/components/kpis/TableroKpis";
 import type { Participante, AccionDelPlan, LineaBase } from "@/components/kpis/FormularioKpi";
@@ -23,7 +24,7 @@ export default async function KpisPag({ params }: { params: Promise<{ id: string
   const sb = supabaseAdmin();
   const hoy = new Date();
 
-  const [{ data: filas }, { data: participantes }, { data: acciones }, { data: mediciones }, { data: metricas }, { data: empresa }, { data: plan }] = await Promise.all([
+  const [{ data: filas }, { data: participantes }, { data: acciones }, { data: mediciones }, { data: metricas }, { data: empresa }, { data: plan }, horaCierre] = await Promise.all([
     sb.from("indicadores").select("*").eq("company_id", id).order("created_at"),
     sb.from("participants").select("id,nombre,puesto,rol").eq("company_id", id).order("nombre"),
     sb.from("actions").select("id,accion,estado").eq("company_id", id).not("estado", "in", "(descartado,rechazado)").order("prioridad"),
@@ -35,6 +36,8 @@ export default async function KpisPag({ params }: { params: Promise<{ id: string
     // El plan ENTERO, también lo descartado y lo rechazado: para decir «meta sin plan» hay que saber si la acción
     // que el indicador nombra sigue viva. La lista de arriba (sin descartadas) es la del selector del formulario.
     sb.from("actions").select("id,estado,indicador_id,accion,verificado_at").eq("company_id", id),
+    // A qué hora cierra el negocio: lo diario de hoy se anota desde esa hora. Aparte, para que no arrastre a la zona.
+    leerHoraCierre(id),
   ]);
   const zona = zonaDe((empresa as { zona_horaria?: unknown } | null)?.zona_horaria);
 
@@ -99,6 +102,7 @@ export default async function KpisPag({ params }: { params: Promise<{ id: string
         lineasBase={lineasBase}
         propuestas={propuestas}
         zona={zona}
+        horaCierre={horaCierre}
       />
     </>
   );

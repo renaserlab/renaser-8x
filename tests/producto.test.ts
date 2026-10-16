@@ -155,6 +155,8 @@ const DUENA: Perfil = { id: "00000000-0000-4000-8000-0000000000a1", email: "duen
  * aplica desde esta constante, sobre PGlite, al final del archivo.
  */
 const NOMBRE_MIGRACION = "migracion-lineas-producto-cliente.sql";
+/** La del 16-10: columnas nuevas en lineas_producto y la vista del dueño rehecha con ellas. */
+const MIGRACION_16_10 = "migracion-entrar-hoy.sql";
 const MIGRACION_PENDIENTE = `-- EL DUEÑO NO LEE LA DECISIÓN DE UNA LÍNEA HASTA QUE SE ACUERDA (13-10-2026, R9.3).
 --
 -- migracion-entrada-y-direccion.sql dejó al dueño leer lineas_producto entera (política
@@ -1132,7 +1134,8 @@ describe("POSTGRES EMBEBIDO (PGlite, no Supabase) · las filas que escribe la im
       // El esquema del repositorio SIN la migración pedida, exista ya el archivo o no: así el «antes» se puede
       // reproducir siempre, también el día que la migración esté registrada en orden-aplicacion.json.
       pg = await crearBase();
-      await aplicarTodo(pg, { orden: leerOrden().filter((e) => e.archivo !== NOMBRE_MIGRACION) });
+      // Tampoco la del 16-10 (migracion-entrar-hoy.sql), que rehace la misma vista con más columnas: se aplica al final, encima.
+      await aplicarTodo(pg, { orden: leerOrden().filter((e) => e.archivo !== NOMBRE_MIGRACION && e.archivo !== MIGRACION_16_10) });
       await pg.query(
         "insert into auth.users (id, email, raw_user_meta_data) values ($1, 'duena-a@prueba.local', $2::jsonb), ($3, 'dueno-b@prueba.local', $4::jsonb), ($5, 'consultora@prueba.local', $6::jsonb)",
         [DUENA.id, JSON.stringify({ nombre: "Dueña A" }), "00000000-0000-4000-8000-0000000000b1", JSON.stringify({ nombre: "Dueño B" }), CONSULTORA.id, JSON.stringify({ nombre: "Consultora" })]
@@ -1211,6 +1214,8 @@ describe("POSTGRES EMBEBIDO (PGlite, no Supabase) · las filas que escribe la im
   it("CON la migración pedida · aplica dos veces seguidas y el dueño ya no lee la tabla: lee una vista sin decisión ni motivo, y solo para leer", async () => {
     const antesConsultora = (await consultarComo<{ n: number }>(db(), "authenticated", CONSULTORA.id, "select count(*)::int as n from lineas_producto"))[0].n;
     for (let vez = 0; vez < 2; vez++) for (const s of dividirSentencias(sqlMigracion())) await db().exec(s);
+    // La migración del 13-10 recrea la vista con las columnas de entonces; la del 16-10 la rehace con las nuevas (dos veces: es idempotente).
+    for (let vez = 0; vez < 2; vez++) for (const s of dividirSentencias(readFileSync(path.join(CARPETA_SUPABASE, MIGRACION_16_10), "utf8"))) await db().exec(s);
 
     // La tabla ya no le devuelve nada al dueño: ni filas, ni por tanto decisiones.
     expect(await consultarComo(db(), "authenticated", DUENA.id, "select decision, decision_motivo from lineas_producto")).toEqual([]);

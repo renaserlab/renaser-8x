@@ -33,8 +33,12 @@ const NOMBRE_COLUMNA: Record<string, string> = { nombre: "nombre", area: "área"
  * en la tabla de procesos ni en la lista del dueño, ni cuenta en el avance: queda aquí abajo, «de la
  * lista de la empresa, sin dibujar», hasta que alguien le dibuja el primer paso. Desde aquí se abre para
  * dibujarlo, o se quita si se importó por error.
+ *
+ * `paraCliente` (16-10-2026): el dueño también importa su lista, pero solo cuando la consultora le abrió «Subir o
+ * dibujar los procesos» (la página no lo monta sin eso, y la ruta lo exige igual). Mismos dos pasos, en sus palabras:
+ * lo que entra queda en «por dibujar», y desde ahí lo abre para subirle su archivo o dibujarlo.
  */
-export function ImportarProcesos({ companyId, enLista = [], base }: { companyId: string; enLista?: ProcesoEnLista[]; base?: string }) {
+export function ImportarProcesos({ companyId, enLista = [], base, paraCliente = false }: { companyId: string; enLista?: ProcesoEnLista[]; base?: string; paraCliente?: boolean }) {
   const router = useRouter();
   const entrada = useRef<HTMLInputElement>(null);
   const [archivo, setArchivo] = useState<File | null>(null);
@@ -115,32 +119,40 @@ export function ImportarProcesos({ companyId, enLista = [], base }: { companyId:
 
   return (
     <section className="panel p-5 mb-10">
-      <h2 className="t-seccion">Importar la lista de procesos</h2>
+      <h2 className="t-seccion">{paraCliente ? "¿Tienes la lista de tus procesos en un Excel?" : "Importar la lista de procesos"}</h2>
       <p className="t-cuerpo medida mt-1" style={{ color: "var(--grafito)" }}>
-        Si la empresa ya tiene sus procesos en un Excel o un CSV, súbelo. Hace falta una columna con el nombre; área, responsable y descripción se toman si están. Antes de crear nada verás qué entra y qué se omite.
+        {paraCliente
+          ? "Súbela aquí: basta una columna con el nombre de cada proceso; si también tiene área, responsable o descripción, se toman. Antes de guardar nada verás qué entra y qué no."
+          : "Si la empresa ya tiene sus procesos en un Excel o un CSV, súbelo. Hace falta una columna con el nombre; área, responsable y descripción se toman si están. Antes de crear nada verás qué entra y qué se omite."}
       </p>
 
       <div className="flex flex-wrap items-end gap-3 mt-4">
-        <label className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1">
           <span className="t-etiqueta">Archivo (.xlsx o .csv)</span>
-          <input
-            ref={entrada}
-            id="archivo-procesos"
-            type="file"
-            className="campo"
-            accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            aria-label="Archivo con la lista de procesos"
-            disabled={trabajando !== null}
-            onChange={(e) => {
-              const f = e.target.files?.[0] ?? null;
-              setArchivo(f);
-              setVista(null);
-              setHecho(null);
-              setError(null);
-              if (f) void leer(f);
-            }}
-          />
-        </label>
+          {/* Un botón, no la caja nativa que se leía como caja de texto; al lado, el nombre del archivo elegido. */}
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="boton boton--secundario archivo-boton">
+              <input
+                ref={entrada}
+                id="archivo-procesos"
+                type="file"
+                accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                aria-label="Archivo con la lista de procesos"
+                disabled={trabajando !== null}
+                onChange={(e) => {
+                  const f = e.target.files?.[0] ?? null;
+                  setArchivo(f);
+                  setVista(null);
+                  setHecho(null);
+                  setError(null);
+                  if (f) void leer(f);
+                }}
+              />
+              {archivo ? "Cambiar el archivo" : "Elegir el archivo"}
+            </label>
+            {archivo && <span className="t-dato archivo-nombre">{archivo.name}</span>}
+          </div>
+        </div>
         {vista && vista.hojas.length > 1 && (
           <label className="flex flex-col gap-1">
             <span className="t-etiqueta">Hoja</span>
@@ -215,7 +227,11 @@ export function ImportarProcesos({ companyId, enLista = [], base }: { companyId:
             <button type="button" className="boton boton--secundario" disabled={trabajando !== null} onClick={descartar}>
               No importar
             </button>
-            <span className="t-dato" style={{ color: "var(--grafito)" }}>Entran a la lista de la empresa, sin dibujar: no cuentan como procesos dibujados ni se le muestran al dueño. Nada de lo que ya existe se cambia.</span>
+            <span className="t-dato" style={{ color: "var(--grafito)" }}>
+              {paraCliente
+                ? "Entran a tu lista «por dibujar»: después abres cada uno para subirle su archivo o dibujarlo. Nada de lo que ya tienes se cambia."
+                : "Entran a la lista de la empresa, sin dibujar: no cuentan como procesos dibujados, y el dueño los ve solo mientras le tengas abierta «Subir o dibujar los procesos». Nada de lo que ya existe se cambia."}
+            </span>
           </div>
         </div>
       )}
@@ -223,7 +239,13 @@ export function ImportarProcesos({ companyId, enLista = [], base }: { companyId:
       {hecho && (
         <div className="mt-4" role="status">
           <p className="t-dato" style={{ color: "var(--confirmado)" }}>
-            {hecho.creados === 0 ? "No se creó ningún proceso: todo lo del archivo ya existía o se omitió." : `Se añadieron ${hecho.creados} proceso(s) a la lista de la empresa desde «${hecho.archivo}». Están aquí abajo, sin dibujar todavía.`}
+            {hecho.creados === 0
+              ? paraCliente
+                ? "No se agregó ningún proceso: todo lo del archivo ya estaba en tu lista o se dejó fuera."
+                : "No se creó ningún proceso: todo lo del archivo ya existía o se omitió."
+              : paraCliente
+                ? `Se agregaron ${hecho.creados} proceso(s) de «${hecho.archivo}» a tu lista. Están aquí abajo, por dibujar.`
+                : `Se añadieron ${hecho.creados} proceso(s) a la lista de la empresa desde «${hecho.archivo}». Están aquí abajo, sin dibujar todavía.`}
             {hecho.omitidos.length > 0 ? ` Se omitieron ${hecho.omitidos.length} fila(s).` : ""}
           </p>
         </div>
@@ -231,9 +253,11 @@ export function ImportarProcesos({ companyId, enLista = [], base }: { companyId:
 
       {enLista.length > 0 && (
         <div className="mt-6" style={{ borderTop: "1px solid var(--linea)", paddingTop: 16 }}>
-          <h3 className="t-etiqueta">De la lista de la empresa, sin dibujar ({enLista.length})</h3>
+          <h3 className="t-etiqueta">{paraCliente ? `De tu lista, por dibujar (${enLista.length})` : `De la lista de la empresa, sin dibujar (${enLista.length})`}</h3>
           <p className="t-dato medida mt-1" style={{ color: "var(--grafito)" }}>
-            La empresa dijo que estos procesos existen; nadie los ha dibujado. No cuentan en el avance ni entran al diagnóstico, y el dueño no los ve en su lista. Al guardarle el primer paso, el proceso pasa solo a la tabla de arriba.
+            {paraCliente
+              ? "Ábrelos uno por uno: súbele a cada uno su archivo y lo dibujamos, o dibújalo tú. Cuando tenga su primer paso, pasa a «Tus procesos»."
+              : "La empresa dijo que estos procesos existen; nadie los ha dibujado. No cuentan en el avance ni entran al diagnóstico. El dueño los ve solo mientras le tengas abierta «Subir o dibujar los procesos». Al guardarle el primer paso, el proceso pasa solo a la tabla de arriba."}
           </p>
           {errorLista && <p className="t-dato mt-2" role="alert" style={{ color: "var(--contradicho)" }}>{errorLista}</p>}
           <ul className="flex flex-col gap-2 mt-3">
@@ -241,7 +265,7 @@ export function ImportarProcesos({ companyId, enLista = [], base }: { companyId:
               <li key={p.id} className="t-dato flex flex-wrap items-baseline gap-x-4 gap-y-1">
                 <span>{p.nombre}</span>
                 <span style={{ color: "var(--grafito)" }}>{p.area ?? "sin área"}</span>
-                <Link href={`${raiz}/${p.id}`} style={{ color: "var(--marca)", textDecoration: "underline" }}>Abrir para dibujarlo</Link>
+                <Link href={`${raiz}/${p.id}`} style={{ color: "var(--marca)", textDecoration: "underline" }}>{paraCliente ? "Abrirlo" : "Abrir para dibujarlo"}</Link>
                 {quitando === p.id ? (
                   <span className="flex flex-wrap items-center gap-3">
                     <span>¿Quitar «{p.nombre}» de la lista? No se puede deshacer.</span>

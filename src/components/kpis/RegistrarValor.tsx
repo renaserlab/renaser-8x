@@ -20,12 +20,13 @@ export function aNumero(t: string): number | null | "invalido" {
  * nadie convierte un hueco en un cero sin darse cuenta. El periodo que se ofrece es siempre uno
  * cerrado (nunca el que está en curso), y cerrado en el reloj de la empresa (`zona`), no en UTC: el
  * servidor aplica la misma regla. La consultora además dice qué tan comprobado está el número; la empresa
- * registra como «declarado» y no elige.
+ * registra como «declarado» y no elige. Con `horaCierre` (companies.hora_cierre), lo diario de HOY se ofrece desde
+ * esa hora: el negocio ya cerró y sabe cuánto hizo.
  */
-export function RegistrarValor({ companyId, kpi, modo, zona, alCerrar }: { companyId: string; kpi: KpiParaRegistrar; modo: "consultor" | "cliente"; zona: string; alCerrar?: () => void }) {
+export function RegistrarValor({ companyId, kpi, modo, zona, horaCierre, alCerrar }: { companyId: string; kpi: KpiParaRegistrar; modo: "consultor" | "cliente"; zona: string; horaCierre?: string | null; alCerrar?: () => void }) {
   const router = useRouter();
   // Sin fecha explícita: «ahora», leído en el reloj de la empresa.
-  const periodos = periodosRecientes(kpi.frecuencia, 6, undefined, zona);
+  const periodos = periodosRecientes(kpi.frecuencia, 6, undefined, zona, horaCierre);
   const [periodo, setPeriodo] = useState(periodos[0] ?? "");
   const [texto, setTexto] = useState("");
   const [fuente, setFuente] = useState("");
@@ -98,7 +99,7 @@ export function RegistrarValor({ companyId, kpi, modo, zona, alCerrar }: { compa
             </label>
             <label className="flex flex-col gap-1" style={{ flex: "1 1 180px" }}>
               <span className="t-etiqueta">De dónde salió</span>
-              <input className="campo" placeholder={kpi.fuente ?? "cuaderno, Excel, sistema…"} value={fuente} onChange={(e) => setFuente(e.target.value)} aria-label="Fuente del valor" />
+              <input className="campo" placeholder={kpi.fuente ?? "Dónde quedó anotado"} value={fuente} onChange={(e) => setFuente(e.target.value)} aria-label="Fuente del valor" />
             </label>
             <label className="flex flex-col gap-1" style={{ flex: "1 1 180px" }}>
               <span className="t-etiqueta">Nota</span>

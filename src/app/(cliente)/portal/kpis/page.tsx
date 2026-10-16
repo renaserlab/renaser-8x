@@ -1,6 +1,7 @@
 import { contextoPortal } from "@/lib/portal";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { desdeFila, zonaDe } from "@/lib/kpis";
+import { leerHoraCierre } from "@/lib/negocio-datos";
 import { TusIndicadores, type IndicadorCliente, type UltimosValores } from "@/components/kpis/TusIndicadores";
 
 export const dynamic = "force-dynamic";
@@ -15,11 +16,13 @@ export default async function KpisCliente() {
   if (!c.companyId) return <p className="t-cuerpo medida">{c.queFalta}</p>;
 
   const sb = supabaseAdmin();
-  const [{ data: filas }, { data: participantes }, { data: empresa }] = await Promise.all([
+  const [{ data: filas }, { data: participantes }, { data: empresa }, horaCierre] = await Promise.all([
     sb.from("indicadores").select("*").eq("company_id", c.companyId).neq("estado", "archivado").order("created_at"),
     sb.from("participants").select("id,puesto,rol").eq("company_id", c.companyId),
     // Un periodo cierra en el reloj de la empresa. Si la columna no existe o viene vacía, America/Lima.
     sb.from("companies").select("zona_horaria").eq("id", c.companyId).maybeSingle(),
+    // A qué hora cierra el negocio: lo diario de hoy se anota desde esa hora. Aparte, para que no arrastre a la zona.
+    leerHoraCierre(c.companyId),
   ]);
   const zona = zonaDe((empresa as { zona_horaria?: unknown } | null)?.zona_horaria);
   const puestoDe = new Map((participantes ?? []).map((p) => [p.id as string, (p.puesto as string | null) ?? (p.rol as string | null) ?? null]));
@@ -59,7 +62,7 @@ export default async function KpisCliente() {
       <p className="t-cuerpo medida mb-7" style={{ color: "var(--grafito)" }}>
         Cada indicador dice qué mide, cada cuánto se anota y cuál fue el último valor. Si en un periodo no tienes el dato, se anota como sin dato, no como cero.
       </p>
-      <TusIndicadores companyId={c.companyId} indicadores={indicadores} valores={valores} zona={zona} />
+      <TusIndicadores companyId={c.companyId} indicadores={indicadores} valores={valores} zona={zona} horaCierre={horaCierre} />
     </>
   );
 }

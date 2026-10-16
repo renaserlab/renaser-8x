@@ -4,6 +4,7 @@ import { registrar, ipDe } from "@/lib/auditoria";
 import { normalizarClave, type Metrica } from "@/lib/metricas";
 import { desdeFila, completitud, listo, alertas, avance, kpisDesdeVitales } from "@/lib/kpis";
 import { Crear, COLUMNAS, comprobarCoherencia, comprobarReferencias } from "./_comun";
+import { refrescarRuta } from "@/lib/ruta-datos";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -78,5 +79,6 @@ export const POST = protegido<Ctx>({}, async (perfil, req, ctx) => {
   }
   const kpi = desdeFila(data as Record<string, unknown>);
   void registrar({ companyId: id, actor: perfil, accion: "crear", entidad: "indicador", entidadId: kpi.id, detalle: { clave, tipo_indicador: kpi.tipo_indicador, estado: kpi.estado }, ruta: "/api/companies/kpis", ip: ipDe(req) });
+  refrescarRuta(id, "ruta");
   return ok({ kpi, completitud: completitud(kpi), listo: listo(kpi).ok }, 201);
 });

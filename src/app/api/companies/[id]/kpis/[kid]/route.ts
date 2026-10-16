@@ -6,6 +6,7 @@ import { normalizarClave } from "@/lib/metricas";
 import { desdeFila, completitud, listo, motivoSuficiente, TEXTO_FALTA_MOTIVO } from "@/lib/kpis";
 import { Editar, COLUMNAS, comprobarCoherencia, comprobarReferencias, diferencias } from "../_comun";
 import { dejarMotivoDeArchivo } from "../_registro";
+import { refrescarRuta } from "@/lib/ruta-datos";
 
 type Ctx = { params: Promise<{ id: string; kid: string }> };
 
@@ -79,5 +80,6 @@ export const PATCH = protegido<Ctx>({}, async (perfil, req, ctx) => {
       detalle: { antes: dif.antes, despues: dif.despues, motivo: b.motivo ?? null }, ruta: RUTA, ip: ipDe(req),
     });
   }
+  refrescarRuta(id, "ruta");
   return ok({ kpi, completitud: completitud(kpi), listo: listo(kpi).ok });
 });

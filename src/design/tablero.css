@@ -1,12 +1,147 @@
-/* 8X · TABLEROS Y NAVEGACIÓN (13-10-2026). Traído del prototipo aprobado en diseno/prototipos/.
+/* 8X · TABLEROS Y NAVEGACIÓN (13-10-2026; navegación al costado desde el 16-10-2026).
+   Traído del prototipo aprobado en diseno/prototipos/.
    Las clases de tablero solo valen dentro de .tablero; las de navegación son globales.
    Movimiento: ease-out fuerte, escala al presionar, hover solo con puntero fino, todo bajo 300 ms. */
 
-/* ───────── NAVEGACIÓN ───────── */
+/* ───────── MARCO: BARRA LATERAL + COLUMNA (16-10-2026) ─────────
+   Pedido de Kelin: «navegación al costado, no arriba, que se vea la barra lateral o pueda ocultarla; arriba la
+   barra de proceso y avance con cada empresa». Una sola navegación (src/components/navegacion/Lateral.tsx):
+   — Escritorio (≥1024 px): la barra fija a la izquierda, 248 px, o plegada a un riel de íconos de 72 px.
+   — Celular y tablet (<1024 px): una franja fina arriba y la barra entra desde la izquierda como cajón.
+   Sin empresa elegida no hay barra lateral: .marco-app queda en una sola columna. */
+.marco-app { min-height: 100dvh; }
+.columna-app { min-width: 0; display: flex; flex-direction: column; min-height: 100dvh; }
+.columna-app > .contenido-app { flex: 1 0 auto; }
+.contenido-app { max-width: 1360px; margin: 0 auto; width: 100%; padding: 18px 28px 48px; overflow-x: clip; }
+
+.lateral {
+  display: flex; flex-direction: column; gap: 4px; min-width: 0;
+  background: var(--papel); box-shadow: var(--sombra);
+  overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
+}
+.lateral__cabeza { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 0 12px; }
+.lateral .marca-app, .barra-movil .marca-app { box-shadow: none; background: none; padding: 8px 10px; }
+.lateral__boton {
+  width: 44px; height: 44px; flex: none; border-radius: 14px; border: 0; background: none; color: var(--grafito);
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font: inherit;
+  transition: transform 160ms var(--ease-out), background-color 150ms ease, color 150ms ease;
+}
+.lateral__boton svg { width: 20px; height: 20px; }
+.lateral__boton:active { transform: scale(0.94); }
+@media (hover: hover) and (pointer: fine) { .lateral__boton:hover { background: var(--suave); color: var(--tinta); } }
+.lateral__cuerpo { flex: 1 0 auto; }
+
+.menu-lateral { display: flex; flex-direction: column; gap: 2px; }
+.menu-lateral a {
+  position: relative; display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px;
+  border-radius: 14px; color: var(--tinta); text-decoration: none; font-size: 13.5px; font-weight: 550;
+  transition: transform 160ms var(--ease-out), background-color 150ms ease, color 150ms ease;
+}
+.menu-lateral a svg { width: 19px; height: 19px; flex: none; }
+.menu-lateral .rotulo { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* El destino activo es la píldora oscura, como en la navegación del 13-10. */
+.menu-lateral a[aria-current="page"] { background: var(--tinta); color: #fff; font-weight: 650; }
+.menu-lateral a[data-dentro] { background: var(--azul-velo); }
+.menu-lateral a:active { transform: scale(0.98); }
+@media (hover: hover) and (pointer: fine) { .menu-lateral a:not([aria-current="page"]):hover { background: var(--azul-velo); } }
+.menu-lateral .punto { width: 19px; flex: none; display: inline-flex; justify-content: center; }
+.menu-lateral .punto::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--azul-medio); }
+.menu-lateral a[aria-current="page"] .punto::before { background: #fff; }
+.titulo-menu { margin: 18px 12px 6px; font-size: 12px; font-weight: 650; color: var(--grafito); letter-spacing: 0.02em; }
+/* Lo que la consultora pidió llenar y sigue abierto, junto al destino donde se llena. */
+.contador {
+  margin-left: auto; flex: none; min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--marca); color: #fff; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.menu-lateral a[aria-current="page"] .contador { background: #fff; color: var(--tinta); }
+
+.lateral__pie { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--linea); display: flex; align-items: center; gap: 10px; min-width: 0; }
+.lateral__quien { flex: 1; min-width: 0; font-size: 12px; color: var(--grafito); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lateral__pie .boton-redondo { background: var(--suave); border-color: transparent; }
+.lateral__salir { flex: 1; min-width: 0; }
+.lateral__salir button {
+  width: 100%; min-height: 44px; display: flex; align-items: center; gap: 12px; padding: 0 12px; border: 0; border-radius: 14px;
+  background: none; color: var(--grafito); font: inherit; font-size: 13.5px; font-weight: 550; cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+.lateral__salir svg { width: 19px; height: 19px; flex: none; }
+@media (hover: hover) and (pointer: fine) { .lateral__salir button:hover { background: var(--suave); color: var(--tinta); } }
+
+.barra-movil { display: none; }
+
+@media (min-width: 1024px) {
+  .marco-app:has(> .lateral) { display: grid; grid-template-columns: var(--ancho-lateral, 248px) minmax(0, 1fr); align-items: start; }
+  .marco-app:has(> .lateral[data-estado="riel"]) { --ancho-lateral: 72px; }
+  .marco-app > .lateral {
+    grid-column: 1; grid-row: 1; position: sticky; top: 12px;
+    height: calc(100dvh - 24px); margin: 12px 0 12px 12px; padding: 14px 12px;
+    border-radius: var(--radio-tarjeta);
+  }
+  .marco-app > .columna-app { grid-column: 2; grid-row: 1; }
+  .marco-app > .telon { display: none; }
+
+  /* Riel: solo los destinos principales con su ícono; el nombre queda en aria-label y en title. */
+  .lateral[data-estado="riel"] { padding: 14px 8px; align-items: center; }
+  .lateral[data-estado="riel"] .lateral__cabeza { flex-direction: column; gap: 6px; padding-bottom: 10px; }
+  .lateral[data-estado="riel"] .marca-app { padding: 8px 4px; }
+  .lateral[data-estado="riel"] .marca-app small,
+  .lateral[data-estado="riel"] .rotulo,
+  .lateral[data-estado="riel"] [data-grupo="secundario"] { display: none; }
+  .lateral[data-estado="riel"] .lateral__cuerpo { width: 100%; }
+  .lateral[data-estado="riel"] .menu-lateral { align-items: center; }
+  .lateral[data-estado="riel"] .menu-lateral a { width: 44px; padding: 0; justify-content: center; }
+  .lateral[data-estado="riel"] .contador {
+    position: absolute; top: -3px; right: -5px; min-width: 18px; height: 18px; padding: 0 5px; font-size: 12px;
+    box-shadow: 0 0 0 2px var(--papel);
+  }
+  .lateral[data-estado="riel"] .lateral__pie { flex-direction: column; width: 100%; }
+  .lateral[data-estado="riel"] .lateral__salir { width: 100%; }
+  .lateral[data-estado="riel"] .lateral__salir button { justify-content: center; padding: 0; }
+}
+
+@media (max-width: 1023px) {
+  /* La franja fina de arriba: abrir el menú, la marca o la empresa y, a la derecha, la torre o «Salir». */
+  .barra-movil {
+    display: flex; align-items: center; gap: 8px; position: sticky; top: 0; z-index: 30;
+    min-height: 60px; padding: 8px 12px;
+    background: rgba(236, 242, 253, 0.84);
+    -webkit-backdrop-filter: saturate(1.4) blur(14px); backdrop-filter: saturate(1.4) blur(14px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.9);
+  }
+  .barra-movil .boton-redondo { width: 44px; height: 44px; }
+  .barra-movil__marca { flex: 1; min-width: 0; display: flex; }
+  .barra-movil__marca .marca-app { padding: 6px 4px; max-width: 100%; }
+  .barra-movil__derecha { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+
+  /* El cajón: entra desde la izquierda con transform; cerrado no se ve ni recibe el foco (visibility). */
+  .lateral {
+    position: fixed; z-index: 61; top: 0; bottom: 0; left: 0; width: min(304px, 86vw);
+    padding: calc(12px + env(safe-area-inset-top)) 12px calc(14px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));
+    border-radius: 0 var(--radio-tarjeta) var(--radio-tarjeta) 0; box-shadow: var(--sombra-flota);
+    transform: translateX(-104%); visibility: hidden;
+    transition: transform 240ms var(--ease-out), visibility 0s linear 240ms;
+  }
+  .lateral[data-movil="abierta"] { transform: none; visibility: visible; transition: transform 240ms var(--ease-out), visibility 0s; }
+  .marco-app > .telon { animation: aparece-telon 240ms var(--ease-out); }
+
+  .contenido-app { padding: 10px 16px calc(32px + env(safe-area-inset-bottom)); }
+  .aviso-vista { width: calc(100% - 32px); border-radius: 16px; }
+  .solo-escritorio { display: none !important; }
+}
+@keyframes aparece-telon { from { opacity: 0; } }
+@media (min-width: 1024px) { .solo-celular { display: none !important; } }
+@media (prefers-reduced-motion: reduce) {
+  .lateral, .lateral[data-movil="abierta"] { transition: none; }
+  .marco-app > .telon { animation: none; }
+}
+
+/* ───────── CABECERA SIN BARRA LATERAL (cliente sin empresa) Y PIEZAS COMPARTIDAS ───────── */
 .cabecera-app {
   display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px;
   padding: 18px 28px 6px; max-width: 1360px; margin: 0 auto; width: 100%;
 }
+.cabecera-app.sin-pildora { grid-template-columns: 1fr auto; }
 .marca-app {
   justify-self: start; display: inline-flex; align-items: center; gap: 10px; min-width: 0;
   background: var(--papel); border-radius: 14px; padding: 9px 16px; box-shadow: var(--sombra);
@@ -63,10 +198,6 @@
 }
 .aviso-vista a { color: var(--tinta); background: #fff; border-radius: 999px; padding: 6px 14px; text-decoration: none; font-weight: 650; }
 
-.contenido-app { max-width: 1360px; margin: 0 auto; width: 100%; padding: 14px 28px 48px; overflow-x: clip; }
-
-.cabecera-app.sin-pildora { grid-template-columns: 1fr auto; }
-
 /* Fila «En esta sección»: píldoras claras sobre el cielo; la activa es blanca. */
 .en-seccion { display: flex; align-items: center; gap: 6px; overflow-x: auto; margin: 4px 0 14px; scrollbar-width: none; padding: 2px; }
 .en-seccion a {
@@ -80,41 +211,145 @@
 @media (hover: hover) and (pointer: fine) { .en-seccion a:not([aria-current="page"]):hover { background: var(--papel); color: var(--tinta); } }
 .en-seccion a.cambiar { margin-left: auto; background: none; border-color: transparent; text-decoration: underline; text-underline-offset: 3px; }
 
-/* Menú completo (panel lateral en PC, hoja inferior en celular) */
-.menu-app { display: flex; flex-direction: column; gap: 2px; }
-.menu-app a {
-  display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 14px;
-  color: var(--tinta); text-decoration: none; font-size: 15px; font-weight: 550;
-  transition: background-color 150ms ease;
-}
-.menu-app a[aria-current="page"] { background: var(--azul-velo); font-weight: 700; }
-@media (hover: hover) and (pointer: fine) { .menu-app a:hover { background: var(--suave); } }
-.menu-app .titulo-menu { margin: 16px 12px 6px; font-size: 12px; font-weight: 650; color: var(--grafito); letter-spacing: 0.02em; }
-
 @media (max-width: 1023px) {
   .cabecera-app { grid-template-columns: 1fr auto; padding: 14px 16px 6px; }
-  .cabecera-app > .pildora {
-    position: fixed; z-index: 40; left: 50%; bottom: calc(12px + env(safe-area-inset-bottom));
-    transform: translateX(-50%);
-    background: rgba(255, 255, 255, 0.86);
-    -webkit-backdrop-filter: saturate(1.4) blur(14px); backdrop-filter: saturate(1.4) blur(14px);
-    box-shadow: var(--sombra-flota);
-  }
-  .cabecera-app > .pildora a, .cabecera-app > .pildora button {
-    height: 54px; min-width: 58px; padding: 0 8px; flex-direction: column; gap: 2px; font-size: 11px; font-weight: 600;
-  }
-  .cabecera-app > .pildora .rotulo { display: block; }
-  .cabecera-app > .pildora a[aria-current="page"] { padding: 0 12px; }
-  .contenido-app { padding: 8px 16px calc(112px + env(safe-area-inset-bottom)); }
-  .aviso-vista { width: calc(100% - 32px); border-radius: 18px; }
-  .solo-escritorio { display: none !important; }
 }
-@media (min-width: 1024px) { .solo-celular { display: none !important; } }
-@media (max-width: 400px) {
-  .pildora { gap: 2px; padding: 4px; }
-  .cabecera-app > .pildora a, .cabecera-app > .pildora button { min-width: 52px; padding: 0 5px; font-size: 10.5px; }
+
+/* ───────── SECCIONES DE LA EMPRESA (consultora: TabsEmpresa) ─────────
+   Celular: cada capa es una fila que se desliza. Pantalla mediana: el rótulo a la izquierda y las secciones en
+   renglones. Escritorio ancho (≥1280 px): una columna lateral de la empresa, pegada al bajar, y la pantalla a la
+   derecha. Bajo 1280 px no cabe una segunda columna junto a la barra lateral sin apretar las tablas. */
+.empresa-pantalla { min-width: 0; }
+.tabs-empresa { border-top: 1px solid var(--linea); margin-bottom: 22px; }
+.capa-empresa { border-bottom: 1px solid var(--linea); }
+.capa-empresa__rotulo {
+  margin: 0; padding-top: 8px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--grafito);
 }
-@media print { .cabecera-app, .aviso-vista { display: none !important; } .contenido-app { padding: 0; } }
+.capa-empresa[data-aqui] .capa-empresa__rotulo { color: var(--tinta); }
+.capa-empresa__secciones { display: flex; gap: 4px; min-width: 0; scrollbar-width: none; }
+.capa-empresa__secciones a {
+  flex: none; display: inline-flex; align-items: center; padding: 8px 12px; margin-bottom: -1px; white-space: nowrap;
+  text-decoration: none; font-size: 13.5px; font-weight: 500; color: var(--grafito); border-bottom: 2px solid transparent;
+  transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease;
+}
+.capa-empresa__secciones a[aria-current="page"] { color: var(--tinta); font-weight: 600; border-bottom-color: var(--marca); }
+@media (hover: hover) and (pointer: fine) { .capa-empresa__secciones a:hover { color: var(--tinta); } }
+@media (pointer: coarse) { .capa-empresa__secciones a { min-height: 44px; } }
+@media (min-width: 1024px) {
+  .capa-empresa { display: flex; align-items: baseline; gap: 8px; }
+  .capa-empresa__rotulo { flex: none; width: 116px; }
+  .capa-empresa__secciones { flex: 1; flex-wrap: wrap; overflow: visible; }
+}
+@media (min-width: 1280px) {
+  .empresa-rejilla { display: grid; grid-template-columns: 212px minmax(0, 1fr); gap: 28px; align-items: start; }
+  .tabs-empresa {
+    position: sticky; top: 16px; max-height: calc(100dvh - 32px); overflow-y: auto; scrollbar-width: thin;
+    margin: 0; border-top: 0;
+  }
+  .capa-empresa { display: block; border-bottom: 0; padding-bottom: 10px; }
+  .capa-empresa__rotulo { width: auto; padding: 6px 12px; }
+  .capa-empresa__secciones { flex-direction: column; flex-wrap: nowrap; gap: 1px; }
+  .capa-empresa__secciones a {
+    margin: 0; padding: 7px 12px; min-height: 36px; border-bottom: 0; border-radius: 12px; white-space: normal; line-height: 1.25;
+  }
+  .capa-empresa__secciones a[aria-current="page"] { background: var(--azul-velo); }
+}
+@media (min-width: 1280px) and (hover: hover) and (pointer: fine) {
+  .capa-empresa__secciones a:not([aria-current="page"]):hover { background: var(--suave); }
+}
+
+/* ───────── BARRA DE AVANCE DE LA RUTA (BarraRuta, BarraRutaCliente) ─────────
+   No es navegación: un tramo por etapa, ancho según sus días. Pasada llena, en curso con su %, por venir clara.
+   Lo que no se pudo leer va rayado (.sin-medir), nunca como un cero. */
+.barra-ruta { background: var(--papel); border-radius: var(--radio-tarjeta); box-shadow: var(--sombra); padding: 14px 18px 12px; min-width: 0; }
+.columna-app > .barra-ruta { width: calc(100% - 56px); max-width: 1304px; margin: 14px auto 0; }
+.hoja .barra-ruta { box-shadow: none; border: 1px solid var(--linea); border-radius: 16px; margin: 0 0 18px; }
+.barra-ruta--linea {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px;
+  padding: 10px 16px; font-size: 13.5px; color: var(--grafito);
+}
+.barra-ruta__cabeza { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 16px; }
+.barra-ruta__titulo { margin: 0; font-size: 15.5px; color: var(--tinta); }
+.barra-ruta__titulo b { font-family: var(--font-num); font-weight: 700; }
+.barra-ruta__dia { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; font-size: 12px; color: var(--grafito); }
+
+.tramos { list-style: none; margin: 10px 0 0; padding: 0; display: flex; gap: 8px; }
+.tramo { flex: 1 1 0; min-width: 56px; display: flex; flex-direction: column; gap: 6px; }
+.tramo .pista { position: relative; display: block; height: 10px; border-radius: 999px; background: var(--suave); box-shadow: inset 0 0 0 1px var(--linea); }
+.tramo .relleno { position: absolute; left: 0; top: 0; bottom: 0; border-radius: inherit; background: var(--marca); }
+.tramo[data-estado="pasada"] .pista { background: var(--tinta); box-shadow: none; }
+.tramo[data-estado="en_curso"] .pista { background: var(--azul-velo); box-shadow: inset 0 0 0 1px var(--azul-claro); }
+.sin-medir { background: var(--rayado); }
+.tramo .pista.sin-medir { background: var(--rayado); box-shadow: inset 0 0 0 1px var(--raya); }
+.tramo .compuerta {
+  position: absolute; right: 0; top: 50%; width: 10px; height: 10px; border-radius: 0;
+  transform: translate(50%, -50%) rotate(45deg); background: var(--papel); border: 2px solid var(--grafito);
+}
+.tramo .compuerta[data-veredicto="verde"] { background: var(--confirmado); border-color: var(--confirmado); }
+.tramo .compuerta[data-veredicto="ambar"] { background: var(--caducado); border-color: var(--caducado); }
+.tramo .compuerta[data-veredicto="rojo"] { background: var(--contradicho); border-color: var(--contradicho); }
+.tramo__texto { display: flex; flex-direction: column; min-width: 0; }
+.tramo__nombre { font-size: 12px; font-weight: 650; color: var(--tinta); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tramo__dato { font-size: 12px; color: var(--grafito); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tramo[data-estado="por_venir"] .tramo__nombre { color: var(--grafito); font-weight: 550; }
+/* La etapa en curso es lo único que hay que leer en la barra: nunca la más angosta, aunque dure 7 días de 120. */
+.tramo[data-estado="en_curso"] { min-width: 150px; flex-shrink: 0; }
+
+.barra-ruta__falta { margin-top: 10px; border-top: 1px solid var(--linea); padding-top: 2px; font-size: 13.5px; }
+.barra-ruta__falta summary {
+  display: block; list-style: none; cursor: pointer; padding: 10px 0 8px 18px; position: relative;
+  font-weight: 600; color: var(--tinta); line-height: 1.4;
+}
+.barra-ruta__falta summary::-webkit-details-marker { display: none; }
+.barra-ruta__falta summary::before {
+  content: ""; position: absolute; left: 2px; top: 16px; width: 7px; height: 7px;
+  border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg); transition: transform 160ms var(--ease-out);
+}
+.barra-ruta__falta[open] summary::before { transform: rotate(45deg); }
+.barra-ruta__sugerido { font-weight: 500; color: var(--grafito); }
+.barra-ruta__falta ul { list-style: none; margin: 2px 0 8px; padding: 0; display: grid; gap: 6px; }
+.barra-ruta__falta li { display: flex; align-items: baseline; gap: 10px; color: var(--grafito); }
+.barra-ruta__falta li b { color: var(--tinta); font-weight: 600; }
+.barra-ruta__falta .senal { flex: none; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--grafito); }
+.barra-ruta__falta .senal.sin-medir { width: 22px; height: 10px; border-radius: 999px; border: 0; }
+
+@media (max-width: 1023px) {
+  .columna-app > .barra-ruta { width: calc(100% - 32px); margin-top: 10px; }
+}
+@media (max-width: 640px) {
+  .barra-ruta { padding: 12px 14px 10px; }
+  .tramos { gap: 6px; }
+  .tramo, .tramo[data-estado="en_curso"] { min-width: 28px; }
+  /* En un celular no caben los nombres bajo cada tramo: la cabecera ya dice la etapa en curso y su %.
+     Los nombres siguen ahí para quien usa lector de pantalla. */
+  .tramo__texto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+}
+
+/* ───────── IMPRESIÓN: ni navegación ni barra de avance ───────── */
+@media print {
+  .barra-movil, .lateral, .telon, .barra-ruta, .cabecera-app, .aviso-vista, .tabs-empresa { display: none !important; }
+  .marco-app, .empresa-rejilla { display: block !important; }
+  .contenido-app { padding: 0; }
+}
+
+/* ───────── BOTÓN ELEGIDO ─────────
+   Un botón secundario que queda elegido («No lo sé», «Cumple», «No ha bajado») se ve elegido: la píldora oscura,
+   como la navegación activa. Antes solo lo decía aria-pressed y se veía igual que sin elegir. */
+.boton--secundario[aria-pressed="true"],
+.boton--secundario[aria-pressed="true"]:hover { background: var(--tinta); border-color: var(--tinta); color: var(--papel); }
+
+/* Elegir un archivo (SubirProceso, ImportarProcesos): la caja nativa se leía como una caja de texto y en el celular
+   se cortaba («Ningú…onado»). Un botón con el input dentro, invisible pero enfocable; al lado, el nombre elegido. */
+.archivo-boton { position: relative; cursor: pointer; }
+.archivo-boton input[type="file"] { position: absolute; width: 1px; height: 1px; padding: 0; margin: 0; opacity: 0; overflow: hidden; clip-path: inset(50%); }
+.archivo-boton:has(input:focus-visible) { outline: 2px solid var(--marca); outline-offset: 2px; }
+.archivo-boton:has(input:disabled) { opacity: 0.45; cursor: default; }
+.archivo-nombre { min-width: 0; overflow-wrap: anywhere; color: var(--tinta); }
+
+/* Un monto no se parte entre líneas («S/» al final de una y la cifra en la siguiente) en el tablero de rentabilidad:
+   las cifras en negrita de las frases y las de las celdas (.cifra). */
+.rentabilidad b, .rentabilidad .cifra { white-space: nowrap; }
 
 /* ───────── TABLERO ───────── */
 .tablero {

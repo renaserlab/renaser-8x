@@ -5,7 +5,8 @@ import { encolar, PRIORIDAD } from "@/lib/jobs/queue";
 import { registrar, ipDe } from "@/lib/auditoria";
 import { registrarError } from "@/lib/errores";
 import { desdeFila, registrarValor, motivoSuficiente, TEXTO_FALTA_MOTIVO } from "@/lib/kpis";
-import { guardarValor, zonaDeEmpresa, dejarMotivoDeArchivo, rastroDeValor } from "../kpis/_registro";
+import { guardarValor, zonaDeEmpresa, horaCierreDeEmpresa, dejarMotivoDeArchivo, rastroDeValor } from "../kpis/_registro";
+import { refrescarRuta } from "@/lib/ruta-datos";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -79,12 +80,12 @@ export const PATCH = protegido<Ctx>({}, async (perfil, req, ctx) => {
   // Tal como quedará después del cambio de estado: activar y anotar en la misma petición sigue valiendo.
   const despues = cambiaEstado ? { ...kpi, estado: b.estado! } : kpi;
   const ahora = new Date();
-  const zona = traeValor ? await zonaDeEmpresa(sb, id) : null;
+  const [zona, horaCierre] = traeValor ? await Promise.all([zonaDeEmpresa(sb, id), horaCierreDeEmpresa(sb, id)]) : [null, null];
 
   // Antes de escribir nada: si el valor no va a entrar, tampoco se cambia el estado. Nada a medias.
   if (traeValor) {
     if (despues.estado === "archivado") return fallo("Ese indicador está archivado. Actívalo antes de anotarle un valor.", 400);
-    const plan = registrarValor(despues, { periodo: b.periodo!, valor: b.valor ?? null, estado_validacion: "declarado" }, ahora, zona!);
+    const plan = registrarValor(despues, { periodo: b.periodo!, valor: b.valor ?? null, estado_validacion: "declarado" }, ahora, zona!, horaCierre);
     if (!plan.ok) return fallo(plan.motivo, 400);
   }
 
@@ -108,7 +109,7 @@ export const PATCH = protegido<Ctx>({}, async (perfil, req, ctx) => {
   let aviso: string | null = null;
   if (traeValor) {
     // El contrato viejo no deja elegir la validación: lo que entra por aquí es lo que la empresa declara.
-    const r = await guardarValor(sb, despues, { periodo: b.periodo!, valor: b.valor ?? null, estado_validacion: "declarado" }, perfil, { zona, hoy: ahora });
+    const r = await guardarValor(sb, despues, { periodo: b.periodo!, valor: b.valor ?? null, estado_validacion: "declarado" }, perfil, { zona, hoy: ahora, horaCierre });
     if (!r.ok) {
       if (r.tecnico) void registrarError({ ruta: RUTA, metodo: "PATCH", mensaje: "No se guardó el valor de un indicador", detalle: r.tecnico, actorId: perfil.id, companyId: id });
       return fallo(r.motivo, r.status);
@@ -125,6 +126,7 @@ export const PATCH = protegido<Ctx>({}, async (perfil, req, ctx) => {
   }
 
   // El contrato de siempre; `aviso` solo viaja cuando hay algo que decirle a quien anotó.
+  refrescarRuta(id, "ruta");
   if (aviso) return ok({ listo: true, aviso });
   return ok({ listo: true });
 });

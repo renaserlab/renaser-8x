@@ -27,6 +27,11 @@ import { costeoPorSku, costeoPorServicio, type Calculo, type CosteoSku, type Cos
 import { moneda as enMoneda, configDe, porDefecto, type ConfigEmpresa } from "./formato";
 import { leerExcel, type Hoja, type ValorCelda } from "./documentos/excel";
 import { supabaseAdmin } from "./supabase/admin";
+import { ESTADOS_DATO, centro, formaDe, peorEstado, rangoDe, sumarRangos, type EstadoDato, type Rango } from "./dato-oral";
+import { esModeloNegocio, type ModeloNegocio } from "./negocio";
+import type { ComponenteCosto } from "./esquemas-negocio";
+
+export type { ComponenteCosto } from "./esquemas-negocio";
 
 // ─── Vocabulario cerrado (coincide con los checks de la migración) ──────────────────────────────────
 
@@ -70,7 +75,43 @@ export type LineaProducto = {
   decision_motivo: string | null;
   created_at?: string | null;
   updated_at?: string | null;
+  // ── Lo que el cliente llena desde el 16-10 (migracion-entrar-hoy.sql). Opcionales en el tipo para no romper los
+  //    literales que ya existían; desdeFila los llena siempre (null, [] o {}).
+  /** Cómo gana dinero con esta línea (uno de los seis modelos). */
+  modelo?: ModeloNegocio | null;
+  /** El grupo para «de cada 10» («Pantalones», «Polos»). */
+  grupo?: string | null;
+  canal?: string | null;
+  /** El otro precio: por mayor o el mínimo al que vende. */
+  precio_segundo?: number | null;
+  segundo_precio_es?: SegundoPrecio | null;
+  /** De cada 10 ventas, cuántas van al segundo precio. */
+  de_cada_10_segundo?: number | null;
+  /** El costo por partes (tela, costura…). Con partes, costo_variable_unitario lo escribe 8X. */
+  componentes_costo?: ComponenteCosto[];
+  /** Cuánto vende en un mes normal: exacto, o en rango (desde-hasta). */
+  unidades_mes?: number | null;
+  unidades_mes_desde?: number | null;
+  unidades_mes_hasta?: number | null;
+  /** De cada 10 de su grupo, cuántos son de esta línea (cuando no sabe cuántos vende de cada una). */
+  participacion_de_10?: number | null;
+  /** El estado de cada dato: a ojo, anotado, comprobado o «no lo sé». */
+  estados?: EstadosLinea;
+  /** Lo que la pantalla deja escrito para rehacer la cuenta (dicho por trimestre o por día; ticket y comisión). */
+  datos_modelo?: Record<string, unknown> | null;
+  creada_por?: string | null;
 };
+
+export const SEGUNDOS_PRECIOS = ["por_mayor", "minimo"] as const;
+export type SegundoPrecio = (typeof SEGUNDOS_PRECIOS)[number];
+export type GrupoEstado = "precio" | "costo" | "unidades";
+export type EstadosLinea = Partial<Record<GrupoEstado, EstadoDato>>;
+
+/** Los campos que la migración del 16-10 agregó: con alguno de estos, la línea ya usa la tabla nueva. */
+export const CAMPOS_NUEVOS = [
+  "modelo", "grupo", "canal", "precio_segundo", "segundo_precio_es", "de_cada_10_segundo", "componentes_costo",
+  "unidades_mes", "unidades_mes_desde", "unidades_mes_hasta", "participacion_de_10", "estados", "datos_modelo", "creada_por",
+] as const;
 
 /** Los campos que la consultora puede escribir. Lo que no venga no se toca; null borra a propósito. */
 export type DatosLinea = Partial<Omit<LineaProducto, "id" | "company_id" | "created_at" | "updated_at">>;
@@ -130,7 +171,105 @@ export function desdeFila(f: Record<string, unknown>): LineaProducto {
     decision_motivo: textoONull(f.decision_motivo),
     created_at: textoONull(f.created_at),
     updated_at: textoONull(f.updated_at),
+    modelo: esModeloNegocio(f.modelo) ? f.modelo : null,
+    grupo: textoONull(f.grupo),
+    canal: textoONull(f.canal),
+    precio_segundo: numero(f.precio_segundo),
+    segundo_precio_es: (SEGUNDOS_PRECIOS as readonly string[]).includes(String(f.segundo_precio_es)) ? (f.segundo_precio_es as SegundoPrecio) : null,
+    de_cada_10_segundo: numero(f.de_cada_10_segundo),
+    componentes_costo: partesDesde(f.componentes_costo),
+    unidades_mes: numero(f.unidades_mes),
+    unidades_mes_desde: numero(f.unidades_mes_desde),
+    unidades_mes_hasta: numero(f.unidades_mes_hasta),
+    participacion_de_10: numero(f.participacion_de_10),
+    estados: estadosDesde(f.estados),
+    datos_modelo: f.datos_modelo && typeof f.datos_modelo === "object" && !Array.isArray(f.datos_modelo) ? (f.datos_modelo as Record<string, unknown>) : null,
+    creada_por: textoONull(f.creada_por),
   };
+}
+
+const esEstadoDato = (v: unknown): v is EstadoDato => (ESTADOS_DATO as readonly string[]).includes(String(v));
+
+/** Un jsonb tal como llega: objeto, o texto con JSON (algunas lecturas lo traen así). Lo ilegible es null. */
+function jsonDe(v: unknown): unknown {
+  if (typeof v !== "string") return v;
+  try {
+    return JSON.parse(v) as unknown;
+  } catch {
+    return null;
+  }
+}
+
+/** Las partes del costo tal como vienen de la base (jsonb). Lo que no se reconoce se deja fuera; un número ilegible queda null. */
+export function partesDesde(v: unknown): ComponenteCosto[] {
+  const lista = jsonDe(v);
+  if (!Array.isArray(lista)) return [];
+  const salida: ComponenteCosto[] = [];
+  for (const p of lista) {
+    if (!p || typeof p !== "object") continue;
+    const o = p as Record<string, unknown>;
+    const nombre = textoONull(o.nombre);
+    if (!nombre) continue;
+    salida.push({ nombre, valor: numero(o.valor), desde: numero(o.desde), hasta: numero(o.hasta), estado: esEstadoDato(o.estado) ? o.estado : "estimado" });
+  }
+  return salida;
+}
+
+/** El estado de cada grupo de datos de la línea. Lo desconocido no se inventa: se deja fuera. */
+export function estadosDesde(v: unknown): EstadosLinea {
+  const o = jsonDe(v);
+  if (!o || typeof o !== "object" || Array.isArray(o)) return {};
+  const salida: EstadosLinea = {};
+  for (const g of ["precio", "costo", "unidades"] as const) {
+    const e = (o as Record<string, unknown>)[g];
+    if (esEstadoDato(e)) salida[g] = e;
+  }
+  return salida;
+}
+
+// ─── El costo por partes ─────────────────────────────────────────────────────────────────────────
+
+export type CostoDePartes = {
+  /** La suma de las partes; null si alguna es «no lo sé» o no tiene número todavía. */
+  rango: Rango | null;
+  /** El más débil de los estados de las partes; null si alguna es «no lo sé» o está vacía. */
+  estado: EstadoDato | null;
+  /** Las partes sin número («no lo sé» o todavía vacías), por su nombre. */
+  faltan: string[];
+  /** Lo que suman las partes que SÍ tienen número: el costo es «de al menos» esto. null si ninguna tiene. */
+  conocido: Rango | null;
+};
+
+/** El costo de una unidad sumando sus partes. Nada se completa a ojo: si falta una parte, el total no existe. */
+export function costoDesdePartes(partes: ComponenteCosto[]): CostoDePartes {
+  const rangos = partes.map((p) => rangoDe(p));
+  const faltan = partes.filter((_, i) => rangos[i] == null).map((p) => p.nombre);
+  const conNumero = rangos.filter((r): r is Rango => r != null);
+  return {
+    rango: partes.length && !faltan.length ? sumarRangos(rangos) : null,
+    estado: partes.length ? peorEstado(partes.map((p) => (formaDe(p) === "vacio" ? "no_lo_se" : p.estado))) : null,
+    faltan,
+    conocido: conNumero.length ? sumarRangos(conNumero) : null,
+  };
+}
+
+/**
+ * LA SINCRONÍA DEL COSTO. Cuando se guardan las partes y TODAS tienen número, se escribe costo_variable_unitario =
+ * centro de su suma y estados.costo = el más débil de sus estados; si alguna falta, costo_variable_unitario = null y
+ * estados.costo se quita. Así evaluar() (la vista por periodo de la consultora) sigue funcionando sin cambios. Sin
+ * partes en el cambio, no se toca nada. Devuelve lo que hay que agregar a los cambios.
+ */
+export function sincronizarCosto(partes: ComponenteCosto[] | undefined, estadosPrevios?: EstadosLinea, estadosNuevos?: EstadosLinea): Pick<DatosLinea, "costo_variable_unitario" | "estados"> {
+  if (!partes || partes.length === 0) return {};
+  const c = costoDesdePartes(partes);
+  const estados: EstadosLinea = { ...(estadosPrevios ?? {}), ...(estadosNuevos ?? {}) };
+  if (c.rango) {
+    if (c.estado) estados.costo = c.estado;
+    else delete estados.costo;
+    return { costo_variable_unitario: centro(c.rango), estados };
+  }
+  delete estados.costo;
+  return { costo_variable_unitario: null, estados };
 }
 
 // ─── El periodo de una línea ─────────────────────────────────────────────────────────────────────────
@@ -493,11 +632,24 @@ export function evaluar(lineas: LineaProducto[], opciones: OpcionesEvaluar | str
  * Revisa cómo QUEDARÍA una línea (la previa con los cambios encima) y devuelve por qué no se puede
  * guardar, o null. La usan la ruta que crea y la que edita, para que digan lo mismo.
  */
-export function revisarLinea(l: Pick<LineaProducto, "tipo" | "horas_por_unidad" | "decision" | "decision_motivo" | "periodo">): string | null {
+export function revisarLinea(
+  l: Pick<LineaProducto, "tipo" | "horas_por_unidad" | "decision" | "decision_motivo" | "periodo"> &
+    Partial<Pick<LineaProducto, "precio_segundo" | "segundo_precio_es" | "de_cada_10_segundo" | "unidades_mes" | "unidades_mes_desde" | "unidades_mes_hasta" | "participacion_de_10" | "componentes_costo">>
+): string | null {
   if (l.decision && !l.decision_motivo?.trim()) return "Di por qué: la decisión se guarda con su motivo.";
   if (!l.decision && l.decision_motivo?.trim()) return "Hay un motivo sin decisión: elige la decisión o quita el motivo.";
   if (l.horas_por_unidad != null && l.tipo !== "servicio") return "Las horas por unidad son de un servicio; en un producto no aplican.";
   if (l.periodo && !periodoValido(l.periodo)) return `El periodo se escribe así: ${FORMA_PERIODO}.`;
+  // Lo del 16-10: dos precios, cuánto se vende al mes y las partes del costo.
+  if (l.precio_segundo != null && !l.segundo_precio_es) return "Falta decir qué es el segundo precio: por mayor o el mínimo.";
+  if (l.precio_segundo == null && l.segundo_precio_es) return "Falta el segundo precio; o quita si es por mayor o el mínimo.";
+  if (l.de_cada_10_segundo != null && l.precio_segundo == null) return "«De cada 10 ventas, cuántas van al otro precio» necesita el otro precio.";
+  if (l.de_cada_10_segundo != null && (l.de_cada_10_segundo < 0 || l.de_cada_10_segundo > 10)) return "De cada 10 ventas: un número de 0 a 10.";
+  if (l.unidades_mes != null && (l.unidades_mes_desde != null || l.unidades_mes_hasta != null)) return "Cuánto vendes en un mes: un número o un rango, no los dos.";
+  if ((l.unidades_mes_desde == null) !== (l.unidades_mes_hasta == null)) return "Un rango de cuánto vendes necesita sus dos extremos: desde y hasta.";
+  if (l.unidades_mes_desde != null && l.unidades_mes_hasta != null && l.unidades_mes_desde > l.unidades_mes_hasta) return "En cuánto vendes, el «desde» es mayor que el «hasta».";
+  if (l.participacion_de_10 != null && (l.participacion_de_10 < 0 || l.participacion_de_10 > 10)) return "De cada 10: un número de 0 a 10.";
+  if (l.componentes_costo?.some((p) => !p.nombre?.trim())) return "Cada parte del costo necesita su nombre.";
   return null;
 }
 
@@ -845,7 +997,9 @@ export class ErrorDeLinea extends Error {
   }
 }
 
-const COLUMNAS = "id,company_id,codigo,nombre,tipo,cliente_objetivo,necesidad,promesa,precio,costo_variable_unitario,unidades_periodo,horas_por_unidad,periodo,origen,source_id,decision,decision_motivo,created_at,updated_at";
+/** Las columnas de antes del 16-10: si la migración nueva todavía no está aplicada, se lee con estas y nada se cae. */
+const COLUMNAS_BASE = "id,company_id,codigo,nombre,tipo,cliente_objetivo,necesidad,promesa,precio,costo_variable_unitario,unidades_periodo,horas_por_unidad,periodo,origen,source_id,decision,decision_motivo,created_at,updated_at";
+const COLUMNAS = `${COLUMNAS_BASE},${CAMPOS_NUEVOS.join(",")}`;
 
 /**
  * Lo mismo sin la decisión ni su motivo: lo que se le pide a la base cuando quien mira es el dueño. Se
@@ -857,6 +1011,15 @@ const COLUMNAS = "id,company_id,codigo,nombre,tipo,cliente_objetivo,necesidad,pr
  * migración aparte; por eso la lista se exporta: la prueba comprueba que la vista y esta lista coinciden.
  */
 export const COLUMNAS_PARA_DUENO = COLUMNAS.split(",").filter((c) => c !== "decision" && c !== "decision_motivo").join(",");
+const COLUMNAS_BASE_PARA_DUENO = COLUMNAS_BASE.split(",").filter((c) => c !== "decision" && c !== "decision_motivo").join(",");
+
+/**
+ * ¿El fallo es que una columna nueva todavía no existe (migracion-entrar-hoy.sql sin aplicar)? Postgres 42703 en un
+ * select; PostgREST PGRST204 cuando se manda a escribir una columna que no conoce. Entonces se vuelve a pedir con las
+ * columnas de antes: la pantalla de siempre no se cae porque el código llegó antes que la base.
+ */
+const faltaColumnaNueva = (e: { code?: string | null } | null | undefined): boolean => e?.code === "42703" || e?.code === "PGRST204";
+const traeCamposNuevos = (fila: Record<string, unknown>) => CAMPOS_NUEVOS.some((c) => fila[c] !== undefined);
 
 /** PostgREST corta cada respuesta en 1.000 filas. Se pide de a tramos hasta agotar, con un tope que no se alcanza por accidente. */
 const TRAMO = 1000;
@@ -867,7 +1030,15 @@ const MAX_TRAMOS = 20;
  * primeros 1.000 sin decir nada, y la importación siguiente creería que los otros 500 son nuevos.
  */
 export async function listarLineas(companyId: string, opciones: { paraDueno?: boolean } = {}): Promise<LineaProducto[]> {
-  const columnas = opciones.paraDueno ? COLUMNAS_PARA_DUENO : COLUMNAS;
+  try {
+    return await listarConColumnas(companyId, opciones.paraDueno ? COLUMNAS_PARA_DUENO : COLUMNAS);
+  } catch (e) {
+    if (e instanceof ErrorDeLinea && faltaColumnaNueva({ code: e.codigo })) return listarConColumnas(companyId, opciones.paraDueno ? COLUMNAS_BASE_PARA_DUENO : COLUMNAS_BASE);
+    throw e;
+  }
+}
+
+async function listarConColumnas(companyId: string, columnas: string): Promise<LineaProducto[]> {
   const filas: Record<string, unknown>[] = [];
   for (let tramo = 0; tramo < MAX_TRAMOS; tramo++) {
     // Las importadas comparten created_at: el código y el id desempatan para que el orden sea el mismo en cada tramo.
@@ -898,9 +1069,11 @@ export function esTablaAusente(e: unknown): boolean {
 
 /** Una línea de ESTA empresa, o null. El id solo no basta: la empresa va siempre en la consulta. */
 export async function leerLinea(companyId: string, id: string): Promise<LineaProducto | null> {
-  const { data, error } = await supabaseAdmin().from("lineas_producto").select(COLUMNAS).eq("id", id).eq("company_id", companyId).maybeSingle();
+  const leer = (columnas: string) => supabaseAdmin().from("lineas_producto").select(columnas).eq("id", id).eq("company_id", companyId).maybeSingle();
+  let { data, error } = await leer(COLUMNAS);
+  if (error && faltaColumnaNueva(error)) ({ data, error } = await leer(COLUMNAS_BASE));
   if (error) throw new ErrorDeLinea(error.message, error.code ?? null);
-  return data ? desdeFila(data as Record<string, unknown>) : null;
+  return data ? desdeFila(data as unknown as Record<string, unknown>) : null;
 }
 
 /**
@@ -918,7 +1091,7 @@ export async function configDeEmpresa(companyId: string): Promise<ConfigEmpresa>
 
 function filaParaGuardar(d: DatosLinea): Record<string, unknown> {
   const fila: Record<string, unknown> = {};
-  const campos: (keyof DatosLinea)[] = ["codigo", "nombre", "tipo", "cliente_objetivo", "necesidad", "promesa", "precio", "costo_variable_unitario", "unidades_periodo", "horas_por_unidad", "periodo", "origen", "source_id", "decision", "decision_motivo"];
+  const campos: (keyof DatosLinea)[] = ["codigo", "nombre", "tipo", "cliente_objetivo", "necesidad", "promesa", "precio", "costo_variable_unitario", "unidades_periodo", "horas_por_unidad", "periodo", "origen", "source_id", "decision", "decision_motivo", ...CAMPOS_NUEVOS];
   for (const c of campos) if (d[c] !== undefined) fila[c] = d[c];
   return fila;
 }
@@ -927,22 +1100,37 @@ const mensajeDe = (error: { code?: string | null; message: string }, codigo: str
   error.code === "23505" ? `Ya hay una línea con el código «${codigo ?? ""}» en esta empresa.` : error.message;
 
 export async function crearLinea(companyId: string, datos: DatosLinea & { nombre: string; tipo: TipoLinea }): Promise<LineaProducto> {
-  const { data, error } = await supabaseAdmin().from("lineas_producto").insert({ company_id: companyId, ...filaParaGuardar(datos) }).select(COLUMNAS).single();
+  const fila = { company_id: companyId, ...filaParaGuardar(datos) };
+  const insertar = (columnas: string) => supabaseAdmin().from("lineas_producto").insert(fila).select(columnas).single();
+  let { data, error } = await insertar(COLUMNAS);
+  // Sin la migración nueva, una línea con solo los campos de siempre se guarda igual y se devuelve con las columnas de antes.
+  if (error && faltaColumnaNueva(error) && !traeCamposNuevos(fila)) ({ data, error } = await insertar(COLUMNAS_BASE));
   if (error) throw new ErrorDeLinea(mensajeDe(error, datos.codigo), error.code ?? null);
-  return desdeFila(data as Record<string, unknown>);
+  return desdeFila(data as unknown as Record<string, unknown>);
 }
 
 export async function editarLinea(companyId: string, id: string, datos: DatosLinea): Promise<LineaProducto> {
-  const { data, error } = await supabaseAdmin()
-    .from("lineas_producto")
-    .update({ ...filaParaGuardar(datos), updated_at: new Date().toISOString() })
-    .eq("id", id)
-    .eq("company_id", companyId)
-    .select(COLUMNAS)
-    .maybeSingle();
+  const fila = filaParaGuardar(datos);
+  const actualizar = (columnas: string) =>
+    supabaseAdmin()
+      .from("lineas_producto")
+      .update({ ...fila, updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .eq("company_id", companyId)
+      .select(columnas)
+      .maybeSingle();
+  let { data, error } = await actualizar(COLUMNAS);
+  if (error && faltaColumnaNueva(error) && !traeCamposNuevos(fila)) ({ data, error } = await actualizar(COLUMNAS_BASE));
   if (error) throw new ErrorDeLinea(mensajeDe(error, datos.codigo), error.code ?? null);
   if (!data) throw new ErrorDeLinea("Esa línea no es de esta empresa.", "no_encontrada");
-  return desdeFila(data as Record<string, unknown>);
+  return desdeFila(data as unknown as Record<string, unknown>);
+}
+
+/** Borra una línea de ESTA empresa. La empresa va siempre en la consulta. Devuelve si había algo que borrar. */
+export async function borrarLinea(companyId: string, id: string): Promise<boolean> {
+  const { data, error } = await supabaseAdmin().from("lineas_producto").delete().eq("id", id).eq("company_id", companyId).select("id");
+  if (error) throw new ErrorDeLinea(error.message, error.code ?? null);
+  return (data ?? []).length > 0;
 }
 
 /** Cuántas actualizaciones viajan juntas: suficiente para no tardar minutos, poco para no saturar la base. */

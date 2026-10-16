@@ -73,6 +73,12 @@ describe("el portal del cliente no lee trabajo interno de la consultora", () => 
     }
   });
 
+  it("ninguna página del portal lee las marcas ni los veredictos de compuerta de la consultora (ruta_marcas)", () => {
+    // El dueño ve sus etapas por vistaDueno (src/lib/ruta.ts), sin criterios, notas ni veredictos; la tabla no se lee
+    // desde ninguna página suya, ni con el cliente de la base ni por su nombre.
+    for (const p of PAGINAS) expect(p.src, `${p.ruta} lee ruta_marcas: es trabajo interno de la consultora`).not.toMatch(/ruta_marcas/);
+  });
+
   it("ninguna página del cliente lee las decisiones de la consultora", () => {
     for (const p of PAGINAS) {
       expect(p.src, `${p.ruta} lee decisiones: eso es deliberación interna`).not.toMatch(/from\("decisiones"\)/);

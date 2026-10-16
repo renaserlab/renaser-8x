@@ -8,6 +8,7 @@ import { registrarError } from "@/lib/errores";
 import { filasDeNumeros, VITAL_POR_CLAVE, RECONOCIDA_POR_CLAVE } from "@/lib/metricas";
 import { conCifraDesplazada, escribirConservando, type MetricaGuardada } from "@/lib/rules/contradiccion-numerica";
 import { nombreDePeriodo } from "@/lib/temporadas";
+import { refrescarRuta } from "@/lib/ruta-datos";
 
 /**
  * LOS NÚMEROS DEL NEGOCIO, contados por el propio dueño.
@@ -207,5 +208,6 @@ export const POST = protegido({}, async (perfil, req) => {
       { status: 409 }
     );
   }
+  refrescarRuta(companyId, "ruta");
   return ok({ guardados, no_guardados });
 });

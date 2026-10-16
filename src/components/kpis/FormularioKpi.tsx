@@ -60,11 +60,13 @@ function Campo({ etiqueta, ayuda, children }: { etiqueta: string; ayuda?: string
  * indicador referencia la versión exacta y una recongelación posterior no lo mueve.
  */
 export function FormularioKpi({
-  companyId, inicial, kpiId, participantes, acciones, lineasBase, zona, alCerrar,
+  companyId, inicial, kpiId, participantes, acciones, lineasBase, zona, horaCierre, alCerrar,
 }: {
   companyId: string;
   /** Zona horaria de la empresa: el periodo cerrado que se muestra de ejemplo es el de su reloj. */
   zona: string;
+  /** companies.hora_cierre: lo diario de hoy ya cerró desde esa hora. */
+  horaCierre?: string | null;
   inicial?: Partial<Kpi | NuevoKpi>;
   /** Si viene, es edición (PATCH); si no, creación (POST). */
   kpiId?: string;
@@ -191,7 +193,7 @@ export function FormularioKpi({
             {TIPOS_INDICADOR.map((t) => <option key={t} value={t}>{TIPO_TEXTO[t]}</option>)}
           </select>
         </Campo>
-        <Campo etiqueta="7 · Punto de partida" ayuda={`Valor y su periodo (${forma}). Ejemplo de periodo cerrado: ${periodoCerradoMasReciente(c.frecuencia, undefined, zona)}.`}>
+        <Campo etiqueta="7 · Punto de partida" ayuda={`Valor y su periodo (${forma}). Ejemplo de periodo cerrado: ${periodoCerradoMasReciente(c.frecuencia, undefined, zona, horaCierre)}.`}>
           <div className="flex gap-2">
             <input aria-label="Valor del punto de partida" className="campo" style={{ maxWidth: 140 }} inputMode="decimal" value={c.linea_base_valor} onChange={(e) => pon("linea_base_valor", e.target.value)} placeholder="valor" />
             <input aria-label="Periodo del punto de partida" className="campo" value={c.linea_base_periodo} onChange={(e) => pon("linea_base_periodo", e.target.value)} placeholder="periodo" />

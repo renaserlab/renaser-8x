@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { InventarioActivos } from "@/components/cliente/InventarioActivos";
 import { bibliotecaRecomendada, type FindingLite } from "@/lib/biblioteca";
 import { EditarMiEmpresa } from "@/components/cliente/EditarMiEmpresa";
+import { pedidoDeSecciones, AvisoPedido, ListoPedido } from "@/components/negocio/PedidoDeConsultora";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,8 @@ export default async function Activos({ searchParams }: { searchParams: Promise<
     sb.from("companies").select("etapa_negocio").eq("id", c.companyId).single(),
     sb.from("companies").select("nombre,ficha").eq("id", c.companyId).single(),
   ]);
+  // Lo que pidió la consultora (el organigrama, los manuales) va arriba, con su nota; «Listo» al final.
+  const pedido = await pedidoDeSecciones(c.companyId, ["subir_organigrama", "subir_manuales"], c.u);
   const recomendados = (findings ?? []).length ? bibliotecaRecomendada((findings ?? []) as FindingLite[], emp?.etapa_negocio) : [];
   return (
     <>
@@ -30,6 +33,7 @@ export default async function Activos({ searchParams }: { searchParams: Promise<
         Área por área: lo que exista —un documento, una foto del cuaderno, un audio— súbelo aquí mismo.
         Lo que nunca se escribió, cuéntanoslo con tus palabras.
       </p>
+      <AvisoPedido p={pedido} que="Súbelo en su lugar, aquí abajo." />
       {/* Todo lo tuyo, a un toque: los procesos dibujados y lo subido viven aquí dentro. */}
       <div className="flex flex-wrap gap-2 mb-8">
         <EditarMiEmpresa nombre={emp2?.nombre ?? ""} ficha={(emp2?.ficha as Record<string, string>) ?? {}} />
@@ -46,6 +50,7 @@ export default async function Activos({ searchParams }: { searchParams: Promise<
         prioridades={recomendados}
         docDestacado={doc}
       />
+      <ListoPedido p={pedido} />
     </>
   );
 }

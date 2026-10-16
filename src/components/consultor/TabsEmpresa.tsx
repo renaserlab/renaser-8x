@@ -7,10 +7,13 @@ import { usePathname } from "next/navigation";
 export type Capa = { rotulo: string; tabs: [string, string][] };
 
 /**
- * Pestañas de la empresa en CAPAS con rótulo visible (Resumen → Evidencia → Intervención): el orden en
- * que la consultora lee una empresa. Cada capa es una fila con estado activo real (línea firme).
- * En pantallas chicas la fila se desliza en horizontal y la pestaña activa se trae a la vista; en
- * escritorio las pestañas se acomodan en más de un renglón, para que ninguna quede escondida.
+ * Secciones de la empresa en CAPAS con rótulo visible (Resumen → Evidencia → Intervención): el orden en que
+ * la consultora lee una empresa.
+ * — Escritorio ancho: una COLUMNA LATERAL de la empresa, a la izquierda de la pantalla, con el rótulo de cada
+ *   capa y sus secciones una debajo de otra; se queda a la vista al bajar (sticky).
+ * — Celular y pantallas medianas: cada capa es una fila que se desliza en horizontal y la sección activa se trae
+ *   a la vista. Ninguna sección queda escondida.
+ * Los estilos viven en src/design/tablero.css (.tabs-empresa).
  */
 export function TabsEmpresa({ base, capas }: { base: string; capas: Capa[] }) {
   const ruta = usePathname();
@@ -18,6 +21,7 @@ export function TabsEmpresa({ base, capas }: { base: string; capas: Capa[] }) {
   const esActiva = (h: string) => (h === "" ? ruta === base : ruta === `${base}${h}` || ruta.startsWith(`${base}${h}/`));
 
   // Solo se mueve la fila, nunca la página: en un celular la pestaña activa no puede quedar fuera de la vista.
+  // En la columna de escritorio la fila no desborda en horizontal y esto no hace nada.
   useEffect(() => {
     const el = activa.current;
     const fila = el?.parentElement;
@@ -26,29 +30,17 @@ export function TabsEmpresa({ base, capas }: { base: string; capas: Capa[] }) {
   }, [ruta]);
 
   return (
-    <nav className="mt-4" aria-label="Secciones de la empresa" style={{ borderTop: "1px solid var(--linea)" }}>
+    <nav className="tabs-empresa no-imprimir" aria-label="Secciones de la empresa">
       {capas.map((capa) => {
         const aqui = capa.tabs.some(([h]) => esActiva(h));
         return (
-          <div key={capa.rotulo} className="lg:flex lg:items-baseline lg:gap-2" style={{ borderBottom: "1px solid var(--linea)" }}>
-            <p
-              className="t-etiqueta"
-              style={{ flex: "none", width: 116, paddingTop: 8, textTransform: "uppercase", letterSpacing: "0.08em", color: aqui ? "var(--tinta)" : "var(--grafito)" }}
-            >
-              {capa.rotulo}
-            </p>
-            <div className="flex gap-1 overflow-x-auto lg:flex-wrap lg:overflow-visible" style={{ flex: 1, minWidth: 0, scrollbarWidth: "none" }}>
+          <div key={capa.rotulo} className="capa-empresa" data-aqui={aqui ? "si" : undefined}>
+            <p className="capa-empresa__rotulo">{capa.rotulo}</p>
+            <div className="capa-empresa__secciones overflow-x-auto">
               {capa.tabs.map(([h, n]) => {
                 const activo = esActiva(h);
                 return (
-                  <Link
-                    key={h}
-                    ref={activo ? activa : undefined}
-                    href={`${base}${h}`}
-                    aria-current={activo ? "page" : undefined}
-                    className="t-dato px-3 py-2"
-                    style={{ whiteSpace: "nowrap", color: activo ? "var(--tinta)" : "var(--grafito)", fontWeight: activo ? 600 : 500, borderBottom: activo ? "2px solid var(--marca)" : "2px solid transparent", marginBottom: -1, textDecoration: "none" }}
-                  >
+                  <Link key={h} ref={activo ? activa : undefined} href={`${base}${h}`} aria-current={activo ? "page" : undefined}>
                     {n}
                   </Link>
                 );

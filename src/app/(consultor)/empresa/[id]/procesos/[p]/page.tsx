@@ -7,10 +7,16 @@ import { BotonJob } from "@/components/consultor/BotonJob";
 import { Sop } from "@/components/Entregable";
 import { BotonImprimir } from "@/components/base/BotonImprimir";
 import { procesoConToBe } from "@/lib/procesos";
+import { ArchivosDelProceso } from "@/components/procesos/ArchivosDelProceso";
+import { archivosDeProcesos } from "@/components/procesos/datos";
 
 export const dynamic = "force-dynamic";
 
-/** El canvas de un proceso. Vista editable o comparada AS-IS / TO-BE. */
+/**
+ * El canvas de un proceso. Vista editable o comparada AS-IS / TO-BE.
+ * Con los archivos que se le subieron (16-10-2026): sin dibujar, arriba y con «Dibujarlo con lo que subiste»; ya
+ * dibujado, plegado debajo del lienzo para volver a dibujarlo con un archivo (se confirma: reemplaza lo dibujado).
+ */
 export default async function ProcesoPag({ params, searchParams }: { params: Promise<{ id: string; p: string }>; searchParams: Promise<{ vista?: string }> }) {
   const { id, p } = await params;
   const { vista } = await searchParams;
@@ -18,6 +24,10 @@ export default async function ProcesoPag({ params, searchParams }: { params: Pro
   if (!r) notFound();
   const { asis, tobe, sop } = r;
   const comparada = vista === "comparada";
+  const archivos = await archivosDeProcesos(id, [asis.id]);
+  const fuentes = archivos ? (archivos.get(asis.id) ?? []) : null;
+  const dibujado = asis.nodos.length > 0;
+  const subidos = <ArchivosDelProceso processId={asis.id} fuentes={fuentes} dibujado={dibujado} modo="consultora" enlaceFuentes={`/empresa/${id}/fuentes`} />;
   return (
     <>
       <Encabezado
@@ -32,11 +42,13 @@ export default async function ProcesoPag({ params, searchParams }: { params: Pro
           </>
         }
       />
+      {!dibujado && subidos}
       {comparada ? (
         <Comparada companyId={id} asis={{ id: asis.id, nombre: asis.nombre, nodos: asis.nodos, edges: asis.edges }} tobe={tobe ? { id: tobe.id, nombre: tobe.nombre, nodos: tobe.nodos, edges: tobe.edges } : null} />
       ) : (
         <Canvas processId={asis.id} companyId={id} nombre={asis.nombre} nodos={asis.nodos} edges={asis.edges} />
       )}
+      {dibujado && !comparada && subidos}
       {tobe && !comparada && (
         <section className="mt-10">
           <h2 className="t-seccion mb-3">TO-BE (editable)</h2>

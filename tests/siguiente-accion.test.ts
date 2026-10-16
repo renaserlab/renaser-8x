@@ -68,6 +68,7 @@ function con(...encendidos: EstadoSiguiente[]): Hechos {
   return {
     entrada: on("entrada") ? { estado: "en_curso", respondidas: 5, total: 12 } : null,
     comoDueno: true,
+    pedidos: { abiertas: on("pedidos") ? 2 : 0 },
     direccion: on("direccion") ? { version: 2 } : null,
     puntoDePartida: on("punto_de_partida") ? { version: 1 } : null,
     tareas: { estaSemana: on("tareas_semana") ? 3 : 0, enMarcha: on("tareas_semana") || on("tareas_en_marcha") ? 5 : 0 },
@@ -82,6 +83,7 @@ function con(...encendidos: EstadoSiguiente[]): Hechos {
 /** Lo que cada estado dice y a dónde lleva. Escrito aquí entero: si el texto cambia, que sea a propósito. */
 const ESPERADO: Record<EstadoSiguiente, { texto: string; href: string; accion: string }> = {
   entrada: { texto: "Vas en la pregunta 6 de 12.", href: "/portal/entrada", accion: "Continuar" },
+  pedidos: { texto: "Tu consultora te pidió 2 cosas.", href: "/portal/pedidos", accion: "Ver lo que te pidió" },
   direccion: { texto: "Revisa hacia dónde va tu empresa.", href: "/portal/direccion", accion: "Leer y confirmar" },
   punto_de_partida: { texto: "Confirma tu punto de partida.", href: "/portal/resultados", accion: "Revisar y aceptar" },
   tareas_semana: { texto: "Tienes 3 tareas esta semana.", href: "/portal/semana", accion: "Ver esta semana" },
@@ -101,7 +103,7 @@ describe("la decisión: una acción por estado, con su enlace", () => {
   it("el orden es este, entero y a la vista", () => {
     expect([...PRIORIDAD]).toEqual([
       "entrada",
-      "direccion", "punto_de_partida", "tareas_semana", "indicador", "numeros", "tareas_en_marcha", "informe",
+      "pedidos", "direccion", "punto_de_partida", "tareas_semana", "indicador", "numeros", "tareas_en_marcha", "informe",
       "restriccion", "pregunta_abierta", "paso",
     ]);
     expect([...ESTADOS_PENDIENTES, ...ESTADOS_DE_SIEMPRE]).toEqual(PRIORIDAD.slice(1));
@@ -124,7 +126,7 @@ describe("la decisión: una acción por estado, con su enlace", () => {
 
   it("los seis lugares que la portada nunca señalaba ahora tienen quién los señale", () => {
     const destinos = NUEVOS.map((e) => siguienteAccion(con(e))!.href);
-    for (const ruta of ["/portal/direccion", "/portal/numeros", "/portal/semana", "/portal/plan", "/portal/kpis", "/portal/resultados", "/portal/informe"]) {
+    for (const ruta of ["/portal/pedidos", "/portal/direccion", "/portal/numeros", "/portal/semana", "/portal/plan", "/portal/kpis", "/portal/resultados", "/portal/informe"]) {
       expect(destinos, `ningún estado lleva a ${ruta}`).toContain(ruta);
     }
   });
@@ -213,9 +215,11 @@ describe("la lectura de siempre, cuando no hay nada nuevo", () => {
     expect(siguienteAccion({ ...todo, entrada: { estado: "sin_empezar", respondidas: 0, total: 12 } })).toMatchObject({ estado: "entrada", href: "/portal/entrada", accion: "Empezar", texto: "Empecemos por conocer tu negocio." });
     expect(siguienteAccion({ ...todo, entrada: { estado: "en_curso", respondidas: 5, total: 12 } })).toMatchObject({ estado: "entrada", accion: "Continuar", texto: "Vas en la pregunta 6 de 12." });
     expect(siguienteAccion({ ...todo, entrada: { estado: "por_confirmar", respondidas: 12, total: 12 } })).toMatchObject({ estado: "entrada", accion: "Revisar y confirmar" });
-    // Confirmada, o sin entrada (empresas que ya estaban en marcha): no manda.
-    expect(siguienteAccion({ ...todo, entrada: { estado: "confirmada", respondidas: 12, total: 12 } })?.estado).toBe("direccion");
-    expect(siguienteAccion({ ...todo, entrada: null })?.estado).toBe("direccion");
+    // Confirmada, o sin entrada (empresas que ya estaban en marcha): no manda. Manda lo primero que espera al dueño:
+    // desde el 16-10, lo que le pidió su consultora.
+    expect(siguienteAccion({ ...todo, entrada: { estado: "confirmada", respondidas: 12, total: 12 } })?.estado).toBe("pedidos");
+    expect(siguienteAccion({ ...todo, entrada: null })?.estado).toBe("pedidos");
+    expect(siguienteAccion({ ...todo, entrada: null, pedidos: { abiertas: 0 } })?.estado).toBe("direccion");
   });
 
   it("tablero.ts sigue exportando la entrada con los nombres de antes", () => {
@@ -637,6 +641,7 @@ describe("pendientesDelDueno: lee lo que espera al dueño", () => {
     const p = await pendientesDelDueno(EMP, elDueno, { sb, ahora: HOY });
     expect(p).toEqual({
       comoDueno: true,
+      pedidos: { abiertas: 0 },
       direccion: { version: 2 },
       puntoDePartida: { version: 2 },
       tareas: { estaSemana: ESTA_SEMANA.length, enMarcha: EN_MARCHA.length },
@@ -682,6 +687,25 @@ describe("pendientesDelDueno: lee lo que espera al dueño", () => {
     expect(accionPendiente({ ...alFinal, informeListo: true })).toBeNull();
   });
 
+  it("lo que pidió la consultora (16-10): cuenta solo lo activo de SU empresa y va primero entre los pendientes", async () => {
+    const tablas = empresaConTodoPendiente();
+    tablas.solicitudes_cliente = [
+      { id: "s1", company_id: EMP, seccion: "productos", estado: "activa" },
+      { id: "s2", company_id: EMP, seccion: "historia", estado: "activa" },
+      { id: "s3", company_id: EMP, seccion: "costos", estado: "completada" },
+      { id: "s4", company_id: EMP, seccion: "moneda", estado: "retirada" },
+      { id: "s9", company_id: OTRA, seccion: "productos", estado: "activa" },
+    ];
+    const p = await pendientesDelDueno(EMP, elDueno, { sb: dobleDeBase(tablas).sb, ahora: HOY });
+    expect(p.pedidos).toEqual({ abiertas: 2 });
+    expect(accionPendiente(p)).toMatchObject({ estado: "pedidos", texto: "Tu consultora te pidió 2 cosas.", href: "/portal/pedidos" });
+    tablas.solicitudes_cliente = [{ id: "s1", company_id: EMP, seccion: "productos", estado: "activa" }];
+    expect(accionPendiente(await pendientesDelDueno(EMP, elDueno, { sb: dobleDeBase(tablas).sb, ahora: HOY }))?.texto).toBe("Tu consultora te pidió 1 cosa.");
+    // Cumplido lo pedido, vuelve lo de antes.
+    tablas.solicitudes_cliente = [];
+    expect(accionPendiente(await pendientesDelDueno(EMP, elDueno, { sb: dobleDeBase(tablas).sb, ahora: HOY }))?.estado).toBe("direccion");
+  });
+
   it("un líder o un participante no es el dueño; la consultora que mira como él, sí", async () => {
     const tablas = empresaConTodoPendiente();
     tablas.memberships = [{ user_id: DUENO, company_id: EMP, nivel: "lider" }];
@@ -700,7 +724,7 @@ describe("pendientesDelDueno: lee lo que espera al dueño", () => {
 
   it("una empresa sin nada de esto: ningún aviso, y los nueve números por contar", async () => {
     const p = await pendientesDelDueno(EMP, elDueno, { sb: dobleDeBase({ memberships: [{ user_id: DUENO, company_id: EMP, nivel: "dueno" }] }).sb, ahora: HOY });
-    expect(p).toEqual({ comoDueno: true, direccion: null, puntoDePartida: null, tareas: { estaSemana: 0, enMarcha: 0 }, indicadores: [], numeros: { faltan: 9, total: 9 }, informeListo: false, informeAbierto: false });
+    expect(p).toEqual({ comoDueno: true, pedidos: { abiertas: 0 }, direccion: null, puntoDePartida: null, tareas: { estaSemana: 0, enMarcha: 0 }, indicadores: [], numeros: { faltan: 9, total: 9 }, informeListo: false, informeAbierto: false });
     expect(accionPendiente(p)?.estado).toBe("numeros");
     expect(rastro.errores).toEqual([]);
   });
@@ -728,6 +752,8 @@ describe("pendientesDelDueno: la portada nunca se cae por una migración pendien
     ["indicador_valores", FUERA_DE_CACHE, (p) => expect(p.indicadores).toEqual([])],
     ["company_metricas", FALTA_TABLA, (p) => expect(p.numeros).toBeNull()],
     ["audit_log", FALTA_TABLA, (p) => expect(p.informeAbierto).toBeNull()],
+    ["solicitudes_cliente", FALTA_TABLA, (p) => expect(p.pedidos).toBeNull()],
+    ["solicitudes_cliente", FUERA_DE_CACHE, (p) => expect(p.pedidos).toBeNull()],
   ];
 
   it.each(CASOS)("sin %s (%o) ese aviso no aparece, los demás siguen y no queda error anotado", async (tabla, error, comprobar) => {
@@ -744,6 +770,7 @@ describe("pendientesDelDueno: la portada nunca se cae por una migración pendien
       indicador_valores: ["indicadores"],
       company_metricas: ["numeros"],
       audit_log: ["informeAbierto"],
+      solicitudes_cliente: ["pedidos"],
     };
     for (const campo of Object.keys(completa) as (keyof typeof p)[]) {
       if (!dependen[tabla]!.includes(campo)) expect(p[campo], `«${campo}» cambió al faltar ${tabla}`).toEqual(completa[campo]);
@@ -754,7 +781,7 @@ describe("pendientesDelDueno: la portada nunca se cae por una migración pendien
   });
 
   it("sin ninguna de las tablas nuevas la portada queda como antes: ningún aviso nuevo", async () => {
-    const fallas = Object.fromEntries(["ficha_direccion", "actas_aceptacion", "indicadores", "indicador_valores", "audit_log"].map((t) => [t, FALTA_TABLA]));
+    const fallas = Object.fromEntries(["ficha_direccion", "actas_aceptacion", "indicadores", "indicador_valores", "audit_log", "solicitudes_cliente"].map((t) => [t, FALTA_TABLA]));
     const tablas = empresaConTodoPendiente();
     tablas.company_metricas = VITALES.map((v) => ({ company_id: EMP, clave: v.clave, periodo: v.mensual ? "2026-09" : "actual", valor: 100, estado: "contado" }));
     const p = await pendientesDelDueno(EMP, elDueno, { sb: dobleDeBase(tablas, { ...fallas, mediciones: FALTA_COLUMNA, actions: FALTA_COLUMNA }).sb, ahora: HOY });

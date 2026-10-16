@@ -46,7 +46,8 @@ function estadoDe(items: ItemBandeja[], conActividad: boolean): { clase: string;
 }
 
 export default async function Bandeja() {
-  const desde = new Date(Date.now() - SEMANAS * 7 * 86_400_000);
+  const ahora = new Date().getTime();
+  const desde = new Date(ahora - SEMANAS * 7 * 86_400_000);
   const [u, { items, empresas }, { data: confirmaciones }] = await Promise.all([
     requerirConsultor(),
     bandeja(),
@@ -71,7 +72,7 @@ export default async function Bandeja() {
 
   // Semanas: las últimas ocho, de lunes a domingo. Una semana sin confirmaciones es un cero contado, no un hueco.
   const porSemana = new Map<string, number>();
-  for (let i = SEMANAS - 1; i >= 0; i--) porSemana.set(lunesDe(new Date(Date.now() - i * 7 * 86_400_000)), 0);
+  for (let i = SEMANAS - 1; i >= 0; i--) porSemana.set(lunesDe(new Date(ahora - i * 7 * 86_400_000)), 0);
   for (const c of confirmaciones ?? []) {
     const k = lunesDe(new Date(String(c.validado_at)));
     if (porSemana.has(k)) porSemana.set(k, (porSemana.get(k) ?? 0) + 1);

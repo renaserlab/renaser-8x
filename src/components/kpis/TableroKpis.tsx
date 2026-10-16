@@ -37,6 +37,7 @@ type Contexto = {
   historia: ValorHistoria[];
   /** Zona horaria de la empresa: decide qué periodo ya cerró al registrar un valor. */
   zona: string;
+  horaCierre?: string | null;
   alError: (m: string | null) => void;
 };
 
@@ -97,7 +98,7 @@ function FilaKpi({ k, ctx }: { k: KpiVista; ctx: Contexto }) {
             <>
               <p style={{ fontSize: 20, fontWeight: 700, fontVariantNumeric: "tabular-nums", lineHeight: 1.1 }}>{textoValor(k.unidad, k.valor_actual, k.moneda)}</p>
               <p className="t-dato" style={{ color: "var(--grafito)" }}>
-                {nombreDePeriodoKpi(k.valor_actual_periodo)} · {textoValidacion(k, { zona: ctx.zona })}
+                {nombreDePeriodoKpi(k.valor_actual_periodo)} · {textoValidacion(k, { zona: ctx.zona, horaCierre: ctx.horaCierre })}
               </p>
             </>
           ) : (
@@ -166,9 +167,9 @@ function FilaKpi({ k, ctx }: { k: KpiVista; ctx: Contexto }) {
         {k.estado === "archivado" && <button type="button" className="boton boton--secundario" style={boton} onClick={() => cambiarEstado("activo")}>Reactivar</button>}
       </div>
 
-      {abierto === "registrar" && <RegistrarValor companyId={ctx.companyId} kpi={k} modo="consultor" zona={ctx.zona} alCerrar={() => setAbierto("nada")} />}
+      {abierto === "registrar" && <RegistrarValor companyId={ctx.companyId} kpi={k} modo="consultor" zona={ctx.zona} horaCierre={ctx.horaCierre} alCerrar={() => setAbierto("nada")} />}
       {abierto === "ajustar" && (
-        <FormularioKpi companyId={ctx.companyId} kpiId={k.id} inicial={k} participantes={ctx.participantes} acciones={ctx.acciones} lineasBase={ctx.lineasBase} zona={ctx.zona} alCerrar={() => setAbierto("nada")} />
+        <FormularioKpi companyId={ctx.companyId} kpiId={k.id} inicial={k} participantes={ctx.participantes} acciones={ctx.acciones} lineasBase={ctx.lineasBase} zona={ctx.zona} horaCierre={ctx.horaCierre} alCerrar={() => setAbierto("nada")} />
       )}
       {abierto === "historia" && (
         <div className="mt-3">
@@ -220,11 +221,13 @@ function Grupo({ titulo, sub, lista, ctx }: { titulo: string; sub: string; lista
  * Lo propuesto desde los nueve números se crea con un clic, siempre «propuesto».
  */
 export function TableroKpis({
-  companyId, kpis, historia, participantes, acciones, lineasBase, propuestas, zona,
+  companyId, kpis, historia, participantes, acciones, lineasBase, propuestas, zona, horaCierre,
 }: {
   companyId: string;
   /** Zona horaria de la empresa (companies.zona_horaria). */
   zona: string;
+  /** companies.hora_cierre: lo diario de hoy se anota desde esa hora. */
+  horaCierre?: string | null;
   kpis: KpiVista[];
   historia: ValorHistoria[];
   participantes: Participante[];
@@ -239,7 +242,7 @@ export function TableroKpis({
 
   const grupos = separarPorTipo(kpis);
   const conAlerta = kpis.filter((k) => k.alertas.length > 0);
-  const ctx: Contexto = { companyId, participantes, acciones, lineasBase, historia, zona, alError: setError };
+  const ctx: Contexto = { companyId, participantes, acciones, lineasBase, historia, zona, horaCierre, alError: setError };
 
   const crearPropuesta = async (p: PropuestaKpi) => {
     setError(null);
@@ -277,7 +280,7 @@ export function TableroKpis({
       <div className="flex gap-2 mb-6 flex-wrap">
         <button type="button" className="boton" onClick={() => setNuevo((v) => !v)}>Nuevo indicador</button>
       </div>
-      {nuevo && <FormularioKpi companyId={companyId} participantes={participantes} acciones={acciones} lineasBase={lineasBase} zona={zona} alCerrar={() => setNuevo(false)} />}
+      {nuevo && <FormularioKpi companyId={companyId} participantes={participantes} acciones={acciones} lineasBase={lineasBase} zona={zona} horaCierre={horaCierre} alCerrar={() => setNuevo(false)} />}
 
       <Grupo titulo="De resultado" sub={`Qué cambió en el negocio. Indicador ${TIPO_TEXTO.resultado}.`} lista={grupos.resultado} ctx={ctx} />
       <Grupo titulo="De ejecución" sub={`Qué se hizo. Indicador ${TIPO_TEXTO.ejecucion}. Cumplirlos no es mejora financiera: eso lo dicen los de resultado.`} lista={grupos.ejecucion} ctx={ctx} />

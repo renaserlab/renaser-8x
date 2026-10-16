@@ -119,9 +119,9 @@ export default async function Portal() {
   // «más» solo tiene sentido cuando lo que se lee arriba ya es un hallazgo (la restricción).
   const arribaVaUnHallazgo = !deEntrada && lecturaDeSiempre.estado === "restriccion";
 
-  // Las tres fases del método: dónde está parada la empresa.
-  const fase = t.biblioteca.listos > 0 ? 3 : cosas > 0 || (c.porValidar ?? 0) > 0 ? 2 : 1;
-  const FASES = ["Diagnóstico", "Auditoría profunda", "Sistematización"];
+  // Las «tres fases del método» se retiraron de aquí el 16-10-2026: la barra de avance de arriba (BarraRutaCliente,
+  // en el layout) ya dice en qué etapa va la empresa, y dos cosas con el mismo propósito confunden.
+  const pedidos = pendientes.pedidos;
 
   // ── Lo que pinta el tablero, todo de lo ya leído ──
   const venta = t.kpis.venta;
@@ -186,7 +186,12 @@ export default async function Portal() {
         <div className="lectura"><span className="num">{t.comprension}%</span><p>entendido</p></div>
         <div className="pie">
           <div><b>{t.biblioteca.listos} de {t.biblioteca.total}</b><small>documentos</small></div>
-          <div><b className="texto">{FASES[fase - 1]}</b><small>fase de ahora</small></div>
+          {pedidos && (
+            <div>
+              <b>{pedidos.abiertas}</b>
+              <small>{pedidos.abiertas === 1 ? "pedido de tu consultora" : "pedidos de tu consultora"}</small>
+            </div>
+          )}
         </div>
       </section>
 
@@ -296,10 +301,6 @@ export default async function Portal() {
             </div>
           )}
         </div>
-        <div className="pasos" aria-label="Avance del método">
-          {FASES.map((f, i) => <span key={f} className={i + 1 < fase ? "hecho" : i + 1 === fase ? "actual" : undefined}>{f}</span>)}
-        </div>
-        <p className="voz">Aquí estás: <strong style={{ color: "var(--tinta)" }}>{FASES[fase - 1]}</strong>{fase < 3 ? ` · sigue ${FASES[fase]}` : " · la última fase"}</p>
       </section>
 
       <section className="tarjeta lista-tarjeta completa" aria-labelledby="t-encontrado">

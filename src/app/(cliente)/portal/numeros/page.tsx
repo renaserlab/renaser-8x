@@ -4,12 +4,14 @@ import { radiografia, derivados, serieDeVentas, vitalesSoloDeDocumento, PERIODO_
 import { explicarCalculo, type Calculo } from "@/lib/finanzas";
 import { ultimosMeses } from "@/lib/temporadas";
 import { zonaDe } from "@/lib/kpis";
+import { leerHoraCierre } from "@/lib/negocio-datos";
 import { MisNumeros } from "@/components/cliente/MisNumeros";
 import { Avance } from "@/components/cliente/Avance";
 import { lecturaDeCorte, diaEnZona, mesCerradoAnterior } from "@/lib/medicion";
 import { cargarMediciones, cargarAccionesLigadas } from "@/components/medicion/datos";
 import { Indicadores, type Indicador, type ValorIndicador } from "@/components/cliente/Indicadores";
 import { Franja, Lectura } from "@/components/base/Franja";
+import { pedidoDeSecciones, AvisoPedido, ListoPedido } from "@/components/negocio/PedidoDeConsultora";
 
 export const dynamic = "force-dynamic";
 
@@ -58,14 +60,18 @@ export default async function Numeros() {
   if (!c.companyId) return <p className="t-cuerpo medida">{c.queFalta}</p>;
 
   const sb = supabaseAdmin();
-  const [{ data: metricasRaw }, { data: empresa }, meds, { data: indicadoresRaw }, { data: reloj }] = await Promise.all([
+  const [{ data: metricasRaw }, { data: empresa }, meds, { data: indicadoresRaw }, { data: reloj }, horaCierre] = await Promise.all([
     sb.from("company_metricas").select("clave,periodo,valor,estado").eq("company_id", c.companyId).limit(200),
     sb.from("companies").select("ficha").eq("id", c.companyId).single(),
     cargarMediciones(sb, c.companyId),
     sb.from("indicadores").select("id,clave,nombre,como_se_mide,unidad,mejor_si,meta_valor,meta_texto,frecuencia,origen_texto,estado").eq("company_id", c.companyId).neq("estado", "archivado").order("created_at"),
     // El reloj de la empresa, en consulta aparte: si la columna no existiera en un entorno, la ficha se lee igual.
     sb.from("companies").select("zona_horaria").eq("id", c.companyId).maybeSingle(),
+    // A qué hora cierra el negocio (lo diario de hoy se anota desde esa hora). Aparte: si la columna falta, no arrastra a la zona.
+    leerHoraCierre(c.companyId),
   ]);
+  // Lo que pidió la consultora («Los números que faltan») va arriba, con su nota; «Listo» al final.
+  const pedido = await pedidoDeSecciones(c.companyId, ["datos_faltantes"], c.u, zonaDe((reloj as { zona_horaria?: unknown } | null)?.zona_horaria));
   // «Hoy» y «el mes pasado» son los de la empresa, no los del servidor. Vacía o desconocida cae a America/Lima.
   const zona = zonaDe((reloj as { zona_horaria?: unknown } | null)?.zona_horaria);
 
@@ -121,6 +127,7 @@ export default async function Numeros() {
         Nueve números cuentan la salud de cualquier negocio. No hace falta contabilidad ni buscar papeles:
         contesta de memoria, como si te lo preguntáramos hablando.
       </p>
+      <AvisoPedido p={pedido} />
 
       {/* LO QUE YA SE PUEDE CALCULAR: la recompensa por haber contestado. Cada cifra con su detalle.
           EL EQUILIBRIO QUE SE MUESTRA ES EL DE LA EMPRESA (D5): fijos entre lo que queda de cada sol
@@ -197,7 +204,7 @@ export default async function Numeros() {
       />
 
       <div className="mt-9">
-        <Indicadores companyId={c.companyId} indicadores={indicadores} valores={valoresInd} zona={zona} />
+        <Indicadores companyId={c.companyId} indicadores={indicadores} valores={valoresInd} zona={zona} horaCierre={horaCierre} />
       </div>
 
       {/* Sin comparación todavía: el punto de partida va abajo, después de que ponga sus números. */}
@@ -206,6 +213,8 @@ export default async function Numeros() {
           <Avance companyId={c.companyId} base={base} ultimoCorte={ultimoCorte} lectura={lectura} cortes={cortes} numerosListos={r.listos} mesPasado={mesPasado} hoy={hoy} />
         </div>
       )}
+
+      <ListoPedido p={pedido} />
     </>
   );
 }

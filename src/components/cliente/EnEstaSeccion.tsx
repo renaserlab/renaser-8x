@@ -17,9 +17,13 @@ import { destinoDe } from "./NavCliente";
 const NOMBRES: [string, string][] = [
   ["/portal/entrada", "Cuéntanos tu negocio"],
   ["/portal/conversacion", "Conversación"],
+  ["/portal/pedidos", "Lo que te pidió tu consultora"],
   ["/portal/direccion", "Hacia dónde vamos"],
   ["/portal/numeros", "Tus números"],
   ["/portal/producto", "Lo que vendes"],
+  ["/portal/costos", "Tus gastos del mes"],
+  ["/portal/historia", "Tu historia"],
+  ["/portal/cobros", "Cobros y mercadería"],
   ["/portal/validar", "Confirmar información"],
   ["/portal/informe", "Informe"],
   ["/portal/documentos", "Archivos aportados"],
@@ -31,11 +35,17 @@ const NOMBRES: [string, string][] = [
 
 const CAMBIAR = "/portal/elegir-empresa";
 
-export function EnEstaSeccion({ variasEmpresas = false }: { variasEmpresas?: boolean }) {
+/**
+ * `ocultar`: las pantallas que hoy no le tocan al dueño (pantallasOcultas de src/lib/secciones.ts: cerradas por su
+ * consultora y sin nada guardado). Lo decide el layout, que ya lee qué está abierto. La pantalla en la que se está
+ * nunca se esconde de la fila.
+ */
+export function EnEstaSeccion({ variasEmpresas = false, ocultar = [] }: { variasEmpresas?: boolean; ocultar?: readonly string[] }) {
   const ruta = usePathname();
   const activa = useRef<HTMLAnchorElement | null>(null);
   const destino = destinoDe(ruta);
-  const enlaces = destino ? NOMBRES.filter(([href]) => destinoDe(href) === destino) : [];
+  const enEsta = (href: string) => ruta === href || ruta.startsWith(`${href}/`);
+  const enlaces = destino ? NOMBRES.filter(([href]) => destinoDe(href) === destino && (!ocultar.includes(href) || enEsta(href))) : [];
   // Cambiar de empresa no es una sección: es un enlace discreto, y solo para quien tiene más de una.
   const cambiar = variasEmpresas && ruta !== CAMBIAR;
 
@@ -51,7 +61,7 @@ export function EnEstaSeccion({ variasEmpresas = false }: { variasEmpresas?: boo
   return (
     <nav className="no-imprimir en-seccion overflow-x-auto" aria-label="En esta sección">
       {enlaces.map(([href, nombre]) => {
-        const a = ruta === href || ruta.startsWith(`${href}/`);
+        const a = enEsta(href);
         return (
           <Link
             key={href}

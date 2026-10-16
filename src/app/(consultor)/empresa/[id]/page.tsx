@@ -4,7 +4,7 @@ import { Encabezado } from "@/components/base/Vacio";
 import { Admision } from "@/components/consultor/Admision";
 import { Participantes } from "@/components/consultor/Participantes";
 import { Etapa } from "@/components/consultor/Etapa";
-import { PILAR, ESTADO_PILAR, ETAPA } from "@/lib/textos";
+import { PILAR, ESTADO_PILAR } from "@/lib/textos";
 import { tokensUsados } from "@/lib/db/queries";
 import { cumplimientoLegal, bibliotecaEsperada } from "@/lib/biblioteca";
 import { tableroEmpresario } from "@/lib/tablero";
@@ -19,6 +19,18 @@ import { coberturaSesion } from "@/lib/rules/cobertura";
 import { puntajePilar, techoPorEvidencia, procesosEsperados, avanceProcesos, porCorroborar } from "@/lib/rules/evidencia";
 import { HECHO, A_MEDIO } from "@/lib/mercado";
 import { TIPO_SESION } from "@/lib/textos";
+import { avanceDeEmpresa } from "@/lib/ruta-datos";
+import { TIPO_TRABAJO_TEXTO } from "@/lib/ruta";
+import { fechaDia } from "@/lib/medicion";
+import { leerTrabajoEmpresa, leerFichaNegocio } from "@/lib/negocio-datos";
+import { listarSolicitudes } from "@/lib/solicitudes";
+import { sugerirModeloNegocio } from "@/lib/negocio";
+import { numerosQueFaltan } from "@/lib/siguiente-accion";
+import { leer, metricasDe, ventaDorada } from "@/components/negocio/datos";
+import { HistoriaNegocio } from "@/components/negocio/HistoriaNegocio";
+import { FichaDeTrabajo } from "@/components/consultor/FichaDeTrabajo";
+import { MarcarCompuerta } from "@/components/consultor/MarcarCompuerta";
+import { ActivarParaCliente } from "@/components/consultor/ActivarParaCliente";
 
 export const dynamic = "force-dynamic";
 
@@ -63,6 +75,27 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
     conteo[k].total++;
     if (cl.estado === "confirmado") conteo[k].confirmadas++;
   }
+  // LO DEL 16-10-2026: la ruta de la empresa, lo que se le pide al cliente y su historia. Cada lectura por separado:
+  // si la migración del 16-10 no está aplicada o una tabla falla, la tarjeta lo dice y el Panorama abre igual.
+  const [avance, trabajo, pedidosEmpresa, fichaNegocio, metricasEmpresa, porConfirmar] = await Promise.all([
+    avanceDeEmpresa(id).then(
+      (a) => ({ ok: true as const, a }),
+      (e: unknown) => {
+        console.error("[ruta] no se pudo leer el avance en el Panorama", id, e);
+        return { ok: false as const, a: null };
+      }
+    ),
+    leer("el trabajo de la empresa", () => leerTrabajoEmpresa(id)),
+    leer("lo pedido al cliente", () => listarSolicitudes(id)),
+    leer("la ficha del negocio", () => leerFichaNegocio(id)),
+    metricasDe(id),
+    leer("los puntos por confirmar", async () => {
+      const { count, error } = await sb.from("claims").select("id", { count: "exact", head: true }).eq("company_id", id).or("estado.eq.contradicho,and(estado.eq.sin_verificar,prioridad_validacion.eq.true)");
+      if (error) throw new Error(error.message);
+      return count ?? 0;
+    }),
+  ]);
+  const faltaMigracion = !trabajo.ok && trabajo.falta;
   const admision = c.admision as (Record<string, string> & { evaluacion?: { admisible: boolean; motivo: string; senales: string[] } }) | null;
   const ficha = c.ficha as { personas?: string; ciudad?: string; whatsapp?: string } | null;
 
@@ -123,7 +156,7 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
     <>
       <Encabezado
         titulo={c.nombre}
-        sub={`${c.sector ?? "sector sin definir"}${ficha?.ciudad ? ` · ${ficha.ciudad}` : ""} · ${ETAPA[c.etapa] ?? c.etapa}`}
+        sub={`${c.sector ?? "sector sin definir"}${ficha?.ciudad ? ` · ${ficha.ciudad}` : ""}`}
         acciones={
           <span className="flex items-center gap-3 flex-wrap">
             <AdministrarEmpresa companyId={id} nombre={c.nombre} sector={c.sector} metaVenta={(ficha as Record<string, string> | null)?.meta_venta_mensual ?? null} />
@@ -137,6 +170,58 @@ export default async function Panorama({ params }: { params: Promise<{ id: strin
           </span>
         }
       />
+
+      {/* TRES TARJETAS ARRIBA (16-10-2026): la ruta y sus compuertas, lo que se activa para el cliente y su historia. */}
+      <section className="grid gap-4 xl:grid-cols-2 mb-6">
+        <div id="ruta" className="panel p-5 xl:col-span-2 flex flex-col gap-5" style={{ scrollMarginTop: 90 }}>
+          <div>
+            <h2 className="t-seccion">La ruta</h2>
+            <p className="t-dato mt-1" style={{ color: "var(--grafito)" }}>Qué trabajo compró la empresa, desde cuándo corre, y en qué compuerta está. Los días son máximos: se avanza con resultados, nunca por calendario.</p>
+          </div>
+          {trabajo.ok ? (
+            // Con tipo de trabajo y día 1 ya elegidos, la ficha se llenó: queda plegada y la ruta sube.
+            trabajo.valor.tipo_trabajo && trabajo.valor.ruta_inicio ? (
+              <details>
+                <summary className="t-etiqueta" style={{ cursor: "pointer" }}>
+                  Ficha de trabajo · {TIPO_TRABAJO_TEXTO[trabajo.valor.tipo_trabajo].consultora} · día 1: {fechaDia(trabajo.valor.ruta_inicio)}
+                </summary>
+                <div className="mt-3">
+                  <FichaDeTrabajo companyId={id} trabajo={trabajo.valor} sugeridos={sugerirModeloNegocio(trabajo.valor.modelo_operativo)} />
+                </div>
+              </details>
+            ) : (
+              <FichaDeTrabajo companyId={id} trabajo={trabajo.valor} sugeridos={sugerirModeloNegocio(trabajo.valor.modelo_operativo)} />
+            )
+          ) : (
+            <p className="t-dato" style={{ color: "var(--caducado)" }}>{faltaMigracion ? "Falta aplicar supabase/migracion-entrar-hoy.sql: sin ella no hay ruta, ni pedidos al cliente, ni la tabla nueva de productos." : "No se pudo leer la ficha de trabajo de la empresa: vuelve a cargar la página."}</p>
+          )}
+          {avance.ok ? <MarcarCompuerta companyId={id} avance={avance.a} /> : <p className="t-dato" style={{ color: "var(--caducado)" }}>No se pudo leer el avance de la ruta: vuelve a cargar la página.</p>}
+        </div>
+        <div className="panel p-5 flex flex-col gap-4">
+          <div>
+            <h2 className="t-seccion">Activar para el cliente</h2>
+            <p className="t-dato mt-1" style={{ color: "var(--grafito)" }}>Marca lo que el dueño tiene que llenar, confirmar o subir. Lo ve en su Inicio y en «Lo que te pidió tu consultora».</p>
+          </div>
+          <ActivarParaCliente
+            companyId={id}
+            solicitudes={pedidosEmpresa.ok ? pedidosEmpresa.valor : null}
+            contexto={{ porConfirmar: porConfirmar.ok ? porConfirmar.valor : null, faltanNumeros: metricasEmpresa.ok ? numerosQueFaltan(metricasEmpresa.valor).faltan : null }}
+            zona={configDe(c).zona_horaria}
+            noDisponible={!pedidosEmpresa.ok && pedidosEmpresa.falta ? "Falta aplicar supabase/migracion-entrar-hoy.sql: sin ella no se le puede pedir nada al cliente desde aquí." : null}
+          />
+        </div>
+        <div className="panel p-5 flex flex-col gap-4">
+          <div>
+            <h2 className="t-seccion">Historia del negocio</h2>
+            <p className="t-dato mt-1" style={{ color: "var(--grafito)" }}>Lo que respondió la empresa, con cómo lo sabe. Para pedírsela, actívala a la izquierda.</p>
+          </div>
+          {fichaNegocio.ok ? (
+            <HistoriaNegocio companyId={id} modo="consultora" historia={fichaNegocio.valor.historia} editable config={configDe(c)} ventaDorada={metricasEmpresa.ok ? ventaDorada(metricasEmpresa.valor) : null} />
+          ) : (
+            <p className="t-dato" style={{ color: "var(--grafito)" }}>{fichaNegocio.falta ? "Falta aplicar supabase/migracion-entrar-hoy.sql." : "No se pudo leer la historia: vuelve a cargar la página."}</p>
+          )}
+        </div>
+      </section>
 
       <Admision companyId={id} estado={c.estado_admision} evaluacion={admision?.evaluacion} respuestas={admision} />
 
