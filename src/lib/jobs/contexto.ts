@@ -16,7 +16,11 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
  * Fuera de un trabajo —una ruta API que llama al modelo directamente— no hay contexto y las
  * funciones no hacen nada. Eso es correcto: no hay trabajo al que atribuirle la procedencia.
  */
-export type ContextoJob = { jobId: string; companyId: string | null; tipo: string };
+/**
+ * `hasta`: cuándo se corta la función que corre el trabajo (el drenaje en Vercel), en ms desde 1970. Las llamadas largas
+ * al modelo lo usan para no empezar lo que no alcanzan a terminar (provider.ts, `hasta`). El worker local no lo pone.
+ */
+export type ContextoJob = { jobId: string; companyId: string | null; tipo: string; hasta?: number };
 
 const almacen = new AsyncLocalStorage<ContextoJob>();
 

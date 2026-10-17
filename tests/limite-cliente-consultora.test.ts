@@ -95,6 +95,58 @@ describe("el portal del cliente no lee trabajo interno de la consultora", () => 
   });
 });
 
+/**
+ * LA ESTRATEGIA (spec-estrategia-8x.md §8.2 y §10.1). `estrategias` y `estrategia_ediciones` no tienen política de
+ * cliente: son trabajo de la consultora. El dueño ve su camino APROBADO y sus preguntas ENVIADAS, y nada más, por las
+ * lecturas de src/lib/estrategia/portal.ts, que filtran en la consulta. Ninguna página del portal lee esas tablas por su
+ * cuenta ni importa lo que arma la estrategia por dentro (versiones, lentes, cálculos, correcciones).
+ */
+describe("la estrategia: el portal ve solo el camino aprobado y las preguntas enviadas", () => {
+  const PORTAL_LIB = readFileSync(path.resolve(__dirname, "../src/lib/estrategia/portal.ts"), "utf8");
+  const PREGUNTAS_LIB = readFileSync(path.resolve(__dirname, "../src/lib/estrategia/preguntas.ts"), "utf8");
+
+  it.each(PAGINAS.map((p) => [p.ruta, p] as const))("%s no lee las tablas de la estrategia por su cuenta", (_r, p) => {
+    expect(p.src, `${p.ruta} lee estrategias: solo por caminoAprobadoParaDueno (src/lib/estrategia/portal.ts)`).not.toMatch(/from\("estrategias"\)/);
+    expect(p.src, `${p.ruta} lee estrategia_preguntas: solo por preguntasDelDueno o preguntasPendientes`).not.toMatch(/from\("estrategia_preguntas"\)/);
+    expect(p.src, `${p.ruta} nombra estrategia_ediciones: lo que corrigió la consultora no llega al portal`).not.toMatch(/estrategia_ediciones/);
+  });
+
+  it("de la estrategia, el portal solo importa lo que es para el dueño", () => {
+    const PERMITIDOS = ["portal", "textos", "dueno", "para-dueno"];
+    const usados: string[] = [];
+    for (const p of PAGINAS) {
+      for (const m of p.src.matchAll(/from "@\/lib\/estrategia\/([a-z-]+)"/g)) {
+        usados.push(m[1]!);
+        expect(PERMITIDOS, `${p.ruta} importa src/lib/estrategia/${m[1]}: el portal no lee versiones, lentes ni correcciones`).toContain(m[1]);
+      }
+    }
+    expect(usados, "ninguna página del portal usa la estrategia: la prueba no mira nada").toContain("portal");
+  });
+
+  it("caminoAprobadoParaDueno filtra en la consulta: su empresa, solo la aprobada, solo cuatro columnas", () => {
+    const q = consultas(PORTAL_LIB).filter((c) => c.tabla === "estrategias");
+    expect(q, "src/lib/estrategia/portal.ts lee estrategias una sola vez").toHaveLength(1);
+    expect(q[0]!.cadena).toMatch(/\.select\(COLUMNAS_CAMINO_DUENO\)/);
+    expect(q[0]!.cadena).toMatch(/\.eq\("company_id",\s*companyId\)/);
+    expect(q[0]!.cadena).toMatch(/\.eq\("estado",\s*"aprobada"\)/);
+    // La página congelada al aprobar (con las cifras ya escritas), su versión y cuándo: ni vigente, ni salida, ni cálculos.
+    expect(PORTAL_LIB).toMatch(/COLUMNAS_CAMINO_DUENO = "id,version,para_dueno,aprobada_at"/);
+    expect(PORTAL_LIB).not.toMatch(/from\("estrategia_ediciones"\)/);
+  });
+
+  it("las preguntas del dueño: de su empresa, solo enviadas o respondidas, sin el porqué de la consultora ni la clave", () => {
+    const q = consultas(PORTAL_LIB).filter((c) => c.tabla === "estrategia_preguntas");
+    expect(q.length).toBeGreaterThanOrEqual(2);
+    for (const c of q) expect(c.cadena, "una lectura de preguntas sin filtrar por la empresa").toMatch(/\.eq\("company_id",\s*companyId\)/);
+    const lista = q.find((c) => /COLUMNAS_PREGUNTA_DUENO/.test(c.cadena));
+    expect(lista, "la lista de preguntas del dueño usa sus columnas").toBeDefined();
+    expect(lista!.cadena).toMatch(/\.in\("estado",\s*\["enviada",\s*"respondida"\]\)/);
+    const columnas = PREGUNTAS_LIB.match(/COLUMNAS_PREGUNTA_DUENO = "([^"]+)"/)?.[1]?.split(",") ?? [];
+    expect(columnas).toContain("texto");
+    for (const interna of ["por_que", "clave", "espera", "estrategia_id", "enviada_por"]) expect(columnas, `el dueño recibe ${interna}`).not.toContain(interna);
+  });
+});
+
 describe("filtrar al pintar no cuenta como filtrar", () => {
   it("el componente del equipo ya no depende de esconder lo que le llega", () => {
     const c = readFileSync(path.resolve(__dirname, "../src/components/cliente/DeclararEquipo.tsx"), "utf8");

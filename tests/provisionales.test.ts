@@ -77,7 +77,6 @@ const estado = vi.hoisted(() => ({
   auditor: vi.fn(),
   investigador: vi.fn(),
   planificador: vi.fn(),
-  estratega: vi.fn(),
   medidor: vi.fn(),
   encolados: [] as Fila[],
   // Claves que la cola ya tiene hechas: encolar con una de ellas no crea trabajo y responde `duplicado`, como la real.
@@ -122,10 +121,10 @@ vi.mock("@/lib/ai/agents/diagnosticador", () => ({
   correrAuditor: (ctx: string) => estado.auditor(ctx),
 }));
 vi.mock("@/lib/ai/agents/investigador", () => ({ correrInvestigador: (ctx: string) => estado.investigador(ctx) }));
-// Los tres agentes que deciden con hallazgos (plan de 45 días, plan estratégico, indicadores): dobles que guardan el
-// contexto que recibieron, para afirmar qué hallazgos les llegan.
+// Los agentes que deciden con hallazgos aquí (plan de 45 días e indicadores): dobles que guardan el contexto que
+// recibieron, para afirmar qué hallazgos les llegan. El plan estratégico de antes se retiró (tramo 8 de
+// spec-estrategia-8x.md): lo provisional tampoco entra a la estrategia nueva, y eso se prueba en tests/estrategia-paquete.test.ts.
 vi.mock("@/lib/ai/agents/planificador", () => ({ correrPlanificador: (ctx: string) => estado.planificador(ctx), correrRedactor: vi.fn(), correrAdmision: vi.fn() }));
-vi.mock("@/lib/ai/agents/estratega", () => ({ correrEstratega: (ctx: string) => estado.estratega(ctx) }));
 vi.mock("@/lib/ai/agents/medidor", () => ({ correrMedidor: (ctx: string) => estado.medidor(ctx) }));
 // claimsDeEmpresa se dobla (devuelve las afirmaciones que la prueba declara); el resto del módulo es el real:
 // claimComoEvidencia y SELECT_SOURCES_DE_CLAIM son justamente lo que se quiere ejercitar.
@@ -539,7 +538,7 @@ describe("cierre · el disparo automático no deja lo guardado con el rótulo de
       expect(estado.diagnosticador).not.toHaveBeenCalled();
       for (const id of ["f-aprobado", "f-pendiente"]) expect(fila(id), id).toMatchObject({ provisional: true });
       expect(estado.base!.tablas.diagnoses[0]).toMatchObject({ estado: "desconocido", resumen: RESUMEN_SIN_INFORMACION });
-      // Con la columna ya al día, tampoco lo leen los que solo miran la columna (el plan estratégico, los indicadores).
+      // Con la columna ya al día, tampoco lo leen los que solo miran la columna (los indicadores).
       expect(await hallazgosAprobadosConEvidencia(EMPRESA)).toHaveLength(0);
       estado.encolados = [];
       expect(await dispararDiagnosticoSiListo(EMPRESA)).toEqual([]);
@@ -1220,8 +1219,8 @@ describe("(d) los manejadores que leen findings para decidir excluyen lo provisi
     "src/lib/jobs/handlers/organigrama.ts",
     "src/lib/jobs/handlers/activos.ts",
     "src/lib/jobs/handlers/procesos.ts",
-    // Cierre Z2: el plan estratégico y los indicadores también deciden con hallazgos.
-    "src/lib/jobs/handlers/plan.ts",
+    // Cierre Z2: los indicadores también deciden con hallazgos. plan.ts ya no lee findings: el plan estratégico se retiró
+    // (tramo 8) y la estrategia que lo reemplaza lee lo provisional para excluirlo (tests/estrategia-paquete.test.ts).
     "src/lib/jobs/handlers/indicadores.ts",
   ])("%s filtra provisional en cada lectura de findings", (ruta) => {
     const lecturas = lecturasDeFindings(leer(ruta)).filter((l) => /\.select\(/.test(l));
@@ -1843,9 +1842,9 @@ describe("(d) cierre · lo provisional no alimenta el plan, los entregables ni l
     // `costo_posible` vive dentro de filtros: pedirlo como columna hacía fallar la consulta entera sin avisar.
     expect(lectura).toContain('.select("titulo,causa_raiz,filtros,pilar,origen")');
     expect(lectura).not.toContain("costo_posible");
-    // Las dos lecturas que no pasan por la frontera (el plan estratégico y los indicadores) también leen el candado de hoy.
+    // Las dos lecturas que no pasan por la frontera (los indicadores y la estrategia) también leen el candado de hoy.
     expect(leer("src/lib/jobs/handlers/indicadores.ts")).toContain("await soloConclusionesDeHoy(job.company_id, hallazgosLeidos ?? [])");
-    expect(leer("src/lib/jobs/handlers/plan.ts")).toContain("await soloConclusionesDeHoy(job.company_id, hallazgosLeidos ?? [])");
+    expect(leer("src/lib/estrategia/paquete-datos.ts")).toContain("await soloConclusionesDeHoy(companyId, findingsLeidos)");
     // Las tres decisiones que salen de esa lista siguen pasando por ella.
     const plan = leer("src/lib/jobs/handlers/plan.ts");
     expect(plan.split("await hallazgosAprobadosConEvidencia(job.company_id)").length - 1).toBe(2);
@@ -1901,7 +1900,8 @@ describe("(d) cierre · lo provisional no alimenta el plan, los entregables ni l
     expect(estado.planificador).not.toHaveBeenCalled();
   });
 
-  it("el plan estratégico y los indicadores tampoco leen lo de la IA de un área que hoy no llega al mínimo, ni aprobado ni pendiente; lo de la consultora sí", async () => {
+  it("los indicadores tampoco leen lo de la IA de un área que hoy no llega al mínimo, ni aprobado ni pendiente; lo de la consultora sí", async () => {
+    // La misma regla para la estrategia (antes, para el plan estratégico de este archivo): tests/estrategia-paquete.test.ts.
     const guardados = () => [
       aprobado("f-ia-aprobado"),
       aprobado("f-ia-pendiente", { estado_revision: "pendiente" }),
@@ -1910,17 +1910,6 @@ describe("(d) cierre · lo provisional no alimenta el plan, los entregables ni l
     ];
     // Personas bajó a 4 confirmadas; producto tiene sus 5.
     const claims = [...confirmadasDelPilar(4), ...confirmadasDelPilar(5, "producto")];
-    estado.estratega.mockReset();
-    estado.estratega.mockResolvedValue(respuestaModelo({ prioridades: [] }));
-    estado.base = baseDecisiones(guardados(), {}, claims);
-    const { handlePlanEstrategico } = await import("@/lib/jobs/handlers/plan");
-    await handlePlanEstrategico(trabajo("je3"));
-    const alEstratega = estado.estratega.mock.calls[0][0] as string;
-    expect(alEstratega).toContain("HALLAZGOS (2)");
-    expect(alEstratega).toContain("TITULO-f-consultora");
-    expect(alEstratega).toContain("TITULO-f-ia-producto");
-    expect(alEstratega).not.toContain("TITULO-f-ia-aprobado");
-    expect(alEstratega).not.toContain("TITULO-f-ia-pendiente");
     estado.medidor.mockReset();
     estado.medidor.mockResolvedValue(respuestaModelo({ indicadores: [] }));
     estado.base = baseDecisiones(guardados(), {}, claims);
@@ -1931,14 +1920,9 @@ describe("(d) cierre · lo provisional no alimenta el plan, los entregables ni l
     expect(alMedidor).toContain("TITULO-f-ia-producto");
     expect(alMedidor).not.toContain("TITULO-f-ia-aprobado");
     expect(alMedidor).not.toContain("TITULO-f-ia-pendiente");
-    // Con solo lo de un área corta no hay con qué redactar, y si la cuenta no se puede hacer no se supone que alcanza.
-    estado.estratega.mockClear();
-    estado.base = baseDecisiones([aprobado("f-ia-aprobado")], {}, confirmadasDelPilar(4));
-    await expect(handlePlanEstrategico(trabajo("je4"))).rejects.toThrow("Todavía no hay hallazgos");
+    // Si la cuenta no se puede hacer no se supone que alcanza.
     estado.base = baseDecisiones([aprobado("f-ia-aprobado")], { "claims:select": "la base no responde" });
-    await expect(handlePlanEstrategico(trabajo("je5"))).rejects.toThrow("No se pudo contar las afirmaciones confirmadas de personas");
     await expect(handleProponerIndicadores(trabajo("ji4"))).rejects.toThrow("No se pudo contar las afirmaciones confirmadas de personas");
-    expect(estado.estratega).not.toHaveBeenCalled();
   });
 
   it("handlePlanificar: si todo lo aprobado es provisional no hay con qué planificar; el planificador no se llama y no nace ninguna acción", async () => {
@@ -1948,27 +1932,6 @@ describe("(d) cierre · lo provisional no alimenta el plan, los entregables ni l
     await expect(handlePlanificar(trabajo("jp1"))).rejects.toThrow("No hay hallazgos aprobados");
     expect(estado.planificador).not.toHaveBeenCalled();
     expect(estado.base!.tablas.actions).toHaveLength(0);
-  });
-
-  it("handlePlanEstrategico: al estratega le llegan las conclusiones y nunca lo provisional; con solo provisionales no se redacta", async () => {
-    estado.estratega.mockReset();
-    estado.estratega.mockResolvedValue(respuestaModelo({ prioridades: [] }));
-    estado.base = baseDecisiones([aprobado("f-conclusion"), aprobado("f-provisional", { provisional: true }), aprobado("f-pendiente-provisional", { provisional: true, estado_revision: "pendiente" }), aprobado("f-anterior", { provisional: null })]);
-    const { handlePlanEstrategico } = await import("@/lib/jobs/handlers/plan");
-    await handlePlanEstrategico(trabajo("je1"));
-    expect(estado.estratega).toHaveBeenCalledTimes(1);
-    const contexto = estado.estratega.mock.calls[0][0] as string;
-    expect(contexto).toContain("HALLAZGOS (2)");
-    expect(contexto).toContain("TITULO-f-conclusion");
-    expect(contexto).toContain("TITULO-f-anterior");
-    expect(contexto).not.toContain("TITULO-f-provisional");
-    expect(contexto).not.toContain("TITULO-f-pendiente-provisional");
-    expect(estado.base!.tablas.deliverables).toHaveLength(1);
-    estado.estratega.mockClear();
-    estado.base = baseDecisiones([aprobado("f-provisional", { provisional: true })]);
-    await expect(handlePlanEstrategico(trabajo("je2"))).rejects.toThrow("Todavía no hay hallazgos");
-    expect(estado.estratega).not.toHaveBeenCalled();
-    expect(estado.base!.tablas.deliverables).toHaveLength(0);
   });
 
   it("handleProponerIndicadores: al medidor no le llega lo provisional ni lo rechazado, y el costo posible sale de donde vive", async () => {

@@ -19,7 +19,9 @@ const RAIZ = path.resolve(__dirname, "../..");
 
 /**
  * Lo que producción ya tiene: el esquema base, las 15 migraciones anteriores a la rama del 13-10, la que solo
- * documenta, y las 13 de la rama del 13-10, aplicadas en producción el 15-10-2026.
+ * documenta, las 13 de la rama del 13-10 (aplicadas en producción el 15-10-2026) y la del 16-10 que deja entrar
+ * al cliente (aplicada el 16-10-2026; el archivo que se pegó es clientes/8x-ejecucion/produccion-2026-10-16.sql,
+ * fuera del repositorio).
  */
 export const YA_EN_PRODUCCION: readonly string[] = [
   "schema.sql", "migracion-gobierno.sql", "migracion-circuito.sql", "migracion-mediciones.sql",
@@ -33,39 +35,48 @@ export const YA_EN_PRODUCCION: readonly string[] = [
   "migracion-excelencia-y-cartera.sql", "migracion-revision-revisada.sql", "migracion-cifra-desplazada.sql",
   "migracion-acciones-solo-por-la-api.sql", "migracion-procesos-importados.sql", "migracion-lineas-producto-cliente.sql",
   "migracion-vistas-cliente-solo-lectura.sql",
+  // Aplicada en producción el 16-10-2026.
+  "migracion-entrar-hoy.sql",
 ];
 
 /**
  * Checks que se amplían: tabla, un valor que ya admitía y uno nuevo que debe admitir. Los seis de la rama del
- * 13-10 ya se comprobaron al aplicarla en producción (15-10); lo pendiente hoy no amplía ninguno. Con la lista
- * vacía, el bloque de comprobación final no se escribe: un `values` vacío es un error de sintaxis.
+ * 13-10 ya se comprobaron al aplicarla en producción (15-10). Lo pendiente hoy (migracion-estrategia.sql) amplía dos:
+ * el bloque de comprobación final mira que de verdad admitan el valor nuevo. Con la lista vacía ese bloque no se
+ * escribe: un `values` vacío es un error de sintaxis.
  */
-export const CHECKS_AMPLIADOS: readonly (readonly [string, string, string])[] = [];
+export const CHECKS_AMPLIADOS: readonly (readonly [string, string, string])[] = [
+  ["solicitudes_cliente", "productos", "preguntas_estrategia"],
+  ["deliverables", "plan_90", "plan_estrategico"],
+];
 
 /** Las tablas que crea lo pendiente: la última fila del archivo dice cuáles quedaron, cuántas y con RLS. */
-export const TABLAS_NUEVAS: readonly string[] = ["costos_mes", "ficha_negocio", "operaciones_moneda", "solicitudes_cliente", "ruta_marcas", "process_versiones"];
+export const TABLAS_NUEVAS: readonly string[] = ["estrategias", "estrategia_ediciones", "estrategia_preguntas"];
 
 /**
  * Las columnas que lo pendiente añade a tablas que ya existían (`tabla.columna`): la última fila dice cuáles quedaron
  * y cuántas. Tiene que ser exactamente cada `add column if not exists` de lo pendiente (lo comprueba
- * tests/sql/paso-a-produccion.test.ts).
+ * tests/sql/paso-a-produccion.test.ts). Hoy ninguna: con la lista vacía, la fila final no las cuenta (un `values`
+ * vacío sería un error de sintaxis).
  */
-export const COLUMNAS_NUEVAS: readonly string[] = [
-  "companies.modelo_negocio", "companies.tipo_trabajo", "companies.ruta_inicio", "companies.hora_cierre",
-  "lineas_producto.modelo", "lineas_producto.grupo", "lineas_producto.canal", "lineas_producto.precio_segundo",
-  "lineas_producto.segundo_precio_es", "lineas_producto.de_cada_10_segundo", "lineas_producto.componentes_costo",
-  "lineas_producto.unidades_mes", "lineas_producto.unidades_mes_desde", "lineas_producto.unidades_mes_hasta",
-  "lineas_producto.participacion_de_10", "lineas_producto.estados", "lineas_producto.datos_modelo", "lineas_producto.creada_por",
-];
+export const COLUMNAS_NUEVAS: readonly string[] = [];
+
+/**
+ * Las funciones que crea lo pendiente y que solo debe poder ejecutar el servidor (service_role): la fila final dice
+ * cuántas quedaron así. Una que el navegador pudiera ejecutar saltaría las reglas de la aplicación.
+ */
+export const FUNCIONES_SOLO_SERVIDOR: readonly string[] = ["estrategia_lente_lista", "aprobar_estrategia"];
 
 /** Lo que dice la cabecera del archivo: la verdad de lo que hoy está pendiente, no la de una tanda anterior. */
 export const QUE_HACE: readonly string[] = [
-  "QUÉ HACE: añade 6 tablas con RLS (costos_mes, ficha_negocio, operaciones_moneda, solicitudes_cliente, ruta_marcas,",
-  "process_versiones: la copia de un proceso antes de volver a dibujarlo con un archivo),",
-  "columnas en companies (modelo_negocio, tipo_trabajo, ruta_inicio, hora_cierre) y en lineas_producto (dos precios, costo",
-  "por partes, cuánto se vende al mes, estado de cada dato), y rehace la vista lineas_producto_cliente con esas columnas.",
+  "QUÉ HACE: añade 3 tablas con RLS para la estrategia que 8X genera sola (estrategias: una fila por versión;",
+  "estrategia_ediciones: el rastro de lo que corrige la consultora, que no se cambia; estrategia_preguntas: lo que falta",
+  "saber, convertido en preguntas para el dueño), 2 funciones que solo ejecuta el servidor (estrategia_lente_lista y",
+  "aprobar_estrategia), y amplía 2 checks agregando un valor a cada uno: solicitudes_cliente.seccion admite",
+  "preguntas_estrategia y deliverables.tipo admite plan_estrategico. Desde el navegador nadie escribe en las 3 tablas (la",
+  "consultora solo las lee; el dueño, nada): todo pasa por la aplicación. Aprobar compara la hora de la fila (bloqueo optimista).",
   "NO borra ni cambia ningún dato existente. El código que hoy está en producción sigue funcionando igual con esto aplicado.",
-  "Se puede ejecutar dos veces sin daño.",
+  "Se puede ejecutar dos veces sin daño. Para deshacerlo sin perder filas: supabase/revertir/migracion-estrategia.sql.",
 ];
 
 export function migracionesPendientes(): string[] {
@@ -144,22 +155,35 @@ export function armarSql(): string {
       ].join("\n")
     );
   }
-  partes.push(
-    [
-      "",
-      "",
-      "commit;",
-      "",
-      "-- Comprobación: qué tablas y columnas nuevas quedaron (por nombre y cuántas) y cuántas tablas nuevas tienen RLS.",
-      "select 'MIGRACIONES APLICADAS' as resultado, now() as cuando,",
-      `       (select count(*) from information_schema.tables where table_schema = 'public' and table_name in (${tablas})) as tablas_nuevas_de_${TABLAS_NUEVAS.length},`,
-      `       (select string_agg(table_name, ', ' order by table_name) from information_schema.tables where table_schema = 'public' and table_name in (${tablas})) as tablas_nuevas,`,
-      `       (select count(*) from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'public' and c.relkind = 'r' and c.relrowsecurity and c.relname in (${tablas})) as tablas_con_rls_de_${TABLAS_NUEVAS.length},`,
-      `       (select count(*) from information_schema.columns where table_schema = 'public' and (table_name, column_name) in (values ${columnas})) as columnas_nuevas_de_${COLUMNAS_NUEVAS.length},`,
-      `       (select string_agg(table_name || '.' || column_name, ', ' order by table_name, column_name) from information_schema.columns where table_schema = 'public' and (table_name, column_name) in (values ${columnas})) as columnas_nuevas;`,
-      "",
-    ].join("\n")
-  );
+  // La fila final cuenta solo lo que lo pendiente trae: una lista vacía no se escribe (`in ()` o `values` vacíos
+  // son errores de sintaxis y llegarían después del commit, cuando ya no se puede deshacer nada).
+  const campos: string[] = [
+    "'MIGRACIONES APLICADAS' as resultado",
+    "now() as cuando",
+    `(select count(*) from information_schema.tables where table_schema = 'public' and table_name in (${tablas})) as tablas_nuevas_de_${TABLAS_NUEVAS.length}`,
+    `(select string_agg(table_name, ', ' order by table_name) from information_schema.tables where table_schema = 'public' and table_name in (${tablas})) as tablas_nuevas`,
+    `(select count(*) from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'public' and c.relkind = 'r' and c.relrowsecurity and c.relname in (${tablas})) as tablas_con_rls_de_${TABLAS_NUEVAS.length}`,
+  ];
+  if (COLUMNAS_NUEVAS.length) {
+    campos.push(
+      `(select count(*) from information_schema.columns where table_schema = 'public' and (table_name, column_name) in (values ${columnas})) as columnas_nuevas_de_${COLUMNAS_NUEVAS.length}`,
+      `(select string_agg(table_name || '.' || column_name, ', ' order by table_name, column_name) from information_schema.columns where table_schema = 'public' and (table_name, column_name) in (values ${columnas})) as columnas_nuevas`
+    );
+  }
+  if (FUNCIONES_SOLO_SERVIDOR.length) {
+    const funciones = FUNCIONES_SOLO_SERVIDOR.map((f) => `'${f}'`).join(",");
+    campos.push(
+      `(select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.proname in (${funciones})` +
+        ` and has_function_privilege('service_role', p.oid, 'execute') and not has_function_privilege('authenticated', p.oid, 'execute')` +
+        ` and not has_function_privilege('anon', p.oid, 'execute')) as funciones_solo_servidor_de_${FUNCIONES_SOLO_SERVIDOR.length}`
+    );
+  }
+  const comprobacion =
+    "-- Comprobación: qué tablas nuevas quedaron (por nombre y cuántas) y cuántas tienen RLS" +
+    (COLUMNAS_NUEVAS.length ? "; qué columnas nuevas quedaron (por nombre y cuántas)" : "") +
+    (FUNCIONES_SOLO_SERVIDOR.length ? "; cuántas funciones nuevas ejecuta solo el servidor" : "") +
+    ".";
+  partes.push(["", "", "commit;", "", comprobacion, `select ${campos.join(",\n       ")};`, ""].join("\n"));
   return partes.join("");
 }
 

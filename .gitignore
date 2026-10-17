@@ -57,3 +57,8 @@ scripts/tmp-w.mjs
 /diseno/render/salida/
 /diseno/**/capturas/
 /.impeccable/review/
+
+# scripts locales de una sola vez: leen o escriben datos de clientes y no se publican (lo que ya estaba
+# publicado se saca del índice con git rm --cached, a mano, en el commit limpio)
+scripts/tmp/
+scripts/incorporar-manuales-*.mts

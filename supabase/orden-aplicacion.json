@@ -227,10 +227,20 @@
         "migracion-lineas-producto-cliente.sql"
       ],
       "por_que": "16-10. Lo que el cliente llena hoy: columnas de producto y de empresa, costos_mes, ficha_negocio, operaciones_moneda, solicitudes_cliente, ruta_marcas, process_versiones (la copia de un proceso antes de volver a dibujarlo); rehace lineas_producto_cliente con las columnas nuevas."
+    },
+    {
+      "archivo": "migracion-estrategia.sql",
+      "depende_de": [
+        "schema.sql",
+        "migracion-gobierno.sql",
+        "migracion-entrar-hoy.sql"
+      ],
+      "por_que": "16-10. La estrategia que 8X genera sola: estrategias, estrategia_ediciones, estrategia_preguntas, funciones de etapa y de aprobación; amplía solicitudes_cliente.seccion y deliverables.tipo."
     }
   ],
   "notas": [
     "Aditivo: ningún archivo de esta lista borra tablas ni datos; los `drop` que hay son de políticas, funciones, vistas y constraints que se recrean en la línea siguiente.",
-    "tests/sql/esquema-aplica.test.ts comprueba que todo archivo .sql de esta carpeta esté en esta lista: un archivo fuera de la lista es un archivo sin verificar."
+    "tests/sql/esquema-aplica.test.ts comprueba que todo archivo .sql de esta carpeta esté en esta lista: un archivo fuera de la lista es un archivo sin verificar.",
+    "supabase/revertir/ guarda cómo deshacer una migración sin perder filas (renombra, no borra). No entra en esta lista: no es esquema, es la salida de emergencia; cada archivo de ahí tiene su prueba (p. ej. tests/sql/estrategia.test.ts)."
   ]
 }

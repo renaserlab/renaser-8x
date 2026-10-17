@@ -5,7 +5,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { NavCliente } from "@/components/cliente/NavCliente";
 import { EnEstaSeccion } from "@/components/cliente/EnEstaSeccion";
 import { BarraRutaCliente } from "@/components/cliente/BarraRutaCliente";
-import { seccionesAbiertas, pantallasOcultas } from "@/lib/solicitudes";
+import { seccionesAbiertas, pantallasOcultas, pantallasSinPedido } from "@/lib/solicitudes";
 import { negocioDeEmpresa } from "@/lib/ruta-datos";
 import { ElegirEmpresa } from "./portal/elegir-empresa/ElegirEmpresa";
 
@@ -56,7 +56,8 @@ export default async function LayoutCliente({ children }: { children: React.Reac
       ])
     : [null, null, null];
   const abiertas = abiertasAhora ? abiertasAhora.length : null;
-  const ocultar = pantallasOcultas(abiertasAhora, negocio?.guardado ?? null);
+  // Y «Preguntas para tu plan» solo con preguntas enviadas: sin su pedido abierto sería una página vacía (pantallasSinPedido).
+  const ocultar = [...pantallasOcultas(abiertasAhora, negocio?.guardado ?? null), ...pantallasSinPedido(abiertasAhora)];
   // CINCO DESTINOS (pedido de Kelin, 16-10-2026: «hace rato estaba simple y fácil: diagnóstico, qué hay en números,
   // indicadores y el avance… son muchas pestañas»). Lo que hay hoy (Inicio), lo que encontramos (Tu diagnóstico),
   // cuánto (Tus números), cómo se hace (Tus procesos) y qué haremos (Tu plan, con los indicadores dentro). Conversar no

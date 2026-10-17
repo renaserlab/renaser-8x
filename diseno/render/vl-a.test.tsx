@@ -276,10 +276,11 @@ it("pinta las vistas del dueño A", async () => {
     const { default: DebeSer } = await import("@/app/(consultor)/empresa/[id]/debe-ser/page");
     variantes("vl-estrategia", "Estrategia · Debe ser (arnés)", await consultora("/debe-ser", con(DebeSer as unknown as Pagina)));
   });
-  await hacer("vl-plan-estrategico", async () => {
+  // «Plan estratégico» se retiró el 17-10-2026 (su dirección lleva a la estrategia): se pinta la pantalla nueva.
+  await hacer("vl-estrategia-nueva", async () => {
     armarBase();
-    const { default: PlanEstrategico } = await import("@/app/(consultor)/empresa/[id]/plan-estrategico/page");
-    variantes("vl-plan-estrategico", "Estrategia · Plan estratégico (arnés)", await consultora("/plan-estrategico", con(PlanEstrategico as unknown as Pagina)));
+    const { default: Estrategia } = await import("@/app/(consultor)/empresa/[id]/estrategia/page");
+    variantes("vl-estrategia-nueva", "Estrategia · La estrategia (arnés)", await consultora("/estrategia", con(Estrategia as unknown as Pagina)));
   });
 
   // Revisión del 16-10-2026: Indicadores es su propia vista (salió de Avance).

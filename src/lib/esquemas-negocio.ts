@@ -11,7 +11,7 @@
 import { z } from "zod";
 import { esquemaDatoOral, ESTADOS_DATO, formaDe, rangoDe, type DatoOral, type EstadoDato } from "./dato-oral";
 import { MODELO, MODELOS_NEGOCIO, type ModeloNegocio } from "./negocio";
-import { SECCIONES } from "./secciones";
+import { SECCIONES_QUE_ACTIVA_LA_CONSULTORA } from "./secciones";
 import { TIPOS_TRABAJO, CLAVES_ETAPA } from "./ruta";
 
 /** Texto con algo escrito, recortado y con tope. El mismo `texto` de src/lib/api.ts, sin traer el servidor. */
@@ -383,8 +383,9 @@ export const TEXTO_VEREDICTO_SIN_MOTIVO = "Di por qué en una frase: el veredict
 
 // ─── Activar para el cliente ─────────────────────────────────────────────────────────────────────
 
+/** Solo las que se activan con una casilla: «preguntas_estrategia» la abre el envío de las preguntas (secciones.ts). */
 export const CuerpoActivar = z
-  .object({ secciones: z.array(z.object({ seccion: z.enum(SECCIONES), nota: texto(600).nullable().optional() }).strict()).min(1).max(11) })
+  .object({ secciones: z.array(z.object({ seccion: z.enum(SECCIONES_QUE_ACTIVA_LA_CONSULTORA), nota: texto(600).nullable().optional() }).strict()).min(1).max(SECCIONES_QUE_ACTIVA_LA_CONSULTORA.length) })
   .strict();
 
 export const CuerpoSolicitud = z.object({ estado: z.enum(["completada", "retirada"]) }).strict();

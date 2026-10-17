@@ -36,6 +36,9 @@ const TRAZOS = {
   // El medidor de los indicadores y los tres puntos de un menú de acciones (revisión del 16-10-2026).
   indicadores: <><path d="M4 16.5a8 8 0 0 1 16 0" /><path d="m12 16.5 4.2-5" /><path d="M4 19.5h16" /></>,
   mas: <><circle cx="6" cy="12" r="1.1" /><circle cx="12" cy="12" r="1.1" /><circle cx="18" cy="12" r="1.1" /></>,
+  // La estrategia (17-10-2026): el lápiz de corregir un texto y la marca de una etapa lista.
+  lapiz: <path d="M4.5 19.5h4l10-10a2.1 2.1 0 0 0-4-4l-10 10zM13.5 6.5l4 4" />,
+  hecho: <path d="m5 12.5 4.2 4.2L19 7" />,
 } as const;
 
 export type NombreIcono = keyof typeof TRAZOS;

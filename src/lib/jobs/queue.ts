@@ -4,12 +4,17 @@ import { trabajoActual } from "./contexto";
 import { VERSION_PROMPT } from "../ai";
 import { CIRCUITO_CREDITO, PAUSA_CREDITO_SEG, PREFIJOS_ERROR_PAUSA } from "./reglas";
 
-/** Prioridades. Capítulo 28.3. */
+/**
+ * Prioridades. Capítulo 28.3. La estrategia (spec-estrategia-8x.md §5.3) va en 6: cuenta como pesada en `take_job`
+ * (prioridad ≥ 5), así que una empresa corre a lo sumo dos a la vez —justo las dos lentes— y las entrevistas (1)
+ * pasan primero en cuanto se libera un cupo.
+ */
 export const PRIORIDAD = {
   entrevista: 1,
   proceso_voz: 2,
   contrastar: 3,
   extraer: 5,
+  estrategia: 6,
   diagnosticar: 7,
   lote: 9,
 } as const;
@@ -33,8 +38,9 @@ export type TipoJob =
   | "evaluar_admision"
   | "construir_activo"
   | "sistematizar_activo"
-  | "plan_estrategico"
   | "ficha_direccion"
+  | "estrategia_lente"
+  | "estrategia_rojo"
   | "evaluar";
 
 export function claveIdempotente(partes: (string | number | null | undefined)[]): string {

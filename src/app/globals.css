@@ -2,6 +2,8 @@
 @import "../design/tokens.css";
 @import "../design/tablero.css";
 @import "../design/vistas.css";
+@import "../design/camino.css";
+@import "../design/estrategia.css";
 
 @theme inline {
   --color-papel: var(--papel);

@@ -1,4 +1,5 @@
 /** Reglas puras de la cola: prioridad, reintentos, backoff, lease. Extraídas del worker para poder probarlas. Capítulo 28. */
+import { LLAMADA_LARGA } from "../ai/provider";
 
 export const ESPERAS_MS = [1000, 4000, 16000];
 export const MAX_REINTENTOS_RATE_LIMIT = 2;
@@ -73,4 +74,36 @@ export function cambioTrasPausa(job: Pick<JobMin, "intentos">, ahora: Date) {
 export const ESPERAS_CIRCUITO_MS = [5_000, 10_000, 20_000, 40_000, 60_000];
 export function esperaCircuito(intento: number): number {
   return ESPERAS_CIRCUITO_MS[Math.min(Math.max(intento, 0), ESPERAS_CIRCUITO_MS.length - 1)];
+}
+
+// ---- Trabajos largos al final de un drenaje (spec-estrategia-8x.md §5.3) ----
+
+/**
+ * Los trabajos que hacen UNA llamada larga al modelo (las lentes y el equipo rojo de la estrategia). El drenaje en
+ * Vercel corta la función a los 300 s: uno de estos tomado con poco tiempo por delante moría sin que su manejador
+ * anotara nada, el lease vencía a los diez minutos y se reintentaba gastando otra llamada.
+ */
+export const TIPOS_LARGOS: ReadonlySet<string> = new Set(["estrategia_lente", "estrategia_rojo"]);
+/** Lo que necesita un trabajo largo, además de su llamada al modelo: leer la versión, registrar la llamada, guardar y encolar. */
+export const RESPIRO_TRABAJO_LARGO_MS = 20_000;
+/**
+ * Lo que necesita por delante un trabajo largo para terminar dentro del drenaje: el plazo de su única petición, más las
+ * esperas por 503 que se le permiten, más el respiro de guardar (revisión del 17-10). Antes era un número fijo (150 s)
+ * mientras una sola llamada podía tardar más de 300 s; ahora sale de lo que de verdad se le permite a la llamada.
+ */
+export const MARGEN_TRABAJO_LARGO_MS =
+  LLAMADA_LARGA.plazoMs * LLAMADA_LARGA.intentos + LLAMADA_LARGA.esperas503Ms.reduce((a, b) => a + b, 0) + RESPIRO_TRABAJO_LARGO_MS;
+export const PROGRESO_DEVUELTO = "Espera al siguiente drenaje: necesita más tiempo del que le quedaba a este.";
+
+/**
+ * Qué se escribe en un trabajo largo que el drenaje tomó sin tiempo para terminarlo: vuelve a `pendiente` y DEVUELVE el
+ * intento que `take_job` sumó al tomarlo (la misma forma que cambioTrasPausa). No es un fallo: no lleva error.
+ */
+export function cambioTrasDevolver(job: Pick<JobMin, "intentos">) {
+  return { estado: "pendiente" as const, intentos: Math.max(job.intentos - 1, 0), progreso: PROGRESO_DEVUELTO, lease_expira_at: null, terminado_at: null };
+}
+
+/** ¿Este trabajo se devuelve sin tocarlo? Solo los largos, y solo si al drenaje le queda menos que su margen. */
+export function hayQueDevolver(tipo: string, quedaMs: number): boolean {
+  return TIPOS_LARGOS.has(tipo) && quedaMs < MARGEN_TRABAJO_LARGO_MS;
 }

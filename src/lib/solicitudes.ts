@@ -21,8 +21,8 @@ import { supabaseAdmin } from "./supabase/admin";
 import { TEXTO_SECCION_CERRADA, esSeccion, solicitudDesdeFila, type Seccion, type Solicitud } from "./secciones";
 
 export {
-  SECCIONES, SECCIONES_QUE_ABREN_ESCRITURA, SECCION, GRUPOS_SECCION, TEXTO_SECCION_CERRADA, TEXTO_YA_LISTO, PANTALLA_CONDICIONAL,
-  abiertas, esSeccion, solicitudDesdeFila, pantallasOcultas,
+  SECCIONES, SECCIONES_QUE_ABREN_ESCRITURA, SECCIONES_QUE_ACTIVA_LA_CONSULTORA, SECCION, GRUPOS_SECCION, TEXTO_SECCION_CERRADA, TEXTO_YA_LISTO, PANTALLA_CONDICIONAL,
+  abiertas, esSeccion, solicitudDesdeFila, pantallasOcultas, pantallasSinPedido, PANTALLA_SOLO_CON_PEDIDO,
   type Seccion, type DefSeccion, type Solicitud, type EstadoSolicitud,
 } from "./secciones";
 

@@ -156,6 +156,12 @@ const ARCHIVOS = [
   // de documentos, donde estaban las cifras de muestra («p. ej. 8 mil») y las 34 respuestas modelo.
   "src/components/cliente/MisNumeros.tsx",
   "src/components/cliente/InventarioActivos.tsx",
+  // La estrategia, del lado del dueño (17-10-2026, spec-estrategia-8x.md §8.2): su camino y sus preguntas.
+  "src/app/(cliente)/portal/plan/page.tsx",
+  "src/app/(cliente)/portal/plan/preguntas/page.tsx",
+  "src/components/cliente/CaminoElegido.tsx",
+  "src/components/cliente/ResponderPreguntas.tsx",
+  "src/lib/estrategia/dueno.ts",
 ];
 
 /** Los que no pueden faltar: si uno se mueve, esta lista se actualiza (no se deja de revisar en silencio). */

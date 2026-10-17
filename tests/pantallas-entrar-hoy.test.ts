@@ -33,7 +33,7 @@ vi.mock("@/lib/portal", () => ({ contextoPortal: async () => estado.portal }));
 
 import { tableroRentabilidad, FICHA_VACIA } from "@/lib/rentabilidad";
 import { avanceRuta, type HechosRuta } from "@/lib/ruta";
-import { SECCIONES, SECCION, TEXTO_SECCION_CERRADA, type Solicitud } from "@/lib/secciones";
+import { SECCIONES, SECCIONES_QUE_ACTIVA_LA_CONSULTORA, SECCION, TEXTO_SECCION_CERRADA, type Solicitud } from "@/lib/secciones";
 import { TEXTO_CERRADA_VACIA } from "@/components/negocio/datos";
 import { porDefecto } from "@/lib/formato";
 import type { LineaProducto } from "@/lib/producto";
@@ -445,8 +445,11 @@ describe("consultora · tablero de rentabilidad, ruta y activación", () => {
   it("«Activar para el cliente» lista las 11 secciones en tres grupos, con su estado", async () => {
     const { ActivarParaCliente } = await import("@/components/consultor/ActivarParaCliente");
     const vacio = renderToStaticMarkup(createElement(ActivarParaCliente, { companyId: EMP, solicitudes: [], contexto: { porConfirmar: 3, faltanNumeros: 4 } }));
-    for (const s of SECCIONES) expect(vacio).toContain(SECCION[s].paraConsultora);
-    expect(SECCIONES).toHaveLength(11);
+    for (const s of SECCIONES_QUE_ACTIVA_LA_CONSULTORA) expect(vacio).toContain(SECCION[s].paraConsultora);
+    expect(SECCIONES_QUE_ACTIVA_LA_CONSULTORA).toHaveLength(11);
+    // «preguntas_estrategia» es la duodécima y no lleva casilla: la abre solo el envío de las preguntas (spec-estrategia-8x.md §7.4).
+    expect(SECCIONES).toHaveLength(12);
+    expect(vacio).not.toContain(SECCION.preguntas_estrategia.paraConsultora);
     expect(vacio.match(/type="checkbox"/g) ?? []).toHaveLength(11);
     for (const g of ["Datos del negocio", "Confirmar", "Subir archivos"]) expect(vacio).toContain(g);
     expect(vacio).toContain("Hoy hay 3 puntos marcados para confirmar.");

@@ -1135,7 +1135,11 @@ describe("POSTGRES EMBEBIDO (PGlite, no Supabase) · las filas que escribe la im
       // reproducir siempre, también el día que la migración esté registrada en orden-aplicacion.json.
       pg = await crearBase();
       // Tampoco la del 16-10 (migracion-entrar-hoy.sql), que rehace la misma vista con más columnas: se aplica al final, encima.
-      await aplicarTodo(pg, { orden: leerOrden().filter((e) => e.archivo !== NOMBRE_MIGRACION && e.archivo !== MIGRACION_16_10) });
+      // Ni lo que se apoya en ella (migracion-estrategia.sql amplía un check de su tabla solicitudes_cliente): sin la del
+      // 16-10 no aplica, y esta prueba no la necesita.
+      await aplicarTodo(pg, {
+        orden: leerOrden().filter((e) => e.archivo !== NOMBRE_MIGRACION && e.archivo !== MIGRACION_16_10 && !(e.depende_de ?? []).includes(MIGRACION_16_10)),
+      });
       await pg.query(
         "insert into auth.users (id, email, raw_user_meta_data) values ($1, 'duena-a@prueba.local', $2::jsonb), ($3, 'dueno-b@prueba.local', $4::jsonb), ($5, 'consultora@prueba.local', $6::jsonb)",
         [DUENA.id, JSON.stringify({ nombre: "Dueña A" }), "00000000-0000-4000-8000-0000000000b1", JSON.stringify({ nombre: "Dueño B" }), CONSULTORA.id, JSON.stringify({ nombre: "Consultora" })]

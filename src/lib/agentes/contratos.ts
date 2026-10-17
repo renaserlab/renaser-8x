@@ -17,10 +17,12 @@
  * presupuesto es el límite que ya usaba el código. Eso se corrige con datos, no con opinión.
  */
 
+import { PRESUPUESTO_TOKENS } from "../estrategia/esquemas";
+
 export type ClaveAgente =
   | "admision" | "arquitecto" | "auditor" | "constructor" | "contrastador" | "diagnosticador" | "director"
-  | "entrevistador" | "estratega" | "extractor" | "investigador" | "medidor" | "minero" | "organizador" | "planificador"
-  | "redactor" | "rediseno" | "sistematizador" | "sop";
+  | "entrevistador" | "equipo_rojo" | "extractor" | "investigador" | "lente_dinero" | "lente_terreno"
+  | "medidor" | "minero" | "organizador" | "planificador" | "redactor" | "rediseno" | "sistematizador" | "sop";
 
 /** Quién responde por el agente, según la sección 1 del manual. */
 export type Responsable = "Producto" | "Tecnología" | "Validación" | "Dirección";
@@ -54,6 +56,25 @@ export type Contrato = {
 /** Lo que no se repite en cada ficha porque vale para todas. */
 const SEGURO_DE_REPETIR = "Reintentar es seguro: no escribe nada hasta que su salida valida.";
 const PARADA_COMUN = "Dos fallos seguidos, presupuesto agotado o salida que no valida dos veces.";
+
+/**
+ * LOS TRES AGENTES DE LA ESTRATEGIA (spec-estrategia-8x.md §5.1). Su presupuesto de salida es el de esquemas.ts
+ * (PRESUPUESTO_TOKENS), el que cubre el tamaño máximo de su esquema: tests/estrategia-esquemas.test.ts los ata. El plazo
+ * que se anota es el verdadero: ningún código aplica `tiempo_max_ms`; el de cada petición es AI_TIMEOUT_MS de gemini.ts
+ * (120 s por defecto). `medido: false` hasta que el ensayo vivo (scripts/estrategia/ensayo-vivo.mts) los mida: la
+ * ficha pasa a `medido: true` con el consumo que ese ensayo imprime, nunca antes (un presupuesto que dice estar medido
+ * sin medición es una cifra inventada).
+ *
+ * El estratega de antes (el plan estratégico de 15 secciones en una sola llamada) se retiró el 17-10-2026 con su ficha:
+ * lo reemplazan estos tres (spec-estrategia-8x.md §11, tramo 8).
+ */
+const PROHIBIDO_ESTRATEGIA = [
+  "Escribir una cifra que no venga del paquete o de un supuesto marcado",
+  "Suponer cuánto es algo hoy",
+  "Nombrar a otra empresa, a un autor o un ejemplo",
+];
+const PARADA_ESTRATEGIA = "Salida que no valida dos veces (la etapa queda fallida y no vuelve a la cola), cuota del día agotada o presupuesto de la empresa agotado.";
+const RECUPERACION_ESTRATEGIA = "Repetir la llamada es seguro: la salida se guarda solo si valida, y una etapa con su salida ya guardada no vuelve a llamar al modelo. Repetir una etapa fallida lo decide la consultora con un botón.";
 
 export const CONTRATOS: Record<ClaveAgente, Contrato> = {
   admision: {
@@ -157,17 +178,18 @@ export const CONTRATOS: Record<ClaveAgente, Contrato> = {
     exito: "Una sola pregunta nueva, en lenguaje oral.",
     parada: PARADA_COMUN, recuperacion: SEGURO_DE_REPETIR, responsable: "Producto", medido: true,
   },
-  estratega: {
-    clave: "estratega", version: "1.0",
-    proposito: "Redactar el plan estratégico con el estándar de una firma top, todo salido de la evidencia.",
-    disparador: "El consultor pide el plan estratégico.",
-    fuentes: ["diagnóstico aprobado", "métricas", "procesos", "afirmaciones confirmadas"],
-    entrada: "Toda la evidencia de la empresa.", salida: "SalidaEstratega",
-    acciones_prohibidas: ["Rellenar una sección sin evidencia", "Omitir la opción de no actuar"],
+  equipo_rojo: {
+    clave: "equipo_rojo", version: "1.0",
+    proposito: "Atacar los dos caminos de la estrategia con la lista de control, arreglarlos y dejar lo final: la lectura, la gran apuesta, el FODA y los cruces, los cambios a cada camino, la página del dueño, las victorias de los primeros catorce días y lo que falta saber.",
+    disparador: "Las dos lentes de una versión quedaron guardadas, o el validador encontró errores en su primera salida (una sola reparación).",
+    fuentes: ["paquete de hechos congelado de la versión", "cálculos congelados", "las dos lentes con sus caminos proyectados por el código", "la lista de control", "en la reparación: las violaciones del validador"],
+    entrada: "El paquete, los cálculos, las dos lentes con sus ids locales y sus proyecciones, la lista de control y, si repara, lo que el validador rechazó.",
+    salida: "SalidaEquipoRojo",
+    acciones_prohibidas: [...PROHIBIDO_ESTRATEGIA, "Dar su propio veredicto de la lista de control", "Dejar dos caminos iguales"],
     aprobador: "consultor",
-    presupuesto_tokens: 9000, tiempo_max_ms: 240_000, reintentos: 1,
-    exito: "Las secciones con evidencia escritas y las demás marcadas por_validar.",
-    parada: PARADA_COMUN, recuperacion: SEGURO_DE_REPETIR, responsable: "Dirección", medido: false,
+    presupuesto_tokens: PRESUPUESTO_TOKENS.equipo_rojo, tiempo_max_ms: 120_000, reintentos: 1,
+    exito: "Cambios aplicables a los dos caminos (de tres a cinco jugadas, dos casos o más), toda cifra como un id que existe y la página del dueño sin palabras del método.",
+    parada: PARADA_ESTRATEGIA, recuperacion: RECUPERACION_ESTRATEGIA, responsable: "Dirección", medido: false,
   },
   extractor: {
     clave: "extractor", version: "1.0",
@@ -181,6 +203,32 @@ export const CONTRATOS: Record<ClaveAgente, Contrato> = {
     presupuesto_tokens: 6000, tiempo_max_ms: 120_000, reintentos: 2,
     exito: "Afirmaciones con texto, tipo, temporalidad y fecha.",
     parada: PARADA_COMUN, recuperacion: SEGURO_DE_REPETIR, responsable: "Tecnología", medido: true,
+  },
+  lente_dinero: {
+    clave: "lente_dinero", version: "1.0",
+    proposito: "Pensar la empresa desde el dinero —la oferta de lo que más deja, cómo entra y vuelve un cliente, las palancas del poder del uno, la caja y las fugas— y proponer un camino de tres a cinco jugadas que busque duplicar la utilidad o más.",
+    disparador: "La consultora pide la estrategia y alcanza el mínimo para generar.",
+    fuentes: ["paquete de hechos congelado de la versión", "cálculos congelados"],
+    entrada: "El paquete con cada hecho por su id y su clase, y los cálculos del código.",
+    salida: "SalidaLenteDinero",
+    acciones_prohibidas: [...PROHIBIDO_ESTRATEGIA, "Leer la otra lente"],
+    aprobador: "consultor",
+    presupuesto_tokens: PRESUPUESTO_TOKENS.lente_dinero, tiempo_max_ms: 120_000, reintentos: 1,
+    exito: "Un camino de tres a cinco jugadas con efecto calculable, su FODA y sus cruces, la oferta, sus supuestos de cambio y lo que falta saber, sin una sola cifra suelta.",
+    parada: PARADA_ESTRATEGIA, recuperacion: RECUPERACION_ESTRATEGIA, responsable: "Dirección", medido: false,
+  },
+  lente_terreno: {
+    clave: "lente_terreno", version: "1.0",
+    proposito: "Pensar la empresa desde la operación y el terreno —la restricción que manda, personas, procesos y producto, la dependencia del dueño, los árboles de problemas y soluciones, dónde ganar sin pelear por precio y el canvas— y proponer un camino de tres a cinco jugadas.",
+    disparador: "La consultora pide la estrategia y alcanza el mínimo para generar.",
+    fuentes: ["paquete de hechos congelado de la versión", "cálculos congelados"],
+    entrada: "El paquete con cada hecho por su id y su clase, y los cálculos del código.",
+    salida: "SalidaLenteTerreno",
+    acciones_prohibidas: [...PROHIBIDO_ESTRATEGIA, "Leer la otra lente"],
+    aprobador: "consultor",
+    presupuesto_tokens: PRESUPUESTO_TOKENS.lente_terreno, tiempo_max_ms: 120_000, reintentos: 1,
+    exito: "La restricción con su evidencia y un camino de tres a cinco jugadas que cuelgan de ella, con su FODA, sus cruces, sus supuestos de cambio y lo que falta saber, sin una sola cifra suelta.",
+    parada: PARADA_ESTRATEGIA, recuperacion: RECUPERACION_ESTRATEGIA, responsable: "Dirección", medido: false,
   },
   medidor: {
     clave: "medidor", version: "1.0",

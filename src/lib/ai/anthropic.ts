@@ -58,7 +58,7 @@ export class AnthropicProvider implements AIProvider {
       try {
         const parsed = JSON.parse(extraerJSON(raw));
         const r = p.schema.safeParse(parsed);
-        if (r.success) return { data: r.data, tokens_entrada: entrada, tokens_salida: salida, modelo: MODEL, latencia_ms: Date.now() - t0, intentos: intento + 1 };
+        if (r.success) return { data: r.data, tokens_entrada: entrada, tokens_salida: salida, modelo: MODEL, latencia_ms: Date.now() - t0, intentos: intento + 1, fin: res.stop_reason ?? undefined };
       } catch {
         /* JSON inválido: reintentar una vez */
       }

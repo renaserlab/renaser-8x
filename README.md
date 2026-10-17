@@ -40,10 +40,10 @@ Cada punto lleva su **porqué**: aquí no se avanzó por avanzar; cada decisión
 **Qué:** Gemini como proveedor (principal `gemini-3.7-flash`); ante tormenta sostenida de demanda (503) el proveedor cambia solo a `AI_MODEL_RESPALDO` (3.6-flash, calidad validada) y reintenta. Esquemas grandes que exceden la salida estructurada se degradan inyectando el esquema como texto (validación Zod sigue siendo la puerta). Nombres de modelo blindados con `trim()` (un salto de línea invisible en la variable tumbó producción una vez). Transcripción con modelo dedicado estable.
 **Por qué:** el 3.7 tiene mejor cobertura de diagnóstico (benchmark 1.0 vs 0.83) pero sufre caídas por demanda; el usuario impaciente no puede esperar minutos. Calidad cuando el principal está sano, estabilidad cuando no — sin intervención humana.
 
-### 7 · Plan Estratégico con estándar de firma top (19 hojas)
+### 7 · La estrategia que 8X genera sola (reemplaza al Plan Estratégico de 19 hojas)
 
-**Qué:** agente EL ESTRATEGA que redacta el plan completo: mandato, resumen con decisión "pasar de X a Y mediante Z", 3 apuestas y 3 renuncias reales, radiografía con fuente y confianza por indicador, máximo 3 problemas con costo, FODA con cruces-decisión, canvas con estados comprobado/por validar/contradicho, elecciones Playing-to-Win, opciones comparadas incluyendo "No actuar", supuestos con señal temprana, modelo operativo (quién decide/ejecuta), portafolio acelerar/probar/detener, roadmap, tablero con tipos de KPI, riesgos, gobierno con aprendizaje, y nota de confianza. Se imprime a PDF con calidad editorial.
-**Por qué:** auditoría contra lo que entregan las firmas top (estructura de Kelin + correcciones adoptadas con criterio: mandato, modelo operativo, recursos y aprendizaje sí; PMO y cascadas no — proporcionalidad pyme). Diferencial: cada cifra sale de la evidencia de ESA empresa y lo no probado se declara.
+**Qué:** con los datos de cada empresa, el código arma un paquete de hechos clasificados (hecho, estimado del dueño, percepción, sin dato) y hace todas las cuentas (poder del uno, fugas en tres bolsas, duplicar y triplicar, si seguimos igual). Dos miradas que no se ven —el dinero y la operación— proponen un camino cada una, con jugadas en orden y la respuesta esperada del mercado; una tercera las ataca y deja lo final. Un validador en código rechaza toda cifra sin origen. La consultora compara los dos caminos lado a lado, elige, corrige y aprueba en una sola página (`/empresa/[id]/estrategia`, con su vista para imprimir); el dueño ve solo el camino elegido en «Tu plan», y lo que falta saber le llega como preguntas. El estratega de antes (una sola llamada de 15 secciones) se retiró el 17-10-2026; `/empresa/[id]/plan-estrategico` lleva a la estrategia.
+**Por qué:** la IA puede proponer cuánto cambia algo, nunca cuánto es algo hoy; lo que no se sabe se pregunta y, al responder, los números se rehacen sin gastar consultas. `scripts/estrategia/ensayo-vivo.mts` mide el consumo real con una empresa ficticia antes de dar por medidos los contratos.
 
 ### 8 · Biblioteca proporcional, cumplimiento legal y el valor en soles
 
@@ -128,7 +128,7 @@ en una sola línea.
 ### 14 · Los nueve números dejan de ser una intención (30-08-2026)
 
 Revisión de si 8X podía ya sistematizar una empresa de punta a punta. El veredicto fue que **sabe
-fotografiar pero todavía no pesar**: Qori tenía 18 números y solo 3 de los nueve vitales, y
+fotografiar pero todavía no pesar**: la empresa más avanzada tenía 18 números y solo 3 de los nueve vitales, y
 prácticamente todo vivía en un único periodo `actual`. La Radiografía Mínima existía escrita dentro
 del prompt, pero **nada en el código la verificaba**.
 
@@ -269,12 +269,12 @@ Pruebas: **348 → 377**.
 | Método en texto, sincronizado con el código; Base Maestra completa | `methodology/*.md` |
 | Sistema visual (tokens Apple, Franja/Lectura, panel lateral, DocMd) | `src/design/tokens.css`, `src/components/base/` |
 | Capa de IA (Gemini con respaldo automático; transcripción dedicada) | `src/lib/ai/`, `src/lib/ai/gemini.ts` |
-| Agentes (entrevistador, diagnosticador+auditor, arquitecto, SOP, estratega, planificador, redactor…) con guardia anti-inyección y reglas RENASER | `src/lib/ai/agents/`, `src/lib/rules/base-renaser.ts` |
-| Esquemas Zod de cada salida (incluye `SalidaPlanEstrategico`) | `src/lib/schemas/` |
+| Agentes (entrevistador, diagnosticador+auditor, arquitecto, SOP, planificador, redactor, las dos lentes y el equipo rojo de la estrategia…) con guardia anti-inyección y reglas RENASER | `src/lib/ai/agents/`, `src/lib/rules/base-renaser.ts` |
+| Esquemas Zod de cada salida (los de la estrategia, en `src/lib/estrategia/esquemas.ts`) | `src/lib/schemas/`, `src/lib/estrategia/esquemas.ts` |
 | Reglas sin IA: vigencia, contradicción, evidencia, cobertura, suficiencia, anomalías, pérdida, caminos, biblioteca proporcional, mercado | `src/lib/rules/`, `src/lib/{perdida,caminos,biblioteca,mercado,tablero,hoy}.ts` |
 | Cola + worker serverless (drenado en Vercel disparado por encolar + cron de respaldo; worker local opcional) | `src/lib/jobs/`, `/api/worker/drain` |
 | Panel del consultor · Portal del cliente · Enlace de participante | `src/app/(consultor)/`, `src/app/(cliente)/portal/`, `src/app/participar/` |
-| Plan estratégico imprimible (19 hojas) | `src/app/(consultor)/empresa/[id]/plan-estrategico/` |
+| La estrategia de cada empresa (dos caminos, la consultora elige y aprueba; vista para imprimir con `?vista=documento`) | `src/app/(consultor)/empresa/[id]/estrategia/`, `src/components/estrategia/`, `src/lib/estrategia/` |
 | Visuales del empresario: mapa-plan descargable, árbol de la venta, ruta de estaciones | `src/components/cliente/MapaMental.tsx`, `portal/hoy`, `src/components/Entrevista.tsx` |
 | Benchmark congelado + QA de producción | `benchmark/`, `scripts/qa.mts` |
 | Guardián de diseño (Impeccable) + verdad del producto | `.claude/skills/impeccable/`, `PRODUCT.md`, `.impeccable/surfaces/` |
@@ -306,7 +306,7 @@ Registro (entra directo) → empresa (nace admitida; ficha con ciudad y WhatsApp
 → extraer → contrastar (espejo declarado vs real) → validación del dueño (3 botones)
 → suficiencia → diagnosticar por pilar (Base Maestra como motor; auditor; anomalías; preguntas pendientes en lenguaje oral)
 → revisión del consultor → sistematización (documento declarado vs versión trabajada, lado a lado) → SOP imprimible
-→ plan 45 días (≤3 frentes/semana) → Plan Estratégico (19 hojas, PDF) → entregables → monitoreo
+→ plan 45 días (≤3 frentes/semana) → la estrategia (dos caminos, la consultora aprueba uno) → entregables → monitoreo
 ```
 
 Ninguna llamada a IA ocurre dentro de una petición HTTP: todo pasa por `jobs`, y la cola se drena sola en Vercel.

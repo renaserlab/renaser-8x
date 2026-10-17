@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { pedir } from "@/lib/cliente";
-import { SECCIONES, SECCION, GRUPOS_SECCION, type Seccion, type Solicitud } from "@/lib/secciones";
+import { SECCIONES_QUE_ACTIVA_LA_CONSULTORA, SECCION, GRUPOS_SECCION, type Seccion, type Solicitud } from "@/lib/secciones";
 import { diaMes, mensajeDe } from "@/components/negocio/dato";
 
 type Props = {
@@ -31,7 +31,7 @@ export function ActivarParaCliente({ companyId, solicitudes, contexto, zona, noD
   const activaDe = (s: Seccion) => lista.find((x) => x.seccion === s && x.estado === "activa") ?? null;
   const ultimaDe = (s: Seccion) => lista.find((x) => x.seccion === s) ?? null;
   const [marcadas, setMarcadas] = useState<Seccion[]>([]);
-  const [notas, setNotas] = useState<Record<string, string>>(() => Object.fromEntries(SECCIONES.map((s) => [s, activaDe(s)?.nota ?? ""])));
+  const [notas, setNotas] = useState<Record<string, string>>(() => Object.fromEntries(SECCIONES_QUE_ACTIVA_LA_CONSULTORA.map((s) => [s, activaDe(s)?.nota ?? ""])));
   const [trabajando, setTrabajando] = useState(false);
   const [aviso, setAviso] = useState<Aviso>(null);
   const [enlace, setEnlace] = useState<string | null>(null);
@@ -95,7 +95,7 @@ export function ActivarParaCliente({ companyId, solicitudes, contexto, zona, noD
         <fieldset key={g.clave} style={{ border: 0, padding: 0, margin: 0 }}>
           <legend className="t-etiqueta mb-2">{g.nombre}</legend>
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-            {SECCIONES.filter((s) => SECCION[s].grupo === g.clave).map((s) => {
+            {SECCIONES_QUE_ACTIVA_LA_CONSULTORA.filter((s) => SECCION[s].grupo === g.clave).map((s) => {
               const activa = activaDe(s);
               const ultima = ultimaDe(s);
               const estado = activa

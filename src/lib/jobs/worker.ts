@@ -1,6 +1,6 @@
 import { supabaseAdmin } from "../supabase/admin";
 import { conTrabajo } from "./contexto";
-import { AIRateLimitError, AIProviderDownError, AIValidationError } from "../ai/provider";
+import { AIRateLimitError, AIProviderDownError, AISinTiempoError, AIValidationError } from "../ai/provider";
 import { AIProviderPausedError } from "../ai";
 import { superaTope, refrescarStats, registrarErrorLlamada } from "../db/queries";
 import { handleExtraer } from "./handlers/extraer";
@@ -8,13 +8,14 @@ import { handleContrastar } from "./handlers/contrastar";
 import { handleEntrevistaSiguiente, handleTranscribirRespuesta, handleMinarKnowHow } from "./handlers/entrevista";
 import { handleGenerarProceso, handleGenerarToBe, handleGenerarSop } from "./handlers/procesos";
 import { handleDiagnosticar, handleConsolidar } from "./handlers/diagnostico";
-import { handlePlanificar, handleRedactarEntregables, handleEvaluarAdmision, handlePlanEstrategico } from "./handlers/plan";
+import { handlePlanificar, handleRedactarEntregables, handleEvaluarAdmision } from "./handlers/plan";
 import { handleConstruirActivo, handleSistematizarActivo } from "./handlers/activos";
 import { handleProponerIndicadores } from "./handlers/indicadores";
 import { handleEstudioOrganigrama } from "./handlers/organigrama";
 import { handleModeloAltoRendimiento } from "./handlers/modelo";
 import { handleFichaDireccion } from "./handlers/ficha-direccion";
-import { esperaRateLimit, estadoTrasFallo, cambioTrasPausa, esperaCircuito, CIRCUITO_CREDITO } from "./reglas";
+import { handleEstrategiaLente, handleEstrategiaRojo } from "./handlers/estrategia";
+import { esperaRateLimit, estadoTrasFallo, cambioTrasPausa, cambioTrasDevolver, hayQueDevolver, esperaCircuito, CIRCUITO_CREDITO, TIPOS_LARGOS, MARGEN_TRABAJO_LARGO_MS } from "./reglas";
 import { abrirCircuitoCredito, circuitoCreditoAbierto } from "./queue";
 import { redactarToken } from "../tokens";
 
@@ -36,11 +37,12 @@ export const HANDLERS: Record<string, (job: Job) => Promise<unknown>> = {
   evaluar_admision: handleEvaluarAdmision,
   construir_activo: handleConstruirActivo,
   sistematizar_activo: handleSistematizarActivo,
-  plan_estrategico: handlePlanEstrategico,
   proponer_indicadores: handleProponerIndicadores,
   estudio_organigrama: handleEstudioOrganigrama,
   modelo_alto_rendimiento: handleModeloAltoRendimiento,
   ficha_direccion: handleFichaDireccion,
+  estrategia_lente: handleEstrategiaLente,
+  estrategia_rojo: handleEstrategiaRojo,
 };
 
 const CONCURRENCIA = Number(process.env.WORKER_CONCURRENCIA ?? 6);
@@ -64,7 +66,7 @@ function log(...a: unknown[]) {
  * y una base falsa: la regla «una pausa del proveedor no consume intentos» tiene que demostrarse,
  * no suponerse.
  */
-export async function ejecutar(job: Job) {
+export async function ejecutar(job: Job, opciones: { hasta?: number } = {}) {
   const sb = supabaseAdmin();
   const h = HANDLERS[job.tipo];
   if (!h) {
@@ -85,12 +87,21 @@ export async function ejecutar(job: Job) {
     for (let i = 0; ; i++) {
       try {
         // Con el trabajo como contexto ambiental, la cola y las fuentes se anotan solas.
-        resultado = await conTrabajo({ jobId: job.id, companyId: job.company_id, tipo: job.tipo }, () => h(job));
+        resultado = await conTrabajo({ jobId: job.id, companyId: job.company_id, tipo: job.tipo, hasta: opciones.hasta }, () => h(job));
         break;
       } catch (e) {
         // Sin crédito no se reintenta ni con backoff: se sale ya y el trabajo vuelve a la cola entero.
         if (e instanceof AIProviderPausedError) throw e;
         const espera = e instanceof AIRateLimitError || e instanceof AIProviderDownError ? esperaRateLimit(i) : null;
+        // UN TRABAJO LARGO NO SE QUEDA SIN RELOJ A MITAD DE CAMINO (revisión del 17-10): si la llamada no cabía en lo que le
+        // quedaba al drenaje, o el reintento con su espera ya no cabe, vuelve a la cola sin gastar el intento y la
+        // continuación lo toma con el reloj entero. Antes moría con la función y el reintento volvía a pagar la llamada.
+        const sinReloj = e instanceof AISinTiempoError || (espera !== null && TIPOS_LARGOS.has(job.tipo) && opciones.hasta != null && Date.now() + espera + MARGEN_TRABAJO_LARGO_MS > opciones.hasta);
+        if (sinReloj) {
+          await sb.from("jobs").update(cambioTrasDevolver(job)).eq("id", job.id);
+          log(`← ${job.tipo} ${job.id} devuelto a la cola: no le alcanzaba el reloj de este drenaje (${redactarToken(e instanceof Error ? e.message : String(e))})`);
+          return;
+        }
         if (espera !== null) {
           await sb.from("jobs").update({ progreso: `${e instanceof AIRateLimitError ? "Límite del proveedor" : "Proveedor no responde"}. Reintentando en ${espera / 1000}s` }).eq("id", job.id);
           await dormir(espera);
@@ -168,10 +179,19 @@ export async function drenarCola(maxMs: number): Promise<{ procesados: number; m
       await dormir(300);
       continue;
     }
+    // UN TRABAJO LARGO NO EMPIEZA SI NO ALCANZA A TERMINAR (spec-estrategia-8x.md §5.3). El drenaje deja de tomar a los
+    // 250 s, pero uno tomado al final seguía corriendo hasta que la función se cortaba a los 300 s: moría sin que su
+    // manejador anotara nada, el lease vencía y el reintento pagaba otra llamada. Se devuelve a la cola SIN gastar el
+    // intento y se termina el drenaje: la continuación lo toma con el reloj entero.
+    if (hayQueDevolver(job.tipo, maxMs - (Date.now() - t0))) {
+      await sb.from("jobs").update(cambioTrasDevolver(job)).eq("id", job.id);
+      log(`← ${job.tipo} ${job.id} devuelto a la cola: le quedaba poco tiempo a este drenaje [drain]`);
+      break;
+    }
     activos.add(job.id);
     procesados++;
     log(`→ ${job.tipo} (p${job.prioridad}) ${job.id} [drain]`);
-    enVuelo.push(ejecutar(job).finally(() => activos.delete(job.id)));
+    enVuelo.push(ejecutar(job, { hasta: t0 + maxMs }).finally(() => activos.delete(job.id)));
   }
   await Promise.allSettled(enVuelo);
   return { procesados, ms: Date.now() - t0, ...(pausado ? { pausado } : {}) };

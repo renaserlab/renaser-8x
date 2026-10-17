@@ -12,8 +12,17 @@
 export const SECCIONES = [
   "productos", "costos", "historia", "moneda", "credito", "inventario",
   "corroborar_diagnostico", "datos_faltantes", "subir_organigrama", "subir_manuales", "subir_procesos",
+  "preguntas_estrategia",
 ] as const;
 export type Seccion = (typeof SECCIONES)[number];
+
+/**
+ * Las que la consultora abre con una casilla en «Activar para el cliente». Todas menos «preguntas_estrategia»
+ * (spec-estrategia-8x.md §7.4): esa la abre solo el envío de las preguntas de la estrategia
+ * (POST /api/companies/[id]/estrategia-preguntas), porque abierta sin ninguna pregunta enviada el dueño entraría a una
+ * página vacía.
+ */
+export const SECCIONES_QUE_ACTIVA_LA_CONSULTORA = SECCIONES.filter((s): s is Exclude<Seccion, "preguntas_estrategia"> => s !== "preguntas_estrategia");
 
 /** Lo que el dueño llena en tablas nuevas: solo estas se abren y cierran con la solicitud. */
 export const SECCIONES_QUE_ABREN_ESCRITURA = ["productos", "costos", "historia", "moneda", "credito", "inventario"] as const;
@@ -32,6 +41,8 @@ export const SECCION: Record<Seccion, DefSeccion> = {
   subir_organigrama: { clave: "subir_organigrama", grupo: "subir", paraDueno: "Tu organigrama", paraConsultora: "Subir el organigrama", href: "/portal/activos?doc=personas.organigrama" },
   subir_manuales: { clave: "subir_manuales", grupo: "subir", paraDueno: "Tus manuales y políticas", paraConsultora: "Subir manuales y políticas", href: "/portal/activos?doc=procesos.procedimientos" },
   subir_procesos: { clave: "subir_procesos", grupo: "subir", paraDueno: "Tus procesos: súbelos o dibújalos", paraConsultora: "Subir o dibujar los procesos", href: "/portal/procesos" },
+  // Se responde dentro de «Tu plan»: el dueño no gana un destino nuevo (cinco destinos, NavCliente).
+  preguntas_estrategia: { clave: "preguntas_estrategia", grupo: "confirmar", paraDueno: "Unas preguntas para afinar tu plan", paraConsultora: "Preguntas de la estrategia (lo que falta saber)", href: "/portal/plan/preguntas" },
 };
 
 /** Los tres grupos, en el orden en que la consultora los ve. */
@@ -78,7 +89,22 @@ export function pantallasOcultas(abiertasAhora: readonly Seccion[] | null, guard
     .map(([href]) => href);
 }
 
-export const TEXTO_SECCION_CERRADA = "Esta parte la abre tu consultora cuando la necesita. Si quieres corregir algo, escríbele.";
+/**
+ * LAS PANTALLAS QUE SOLO EXISTEN CON SU PEDIDO ABIERTO (spec-estrategia-8x.md §7.4). «Preguntas para tu plan» no tiene
+ * nada que mostrar si la consultora no envió preguntas: en la fila de «Tu plan» sería un enlace a una página vacía. Sale
+ * cuando su pedido está abierto (y siempre en la pantalla en la que se está: EnEstaSeccion no esconde esa).
+ */
+export const PANTALLA_SOLO_CON_PEDIDO: Record<string, Seccion> = { [SECCION.preguntas_estrategia.href]: "preguntas_estrategia" };
+
+/** Las pantallas de PANTALLA_SOLO_CON_PEDIDO cuyo pedido no está abierto. Sin saber qué está abierto (null), ninguna. */
+export function pantallasSinPedido(abiertasAhora: readonly Seccion[] | null): string[] {
+  if (!abiertasAhora) return [];
+  return Object.entries(PANTALLA_SOLO_CON_PEDIDO)
+    .filter(([, s]) => !abiertasAhora.includes(s))
+    .map(([href]) => href);
+}
+
+export const TEXTO_SECCION_CERRADA ="Esta parte la abre tu consultora cuando la necesita. Si quieres corregir algo, escríbele.";
 export const TEXTO_YA_LISTO = "Esto ya estaba marcado como listo.";
 
 /** Las activas, en el orden de SECCIONES (el orden en que conviene llenarlas). */

@@ -36,7 +36,7 @@
 import { describe, it, expect } from "vitest";
 import { existsSync, readdirSync, readFileSync } from "fs";
 import path from "path";
-import { VISTAS, EXPEDIENTE } from "@/lib/vistas-empresa";
+import { VISTAS, EXPEDIENTE, PANTALLAS_MUDADAS } from "@/lib/vistas-empresa";
 
 const SRC = path.resolve(__dirname, "../src");
 const leer = (rel: string) => readFileSync(path.join(SRC, rel), "utf8").replace(/\r\n/g, "\n");
@@ -183,9 +183,21 @@ describe("portal del cliente: cinco destinos, y toda pantalla a dos toques", () 
     expect(RUTAS_PORTAL, "la pantalla de iniciativas del dueño no existe: no se enlaza lo que no está construido").toContain("/portal/iniciativas");
     expect(GRUPO.get("/portal/iniciativas")).toBe("/portal/plan");
     expect(NOMBRES.get("/portal/iniciativas")).toBe("Lo que estamos probando");
-    // Bajo Plan quedan cuatro pantallas, en el orden en que el dueño las recorre: la semana, lo que se mide, cómo vamos y lo que se prueba.
+    // Bajo Plan, en el orden en que el dueño las recorre: lo que su consultora le preguntó (solo cuando se lo preguntó),
+    // la semana, lo que se mide, cómo vamos y lo que se prueba.
     const bajoPlan = [...NOMBRES.keys()].filter((r) => GRUPO.get(r) === "/portal/plan");
-    expect(bajoPlan).toEqual(["/portal/semana", "/portal/kpis", "/portal/resultados", "/portal/iniciativas"]);
+    expect(bajoPlan).toEqual(["/portal/plan/preguntas", "/portal/semana", "/portal/kpis", "/portal/resultados", "/portal/iniciativas"]);
+  });
+
+  it("lo nuevo del 17-10: las preguntas de la estrategia se responden dentro de «Tu plan», sin un destino nuevo", () => {
+    // spec-estrategia-8x.md §8.2 con el ajuste de los cinco destinos: la página vive bajo /portal/plan y la fila la nombra.
+    expect(RUTAS_PORTAL, "la página de las preguntas del dueño no existe: no se enlaza lo que no está construido").toContain("/portal/plan/preguntas");
+    expect(GRUPO.get("/portal/plan/preguntas")).toBe("/portal/plan");
+    expect(NOMBRES.get("/portal/plan/preguntas")).toBe("Preguntas para tu plan");
+    // Los cinco destinos no crecen.
+    expect(pares(cuerpoDe(layoutCliente, "enlaces"))).toEqual(CINCO);
+    // Y en la fila sale solo con su pedido abierto: el layout suma pantallasSinPedido a lo que se oculta.
+    expect(layoutCliente).toMatch(/pantallasSinPedido\(abiertasAhora\)/);
   });
 
   it("lo nuevo del 16-10: bajo Tus números van lo que vende, los gastos, la historia y los cobros, en ese orden", () => {
@@ -257,10 +269,37 @@ describe("empresa de la consultora: seis vistas y el Expediente", () => {
     expect(enEstaVista).toMatch(/whiteSpace: "nowrap"/);
   });
 
-  it.each(RUTAS_EMPRESA)("/empresa/[id]%s está en una sola vista", (ruta) => {
+  it.each(RUTAS_EMPRESA)("/empresa/[id]%s está en una sola vista (o se mudó y lleva a la nueva)", (ruta) => {
     const madre = madreDe(ruta);
     const donde = TODAS.filter((v) => v.sub.some(([h]) => h === madre)).map((v) => v.nombre);
+    // Una pantalla que se mudó no va en ninguna vista: lo que se ve es la nueva, a la que redirige (prueba de abajo).
+    if (PANTALLAS_MUDADAS[madre]) {
+      expect(donde, `/empresa/[id]${madre} se mudó a ${PANTALLAS_MUDADAS[madre]}: no puede seguir en una vista`).toHaveLength(0);
+      return;
+    }
     expect(donde, `/empresa/[id]${madre} tiene que estar en las pantallas de una vista, y solo de una; está en: [${donde.join(", ")}]`).toHaveLength(1);
+  });
+
+  it("una pantalla que se mudó lleva a la nueva: redirección escrita en next.config.ts (307); si su carpeta vieja sigue, su page.tsx solo la repite", () => {
+    const config = readFileSync(path.resolve(SRC, "../next.config.ts"), "utf8");
+    expect(Object.keys(PANTALLAS_MUDADAS).length, "si esto falla, la prueba no mira nada").toBeGreaterThan(0);
+    for (const [vieja, nueva] of Object.entries(PANTALLAS_MUDADAS)) {
+      // La nueva existe y está en una vista.
+      expect(RUTAS_EMPRESA, `${nueva} no tiene page.tsx`).toContain(nueva);
+      expect(TODAS.filter((v) => v.sub.some(([h]) => h === nueva)), `${nueva} no está en una sola vista`).toHaveLength(1);
+      // next.config.ts la redirige, NO permanente: un 308 se queda guardado en el navegador aunque se revierta.
+      const regla = new RegExp(String.raw`source:\s*"/empresa/:id${vieja}",\s*destination:\s*"/empresa/:id${nueva}",\s*permanent:\s*false`);
+      expect(config, `next.config.ts no redirige ${vieja} → ${nueva} con permanent: false`).toMatch(regla);
+      // Mientras su carpeta exista, su página repite la redirección (nunca vuelve a pintar lo de antes). La de «Plan
+      // estratégico» se retiró en el tramo 8 de spec-estrategia-8x.md: la redirección de next.config.ts basta.
+      const pagina = path.join(SRC, `app/(consultor)/empresa/[id]${vieja}/page.tsx`);
+      if (existsSync(pagina)) {
+        const src = readFileSync(pagina, "utf8");
+        expect(src, `${vieja}/page.tsx no redirige`).toMatch(/redirect\(/);
+        expect(src, `${vieja}/page.tsx no lleva a ${nueva}`).toContain(`/estrategia`);
+        expect(src, `${vieja}/page.tsx todavía lee o pinta algo`).not.toMatch(/supabaseAdmin|<article|BotonJob/);
+      }
+    }
   });
 
   it("ninguna pantalla de una vista apunta a algo que no existe, y ninguna se repite", () => {
@@ -270,10 +309,18 @@ describe("empresa de la consultora: seis vistas y el Expediente", () => {
     for (const v of TODAS) for (const [h, n] of v.sub) expect(n.trim(), `la pantalla ${h} de ${v.nombre} no tiene nombre`).not.toBe("");
   });
 
-  it("las 20 pestañas de antes siguen abriendo: ninguna ruta vieja se borró", () => {
+  it("las 20 pestañas de antes siguen abriendo: ninguna ruta vieja se borró sin llevar a la nueva", () => {
     const DE_ANTES = ["", "/direccion", "/fuentes", "/afirmaciones", "/realidad", "/entrevista", "/dia", "/procesos", "/organigrama", "/producto", "/madurez", "/diagnostico", "/debe-ser", "/plan-estrategico", "/plan", "/kpis", "/revision", "/excelencia", "/entrega", "/configuracion"];
     expect(DE_ANTES).toHaveLength(20);
-    for (const r of DE_ANTES) expect(RUTAS_EMPRESA, `${r || "(portada)"} ya no tiene page.tsx`).toContain(r);
+    // Abre si tiene su page.tsx, o si se mudó y su dirección lleva a la nueva («Plan estratégico» → la estrategia).
+    for (const r of DE_ANTES) expect(RUTAS_EMPRESA.includes(r) || !!PANTALLAS_MUDADAS[r], `${r || "(portada)"} ya no tiene page.tsx ni lleva a otra`).toBe(true);
+  });
+
+  it("la estrategia es la primera pantalla de la vista Estrategia; «Debe ser», la segunda", () => {
+    const estrategia = VISTAS.find((v) => v.clave === "estrategia")!;
+    expect(estrategia.href).toBe("/estrategia");
+    expect(estrategia.sub.map(([h]) => h)).toEqual(["/estrategia", "/debe-ser"]);
+    expect(RUTAS_EMPRESA).toContain("/estrategia");
   });
 
   it("«Excelencia» sigue enlazada: está en Avance", () => {

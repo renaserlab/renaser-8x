@@ -114,10 +114,17 @@ export const NODOS: NodoSistema[] = [
     disparadores: ["/companies/[id]/modelo"], encola: [],
     hace: "Describe el mejor negocio DE SU TAMAÑO en ese rubro, como referencia, nunca como hecho.",
   },
+  // La estrategia (spec-estrategia-8x.md §5.3): la consultora la pide (las dos lentes) y reintenta una etapa que falló
+  // (cualquiera de las tres; la prueba también cuando nadie la puso en marcha).
   {
-    tipo: "plan_estrategico", nombre: "Plan estratégico", fase: "diseno", agentes: ["estratega"],
-    disparadores: ["/companies/[id]/plan-estrategico"], encola: [],
-    hace: "Redacta el plan con el estándar de una firma top, todo salido de la evidencia.",
+    tipo: "estrategia_lente", nombre: "Los dos caminos de la estrategia", fase: "diseno", agentes: ["lente_dinero", "lente_terreno"],
+    disparadores: ["/companies/[id]/estrategia", "/companies/[id]/estrategia/[eid]/reintentar"], encola: ["estrategia_rojo"],
+    hace: "Dos miradas que no se ven —el dinero y la operación— proponen un camino cada una con los hechos congelados de la empresa.",
+  },
+  {
+    tipo: "estrategia_rojo", nombre: "Poner a prueba la estrategia", fase: "diseno", agentes: ["equipo_rojo"],
+    disparadores: ["/companies/[id]/estrategia/[eid]/reintentar"], encola: ["estrategia_rojo"],
+    hace: "Ataca los dos caminos, los arregla, valida cada cifra (una reparación si hace falta) y deja la estrategia lista para la consultora.",
   },
   {
     tipo: "planificar", nombre: "Plan de 90 días", fase: "entrega", agentes: ["planificador"],

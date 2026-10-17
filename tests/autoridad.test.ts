@@ -118,6 +118,8 @@ describe("las rutas de aprobación exigen la autoridad (estático)", () => {
     ["companies/[id]/publish/route.ts", "aprobar_plan", false],
     ["companies/[id]/medicion/route.ts", "cerrar_medicion", true],
     ["companies/[id]/close/route.ts", "cerrar_medicion", false],
+    // La estrategia (spec-estrategia-8x.md §2.1): rol de consultora Y autoridad; el dueño también tiene aprobar_plan.
+    ["companies/[id]/estrategia/[eid]/aprobar/route.ts", "aprobar_plan", true],
   ];
   it.each(ESPERADO)("%s llama exigirAutoridad(perfil, %s)", (ruta, accion) => {
     const src = leer(ruta);

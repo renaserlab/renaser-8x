@@ -18,6 +18,10 @@ import type { NombreIcono } from "@/components/base/Icono";
  * indicadores y avance— más la Estructura (procesos y organigrama, que pidió aparte y «no todo junto») y la
  * Estrategia (cómo debe ser, el plan estratégico con su FODA y sus cruces, y las dos rutas cuando existan), que es
  * el trabajo de consultora que más pidió ese día. Indicadores salió de Avance a su propia vista.
+ *
+ * 17-10-2026: la Estrategia abre la estrategia que 8X genera sola (/estrategia: la lectura, la gran apuesta y los
+ * dos caminos para elegir y aprobar); «Plan estratégico» se fusionó con ella y su dirección redirige
+ * (PANTALLAS_MUDADAS).
  */
 
 export type ClaveVista = "diagnostico" | "numeros" | "indicadores" | "estructura" | "estrategia" | "avance" | "expediente";
@@ -70,13 +74,15 @@ export const VISTAS: Vista[] = [
     ],
   },
   {
-    // Sin página resumen propia: su enlace abre el plan estratégico (FODA y cruces).
+    // Su enlace abre la estrategia que 8X genera sola (spec-estrategia-8x.md §8.1): la lectura, la gran apuesta, los dos
+    // caminos para elegir y aprobar, y el FODA con sus cruces en «El análisis». «Plan estratégico» se fusionó con ella
+    // (§8.4): su dirección vieja redirige aquí (PANTALLAS_MUDADAS, abajo).
     clave: "estrategia",
     nombre: "Estrategia",
-    href: "/plan-estrategico",
+    href: "/estrategia",
     icono: "estrategia",
     sub: [
-      ["/plan-estrategico", "Plan estratégico"],
+      ["/estrategia", "Estrategia"],
       ["/debe-ser", "Debe ser"],
     ],
   },
@@ -114,6 +120,18 @@ export const EXPEDIENTE: Vista = {
 /** Todas, con el Expediente al final. */
 export const TODAS_LAS_VISTAS: readonly Vista[] = [...VISTAS, EXPEDIENTE];
 
+/**
+ * LAS PANTALLAS QUE SE MUDARON: su dirección vieja sigue abriendo, porque lleva a la nueva (`redirects()` de
+ * next.config.ts, que se mira antes que las páginas). No van en ninguna vista: lo que se ve es la nueva.
+ * tests/recorrido-conectado.test.ts comprueba que cada una tiene su redirección escrita y que, si su carpeta vieja
+ * todavía existe, su page.tsx solo repite la redirección.
+ */
+export const PANTALLAS_MUDADAS: Readonly<Record<string, string>> = {
+  // 17-10-2026: «Plan estratégico» se fusionó con la estrategia (spec-estrategia-8x.md §8.4). Su carpeta se retiró en
+  // el tramo 8 de esa especificación, con el estratega viejo; la redirección se queda.
+  "/plan-estrategico": "/estrategia",
+};
+
 /** La subruta sin barra final ni parámetros: "/procesos/" → "/procesos"; "?x=1" → "". */
 function limpia(subruta: string): string {
   const sinQuery = subruta.split(/[?#]/)[0] ?? "";
@@ -125,7 +143,9 @@ function limpia(subruta: string): string {
  * "/entrega/x" → "/entrega"). "" es el Resumen del Diagnóstico. null si no es de ninguna vista.
  */
 export function subActiva(subruta: string): string | null {
-  const r = limpia(subruta);
+  const limpio = limpia(subruta);
+  // Una pantalla que se mudó es la nueva: la barra marca la vista a la que lleva.
+  const r = PANTALLAS_MUDADAS[limpio] ?? limpio;
   if (r === "") return "";
   let mejor: string | null = null;
   for (const v of TODAS_LAS_VISTAS) {

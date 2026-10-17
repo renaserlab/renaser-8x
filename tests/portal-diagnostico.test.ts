@@ -172,7 +172,9 @@ describe("la barra del dueño: cinco destinos, cada uno con su ícono", () => {
     expect(bajo("/portal")).toEqual(["/portal/entrada", "/portal/conversacion", "/portal/pedidos", "/portal/activos", "/portal/documentos"]);
     expect(bajo("/portal/diagnostico")).toEqual(["/portal/hoy", "/portal/validar", "/portal/direccion", "/portal/informe"]);
     expect(bajo("/portal/numeros")).toEqual(["/portal/producto", "/portal/costos", "/portal/historia", "/portal/cobros"]);
-    expect(bajo("/portal/plan")).toEqual(["/portal/semana", "/portal/kpis", "/portal/resultados", "/portal/iniciativas"]);
+    // Las preguntas de la estrategia se responden dentro de «Tu plan» (17-10-2026): sin destino nuevo.
+    expect(bajo("/portal/plan")).toEqual(["/portal/plan/preguntas", "/portal/semana", "/portal/kpis", "/portal/resultados", "/portal/iniciativas"]);
+    expect(destinoDe("/portal/plan/preguntas")).toBe("/portal/plan");
     expect(GRUPO.map(([s]) => s)).not.toContain("/portal/numeros");
     expect(destinoDe("/portal/hoy")).toBe("/portal/diagnostico");
     expect(destinoDe("/portal/direccion/constancia")).toBe("/portal/diagnostico");

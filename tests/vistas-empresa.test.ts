@@ -42,7 +42,7 @@ vi.mock("next/navigation", () => ({
   },
 }));
 
-import { VISTAS, EXPEDIENTE, TODAS_LAS_VISTAS, vistaDe, subActiva, subrutaDe, type ClaveVista } from "@/lib/vistas-empresa";
+import { VISTAS, EXPEDIENTE, TODAS_LAS_VISTAS, PANTALLAS_MUDADAS, vistaDe, subActiva, subrutaDe, type ClaveVista } from "@/lib/vistas-empresa";
 import { periodosRecientes } from "@/lib/kpis";
 
 vi.setConfig({ testTimeout: 60_000 });
@@ -81,7 +81,7 @@ const MAPA: [string, ClaveVista, string][] = [
   ["/madurez", "diagnostico", "Radiografía"],
   ["/diagnostico", "diagnostico", "Hallazgos"],
   ["/debe-ser", "estrategia", "Debe ser"],
-  ["/plan-estrategico", "estrategia", "Plan estratégico"],
+  ["/estrategia", "estrategia", "Estrategia"],
   ["/plan", "avance", "Plan"],
   ["/kpis", "indicadores", "Indicadores"],
   ["/revision", "avance", "Revisión semanal"],
@@ -100,7 +100,7 @@ describe("el mapa: 20 pestañas → 5 vistas + Expediente", () => {
       ["numeros", "Números", "/numeros", "numeros"],
       ["indicadores", "Indicadores", "/kpis", "indicadores"],
       ["estructura", "Estructura", "/procesos", "procesos"],
-      ["estrategia", "Estrategia", "/plan-estrategico", "estrategia"],
+      ["estrategia", "Estrategia", "/estrategia", "estrategia"],
       ["avance", "Avance", "/avance", "avance"],
     ]);
     expect([EXPEDIENTE.clave, EXPEDIENTE.nombre, EXPEDIENTE.href, EXPEDIENTE.icono]).toEqual(["expediente", "Expediente", "/expediente", "carpeta"]);
@@ -114,7 +114,7 @@ describe("el mapa: 20 pestañas → 5 vistas + Expediente", () => {
       numeros: ["/numeros", "/producto", "/realidad"],
       indicadores: ["/kpis"],
       estructura: ["/procesos", "/organigrama"],
-      estrategia: ["/plan-estrategico", "/debe-ser"],
+      estrategia: ["/estrategia", "/debe-ser"],
       avance: ["/avance", "/plan", "/revision", "/excelencia", "/entrega"],
       expediente: ["/expediente", "/fuentes", "/afirmaciones", "/entrevista", "/dia", "/configuracion"],
     });
@@ -136,9 +136,10 @@ describe("el mapa: 20 pestañas → 5 vistas + Expediente", () => {
     expect(subActiva("/entrega/x")).toBe("/entrega");
     expect(vistaDe("")).toBe("diagnostico");
     expect(vistaDe("/direccion/constancia")).toBe("diagnostico");
-    // /plan-estrategico no es hija de /plan: gana la pantalla más larga que calza.
-    expect(subActiva("/plan-estrategico")).toBe("/plan-estrategico");
+    // «Plan estratégico» se mudó a la estrategia (17-10-2026): su dirección vieja es la pantalla nueva, nunca /plan.
+    expect(subActiva("/plan-estrategico")).toBe("/estrategia");
     expect(vistaDe("/plan-estrategico")).toBe("estrategia");
+    expect(vistaDe("/estrategia")).toBe("estrategia");
     expect(vistaDe("/debe-ser")).toBe("estrategia");
     expect(vistaDe("/planilla")).toBeNull();
     expect(vistaDe("/no-existe")).toBeNull();
@@ -146,6 +147,18 @@ describe("el mapa: 20 pestañas → 5 vistas + Expediente", () => {
     expect(vistaDe("/realidad/")).toBe("numeros");
     expect(vistaDe("/kpis?x=1")).toBe("indicadores");
     expect(vistaDe("/kpis/k1")).toBe("indicadores");
+  });
+
+  it("«Plan estratégico» se mudó: no está en ninguna vista y lleva a la estrategia, la primera pantalla de Estrategia", () => {
+    expect(PANTALLAS_MUDADAS).toEqual({ "/plan-estrategico": "/estrategia" });
+    for (const [vieja, nueva] of Object.entries(PANTALLAS_MUDADAS)) {
+      expect(TODAS_LAS_VISTAS.filter((v) => v.sub.some(([h]) => h === vieja)), `${vieja} sigue en una vista`).toHaveLength(0);
+      expect(TODAS_LAS_VISTAS.filter((v) => v.sub.some(([h]) => h === nueva)), `${nueva} no está en una sola vista`).toHaveLength(1);
+    }
+    const estrategia = TODAS_LAS_VISTAS.find((v) => v.clave === "estrategia")!;
+    expect(estrategia.href).toBe("/estrategia");
+    expect(estrategia.sub[0]).toEqual(["/estrategia", "Estrategia"]);
+    expect(estrategia.sub[1]).toEqual(["/debe-ser", "Debe ser"]);
   });
 
   it("de la ruta del navegador a la subruta de la empresa", () => {

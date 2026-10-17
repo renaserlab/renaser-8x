@@ -2,6 +2,9 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { Documento, Sop, PlanTabla, type Redactado, type SopRow, type Accion } from "./Entregable";
 import { Canvas, type NodoDB, type EdgeDB } from "./canvas/Canvas";
 import { ENTREGABLE } from "@/lib/textos";
+import { esPaginaDelDueno } from "@/lib/estrategia/para-dueno";
+import { PARA_DUENO } from "@/lib/estrategia/textos";
+import { CaminoElegido } from "./cliente/CaminoElegido";
 
 type Deliv = { id: string; company_id: string; tipo: string; contenido: Record<string, unknown> | null; version: number; publicado: boolean };
 
@@ -54,6 +57,20 @@ export async function VistaEntregable({ d, paraCliente = false, marca }: { d: De
           <Sop key={s.id} sop={s as SopRow} titulo={(s.processes as unknown as { nombre: string } | null)?.nombre} />
         ))}
       </div>
+    );
+  }
+
+  // La estrategia aprobada (spec-estrategia-8x.md §8.4): su copia guarda SOLO la página del dueño, con las cifras ya
+  // escritas, y se pinta con la misma pieza que él lee en su «Plan». Un plan de antes de la estrategia nueva no se
+  // muestra en crudo: se dice que es de una versión anterior (nunca un <pre> con su contenido, que podría traer el otro
+  // camino o los cálculos).
+  if (d.tipo === "plan_estrategico") {
+    return esPaginaDelDueno(d.contenido) ? (
+      <CaminoElegido p={d.contenido.para_dueno} nivel={paraCliente ? 1 : 2} />
+    ) : (
+      <p className="t-cuerpo" style={{ color: "var(--grafito)" }}>
+        {PARA_DUENO.plan_anterior}
+      </p>
     );
   }
 

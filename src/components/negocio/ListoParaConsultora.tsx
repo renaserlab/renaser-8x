@@ -17,13 +17,17 @@ type Props = {
   zona?: string;
   /** Qué se termina, cuando en la misma pantalla hay más de un pedido («Tus ventas al crédito o fiadas»). */
   que?: string;
+  /** Lo que dice el botón. Las preguntas del plan dicen «Listo, ya respondí» (spec-estrategia-8x.md §7.3). */
+  boton?: string;
 };
+
+const BOTON = "Listo, ya lo llené";
 
 /**
  * «LISTO, YA LO LLENÉ». El dueño le avisa a su consultora que terminó lo que le pidió; desde ahí la sección queda
  * para leer (la vuelve a abrir ella si hace falta). Sin pedido activo, solo se dice cuándo avisó.
  */
-export function ListoParaConsultora({ companyId, solicitudId, completadaAt, puede, comoConsultora, zona, que }: Props) {
+export function ListoParaConsultora({ companyId, solicitudId, completadaAt, puede, comoConsultora, zona, que, boton = BOTON }: Props) {
   const router = useRouter();
   const [trabajando, setTrabajando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +44,7 @@ export function ListoParaConsultora({ companyId, solicitudId, completadaAt, pued
   if (comoConsultora) {
     return (
       <p className="t-dato mt-8 medida" style={{ color: "var(--grafito)" }}>
-        Cuando termine, el dueño pulsa «Listo, ya lo llené» desde su portal. Tú no lo marcas por él.
+        Cuando termine, el dueño pulsa «{boton}» desde su portal. Tú no lo marcas por él.
       </p>
     );
   }
@@ -70,7 +74,7 @@ export function ListoParaConsultora({ companyId, solicitudId, completadaAt, pued
     <section className="panel p-5 mt-8 medida" style={{ background: "var(--suave)" }}>
       <p className="t-cuerpo">{que ? `Cuando termines «${que}», avísale a tu consultora.` : "Cuando termines, avísale a tu consultora."} Lo que no sepas puede quedar como «No lo sé»: también sirve.</p>
       <button type="button" className="boton mt-4" onClick={listo} disabled={trabajando}>
-        {trabajando ? "Avisando…" : "Listo, ya lo llené"}
+        {trabajando ? "Avisando…" : boton}
       </button>
       {error && (
         <p className="t-dato mt-2" role="alert" style={{ color: "var(--contradicho)" }}>

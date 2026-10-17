@@ -2,6 +2,13 @@ import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync, statSync } from "fs";
 import path from "path";
 import * as activos from "@/lib/activos";
+import { SISTEMA_LENTE_DINERO, PROMPT_LENTE_DINERO } from "@/lib/ai/agents/lente-dinero";
+import { SISTEMA_LENTE_TERRENO, PROMPT_LENTE_TERRENO } from "@/lib/ai/agents/lente-terreno";
+import { SISTEMA_EQUIPO_ROJO, INSTRUCCION_REPARACION, PROMPT_EQUIPO_ROJO } from "@/lib/ai/agents/equipo-rojo";
+import { GUIA_EFECTOS, bloqueCatalogo } from "@/lib/ai/agents/estrategia-comun";
+import { CONTRATO_RAZONAMIENTO, CONDUCTAS_PROHIBIDAS, LIMITES_REFERENTES } from "@/lib/rules/base-renaser";
+import { GUARDIA } from "@/lib/rules/patrones";
+import { referentesEn } from "@/lib/estrategia/validador";
 
 /**
  * UN EJEMPLO JAMÁS ES CONTENIDO DE LA CAJA.
@@ -254,5 +261,76 @@ describe("nada en pantalla queda sin nombre, sin salida ni sin explicación", ()
     // "Empezar en blanco" es solo del consultor: el vacío del cliente no puede mencionarlo.
     const vacioCliente = textos.slice(textos.indexOf("procesosCliente:"), textos.indexOf("procesosCliente:") + 200);
     expect(vacioCliente).not.toMatch(/dibújalo a mano/);
+  });
+});
+
+/**
+ * LOS PROMPTS DE LA ESTRATEGIA NO TRAEN CIFRAS NI EJEMPLOS (spec-estrategia-8x.md §5.1 y §9.3). Un ejemplo con contenido
+ * en un prompt reaparece como «dato» en la salida: es la misma regla que la de la caja de respuesta, del otro lado. Se
+ * mira el texto PROPIO de cada agente (SISTEMA_*, y la instrucción de la reparación); los bloques compartidos que se le
+ * suman no pasan la regla del dígito (el contrato de razonamiento numera sus pasos) y de ellos solo se exige que no
+ * traigan montos ni porcentajes.
+ */
+describe("los prompts de la estrategia: cifras solo como {{id}} y nada de suponer cuánto es algo hoy", () => {
+  const PROPIOS = { SISTEMA_LENTE_DINERO, SISTEMA_LENTE_TERRENO, SISTEMA_EQUIPO_ROJO, INSTRUCCION_REPARACION };
+  const SISTEMAS = { SISTEMA_LENTE_DINERO, SISTEMA_LENTE_TERRENO, SISTEMA_EQUIPO_ROJO };
+
+  /** Lo permitido: «de cada 10», los horizontes de 14, 30 y 90 días, y el nombre del producto (8X), que no es una cifra. */
+  const sinAnclas = (t: string) =>
+    t.replace(/\b8X\b/g, " ").replace(/de cada 10/g, " ").replace(/\b(?:14|30|90)(?:\s*,\s*(?:14|30|90))*(?:\s+y\s+(?:14|30|90))?\s+días\b/g, " ");
+
+  it.each(Object.entries(PROPIOS))("%s no trae ningún dígito fuera de las anclas permitidas", (_n, t) => {
+    expect(sinAnclas(t).match(/[^\s]*\d[^\s]*/g) ?? []).toEqual([]);
+  });
+
+  it.each(Object.entries(PROPIOS))("%s no trae montos, porcentajes ni «por ejemplo»", (_n, t) => {
+    expect(t).not.toMatch(/S\/|\$|%/);
+    expect(t).not.toMatch(/por ejemplo|p\.\s?ej\./i);
+  });
+
+  it.each(Object.entries(PROPIOS))("%s no nombra a ningún autor ni a otra empresa", (_n, t) => {
+    expect(referentesEn(t)).toEqual([]);
+  });
+
+  it.each(Object.entries(SISTEMAS))("%s manda escribir las cifras solo como {{id}} y prohíbe suponer cuánto es algo hoy", (_n, t) => {
+    expect(t).toContain("Cada número se escribe como {{id}}");
+    expect(t).toMatch(/NO SUPONGAS CUÁNTO ES ALGO HOY/);
+    expect(t).toMatch(/anótalo en faltan con su clave del catálogo/);
+    expect(t).toMatch(/duplicar la utilidad o más a 90 días/);
+  });
+
+  it("cada lente dice qué prefijo usan sus supuestos y que no ve a la otra", () => {
+    expect(SISTEMA_LENTE_DINERO).toMatch(/empieza con SA/);
+    expect(SISTEMA_LENTE_TERRENO).toMatch(/empieza con SB/);
+    expect(SISTEMA_EQUIPO_ROJO).toMatch(/empieza con SR/);
+    for (const t of [SISTEMA_LENTE_DINERO, SISTEMA_LENTE_TERRENO]) expect(t).toMatch(/al que no ves/);
+  });
+
+  it("el equipo rojo recibe la regla de los ids nuevos y la de un paso por jugada", () => {
+    expect(SISTEMA_EQUIPO_ROJO).toMatch(/recibe el número siguiente al último de su lente/);
+    expect(SISTEMA_EQUIPO_ROJO).toMatch(/un paso por jugada, en el orden de las jugadas/);
+    // 8X las ordena por su día de inicio (revisión del 17-10): los pasos se mueven con ellas.
+    expect(SISTEMA_EQUIPO_ROJO).toMatch(/ordena después pasos y jugadas juntos por su día de inicio/);
+    expect(SISTEMA_EQUIPO_ROJO).toMatch(/No des tu propio «cumple \/ no cumple»/);
+  });
+
+  it("los bloques que se suman (compartidos y de estructura) no traen montos ni porcentajes", () => {
+    for (const t of [CONTRATO_RAZONAMIENTO, CONDUCTAS_PROHIBIDAS, LIMITES_REFERENTES, GUIA_EFECTOS, bloqueCatalogo()]) {
+      expect(t).not.toMatch(/S\/|\$|%/);
+      expect(t).not.toMatch(/\d[\d.,]*\s*(?:mil|soles|dólares)\b/i);
+    }
+  });
+
+  it("el catálogo que ve el modelo no trae los límites numéricos: los aplica el validador", () => {
+    expect(bloqueCatalogo()).not.toMatch(/-?\d+\s*(?:a|hasta)\s*\+?\d+/);
+    expect(bloqueCatalogo()).toContain("precio.pct");
+    expect(bloqueCatalogo()).toContain("interesados_mes");
+  });
+
+  it("los tres prompts completos empiezan con la guardia contra lo incrustado", () => {
+    for (const p of [PROMPT_LENTE_DINERO, PROMPT_LENTE_TERRENO, PROMPT_EQUIPO_ROJO]) {
+      expect(p.startsWith(GUARDIA)).toBe(true);
+      for (const b of [CONTRATO_RAZONAMIENTO, CONDUCTAS_PROHIBIDAS, LIMITES_REFERENTES]) expect(p).toContain(b);
+    }
   });
 });

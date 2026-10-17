@@ -30,7 +30,17 @@ const DEFAULTS: Record<string, () => Fila> = {
   lineas_producto: () => ({ componentes_costo: [], estados: {} }),
 };
 
-export function crearBaseFalsa(inicial: Record<string, Fila[]> = {}, fallos: Record<string, ErrorFalso> = {}) {
+/**
+ * Lo que una prueba puede sumar sin cambiar nada de lo de arriba (spec-estrategia-8x.md §9.1): claves únicas de otras
+ * tablas (se suman a UNICAS; para una tabla que ya tiene la suya, chocan las dos) y funciones de la base para `.rpc()`,
+ * que reciben sus argumentos y las tablas en memoria.
+ */
+export type ExtraBaseFalsa = {
+  unicas?: Record<string, (a: Fila, b: Fila) => boolean>;
+  rpc?: Record<string, (args: Record<string, unknown>, tablas: Record<string, Fila[]>) => { data: unknown; error: ErrorFalso | null }>;
+};
+
+export function crearBaseFalsa(inicial: Record<string, Fila[]> = {}, fallos: Record<string, ErrorFalso> = {}, extra: ExtraBaseFalsa = {}) {
   const tablas: Record<string, Fila[]> = {};
   for (const [t, filas] of Object.entries(inicial)) tablas[t] = filas.map((f) => ({ ...f }));
   const pedidos: Pedido[] = [];
@@ -71,8 +81,8 @@ export function crearBaseFalsa(inicial: Record<string, Fila[]> = {}, fallos: Rec
       return Object.fromEntries(cols.map((c) => [c, f[c] ?? null]));
     };
     const choca = (f: Fila, ignorar?: Fila) => {
-      const regla = UNICAS[tabla];
-      return !!regla && tablas[tabla]!.some((x) => x !== ignorar && regla(x, f));
+      const reglas = [UNICAS[tabla], extra.unicas?.[tabla]].filter((r): r is (a: Fila, b: Fila) => boolean => !!r);
+      return reglas.some((regla) => tablas[tabla]!.some((x) => x !== ignorar && regla(x, f)));
     };
     const duplicado = { code: "23505", message: "duplicate key value violates unique constraint" };
 
@@ -181,8 +191,15 @@ export function crearBaseFalsa(inicial: Record<string, Fila[]> = {}, fallos: Rec
     };
     return q;
   };
+  /** Una función de la base: la de `extra.rpc`, o «no existe» como la respondería PostgREST. */
+  const llamadas: { nombre: string; args: Record<string, unknown> }[] = [];
+  const rpc = async (nombre: string, args: Record<string, unknown> = {}) => {
+    llamadas.push({ nombre, args });
+    const f = extra.rpc?.[nombre];
+    return f ? f(args, tablas) : { data: null, error: { code: "PGRST202", message: `Could not find the function public.${nombre}` } };
+  };
   // `fallos` se devuelve para que una prueba haga fallar una tabla después de armar la base (b.fallos.tabla = {...}).
-  return { from, tablas, pedidos, fallos };
+  return { from, rpc, llamadas, tablas, pedidos, fallos };
 }
 
 export type BaseFalsa = ReturnType<typeof crearBaseFalsa>;

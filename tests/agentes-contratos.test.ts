@@ -17,6 +17,7 @@ import { describe, it, expect } from "vitest";
 import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { CONTRATOS, CLAVES_AGENTE, aplicarContrato, esAgenteConocido, AgenteSinContrato, type Contrato } from "@/lib/agentes/contratos";
+import { PRESUPUESTO_TOKENS } from "@/lib/estrategia/esquemas";
 
 const SRC = path.resolve(__dirname, "../src");
 
@@ -86,8 +87,41 @@ describe("cada ficha tiene los campos que el manual hace obligatorios", () => {
 
   it("cada ficha dice si su presupuesto sale de medición o del límite heredado", () => {
     const medidos = CLAVES_AGENTE.filter((k) => CONTRATOS[k].medido);
-    // Siete de los dieciséis han corrido de verdad; el resto se corrige con datos, no con opinión.
+    // Siete tienen su presupuesto medido con consumo real; el resto se corrige con datos, no con opinión. Los tres de la
+    // estrategia pasan a medidos cuando el ensayo vivo (scripts/estrategia/ensayo-vivo.mts) los mida: entonces son diez.
     expect(medidos.length).toBe(7);
+  });
+});
+
+describe("los tres agentes de la estrategia (spec-estrategia-8x.md §5.1)", () => {
+  const ESTRATEGIA = ["lente_dinero", "lente_terreno", "equipo_rojo"] as const;
+
+  it.each(ESTRATEGIA)("«%s» tiene ficha, la aprueba la consultora y responde Dirección", (clave) => {
+    expect(CONTRATOS[clave]).toMatchObject({ clave, aprobador: "consultor", responsable: "Dirección", reintentos: 1, medido: false });
+  });
+
+  it.each(ESTRATEGIA)("«%s» tiene el presupuesto que cubre su esquema y el plazo verdadero (AI_TIMEOUT_MS)", (clave) => {
+    expect(CONTRATOS[clave].presupuesto_tokens).toBe(PRESUPUESTO_TOKENS[clave]);
+    expect(CONTRATOS[clave].tiempo_max_ms).toBe(120_000);
+  });
+
+  it.each(ESTRATEGIA)("«%s» prohíbe escribir cifras sin origen, suponer cuánto es algo hoy y nombrar a otra empresa", (clave) => {
+    const p = CONTRATOS[clave].acciones_prohibidas.join(" · ");
+    expect(p).toMatch(/cifra que no venga del paquete/);
+    expect(p).toMatch(/Suponer cuánto es algo hoy/);
+    expect(p).toMatch(/otra empresa/);
+  });
+
+  it("las dos lentes además prohíben leer la otra lente: la independencia es la razón de tener dos", () => {
+    for (const clave of ["lente_dinero", "lente_terreno"] as const) expect(CONTRATOS[clave].acciones_prohibidas).toContain("Leer la otra lente");
+  });
+
+  it("cada uno se llama con su agente literal y con `largo: true`, en su propio archivo", () => {
+    for (const [clave, archivo] of [["lente_dinero", "lente-dinero"], ["lente_terreno", "lente-terreno"], ["equipo_rojo", "equipo-rojo"]] as const) {
+      const src = readFileSync(path.join(SRC, "lib/ai/agents", `${archivo}.ts`), "utf8");
+      expect(src).toContain(`agente: "${clave}"`);
+      expect(src).toMatch(/largo:\s*true/);
+    }
   });
 });
 
@@ -115,10 +149,10 @@ describe("el contrato se impone: el presupuesto del agente manda sobre lo que pi
   });
 
   it("devuelve también el tiempo máximo, los reintentos y la versión", () => {
-    const r = aplicarContrato("estratega")!;
-    expect(r.tiempo_max_ms).toBe(CONTRATOS.estratega.tiempo_max_ms);
-    expect(r.reintentos).toBe(CONTRATOS.estratega.reintentos);
-    expect(r.version).toBe(CONTRATOS.estratega.version);
+    const r = aplicarContrato("equipo_rojo")!;
+    expect(r.tiempo_max_ms).toBe(CONTRATOS.equipo_rojo.tiempo_max_ms);
+    expect(r.reintentos).toBe(CONTRATOS.equipo_rojo.reintentos);
+    expect(r.version).toBe(CONTRATOS.equipo_rojo.version);
   });
 });
 

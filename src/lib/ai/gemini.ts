@@ -1,6 +1,6 @@
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { z } from "zod";
-import { AIProviderDownError, AIProviderPausedError, AIRateLimitError, AIValidationError, type AIProvider, type CompleteParams, type CompleteResult, type Transcripcion } from "./provider";
+import { AIProviderDownError, AIProviderPausedError, AIRateLimitError, AISinTiempoError, AIValidationError, LLAMADA_LARGA, type AIProvider, type CompleteParams, type CompleteResult, type Transcripcion } from "./provider";
 import { aplicarContrato } from "@/lib/agentes/contratos";
 
 /**
@@ -91,6 +91,24 @@ async function anotarExito() {
   } catch {}
 }
 
+/** Lo mínimo que tiene que quedar en el reloj para empezar una petición: menos que esto no alcanza ni para una corta. */
+const MINIMO_PARA_PEDIR_MS = 15_000;
+
+/**
+ * ¿El 429 es la cuota del DÍA? Gemini lo dice en el detalle de su respuesta (`error.details[].violations[].quotaId`,
+ * p. ej. «…PerDay…»), muy después de los primeros cientos de caracteres del mensaje: por eso se lee el JSON entero y
+ * no el texto recortado. Devuelve el quotaId del día, o null.
+ */
+export function cuotaDelDia(cuerpo: string): string | null {
+  try {
+    const j = JSON.parse(cuerpo) as { error?: { details?: { violations?: { quotaId?: unknown }[] }[] } };
+    for (const d of j.error?.details ?? []) for (const v of d.violations ?? []) if (typeof v.quotaId === "string" && /PerDay/i.test(v.quotaId)) return v.quotaId;
+  } catch {
+    // No era JSON: se busca la marca en el texto entero.
+  }
+  return /"quotaId"\s*:\s*"([^"]*PerDay[^"]*)"/i.exec(cuerpo)?.[1] ?? null;
+}
+
 function extraerJSON(texto: string): string {
   const fence = texto.match(/```(?:json)?\s*([\s\S]*?)```/);
   return (fence ? fence[1] : texto).trim();
@@ -144,8 +162,26 @@ export class GeminiProvider implements AIProvider {
     const t0 = Date.now();
     let entrada = 0, salida = 0, ultimoRaw = "", modelo = MODEL, esperado429 = false, reintentos503 = 0, ultimoDetalle = "", saltoPorTiempo = false;
     // Si el principal está cortado por fallos recientes, se arranca directo en el respaldo.
-    let modeloActivo = MODELO_RESPALDO && (await principalCaido()) ? MODELO_RESPALDO : MODEL;
-    for (let intento = 0; intento < 2; intento++) {
+    // UNA LLAMADA LARGA NO PASA POR EL PRINCIPAL (spec-estrategia-8x.md §5.2). Una salida de diez mil tokens no termina
+    // en el plazo corto del principal: esperaba esos segundos, gastaba una solicitud, salía por el respaldo y le anotaba
+    // un fallo al principal; tres seguidas abrían el cortacircuitos para todo 8X, también para las entrevistas. Con
+    // `largo`, va directo al respaldo con el plazo completo y sin anotar nada; sin respaldo distinto, al principal con el
+    // plazo completo (lo mismo que ya pasaba en ese caso). No se consulta el circuito: no hay a quién saltar.
+    const hayRespaldo = !!MODELO_RESPALDO && MODELO_RESPALDO !== MODEL;
+    let modeloActivo = p.largo ? (hayRespaldo ? MODELO_RESPALDO : MODEL) : MODELO_RESPALDO && (await principalCaido()) ? MODELO_RESPALDO : MODEL;
+    // UNA LLAMADA LARGA CABE EN SU RELOJ (revisión del 17-10): un solo intento, pocos reintentos por 503 con esperas
+    // cortas, ninguna espera por 429, y cada petición acotada a lo que le queda al trabajo (`hasta`). Antes, una sola
+    // llamada podía pasar de 300 s y morir con la función, y el reintento volvía a pagarla.
+    const intentos = p.largo ? LLAMADA_LARGA.intentos : 2;
+    const tope503 = p.largo ? LLAMADA_LARGA.esperas503Ms.length : MAX_REINTENTOS_503;
+    const queda = () => (p.hasta != null ? p.hasta - Date.now() : Infinity);
+    const sinTiempo = (que: string) => new AISinTiempoError(`No queda tiempo en esta vuelta para ${que} (quedan ${Math.max(0, Math.round(queda() / 1000))} s): se retoma en la siguiente.`);
+    const esperar = async (ms: number, que: string) => {
+      if (queda() < ms + MINIMO_PARA_PEDIR_MS) throw sinTiempo(que);
+      await new Promise((r) => setTimeout(r, ms));
+    };
+    for (let intento = 0; intento < intentos; intento++) {
+      if (queda() < MINIMO_PARA_PEDIR_MS) throw sinTiempo("pedirle al asistente");
       let res: Response;
       try {
         res = await fetch(`${BASE}/${modeloActivo}:generateContent`, {
@@ -153,11 +189,15 @@ export class GeminiProvider implements AIProvider {
           headers: { "Content-Type": "application/json", "x-goog-api-key": this.key },
           body: JSON.stringify(body),
           // Al principal se le da menos cuerda que al respaldo: si tarda más, el respaldo ya habría
-          // contestado. El respaldo sí se espera hasta el final — no hay a quién saltar después.
+          // contestado. El respaldo sí se espera hasta el final — no hay a quién saltar después. Y nunca más de lo
+          // que le queda al trabajo.
           signal: AbortSignal.timeout(
-            modeloActivo === MODEL && MODELO_RESPALDO && MODELO_RESPALDO !== MODEL && !saltoPorTiempo
-              ? Math.min(TIMEOUT_PRINCIPAL_MS, TIMEOUT_MS)
-              : TIMEOUT_MS
+            Math.min(
+              modeloActivo === MODEL && hayRespaldo && !saltoPorTiempo && !p.largo
+                ? Math.min(TIMEOUT_PRINCIPAL_MS, TIMEOUT_MS)
+                : TIMEOUT_MS,
+              queda()
+            )
           ),
         });
       } catch (e: unknown) {
@@ -179,21 +219,25 @@ export class GeminiProvider implements AIProvider {
         throw new AIProviderDownError(mensaje);
       }
       if (res.status === 429) {
-        // Cuota por ventana (free tier: 20 solicitudes/ventana). Si el proveedor indica cuánto esperar (≤ 90 s), se espera una vez.
+        // La cuota del DÍA no se espera: se repone mañana. Se lee del JSON entero (el quotaId viene en el detalle).
         const txt = await res.text();
+        const delDia = cuotaDelDia(txt);
+        if (delDia) throw new AIRateLimitError(`Gemini 429 (cuota del día: ${delDia}): ${txt.slice(0, 300)}`, true);
+        // Cuota por ventana (free tier: 20 solicitudes/ventana). Si el proveedor indica cuánto esperar (≤ 90 s), se espera una
+        // vez; una llamada larga no espera: la reintenta el worker si le alcanza el reloj.
         const seg = Number(txt.match(/retry in ([\d.]+)s/i)?.[1] ?? NaN);
-        if (!esperado429 && seg > 0 && seg <= 90) {
+        if (!p.largo && !esperado429 && seg > 0 && seg <= 90) {
           esperado429 = true;
-          await new Promise((r) => setTimeout(r, Math.ceil(seg * 1000) + 1000));
+          await esperar(Math.ceil(seg * 1000) + 1000, "esperar la cuota del minuto");
           intento--;
           continue;
         }
         throw new AIRateLimitError(`Gemini 429: ${txt.slice(0, 300)}`);
       }
-      if (res.status === 503 && reintentos503 < MAX_REINTENTOS_503) {
+      if (res.status === 503 && reintentos503 < tope503) {
         // "High demand" intermitente (verificado en gemini-3.7-flash): reintentos con espera creciente; el worker aplica su propio backoff después.
         reintentos503++;
-        await new Promise((r) => setTimeout(r, Math.min(3000 * 2 ** (reintentos503 - 1), 40_000)));
+        await esperar(p.largo ? LLAMADA_LARGA.esperas503Ms[reintentos503 - 1]! : Math.min(3000 * 2 ** (reintentos503 - 1), 40_000), "reintentar tras un 503");
         intento--;
         continue;
       }
@@ -215,7 +259,7 @@ export class GeminiProvider implements AIProvider {
       }
       if (res.status >= 500) throw new AIProviderDownError(`Gemini ${res.status}: ${(await res.text()).slice(0, 300)}`);
       if (res.status === 400 && jsonSchema) {
-        // Esquemas grandes (p. ej. el plan estratégico completo) exceden el límite de responseJsonSchema
+        // Esquemas grandes (p. ej. el del plan estratégico de 15 secciones, ya retirado) exceden el límite de responseJsonSchema
         // aunque cada sección pase sola (verificado por bisección). Se reintenta sin esquema nativo pero
         // inyectándolo como texto (sin él, el modelo aplana la estructura); la validación Zod sigue siendo la puerta.
         parts.push({ text: `\n\nESQUEMA JSON OBLIGATORIO (respeta cada clave y tipo, incluidos los objetos anidados):\n${JSON.stringify(jsonSchema)}` });
@@ -242,7 +286,7 @@ export class GeminiProvider implements AIProvider {
         const r = p.schema.safeParse(parsed);
         if (r.success) {
           if (modeloActivo === MODEL) void anotarExito();
-          return { data: r.data, tokens_entrada: entrada, tokens_salida: salida, modelo, latencia_ms: Date.now() - t0, intentos: intento + 1 };
+          return { data: r.data, tokens_entrada: entrada, tokens_salida: salida, modelo, latencia_ms: Date.now() - t0, intentos: intento + 1, fin: j.candidates?.[0]?.finishReason };
         }
         ultimoDetalle = r.error.issues.slice(0, 8).map((i) => `${i.path.join(".")}: ${i.message}`).join(" | ");
       } catch (e) {
@@ -265,7 +309,7 @@ export class GeminiProvider implements AIProvider {
   async transcribe(audio: Blob, mime: string, segundos?: number): Promise<Transcripcion> {
     // Audios LARGOS (2.5+ min): el modelo ligero recorta o parafrasea la cola. La decisión va por
     // DURACIÓN real cuando el cliente la manda (el tamaño engañaba: 1–2 min de webm ya pasaban
-    // 1.2MB y se iban al modelo lento sin necesidad — "está tardando", caso Qori Home).
+    // 1.2MB y se iban al modelo lento sin necesidad — "está tardando", lo dijo una clienta).
     const largo = segundos != null && segundos > 0 ? segundos > 150 : audio.size > 3_000_000;
     const modelo = largo
       ? (process.env.GEMINI_TRANSCRIBE_MODEL_LARGO ?? "gemini-3.6-flash").trim()
@@ -276,7 +320,7 @@ export class GeminiProvider implements AIProvider {
       // LA INSTRUCCIÓN NO PUEDE INSINUAR QUÉ SE DIJO (30-08-2026). La versión anterior decía que
       // quien habla "describe su empresa" y daba ejemplos con contenido ("25 mil soles"). Con un
       // audio inaudible el modelo no tenía nada que transcribir y rellenó el hueco con eso mismo:
-      // a la dueña de Qori Home le apareció "empezamos con un capital inicial de 25 mil soles" —
+      // a la dueña de una empresa cliente le apareció "empezamos con un capital inicial de 25 mil soles" —
       // el ejemplo de este prompt— y creyó que el sistema le metía datos de otra empresa.
       // Ahora: español peruano y nada más sobre el tema, ejemplos de FORMATO sin contenido de
       // negocio, y orden explícita de devolver vacío antes que inventar.
@@ -311,7 +355,7 @@ export class GeminiProvider implements AIProvider {
       if (!texto) throw new Error("No pudimos entender el audio. Intenta de nuevo o escribe la respuesta.");
 
       // BARRERA CONTRA LO INVENTADO. Un audio mudo o ininteligible no puede volver como un párrafo:
-      // así fue como a la dueña de Qori Home le apareció una historia de otro negocio en su caja.
+      // así fue como a la dueña de una empresa cliente le apareció una historia de otro negocio en su caja.
       const NADA = /^\[?\s*(sin audio|inaudible|silencio|vacío|vacio)\s*\]?[.\s]*$/i;
       if (NADA.test(texto)) throw new Error("No se escuchó nada en la grabación. Acerca el micrófono y grábalo de nuevo, o escríbelo.");
       // Regla de sensatez: nadie dice más de ~25 palabras por segundo hablado. Si el texto excede

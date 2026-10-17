@@ -46,6 +46,7 @@ export const GRUPO: [string, string][] = [
   ["/portal/costos", "/portal/numeros"],
   ["/portal/historia", "/portal/numeros"],
   ["/portal/cobros", "/portal/numeros"],
+  ["/portal/plan/preguntas", "/portal/plan"],
   ["/portal/semana", "/portal/plan"],
   ["/portal/kpis", "/portal/plan"],
   ["/portal/resultados", "/portal/plan"],

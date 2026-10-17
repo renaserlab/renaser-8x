@@ -31,7 +31,8 @@ const NOMBRES: [string, string][] = [
   ["/portal/costos", "Tus gastos del mes"],
   ["/portal/historia", "Tu historia"],
   ["/portal/cobros", "Cobros y mercadería"],
-  // Tu plan
+  // Tu plan («Preguntas para tu plan» sale solo con preguntas enviadas: pantallasSinPedido, src/lib/secciones.ts)
+  ["/portal/plan/preguntas", "Preguntas para tu plan"],
   ["/portal/semana", "Esta semana"],
   ["/portal/kpis", "Tus indicadores"],
   ["/portal/resultados", "Cómo vamos"],

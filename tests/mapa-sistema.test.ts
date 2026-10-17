@@ -11,7 +11,7 @@
 import { describe, it, expect } from "vitest";
 import { readdirSync, readFileSync, existsSync } from "fs";
 import path from "path";
-import { NODOS, ARISTAS, FASES, agentesFueraDelMapa } from "@/lib/mapa-sistema";
+import { NODOS, NODO, ARISTAS, AUTO_ENCOLA, FASES, agentesFueraDelMapa } from "@/lib/mapa-sistema";
 import { CLAVES_AGENTE, esAgenteConocido } from "@/lib/agentes/contratos";
 
 const RAIZ = path.resolve(__dirname, "..");
@@ -99,5 +99,24 @@ describe("ningún agente queda fuera del mapa sin que se diga", () => {
     // exige es que la función lo DIGA, para que la pantalla pueda mostrarlo en vez de callarlo.
     for (const f of fuera) expect(CLAVES_AGENTE as readonly string[]).toContain(f);
     expect(Array.isArray(fuera)).toBe(true);
+  });
+});
+
+describe("la estrategia en el mapa (spec-estrategia-8x.md §5.3)", () => {
+  it("las lentes y el equipo rojo son dos trabajos de la fase de diseño, con sus agentes", () => {
+    expect(NODO.get("estrategia_lente")).toMatchObject({ fase: "diseno", agentes: ["lente_dinero", "lente_terreno"] });
+    expect(NODO.get("estrategia_rojo")).toMatchObject({ fase: "diseno", agentes: ["equipo_rojo"] });
+  });
+
+  it("la consultora la dispara al pedirla (las dos lentes) y al reintentar una etapa (cualquiera de las tres)", () => {
+    expect(NODO.get("estrategia_lente")!.disparadores).toEqual(["/companies/[id]/estrategia", "/companies/[id]/estrategia/[eid]/reintentar"]);
+    expect(NODO.get("estrategia_rojo")!.disparadores).toEqual(["/companies/[id]/estrategia/[eid]/reintentar"]);
+  });
+
+  it("la lente encola al equipo rojo, y el equipo rojo a sí mismo (la reparación, una sola vez)", () => {
+    expect(ARISTAS).toContainEqual({ de: "estrategia_lente", a: "estrategia_rojo", tipo: "encola" });
+    expect(AUTO_ENCOLA).toContain("estrategia_rojo");
+    const handler = readFileSync(path.join(RAIZ, "src/lib/jobs/handlers/estrategia.ts"), "utf8");
+    expect(handler.match(/tipo:\s*"estrategia_rojo"/g)?.length).toBe(2);
   });
 });

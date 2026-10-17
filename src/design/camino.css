@@ -1,0 +1,122 @@
+/* 8X · LO QUE EL DUEÑO VE DE SU ESTRATEGIA (17-10-2026, spec-estrategia-8x.md §7.3 y §8.2).
+   — El camino que elegimos (CaminoElegido): arriba de «Tu plan», en la vista previa de la consultora y en la copia de la
+     biblioteca. Vive dentro de una hoja: los bloques llevan borde fino, no sombra (una sombra por capa). La vara es el
+     tablero de Diagnóstico: título en Manrope, la cifra grande en Manrope, el chip de estado al lado.
+   — Las preguntas para afinar el plan (ResponderPreguntas): una por tarjeta, con su caja y «No lo sé».
+   Nada de rayado aquí: lo que el dueño todavía no puede ver se dice con palabras («lo calculamos en cuanto…»). */
+
+/* ───────── EL CAMINO QUE ELEGIMOS ───────── */
+.camino-elegido { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.camino-elegido__cabeza { display: flex; flex-direction: column; gap: 8px; padding: 2px 2px 4px; min-width: 0; }
+.camino-elegido__cabeza .t-etiqueta { margin: 0; }
+.camino-elegido__titulo { margin: 0; overflow-wrap: anywhere; }
+.camino-elegido__por-que { margin: 0; max-width: 68ch; font-size: 16px; line-height: 1.5; color: var(--grafito); text-wrap: pretty; }
+
+.camino-elegido__rejilla { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 16px; align-items: start; }
+.camino-elegido__rejilla--sola { grid-template-columns: minmax(0, 1fr); }
+/* La columna de la derecha: lo que esperamos ver, la línea de las preguntas y cómo sabremos, uno debajo del otro. */
+.camino-elegido__columna { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.camino-elegido__columna:empty { display: none; }
+
+.camino-elegido__bloque {
+  display: flex; flex-direction: column; gap: 12px; min-width: 0;
+  background: var(--papel); border: 1px solid var(--linea); border-radius: var(--radio-tarjeta); padding: 18px 20px;
+}
+.camino-elegido__bloque > :is(h2, h3) { margin: 0; font-family: var(--font-num); font-size: 15.5px; font-weight: 700; letter-spacing: -0.01em; color: var(--tinta); }
+
+/* Los pasos: el número en un círculo tinta, qué haremos y, debajo, desde cuándo y quién. */
+.pasos-camino { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.pasos-camino li { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 12px; align-items: start; }
+.pasos-camino__numero {
+  width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+  background: var(--tinta); color: var(--papel); font-family: var(--font-num); font-size: 13.5px; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.pasos-camino__que { margin: 2px 0 0; font-size: 16px; line-height: 1.45; color: var(--tinta); text-wrap: pretty; }
+.pasos-camino__cuando { margin: 2px 0 0; font-size: 13px; color: var(--grafito); }
+.camino-elegido__pedimos { border-top: 1px solid var(--linea); padding-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.camino-elegido__pedimos .t-etiqueta { margin: 0; }
+.camino-elegido__pedimos ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: 16px; line-height: 1.45; }
+
+/* Qué esperamos ver: cuándo, en pequeño; la cifra sola en su línea grande (como en el tablero de Diagnóstico), con su
+   origen al lado; y la frase con su «si», al pie. La caja que se libera una vez va debajo, en una línea. */
+.camino-elegido__esperado { margin: 0; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.esperado__cuando { margin: 0; font-size: 12.5px; font-weight: 650; letter-spacing: 0.02em; color: var(--grafito); }
+.esperado__cifra { margin: 0; font-family: var(--font-num); line-height: 1.2; color: var(--tinta); }
+.esperado__cifra .cifra { font-size: clamp(22px, 3vw, 28px); font-weight: 750; letter-spacing: -0.02em; font-variant-numeric: proportional-nums; text-wrap: balance; }
+.esperado__cifra .estado { font-family: var(--font-ui); letter-spacing: 0; vertical-align: 4px; }
+.esperado__pie { margin: 0; font-size: 15px; line-height: 1.45; color: var(--grafito); text-wrap: pretty; }
+.camino-elegido__esperado + .camino-elegido__esperado { border-top: 1px solid var(--linea); padding-top: 12px; }
+.esperado__caja { margin: 0; padding-top: 10px; border-top: 1px solid var(--linea); font-size: 15.5px; line-height: 1.45; color: var(--tinta); }
+.camino-elegido__falta { margin: 0; font-size: 16px; line-height: 1.5; color: var(--grafito); }
+
+/* Un monto no se parte al cortar la línea («S/» al final de una y la cifra en la siguiente); un rango sí puede bajar
+   entre «entre S/ X» y «y S/ Y». El origen de la cifra va al lado, en pequeño. */
+.monto-dueno, .cifra-dueno__origen { white-space: nowrap; }
+.cifra-dueno > b { font-weight: 650; }
+.cifra-dueno__origen { font-size: 0.82em; font-weight: 500; color: var(--grafito); }
+.falta-dueno { font-style: italic; color: var(--grafito); }
+
+/* La línea de las preguntas: lo que se le pide al dueño va en ámbar, con una sola acción. */
+.camino-elegido__preguntas {
+  margin: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 14px;
+  min-height: 56px; padding: 6px 8px 6px 18px; border-radius: 16px;
+  background: var(--caducado-velo); color: var(--caducado); font-size: 15.5px; font-weight: 650;
+}
+.camino-elegido__preguntas a {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 999px;
+  background: var(--papel); color: var(--caducado); font-weight: 700; text-decoration: none;
+  transition: transform 160ms var(--ease-out), background-color 150ms ease;
+}
+.camino-elegido__preguntas a:active { transform: scale(0.97); }
+@media (hover: hover) and (pointer: fine) { .camino-elegido__preguntas a:hover { background: var(--suave); } }
+
+/* Cómo sabremos y si pasa esto. */
+.senales-camino, .casos-camino { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.senales-camino li { display: flex; flex-direction: column; gap: 2px; border-top: 1px solid var(--linea); padding-top: 10px; }
+.senales-camino li:first-child { border-top: 0; padding-top: 0; }
+.senales-camino__que { margin: 0; font-size: 16px; line-height: 1.45; color: var(--tinta); }
+.senales-camino__cuando { margin: 0; font-size: 13px; color: var(--grafito); }
+/* Los casos van a lo ancho: dos tarjetas lado a lado en escritorio, una debajo de la otra en un celular. */
+.casos-camino { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
+.casos-camino li { display: flex; flex-direction: column; gap: 6px; background: var(--suave); border-radius: 16px; padding: 12px 14px; }
+.casos-camino__si, .casos-camino__haremos { margin: 0; font-size: 16px; line-height: 1.45; color: var(--tinta); }
+.casos-camino__si { font-weight: 600; }
+.casos-camino__rotulo { display: block; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; color: var(--grafito); }
+
+/* Debajo del camino, el plan de cada semana: separado por una línea, sin otra hoja. */
+.plan-semanas { margin-top: 36px; padding-top: 28px; border-top: 1px solid var(--linea); }
+
+/* ───────── LAS PREGUNTAS PARA AFINAR EL PLAN ───────── */
+.preguntas-dueno { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; max-width: 760px; }
+.pregunta-tarjeta {
+  display: flex; flex-direction: column; gap: 12px; min-width: 0;
+  border: 1px solid var(--linea); border-radius: var(--radio-tarjeta); padding: 18px 20px; background: var(--papel);
+  transition: border-color 160ms ease;
+}
+.pregunta-tarjeta:focus-within { border-color: var(--azul-claro); }
+.pregunta-tarjeta__cabeza { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
+.pregunta-tarjeta__numero { font-size: 12px; font-weight: 600; letter-spacing: 0.02em; color: var(--grafito); }
+.pregunta-tarjeta__texto { margin: 0; font-family: var(--font-num); font-size: 18px; font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; color: var(--tinta); text-wrap: pretty; overflow-wrap: anywhere; }
+.pregunta-tarjeta__acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.pregunta-tarjeta__acciones .boton { flex: none; padding: 0 16px; font-size: 13.5px; }
+.pregunta-tarjeta__respuesta { margin: 0; font-size: 16px; color: var(--tinta); }
+.pregunta-tarjeta__respuesta b { font-family: var(--font-num); font-weight: 700; }
+.pregunta-tarjeta__aviso { margin: 0; font-size: 13.5px; color: var(--grafito); }
+.pregunta-tarjeta__error { margin: 0; font-size: 13.5px; color: var(--contradicho); }
+.preguntas-dueno__respondidas { margin-top: 18px; max-width: 760px; border-top: 1px solid var(--linea); padding-top: 4px; }
+.preguntas-dueno__respondidas > .preguntas-dueno { margin-top: 6px; }
+.preguntas-dueno__pie { margin: 22px 0 0; max-width: 760px; font-size: 16px; color: var(--grafito); }
+
+@media (max-width: 760px) {
+  .camino-elegido__rejilla { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .camino-elegido__columna { gap: 12px; }
+  .camino-elegido__bloque { padding: 16px; }
+  .camino-elegido__preguntas { padding: 10px 10px 10px 16px; }
+  .pregunta-tarjeta { padding: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .camino-elegido__preguntas a, .pregunta-tarjeta { transition: none; }
+}
+@media print {
+  .camino-elegido__bloque { break-inside: avoid; }
+}

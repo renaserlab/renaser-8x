@@ -1,9 +1,7 @@
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { correrPlanificador, correrRedactor, correrAdmision } from "@/lib/ai/agents/planificador";
-import { correrEstratega } from "@/lib/ai/agents/estratega";
 import { comoDato } from "@/lib/rules/patrones";
-import { hallazgosAprobadosConEvidencia, soloConclusionesDeHoy, procesoComoJSON, registrarLlamada, etiquetaFuente, claimsDeEmpresa } from "@/lib/db/queries";
-import { detectarAnomalias, tablaResultadosComoTexto, type Metrica } from "@/lib/rules/anomalias";
+import { hallazgosAprobadosConEvidencia, procesoComoJSON, registrarLlamada, etiquetaFuente, claimsDeEmpresa } from "@/lib/db/queries";
 import { progreso } from "../queue";
 import { programarFrentes } from "@/lib/rules/plan";
 import type { SalidaRedactor } from "@/lib/schemas";
@@ -14,43 +12,12 @@ import {
 
 type Job = { id: string; company_id: string; payload: Record<string, unknown> };
 
-/** payload: {} → EL ESTRATEGA redacta el Plan Estratégico (15 secciones, estándar firma top) → deliverables. */
-export async function handlePlanEstrategico(job: Job) {
-  const sb = supabaseAdmin();
-  await progreso(job.id, "Reuniendo toda la evidencia de la empresa");
-  const [{ data: empresa }, { data: hallazgosLeidos }, { data: metricasRaw }, { data: sueno }, { data: activos }, { data: participantes }] = await Promise.all([
-    sb.from("companies").select("nombre,sector,ficha,modelo_operativo,etapa_negocio").eq("id", job.company_id).single(),
-    sb.from("findings").select("titulo,causa_raiz,impacto,pilar,patron,recomendacion,filtros,origen").eq("company_id", job.company_id).neq("estado_revision", "rechazado").or("provisional.is.null,provisional.eq.false").limit(40),
-    sb.from("company_metricas").select("clave,periodo,valor,valor_texto,estado,nota").eq("company_id", job.company_id).limit(80),
-    sb.from("interview_responses").select("bloque,pregunta,respuesta, interview_sessions!inner(tipo,company_id)").eq("interview_sessions.company_id", job.company_id).not("respuesta", "is", null).limit(80),
-    sb.from("company_assets").select("clave,estado,borrador,propuesta").eq("company_id", job.company_id).not("borrador", "is", null),
-    sb.from("participants").select("nombre,puesto,rol").eq("company_id", job.company_id),
-  ]);
-  // Lo de la IA en un área que hoy no llega al mínimo de confirmadas tampoco entra, aunque su columna aún no lo diga.
-  const findings = await soloConclusionesDeHoy(job.company_id, hallazgosLeidos ?? []);
-  if (!findings.length) throw new Error("Todavía no hay hallazgos: corre el diagnóstico antes de pedir el plan estratégico.");
-  const metricas = (metricasRaw ?? []) as Metrica[];
-  const senales = detectarAnomalias(metricas);
-  const ficha = (empresa?.ficha ?? {}) as Record<string, string>;
-
-  await progreso(job.id, "El estratega está redactando el plan");
-  const contexto = [
-    `EMPRESA: ${empresa?.nombre} · ${empresa?.sector ?? ""} · ${ficha.personas ?? "?"} personas · etapa ${empresa?.etapa_negocio ?? "?"} · modelo ${((empresa?.modelo_operativo as string[]) ?? []).join(",") || "?"}`,
-    `PERSONAS REALES (para responsables): ${(participantes ?? []).map((p) => `${p.nombre} (${p.puesto ?? p.rol})`).join(" · ") || "solo el dueño"}`,
-    comoDato(`HALLAZGOS (${findings.length})`, findings.map((f) => `- [${f.impacto} · ${f.pilar}${(f.filtros as { preserva?: boolean })?.preserva ? " · FORTALEZA" : ""}] ${f.titulo}. Causa: ${f.causa_raiz ?? ""}${f.recomendacion ? `. Rec: ${f.recomendacion}` : ""}`).join("\n")),
-    comoDato("NÚMEROS CON ESTADO", tablaResultadosComoTexto(metricas)),
-    senales.length ? comoDato("SEÑALES DEL MOTOR", senales.map((s) => `- ${s.titulo}: ${s.detalle}`).join("\n")) : "",
-    comoDato("LO QUE EL DUEÑO CONTÓ (sueño, historia, números)", (sueno ?? []).slice(0, 60).map((s) => `- ${s.pregunta} → ${String(s.respuesta).slice(0, 200)}`).join("\n")),
-    (activos ?? []).length ? comoDato("DOCUMENTOS YA CONSTRUIDOS", (activos ?? []).map((a) => `## ${a.clave}\n${String(a.propuesta ?? a.borrador).slice(0, 1200)}`).join("\n\n")) : "",
-  ].filter(Boolean).join("\n\n");
-
-  const r = await correrEstratega(contexto);
-  await registrarLlamada(job.company_id, job.id, "estratega", r);
-  const { data: prev } = await sb.from("deliverables").select("version").eq("company_id", job.company_id).eq("tipo", "plan_estrategico").order("version", { ascending: false }).limit(1);
-  const { error: errIns } = await sb.from("deliverables").insert({ company_id: job.company_id, tipo: "plan_estrategico", contenido: r.data, version: (prev?.[0]?.version ?? 0) + 1 });
-  if (errIns) throw new Error(`No se pudo guardar el plan: ${errIns.message}`);
-  return { version: (prev?.[0]?.version ?? 0) + 1, prioridades: r.data.prioridades.length };
-}
+/*
+ * El Plan Estratégico de antes (el estratega, una sola llamada de 15 secciones) se retiró el 17-10-2026: lo reemplaza
+ * la estrategia que 8X genera sola (src/lib/jobs/handlers/estrategia.ts · clientes/8x-plan/spec-estrategia-8x.md §1 y
+ * §11, tramo 8). El tipo de documento `plan_estrategico` sigue: es la copia de la página del dueño que se congela al
+ * aprobar (src/lib/estrategia/acciones.ts) y se ve en la biblioteca con su control documental.
+ */
 
 /**
  * PLANIFICADOR → actions (45 días en 7 semanas, máx. 3 abiertos). Las acciones nacen PROPUESTAS y las

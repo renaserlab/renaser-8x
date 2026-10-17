@@ -31,6 +31,14 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Lectura de Word y Excel en el servidor (src/lib/documentos): se cargan como paquetes de Node, no se empaquetan.
   serverExternalPackages: ["exceljs", "mammoth"],
+  /**
+   * «Plan estratégico» se fusionó con la estrategia (clientes/8x-plan/spec-estrategia-8x.md §8.4). NO permanente
+   * (307): un 308 queda guardado para siempre en el navegador y, si hubiera que revertir, seguiría mandando a una
+   * página que ya no existe. Las redirecciones se miran antes que las páginas.
+   */
+  async redirects() {
+    return [{ source: "/empresa/:id/plan-estrategico", destination: "/empresa/:id/estrategia", permanent: false }];
+  },
   async headers() {
     return [
       {
