@@ -16,11 +16,12 @@ import type { AgenteEnTorre, EjecucionResumen, Cobertura as TipoCobertura, NoEsA
  *  4. Todo tope de cobertura se declara en pantalla. Un recorte silencioso se lee como «esto es todo».
  */
 
-const COLOR_ESTADO: Record<string, string> = {
-  hecho: "var(--confirmado)",
-  fallido: "var(--contradicho)",
-  pendiente: "var(--medida)",
-  tomado: "var(--medida)",
+/** El sello de cada estado de un trabajo (.estado del sistema). */
+const SELLO_ESTADO: Record<string, "ok" | "alto" | "neutro"> = {
+  hecho: "ok",
+  fallido: "alto",
+  pendiente: "neutro",
+  tomado: "neutro",
 };
 
 const miles = (n: number) => n.toLocaleString("es-PE");
@@ -29,8 +30,8 @@ const fecha = (iso: string | null) => (iso ? iso.slice(0, 16).replace("T", " ") 
 
 function Dato({ etiqueta, children }: { etiqueta: string; children: React.ReactNode }) {
   return (
-    <div>
-      <div className="t-etiqueta">{etiqueta}</div>
+    <div className="dato">
+      <div className="t-rotulo">{etiqueta}</div>
       <div className="t-dato">{children}</div>
     </div>
   );
@@ -39,7 +40,7 @@ function Dato({ etiqueta, children }: { etiqueta: string; children: React.ReactN
 /** El periodo consultado y los límites de cobertura. Siempre visible: no hay recortes callados. */
 export function Cobertura({ cobertura }: { cobertura: TipoCobertura }) {
   return (
-    <p className="t-dato" style={{ color: "var(--grafito)", borderLeft: "2px solid var(--linea)", paddingLeft: 10, margin: 0 }}>
+    <p className="t-dato pozo pozo--chico" style={{ color: "var(--grafito)", margin: 0 }}>
       <strong>Periodo consultado:</strong> {cobertura.desde ? fecha(cobertura.desde) : "—"} → {cobertura.hasta ? fecha(cobertura.hasta) : "—"}.{" "}
       {cobertura.metodo}{" "}
       {cobertura.topes.length > 0 ? (
@@ -60,7 +61,7 @@ export function NoSonAgentes({ filas }: { filas: NoEsAgente[] }) {
   const sucias = filas.filter((f) => !f.esFalloDeTrabajo);
   return (
     <details style={{ marginTop: 12 }}>
-      <summary className="t-etiqueta" style={{ cursor: "pointer", color: sucias.length ? "var(--caducado)" : "var(--grafito)" }}>
+      <summary className={sucias.length ? "plegado-enlace plegado-enlace--espera" : "plegado-enlace plegado-enlace--tenue"}>
         En la columna «agente» pero no son agentes ({filas.length})
       </summary>
       <table className="tabla" style={{ marginTop: 10 }}>
@@ -97,11 +98,11 @@ export function FichaAgente({ agente }: { agente: AgenteEnTorre }) {
   const { contrato: c, real } = agente;
   const sinRegistro = real === null;
   return (
-    <article className="panel" style={{ borderTop: `2.5px solid ${sinRegistro ? "var(--linea)" : "var(--marca)"}` }}>
+    <article className="panel p-5">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <h3 style={{ fontSize: 18, fontWeight: 600 }}>
+        <h3 className="titulo-tarjeta">
           {c.clave}{" "}
-          <span className="t-dato" style={{ color: "var(--grafito)", fontWeight: 400 }}>v{c.version} · responde {c.responsable}</span>
+          <span className="t-dato" style={{ color: "var(--grafito)" }}>v{c.version} · responde {c.responsable}</span>
         </h3>
         <span className="t-dato" style={{ color: sinRegistro ? "var(--grafito)" : "var(--confirmado)" }}>
           {sinRegistro
@@ -138,7 +139,7 @@ export function FichaAgente({ agente }: { agente: AgenteEnTorre }) {
             </Dato>
             <Dato etiqueta="Huella que sobrevive al borrado">
               {agente.huella ? (
-                <span style={{ color: "var(--medida)" }}>
+                <span>
                   {miles(agente.huella.llamadas)} llamadas · {fecha(agente.huella.primera)} → {fecha(agente.huella.ultima)}
                 </span>
               ) : (
@@ -172,7 +173,7 @@ export function FichaAgente({ agente }: { agente: AgenteEnTorre }) {
       </div>
 
       <details style={{ marginTop: 14 }}>
-        <summary className="t-etiqueta" style={{ cursor: "pointer" }}>Sus límites y lo que no puede hacer</summary>
+        <summary className="plegado-enlace plegado-enlace--tenue">Sus límites y lo que no puede hacer</summary>
         <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", marginTop: 10 }}>
           <Dato etiqueta="Fuentes autorizadas">{c.fuentes.join(" · ")}</Dato>
           <Dato etiqueta="Entrada obligatoria">{c.entrada}</Dato>
@@ -195,6 +196,7 @@ export function FichaAgente({ agente }: { agente: AgenteEnTorre }) {
 export function ListaEjecuciones({ filas }: { filas: EjecucionResumen[] }) {
   if (filas.length === 0) return null;
   return (
+    <div className="tabla-desliza">
     <table className="tabla">
       <thead>
         <tr>
@@ -213,7 +215,7 @@ export function ListaEjecuciones({ filas }: { filas: EjecucionResumen[] }) {
       <tbody>
         {filas.map((f) => (
           <tr key={f.jobId}>
-            <td style={{ color: COLOR_ESTADO[f.estado] ?? "var(--grafito)" }}>{f.estado}</td>
+            <td><span className={`estado ${SELLO_ESTADO[f.estado] ?? "neutro"}`}>{f.estado}</span></td>
             <td>{f.tipo}</td>
             <td>{f.empresa ?? "—"}</td>
             <td className="t-dato">
@@ -225,11 +227,12 @@ export function ListaEjecuciones({ filas }: { filas: EjecucionResumen[] }) {
             <td style={{ fontVariantNumeric: "tabular-nums" }}>{f.tokens ? miles(f.tokens) : "—"}</td>
             <td className="t-dato">{fecha(f.terminadoAt ?? f.tomadoAt)}</td>
             <td>
-              <Link href={`/torre/${f.jobId}`} className="t-dato">Abrir</Link>
+              <Link href={`/torre/${f.jobId}`} className="enlace-fila enlace-fila--suave">Abrir</Link>
             </td>
           </tr>
         ))}
       </tbody>
     </table>
+    </div>
   );
 }

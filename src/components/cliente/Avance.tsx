@@ -7,7 +7,8 @@ import {
 } from "@/lib/medicion";
 import { ROTULO_CIFRA_PROVISIONAL } from "@/lib/metricas";
 
-const COLOR_TONO: Record<TonoAtribucion, string> = { atribuible: "var(--confirmado)", parcial: "var(--caducado)", neutro: "var(--grafito)" };
+/** El sello de cada lectura (.estado del sistema): atribuible en ok, parcial en espera, lo demás neutro. */
+const SELLO_TONO: Record<TonoAtribucion, "ok" | "espera" | "neutro"> = { atribuible: "ok", parcial: "espera", neutro: "neutro" };
 
 /**
  * ¿FUNCIONÓ LO QUE HICIMOS? La pregunta que hasta hoy era incontestable: el diagnóstico era una foto
@@ -101,15 +102,14 @@ export function Avance({
   // DE QUÉ FECHAS SON LOS NÚMEROS. Va antes de cada botón que congela.
   const periodo = (para: "linea_base" | "corte") => (
     <fieldset className="mb-4" style={{ border: 0, padding: 0, marginInline: 0, minWidth: 0 }}>
-      <legend className="t-cuerpo" style={{ fontWeight: 550, padding: 0 }}>¿De qué fechas son estos números?</legend>
+      <legend className="t-cuerpo fuerte" style={{ padding: 0 }}>¿De qué fechas son estos números?</legend>
       <p className="t-dato mt-1 medida" style={{ color: "var(--grafito)" }}>
         Así comparamos un mes con un mes, y no un mes con tres. Sin las fechas no podremos decirte después si el negocio mejoró.
       </p>
       {mesPasado && (
         <button
           type="button"
-          className="boton boton--secundario mt-2"
-          style={{ minHeight: 40 }}
+          className="boton boton--secundario mt-2 boton--chico"
           disabled={ocupado}
           aria-pressed={desde === mesPasado.desde && hasta === mesPasado.hasta}
           onClick={() => { setDesde(mesPasado.desde); setHasta(mesPasado.hasta); }}
@@ -118,13 +118,13 @@ export function Avance({
         </button>
       )}
       <div className="flex gap-3 flex-wrap mt-2">
-        <label className="t-dato" style={{ color: "var(--grafito)" }}>
+        <label className="etiqueta-campo">
           {mesPasado ? "O desde el día" : "Desde el día"}
-          <input className="campo" type="date" aria-label="Desde qué día son los números" value={desde} max={hoy ?? undefined} disabled={ocupado} onChange={(e) => setDesde(e.target.value)} style={{ display: "block" }} />
+          <input className="campo" type="date" aria-label="Desde qué día son los números" value={desde} max={hoy ?? undefined} disabled={ocupado} onChange={(e) => setDesde(e.target.value)} />
         </label>
-        <label className="t-dato" style={{ color: "var(--grafito)" }}>
+        <label className="etiqueta-campo">
           hasta el día
-          <input className="campo" type="date" aria-label="Hasta qué día son los números" value={hasta} max={hoy ?? undefined} disabled={ocupado} onChange={(e) => setHasta(e.target.value)} style={{ display: "block" }} />
+          <input className="campo" type="date" aria-label="Hasta qué día son los números" value={hasta} max={hoy ?? undefined} disabled={ocupado} onChange={(e) => setHasta(e.target.value)} />
         </label>
       </div>
       {empezado && falta && <p className="t-dato mt-2" style={{ color: "var(--contradicho)" }} role="alert">{falta}</p>}
@@ -134,7 +134,7 @@ export function Avance({
         </p>
       )}
       {para === "corte" && orden && base && (
-        <p className="t-dato mt-1 medida" style={{ color: "var(--contradicho)", fontWeight: 600 }} role="alert">
+        <p className="t-dato mt-1 medida texto-alto" role="alert">
           {orden === "mismo_periodo"
             ? `Estas son las mismas fechas de tu punto de partida (del ${fechaDia(base.periodo_desde)} al ${fechaDia(base.periodo_hasta)}): no habría antes y después, y el corte no se podría leer como resultado. Elige fechas posteriores.`
             : `Estas fechas no vienen después de las de tu punto de partida (del ${fechaDia(base.periodo_desde)} al ${fechaDia(base.periodo_hasta)}): no habría antes y después, y el corte no se podría leer como resultado. Elige fechas posteriores.`}
@@ -165,7 +165,7 @@ export function Avance({
           <>
             {periodo("linea_base")}
             {error && <p className="t-cuerpo mb-3" style={{ color: "var(--contradicho)" }} role="alert">{error}</p>}
-            <button type="button" className="boton" disabled={ocupado || falta != null} onClick={() => congelar("linea_base")}>
+            <button type="button" className="boton boton--secundario" disabled={ocupado || falta != null} onClick={() => congelar("linea_base")}>
               {trabajando === "linea_base" ? "Guardando" : "Fijar mi punto de partida"}
             </button>
             {!empezado && <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>Elige primero de qué fechas son tus números.</p>}
@@ -186,7 +186,7 @@ export function Avance({
             : "No quedó anotado de qué fechas son esos números."}{" "}
           A partir de aquí, todo lo que hagamos se mide contra esa foto.
         </p>
-        {provisionalBase && <p className="t-dato medida mb-2" style={{ color: "var(--caducado)", fontWeight: 600 }}>{provisionalBase}</p>}
+        {provisionalBase && <p className="t-dato medida mb-2 texto-espera">{provisionalBase}</p>}
         <p className="t-cuerpo medida mb-4" style={{ color: "var(--grafito)" }}>
           Cuando pase un mes, actualiza tus números arriba y registra un corte: ahí vas a ver, en soles, qué se movió.
           Si hubiera que corregir el punto de partida, lo hace tu consultor diciendo por qué: queda una versión nueva y la anterior se conserva.
@@ -210,7 +210,7 @@ export function Avance({
     <section className="flex flex-col gap-5">
       <div className="panel p-5">
         <p className="t-etiqueta">Tu avance</p>
-        <p className="t-hero mt-2" style={{ fontSize: "clamp(19px, 3.2vw, 26px)", maxWidth: lectura.esResultado ? "26ch" : "40ch" }}>{lectura.titular}</p>
+        <p className="t-hero mt-2" style={{ maxWidth: lectura.esResultado ? "26ch" : "40ch" }}>{lectura.titular}</p>
         {noComparable ? (
           <p className="t-dato mt-3" style={{ color: "var(--grafito)" }}>
             {nombreMedicion(ultimoCorte)} del {fechaDia(ultimoCorte.fecha)} · tu punto de partida de hoy es la versión {base.version ?? 1}, del {fechaDia(base.fecha)}
@@ -229,7 +229,7 @@ export function Avance({
         )}
         {/* ¿SE PUEDEN COMPARAR LOS PERÍODOS? El mismo veredicto que lee en «Tus resultados», aquí también. */}
         {periodos && (
-          <p className="t-dato mt-2 medida" style={{ color: grave ? "var(--contradicho)" : periodos.veredicto === "sin_periodo" ? "var(--caducado)" : "var(--grafito)", fontWeight: grave ? 600 : 400 }}>
+          <p className={grave ? "t-dato mt-2 medida fuerte" : "t-dato mt-2 medida"} style={{ color: grave ? "var(--contradicho)" : periodos.veredicto === "sin_periodo" ? "var(--caducado)" : "var(--grafito)" }}>
             {periodos.texto}
           </p>
         )}
@@ -244,7 +244,7 @@ export function Avance({
               { n: v.sinCambio, t: "sin cambio", c: "var(--grafito)" },
             ].map((x) => (
               <div key={x.t}>
-                <p style={{ fontSize: 22, fontWeight: 700, color: x.c, lineHeight: 1.1, fontVariantNumeric: "tabular-nums" }}>{x.n}</p>
+                <p className="cifra-media" style={{ color: x.c }}>{x.n}</p>
                 <p className="t-dato" style={{ color: "var(--grafito)" }}>{x.t}</p>
               </div>
             ))}
@@ -265,15 +265,15 @@ export function Avance({
             const punto = !lectura.esResultado ? "var(--linea)" : a.mejoro === true ? "var(--confirmado)" : a.mejoro === false ? "var(--contradicho)" : "var(--linea)";
             return (
               <li key={a.clave} style={{ padding: "11px 0" }}>
-                <div className="flex items-baseline gap-3 flex-wrap">
-                  <span aria-hidden="true" style={{ flex: "none", width: 8, height: 8, borderRadius: 4, background: punto }} />
-                  <span className="t-cuerpo" style={{ fontWeight: 550 }}>{a.nombre}</span>
-                  <span className="t-dato" style={{ fontSize: 12.5, fontWeight: 700, color: COLOR_TONO[e.tono] }}>{e.etiqueta}</span>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span aria-hidden="true" className="punto-fila" style={{ background: punto }} />
+                  <span className="t-cuerpo fuerte">{a.nombre}</span>
+                  <span className={`estado ${SELLO_TONO[e.tono]}`}>{e.etiqueta}</span>
                   {/* Lo provisional se rotula junto al número, no solo dentro de la frase. */}
-                  {a.provisional && <span className="t-dato" style={{ fontSize: 12.5, fontWeight: 700, color: "var(--caducado)" }}>{ROTULO_CIFRA_PROVISIONAL}</span>}
+                  {a.provisional && <span className="estado espera">{ROTULO_CIFRA_PROVISIONAL}</span>}
                 </div>
                 <p className="t-dato mt-1" style={{ color: "var(--grafito)", paddingLeft: 20 }}>{a.observado}</p>
-                {a.delta != null && a.delta !== 0 && <p className="t-dato" style={{ color: "var(--grafito)", paddingLeft: 20, fontSize: 12.5 }}>{a.motivo}</p>}
+                {a.delta != null && a.delta !== 0 && <p className="apunte" style={{ paddingLeft: 20 }}>{a.motivo}</p>}
               </li>
             );
           })}
@@ -296,7 +296,7 @@ export function Avance({
 
       {cortes.length > 1 && (
         <details>
-          <summary className="t-dato" style={{ cursor: "pointer", color: "var(--marca)" }}>Cortes anteriores ({cortes.length - 1})</summary>
+          <summary className="plegado-enlace">Cortes anteriores ({cortes.length - 1})</summary>
           <ul className="lista-editorial mt-2">
             {cortes.slice(1).map((c) => (
               <li key={c.id} className="flex items-baseline justify-between gap-3" style={{ padding: "7px 0" }}>

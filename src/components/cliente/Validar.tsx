@@ -19,7 +19,7 @@ export function Validar({ items }: { items: PorValidar[] }) {
 
   if (!actual)
     return (
-      <div className="panel p-6 aparece">
+      <div className="pozo aparece">
         <p className="t-seccion">Listo. No hay nada más que confirmar por ahora.</p>
         <p className="t-cuerpo mt-2" style={{ color: "var(--grafito)" }}>Si encontramos algo nuevo, te lo mostramos aquí.</p>
       </div>
@@ -53,7 +53,7 @@ export function Validar({ items }: { items: PorValidar[] }) {
       <p className="t-cuerpo">
         <strong>Esto encontramos en {actual.fuente}{actual.fecha ? `, de ${fechaMes(actual.fecha)}` : ""}:</strong>
       </p>
-      <blockquote className="t-doc" style={{ fontSize: 24, lineHeight: 1.35, borderLeft: "3px solid var(--marca)", paddingLeft: 16 }}>“{actual.texto}”</blockquote>
+      <blockquote className="cita">“{actual.texto}”</blockquote>
       {actual.contradiccion && (
         <p className="t-cuerpo" style={{ color: "var(--grafito)" }}>
           Pero en {actual.contradiccion.fuente} dice otra cosa: “{actual.contradiccion.texto}”. ¿Cuál refleja la dirección actual?
@@ -62,7 +62,7 @@ export function Validar({ items }: { items: PorValidar[] }) {
 
       {seguimiento === null ? (
         <div className="flex flex-col gap-3">
-          <button className="boton boton--grande" onClick={() => responder("si")} style={{ background: "var(--confirmado)", borderColor: "var(--confirmado)" }}>Sigue siendo verdad</button>
+          <button className="boton boton--grande" onClick={() => responder("si")}>Sigue siendo verdad</button>
           <button className="boton boton--grande boton--secundario" onClick={() => responder("ya_no")}>Ya no</button>
           <button className="boton boton--grande boton--secundario" onClick={() => responder("nunca")}>Nunca fue así</button>
         </div>
@@ -74,7 +74,7 @@ export function Validar({ items }: { items: PorValidar[] }) {
           <div className="flex gap-3">
             <button className="boton boton--grande" onClick={() => responder(seguimiento as "ya_no")}>Guardar</button>
           </div>
-          <button className="t-dato underline" style={{ color: "var(--grafito)", background: "none", border: 0, textAlign: "left" }} onClick={() => responder(seguimiento as "ya_no")}>Prefiero no explicar ahora</button>
+          <button type="button" className="boton-enlace boton-enlace--tenue" style={{ alignSelf: "flex-start" }} onClick={() => responder(seguimiento as "ya_no")}>Prefiero no explicar ahora</button>
         </div>
       )}
       {error && <p className="t-cuerpo" style={{ color: "var(--contradicho)" }} role="alert">{error}</p>}

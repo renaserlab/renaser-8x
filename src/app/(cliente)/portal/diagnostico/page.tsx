@@ -13,7 +13,8 @@ export const dynamic = "force-dynamic";
 CONTRATO DE DIRECCIÓN — Tu diagnóstico (pedido de Kelin, 16-10-2026)
 THESIS: el dueño ve su empresa en una frase («Tu empresa hoy vende…, te quedan… y participas en…») y debajo los mismos
   cuatro bloques que ve su consultora, en sus palabras: tus procesos, tu tiempo, tu dinero y lo que encontramos.
-OWN-WORLD: el tablero de Inicio: cielo, tarjetas blancas, Manrope en las cifras, rayado = sin dato.
+OWN-WORLD: noche y perla (17-10-2026), el tablero de Inicio: lienzo perla, tarjetas blancas de 20 px, la Didone en
+  títulos y cifras, acero en datos, rayado = sin dato.
 STORY: «Esto es lo que tengo, esto es lo que encontraron, y si un dato no cuadra lo corrijo en un minuto».
 FINISH: nada del trabajo de la consultora (ni dimensiones, ni áreas con puntaje, ni borradores): se filtra al leer
   (leerHechosDiagnostico con para «dueno»). Lo que no se pudo leer se dice; ningún «S/ 0» inventado.

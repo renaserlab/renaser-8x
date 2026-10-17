@@ -66,13 +66,13 @@ function mesesSeguidos(serie: { periodo: string; valor: number; provisional: boo
  */
 function DetalleCalculo({ calculo }: { calculo: Calculo<unknown> }) {
   return (
-    <details style={{ marginTop: 4 }}>
-      <summary className="t-dato" style={{ cursor: "pointer", color: "var(--grafito)", fontSize: 12 }}>Cómo se calculó</summary>
-      <dl style={{ marginTop: 6, display: "grid", gap: 6 }}>
+    <details className="detalle-calculo">
+      <summary>Cómo se calculó</summary>
+      <dl>
         {explicarCalculo(calculo).map((l) => (
           <div key={l.etiqueta}>
-            <dt className="t-etiqueta" style={{ fontSize: 10 }}>{l.etiqueta}</dt>
-            <dd className="t-dato" style={{ margin: 0, fontSize: 12, color: "var(--grafito)", whiteSpace: "normal" }}>{l.texto}</dd>
+            <dt>{l.etiqueta}</dt>
+            <dd>{l.texto}</dd>
           </div>
         ))}
       </dl>
@@ -83,7 +83,7 @@ function DetalleCalculo({ calculo }: { calculo: Calculo<unknown> }) {
 /** «por confirmar» y adónde ir a corregirlo: una cifra con un dato abierto que no cuadra. */
 function PorConfirmar({ que }: { que: string }) {
   return (
-    <p className="nota" style={{ lineHeight: 1.6 }}>
+    <p className="nota por-confirmar">
       <span className="estado espera">por confirmar</span> {que} no cuadra con la cuenta de tus números.{" "}
       <Link href="/portal/diagnostico#incongruencias" className="enlace-azul">Corregir</Link>
     </p>
@@ -96,9 +96,8 @@ function PorConfirmar({ que }: { que: string }) {
  * plegado: el equilibrio y «estás S/X por encima» se leían como firmes. Lo extraído nunca es verificado.
  */
 function RotuloProvisional({ enLinea = false }: { enLinea?: boolean }) {
-  const estilo = { color: "var(--caducado)", fontWeight: 600 } as const;
-  if (enLinea) return <span style={estilo}> ({ROTULO_CIFRA_PROVISIONAL})</span>;
-  return <p className="t-dato" style={{ ...estilo, fontSize: 12, marginTop: 2 }}>{ROTULO_CIFRA_PROVISIONAL.charAt(0).toUpperCase() + ROTULO_CIFRA_PROVISIONAL.slice(1)}.</p>;
+  if (enLinea) return <span className="texto-espera"> ({ROTULO_CIFRA_PROVISIONAL})</span>;
+  return <p className="rotulo-provisional">{ROTULO_CIFRA_PROVISIONAL.charAt(0).toUpperCase() + ROTULO_CIFRA_PROVISIONAL.slice(1)}.</p>;
 }
 
 /**
@@ -356,7 +355,7 @@ export default async function Numeros() {
           {/* Esta frase sale del equilibrio: si él es provisional, ella también, y se dice en la misma línea. Con la línea
               dibujada ya lo dice su resumen, al lado; sin línea, se dice aquí. */}
           {d.sobreEquilibrio != null && !(conVenta >= 2 && vendio) && (
-            <p className="nota" style={{ gridColumn: "1 / -1", fontSize: 13.5 }}>
+            <p className="nota" style={{ gridColumn: "1 / -1" }}>
               {d.sobreEquilibrio >= 0
                 ? `Vendiendo lo del último mes ${d.provisional.equilibrio ? "estarías" : "estás"} ${enSoles(d.sobreEquilibrio)} por encima de tu punto de equilibrio`
                 : `Cuidado: con lo del último mes te ${d.provisional.equilibrio ? "faltarían" : "faltan"} ${enSoles(Math.abs(d.sobreEquilibrio))} para llegar a tu punto de equilibrio`}
@@ -364,14 +363,14 @@ export default async function Numeros() {
             </p>
           )}
           {dorada?.valor != null && serieVenta[0] && (
-            <p className="nota" style={{ gridColumn: "1 / -1", fontSize: 13.5 }}>
+            <p className="nota" style={{ gridColumn: "1 / -1" }}>
               Tu mejor época vendías {enSoles(Number(dorada.valor))} al mes{dorada.estado === "extraido" && <RotuloProvisional enLinea />}. Hoy, {enSoles(serieVenta[0].valor)}
               {serieVenta[0].provisional && <RotuloProvisional enLinea />}.
             </p>
           )}
           {d.equilibrioProductoEstrella != null && (
             <div style={{ gridColumn: "1 / -1" }}>
-              <p className="nota" style={{ fontSize: 13.5 }}>
+              <p className="nota">
                 Si todo lo que vendieras fuera lo que más vendes, necesitarías vender {enSoles(d.equilibrioProductoEstrella)} al mes para cubrir
                 tus gastos fijos{d.provisional.equilibrioProductoEstrella && <RotuloProvisional enLinea />}. Es una hipótesis para conversar, no el punto de equilibrio de tu negocio.
               </p>

@@ -265,7 +265,7 @@ export function TableroKpis({
       {error && <p className="t-cuerpo mb-3" style={{ color: "var(--contradicho)" }} role="alert">{error}</p>}
 
       {conAlerta.length > 0 && (
-        <section className="panel p-4 mb-6" style={{ borderColor: "var(--caducado)" }}>
+        <section className="alerta-indicadores mb-6">
           <h2 className="t-seccion">{conAlerta.length} indicador(es) con alerta</h2>
           <ul className="mt-2 flex flex-col gap-1">
             {conAlerta.map((k) => (

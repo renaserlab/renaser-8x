@@ -123,7 +123,7 @@ export default function Participar({ params }: { params: Promise<{ token: string
   // LEY 29733: nada se pregunta antes de que la persona sepa qué se guarda y lo acepte.
   if (info && consintio === false)
     return (
-      <main className="min-h-screen px-4 py-8" style={{ maxWidth: 620, margin: "0 auto" }}>
+      <main className="pagina-sola pagina-sola--angosta">
         <p className="t-etiqueta">{info.participante.empresa}</p>
         <h1 className="t-titulo mt-2">Antes de empezar</h1>
         <p className="t-cuerpo mt-4 medida">
@@ -136,12 +136,11 @@ export default function Participar({ params }: { params: Promise<{ token: string
           <li><span className="t-cuerpo"><strong>Quién lo ve:</strong> el dueño de la empresa y el consultor de RENASER.</span></li>
           <li><span className="t-cuerpo"><strong>Lo que NO pasa:</strong> tus respuestas no se usan para sancionarte. No hay respuestas buenas ni malas.</span></li>
           <li><span className="t-cuerpo"><strong>Tus derechos:</strong> puedes parar cuando quieras y pedir que borremos lo tuyo. Está en la{" "}
-            <a href="/privacidad" target="_blank" className="underline" style={{ color: "var(--marca)" }}>política de privacidad</a>.</span></li>
+            <a href="/privacidad" target="_blank" className="enlace-texto enlace-texto--acero">política de privacidad</a>.</span></li>
         </ul>
         <button
           type="button"
           className="boton boton--grande mt-6"
-          style={{ width: "100%", justifyContent: "center" }}
           onClick={async () => {
             await fetch("/api/participar/consentimiento", { method: "POST", headers: cabeceras() });
             setConsintio(true);
@@ -154,7 +153,7 @@ export default function Participar({ params }: { params: Promise<{ token: string
     );
 
   return (
-    <main className="min-h-screen px-4 py-6" style={{ maxWidth: 720, margin: "0 auto" }}>
+    <main className="pagina-sola">
       {info && (
         <header className="mb-8">
           <p className="t-etiqueta">{info.participante.empresa}</p>

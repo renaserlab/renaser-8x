@@ -153,8 +153,7 @@ export function InventarioActivos({ companyId, guardados, prioridades = [], docD
 
   const zonaSubida = (clave: string, a: ActivoDef, texto: string) => (
     <div
-      className="mt-3 p-5"
-      style={{ border: "1.5px dashed var(--linea)", borderRadius: "var(--radio)", background: "var(--suave)", textAlign: "center", cursor: "pointer" }}
+      className="zona-subida mt-3"
       role="button"
       tabIndex={0}
       aria-label={`Subir ${a.nombre}`}
@@ -167,17 +166,17 @@ export function InventarioActivos({ companyId, guardados, prioridades = [], docD
       }}
     >
       <input ref={(el) => { inputs.current[clave] = el; }} type="file" multiple style={{ display: "none" }} aria-label={`Archivo de ${a.nombre}`} tabIndex={-1} onChange={(e) => subirArchivos(clave, a, e.target.files)} />
-      <p className="t-cuerpo" style={{ fontWeight: 500 }}>{ocupado === clave ? "Recibiendo…" : texto}</p>
+      <p className="t-cuerpo medio">{ocupado === clave ? "Recibiendo…" : texto}</p>
       <p className="t-dato mt-1" style={{ color: "var(--grafito)" }}>Puede ser un documento, una foto del cuaderno o un audio, tal como esté. Toca aquí para elegirlo.</p>
     </div>
   );
 
   const preguntasLevantamiento = (clave: string, a: ActivoDef, intro: string) => (
-    <div className="mt-3 flex flex-col gap-3 p-4" style={{ background: "var(--suave)", borderRadius: "var(--radio)" }}>
+    <div className="pozo pozo--chico mt-3 flex flex-col gap-3">
       <p className="t-cuerpo medida">{intro}</p>
       {a.preguntas.map((p, i) => (
-        <div key={i} className="flex flex-col gap-2 p-4" style={{ background: "var(--papel)", border: "1px solid var(--linea)", borderRadius: "var(--radio)" }}>
-          <label className="t-cuerpo" style={{ fontWeight: 500 }} htmlFor={`${clave}-p${i}`}>{p}</label>
+        <div key={i} className="pozo__pieza flex flex-col gap-2">
+          <label className="t-cuerpo medio" htmlFor={`${clave}-p${i}`}>{p}</label>
           <div className="flex flex-col gap-2">
             <BotonGrabar grande={false} alTexto={(t) => setRespuestas((r) => ({ ...r, [clave]: { ...(r[clave] ?? {}), [i]: (((r[clave]?.[i] ?? "") + " " + t)).trim() } }))} />
             {/* NADA DENTRO DE LA CAJA QUE SE PUEDA REPETIR (16-10-2026). Primero (30-08-2026) el ejemplo salió
@@ -205,22 +204,22 @@ export function InventarioActivos({ companyId, guardados, prioridades = [], docD
     <MotionConfig reducedMotion="user">
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-4" aria-label="Avance del levantamiento">
-        <div style={{ flex: 1, height: 4, borderRadius: 3, background: "var(--linea)", overflow: "hidden" }}>
-          <div style={{ width: pct + "%", height: "100%", background: "var(--marca)", transition: "width 300ms ease" }} />
+        <div className="avance-fino">
+          <div style={{ width: pct + "%" }} />
         </div>
         <span className="t-dato" style={{ color: "var(--grafito)", flex: "none" }}>{pct === 100 ? "Levantamiento completo" : `Entendido ${pct}%`}</span>
       </div>
       {error && <p className="t-cuerpo" style={{ color: "var(--contradicho)" }} role="alert">{error}</p>}
       {prioridades.length > 0 && (
-        <div className="panel p-4" style={{ borderColor: "var(--marca)" }}>
-          <p className="t-cuerpo" style={{ fontWeight: 550 }}>Según tu diagnóstico, estos documentos primero:</p>
+        <div className="aviso">
+          <p className="t-cuerpo fuerte">Según tu diagnóstico, estos documentos primero:</p>
           <ul className="mt-2 flex flex-col gap-1">
             {prioridades.map((p) => {
               const def = BLOQUES_ACTIVOS.flatMap((b) => b.activos.map((a) => ({ clave: `${b.clave}.${a.clave}`, nombre: a.nombre, bloque: b.clave }))).find((x) => x.clave === p.clave);
               if (!def) return null;
               return (
                 <li key={p.clave} className="t-dato">
-                  <button className="text-left" style={{ background: "none", border: "none", cursor: "pointer", padding: 0, font: "inherit", color: "var(--marca)", textDecoration: "underline" }} onClick={() => setBloqueAbierto(def.bloque)}>
+                  <button className="text-left boton-enlace" onClick={() => setBloqueAbierto(def.bloque)}>
                     {def.nombre}
                   </button>
                   <span style={{ color: "var(--grafito)" }}> — por: {p.razon}</span>
@@ -235,25 +234,25 @@ export function InventarioActivos({ companyId, guardados, prioridades = [], docD
         const av = avanceBloque(b.clave);
         return (
           <section key={b.clave} className="panel" style={{ overflow: "hidden" }}>
-            <button className="w-full p-5 flex items-center justify-between gap-4" style={{ background: "none", border: "none", cursor: "pointer", font: "inherit", textAlign: "left" }} onClick={() => setBloqueAbierto(abierto ? "" : b.clave)} aria-expanded={abierto}>
+            <button type="button" className="bloque-boton" onClick={() => setBloqueAbierto(abierto ? "" : b.clave)} aria-expanded={abierto}>
               <span style={{ minWidth: 0 }}>
-                <span className="t-seccion" style={{ fontSize: 19 }}>{b.nombre}</span>
+                <span className="t-seccion">{b.nombre}</span>
                 <span className="block t-dato mt-1" style={{ color: "var(--grafito)" }}>{b.intro}</span>
               </span>
               <span style={{ flex: "none", textAlign: "right" }}>
                 <span className="t-dato" style={{ color: av.listos === av.total ? "var(--confirmado)" : "var(--grafito)" }}>{av.listos} de {av.total}</span>
-                <span aria-hidden="true" style={{ display: "flex", gap: 3, marginTop: 6, width: 72 }}>
+                <span aria-hidden="true" className="mini-tramos">
                   {b.activos.map((a) => {
                     const e = estados[`${b.clave}.${a.clave}`]?.estado;
                     const listo = LISTOS.includes(e ?? "");
-                    return <span key={a.clave} style={{ flex: 1, height: 3, borderRadius: 2, background: listo ? "var(--marca)" : "var(--linea)" }} />;
+                    return <span key={a.clave} data-listo={listo ? "" : undefined} />;
                   })}
                 </span>
               </span>
             </button>
             <AnimatePresence initial={false}>
             {abierto && (
-              <motion.div key="contenido" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.32, ease: [0.25, 0.1, 0.25, 1] }} style={{ overflow: "hidden" }}>
+              <motion.div key="contenido" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.24, ease: [0.23, 1, 0.32, 1] }} style={{ overflow: "hidden" }}>
               <div className="px-5 pb-5 flex flex-col gap-6">
                 {b.activos.map((a) => {
                   const clave = `${b.clave}.${a.clave}`;
@@ -264,22 +263,18 @@ export function InventarioActivos({ companyId, guardados, prioridades = [], docD
                     <div
                       key={a.clave}
                       id={`doc-${clave}`}
-                      style={
-                        esDestacado
-                          ? { borderTop: "1px solid var(--linea)", paddingTop: 18, marginLeft: -12, marginRight: -12, paddingLeft: 12, paddingRight: 12, paddingBottom: 12, borderRadius: "var(--radio)", background: "color-mix(in srgb, var(--marca) 5%, transparent)" }
-                          : { borderTop: "1px solid var(--linea)", paddingTop: 18 }
-                      }
+                      className={esDestacado ? "documento-fila documento-fila--destacado" : "documento-fila"}
                     >
                       {esDestacado && <p className="t-etiqueta mb-1" style={{ color: "var(--marca)" }}>Este es el que resuelve tu hallazgo</p>}
                       <div className="flex items-baseline justify-between gap-3 flex-wrap">
-                        <p className="t-cuerpo" style={{ fontWeight: 550, fontSize: 18 }}>{a.nombre}</p>
+                        <p className="t-seccion">{a.nombre}</p>
                         <span className="flex items-baseline gap-3">
                           {estado === "contado" && <span className="t-dato" style={{ color: "var(--confirmado)" }}>nos contaste cómo funciona</span>}
                           {(estado === "lo_tengo" || estado === "incompleto") && gracias !== clave && <span className="t-dato" style={{ color: "var(--confirmado)" }}>recibido</span>}
                           {estado === "construido" && <span className="t-dato" style={{ color: "var(--confirmado)" }}>escrito y confirmado</span>}
                           {estado === "en_uso" && <span className="t-dato" style={{ color: "var(--confirmado)" }}>en uso</span>}
                           {["lo_tengo", "incompleto", "no_lo_tengo", "no_se", "contado"].includes(estado ?? "") && (
-                            <button className="t-dato" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--grafito)", textDecoration: "underline", padding: 0, font: "inherit" }} onClick={() => setEstados((e) => ({ ...e, [clave]: { ...(e[clave] ?? { clave, nota: null }), clave, estado: "" } }))}>
+                            <button className="boton-enlace boton-enlace--tenue" onClick={() => setEstados((e) => ({ ...e, [clave]: { ...(e[clave] ?? { clave, nota: null }), clave, estado: "" } }))}>
                               cambiar opción
                             </button>
                           )}
@@ -290,7 +285,7 @@ export function InventarioActivos({ companyId, guardados, prioridades = [], docD
                       {!estado && (
                         <div className="flex flex-wrap gap-2" role="group" aria-label={a.nombre}>
                           {ESTADOS_ACTIVO.map((e) => (
-                            <button key={e.clave} className="boton boton--secundario" style={{ minHeight: 40, fontSize: 15 }} onClick={() => marcar(clave, e.clave)}>
+                            <button key={e.clave} className="boton boton--secundario boton--chico" onClick={() => marcar(clave, e.clave)}>
                               {e.nombre}
                             </button>
                           ))}
@@ -316,7 +311,7 @@ export function InventarioActivos({ companyId, guardados, prioridades = [], docD
                       {estado === "contado" && a.estructura && (
                         <div className="mt-2">
                           {gracias === clave && <p className="t-cuerpo mb-2" style={{ color: "var(--confirmado)" }}>Gracias — con esto ya entendemos cómo funciona.</p>}
-                          <button className="boton boton--secundario" style={{ minHeight: 40, fontSize: 15 }} disabled={ocupado === clave} onClick={() => construir(clave)}>
+                          <button className="boton boton--secundario boton--chico" disabled={ocupado === clave} onClick={() => construir(clave)}>
                             Cuando quieras, lo dejamos por escrito contigo
                           </button>
                         </div>
@@ -333,7 +328,7 @@ export function InventarioActivos({ companyId, guardados, prioridades = [], docD
                         <div className="mt-3 flex flex-col gap-3 aparece">
                           <label className="flex flex-col gap-2">
                             <span className="t-dato" style={{ color: "var(--grafito)" }}>Escrito solo con lo que tu empresa mostró. Corrige lo que quieras:</span>
-                            <textarea className="campo" rows={12} style={{ fontFamily: "var(--font-doc)", fontSize: 16, lineHeight: 1.55 }} value={editando[clave] ?? g.borrador} onChange={(e) => setEditando((x) => ({ ...x, [clave]: e.target.value }))} aria-label={`Borrador de ${a.nombre}`} />
+                            <textarea className="campo campo--documento" rows={12} value={editando[clave] ?? g.borrador} onChange={(e) => setEditando((x) => ({ ...x, [clave]: e.target.value }))} aria-label={`Borrador de ${a.nombre}`} />
                           </label>
                           <div className="flex flex-wrap gap-3">
                             <button className="boton" disabled={ocupado === clave} onClick={() => confirmar(clave)}>Está correcto</button>
@@ -345,20 +340,20 @@ export function InventarioActivos({ companyId, guardados, prioridades = [], docD
 
                       {(estado === "construido" || estado === "en_uso") && g?.borrador && g?.propuesta_estado !== "lista" && (
                         <details className="mt-2">
-                          <summary className="t-dato" style={{ cursor: "pointer", color: "var(--grafito)" }}>{g?.propuesta_estado === "confirmada" ? "Ver lo que nos contaste originalmente" : "Ver el documento confirmado"}</summary>
+                          <summary className="plegado-enlace plegado-enlace--tenue">{g?.propuesta_estado === "confirmada" ? "Ver lo que nos contaste originalmente" : "Ver el documento confirmado"}</summary>
                           <div className="mt-2"><DocMd texto={g.borrador} /></div>
                         </details>
                       )}
                       {/* EL DOCUMENTO EN LIMPIO: con membrete y logo, para pegarlo en la pared. */}
                       {(estado === "construido" || estado === "en_uso") && (g?.borrador || g?.propuesta) && (
-                        <a href={`/imprimir/documento/${clave}`} target="_blank" rel="noreferrer" className="t-dato mt-2" style={{ textDecoration: "underline", color: "var(--marca)", alignSelf: "flex-start" }}>
+                        <a href={`/imprimir/documento/${clave}`} target="_blank" rel="noreferrer" className="enlace-texto enlace-texto--acero t-dato mt-2" style={{ alignSelf: "flex-start" }}>
                           Imprimir / Guardar PDF — con tu logo
                         </a>
                       )}
 
                       {/* CAPA 3 · Sistematización: de lo declarado a lo trabajado, lado a lado. */}
                       {(estado === "construido" || estado === "en_uso") && g?.borrador && !g?.propuesta_estado && (
-                        <button className="boton boton--secundario mt-3" style={{ minHeight: 40, fontSize: 15 }} disabled={ocupado === clave} onClick={async () => {
+                        <button className="boton boton--secundario mt-3 boton--chico" disabled={ocupado === clave} onClick={async () => {
                           setOcupado(clave);
                           setError(null);
                           try {
@@ -379,21 +374,21 @@ export function InventarioActivos({ companyId, guardados, prioridades = [], docD
                       {g?.propuesta_estado === "lista" && g.propuesta && (
                         <div className="mt-3 flex flex-col gap-3 aparece">
                           <div className="grid gap-3 sm:grid-cols-2">
-                            <details className="p-4" style={{ background: "var(--suave)", borderRadius: "var(--radio)" }}>
-                              <summary className="t-etiqueta" style={{ cursor: "pointer" }}>Lo que nos contaste — ver</summary>
+                            <details className="pozo pozo--chico">
+                              <summary className="plegado-enlace plegado-enlace--tenue">Lo que nos contaste — ver</summary>
                               <div className="mt-2"><DocMd texto={g.borrador ?? ""} /></div>
                             </details>
-                            <details className="p-4" open style={{ border: "1.5px solid var(--marca)", borderRadius: "var(--radio)" }}>
-                              <summary className="t-etiqueta" style={{ cursor: "pointer", color: "var(--marca)" }}>La versión trabajada</summary>
+                            <details className="pozo-borde" open>
+                              <summary className="plegado-enlace">La versión trabajada</summary>
                               <div className="mt-2"><DocMd texto={g.propuesta} /></div>
                             </details>
                           </div>
                           {(g.propuesta_cambios?.length ?? 0) > 0 && (
-                            <div className="p-4" style={{ background: "var(--suave)", borderRadius: "var(--radio)" }}>
+                            <div className="pozo pozo--chico">
                               <p className="t-etiqueta mb-2">Qué cambiamos y por qué</p>
                               {(g.propuesta_cambios ?? []).map((c, i) => (
                                 <p key={i} className="t-cuerpo" style={{ marginBottom: 8 }}>
-                                  <span style={{ fontWeight: 550 }}>{i + 1}. {c.cambio}</span>
+                                  <span className="fuerte">{i + 1}. {c.cambio}</span>
                                   <span className="block t-dato" style={{ color: "var(--grafito)" }}>Por qué: {c.por_que}</span>
                                 </p>
                               ))}
@@ -433,13 +428,13 @@ export function InventarioActivos({ companyId, guardados, prioridades = [], docD
                       )}
                       {g?.propuesta_estado === "confirmada" && g.propuesta && (
                         <details className="mt-2">
-                          <summary className="t-dato" style={{ cursor: "pointer", color: "var(--confirmado)" }}>La versión trabajada — confirmada por ti · ver documento</summary>
+                          <summary className="plegado-enlace plegado-enlace--ok">La versión trabajada — confirmada por ti · ver documento</summary>
                           <div className="mt-2"><DocMd texto={g.propuesta} /></div>
                         </details>
                       )}
                       {estado === "construido" && (
-                        <div className="mt-3 flex flex-col gap-2 p-4" style={{ background: "var(--suave)", borderRadius: "var(--radio)" }}>
-                          <p className="t-cuerpo" style={{ fontWeight: 500 }}>Un documento confirmado todavía no cambia nada: hay que usarlo.</p>
+                        <div className="pozo pozo--chico mt-3 flex flex-col gap-2">
+                          <p className="t-cuerpo medio">Un documento confirmado todavía no cambia nada: hay que usarlo.</p>
                           <label className="flex flex-col gap-1">
                             <span className="t-dato" style={{ color: "var(--grafito)" }}>¿Quién responde por que se use? Escribe su nombre.</span>
                             <input className="campo" value={editando[`impl-${clave}`] ?? ""} onChange={(e) => setEditando((x) => ({ ...x, [`impl-${clave}`]: e.target.value }))} placeholder="Su nombre" aria-label={`Responsable de usar ${a.nombre}`} />

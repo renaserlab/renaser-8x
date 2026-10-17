@@ -6,10 +6,12 @@ import { fechaCorta } from "@/lib/textos";
 
 type Grupo = { tipo: string; nombre: string; vigente: Documento | null; historial: Documento[] };
 
+/** El sello del estado de un documento, con los del sistema (.estado): borrador en espera, vigente en ok, reemplazado neutro. */
+const TONO_DOC: Record<string, "ok" | "espera" | "neutro"> = { borrador: "espera", vigente: "ok", obsoleto: "neutro" };
 const Sello = ({ estado }: { estado: string }) => {
   const e = ESTADO_DOC[estado] ?? ESTADO_DOC.borrador!;
   return (
-    <span className="t-dato" style={{ flex: "none", fontSize: 11.5, fontWeight: 700, color: e.color, border: `1px solid ${e.color}`, borderRadius: "var(--radio)", padding: "1px 9px" }}>
+    <span className={`estado ${TONO_DOC[estado] ?? "espera"}`} style={{ flex: "none" }}>
       {e.texto}
     </span>
   );
@@ -50,7 +52,7 @@ export function ControlDocumental({ companyId, grupos }: { companyId: string; gr
           <li key={g.tipo} className="panel p-4">
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div style={{ minWidth: 0 }}>
-                <p className="t-cuerpo" style={{ fontWeight: 600 }}>{g.nombre}</p>
+                <p className="t-cuerpo fuerte">{g.nombre}</p>
                 <p className="t-dato" style={{ color: "var(--grafito)" }}>
                   Versión {doc.version}.0
                   {doc.aprobado_at ? ` · Aprobado por ${doc.aprobado_nombre ?? "el dueño"} el ${fechaCorta(doc.aprobado_at)}` : " · Sin aprobar"}
@@ -69,10 +71,10 @@ export function ControlDocumental({ companyId, grupos }: { companyId: string; gr
                     </label>
                     {error && <p className="t-dato" style={{ color: "var(--contradicho)" }} role="alert">{error}</p>}
                     <div className="flex gap-2 flex-wrap">
-                      <button type="button" className="boton" disabled={trabajando} onClick={() => aprobar(doc.id)} style={{ minHeight: 38, fontSize: 14 }}>
+                      <button type="button" className="boton boton--chico" disabled={trabajando} onClick={() => aprobar(doc.id)}>
                         {trabajando ? "Aprobando" : "Confirmar aprobación"}
                       </button>
-                      <button type="button" className="boton boton--secundario" onClick={() => setAbierto(null)} style={{ minHeight: 38, fontSize: 14 }}>Cancelar</button>
+                      <button type="button" className="boton boton--secundario boton--chico" onClick={() => setAbierto(null)}>Cancelar</button>
                     </div>
                   </div>
                 ) : (
@@ -80,7 +82,7 @@ export function ControlDocumental({ companyId, grupos }: { companyId: string; gr
                     <p className="t-dato mb-2" style={{ color: "var(--grafito)" }}>
                       Al aprobarlo queda como la versión que manda en tu empresa, y la anterior pasa a reemplazada.
                     </p>
-                    <button type="button" className="boton boton--secundario" onClick={() => { setAbierto(doc.id); setMotivo(""); }} style={{ minHeight: 38, fontSize: 14 }}>
+                    <button type="button" className="boton boton--secundario boton--chico" onClick={() => { setAbierto(doc.id); setMotivo(""); }}>
                       Aprobar esta versión
                     </button>
                   </>
@@ -90,7 +92,7 @@ export function ControlDocumental({ companyId, grupos }: { companyId: string; gr
 
             {g.historial.length > 0 && g.vigente && (
               <details className="mt-3">
-                <summary className="t-dato" style={{ cursor: "pointer", color: "var(--marca)" }}>Versiones anteriores ({g.historial.length})</summary>
+                <summary className="plegado-enlace">Versiones anteriores ({g.historial.length})</summary>
                 <ul className="lista-editorial mt-2">
                   {g.historial.map((h) => (
                     <li key={h.id} style={{ padding: "7px 0" }}>

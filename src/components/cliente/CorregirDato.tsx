@@ -144,8 +144,7 @@ export function CorregirDato({ i, abiertas, quien = "dueno" }: { i: Incongruenci
   const porQue = conMotivo ? null : (
     <button
       type="button"
-      className="enlace-azul"
-      style={{ background: "none", border: 0, padding: "0 4px", minHeight: 44, cursor: "pointer", font: "inherit", fontWeight: 650, fontSize: 13.5 }}
+      className="boton boton--terciario"
       onClick={() => setConMotivo(true)}
       disabled={enviando}
     >
@@ -185,7 +184,7 @@ export function CorregirDato({ i, abiertas, quien = "dueno" }: { i: Incongruenci
             void guardar("otra");
           }}
         >
-          <label htmlFor={campo} style={{ flex: "1 1 220px", display: "flex", flexDirection: "column", gap: 4, fontSize: 13.5, fontWeight: 600 }}>
+          <label htmlFor={campo} className="etiqueta-campo" style={{ flex: "1 1 220px" }}>
             La cifra que es
             <input
               id={campo}
@@ -208,7 +207,7 @@ export function CorregirDato({ i, abiertas, quien = "dueno" }: { i: Incongruenci
       )}
 
       {conMotivo && (
-        <label htmlFor={campoMotivo} style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13.5, fontWeight: 600 }}>
+        <label htmlFor={campoMotivo} className="etiqueta-campo">
           ¿Por qué? (si quieres)
           <textarea
             id={campoMotivo}

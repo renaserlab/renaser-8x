@@ -20,8 +20,9 @@ import { ComoSeArmo } from "./ComoSeArmo";
 CONTRATO DE DIRECCIÓN — la estrategia de una empresa, para la consultora (spec-estrategia-8x.md §8.1)
 THESIS: en diez segundos, dónde está la empresa y cuál es la gran apuesta; debajo, los dos caminos lado a lado para
   elegir; elegido uno, la página del dueño tal como la verá y «Aprobar». Lo demás, plegado en cuatro grupos.
-OWN-WORLD: el tablero de Diagnóstico: cielo, tarjetas blancas, Manrope en las cifras, el chip de origen al lado de cada
-  una. Una sola acción principal a la vista en cada momento.
+OWN-WORLD: noche y perla, el tablero de Diagnóstico: lienzo perla, tarjetas blancas de 20 px, la gran apuesta en la noche
+  del marco con su frase en la Didone, Manrope en lo que se opera, acero en los datos, rayado = sin dato, el chip de
+  origen al lado de cada cifra. Una sola acción principal a la vista en cada momento.
 FINISH: ninguna cifra la escribió el modelo: cada una sale de las cuentas del código, con su origen, y lo que falta va
   rayado y con su nombre, nunca como cero. Ningún id a la vista, tampoco para la consultora.
 */

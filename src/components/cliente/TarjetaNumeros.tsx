@@ -5,7 +5,7 @@ const soles = (n: number) => `S/${Math.round(n).toLocaleString("es-PE")}`;
 
 /** El rótulo va PEGADO a la cifra, a la vista: una cifra que sale de un documento sin revisar no se lee como firme. */
 function Provisional() {
-  return <span style={{ color: "var(--caducado)", fontWeight: 600 }}> ({ROTULO_CIFRA_PROVISIONAL})</span>;
+  return <span className="texto-espera"> ({ROTULO_CIFRA_PROVISIONAL})</span>;
 }
 
 /**
@@ -46,8 +46,8 @@ export function TarjetaNumeros({
         </div>
         <Link
           href="/portal/numeros"
-          className={faltan > 0 ? "boton" : "boton boton--secundario"}
-          style={{ minHeight: 38, fontSize: 14, flex: "none" }}
+          className={faltan > 0 ? "boton boton--chico" : "boton boton--secundario boton--chico"}
+          style={{ flex: "none" }}
         >
           {faltan > 0 ? "Completar mis números" : "Ver y corregir"}
         </Link>

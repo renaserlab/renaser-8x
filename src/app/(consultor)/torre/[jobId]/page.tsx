@@ -9,12 +9,13 @@ const miles = (n: number) => n.toLocaleString("es-PE");
 const dur = (ms: number) => (ms >= 1000 ? `${(ms / 1000).toFixed(1)} s` : `${ms} ms`);
 const fecha = (iso: string | null) => (iso ? iso.slice(0, 19).replace("T", " ") : "—");
 
-const COLOR: Record<string, string> = { hecho: "var(--confirmado)", fallido: "var(--contradicho)", pendiente: "var(--medida)", tomado: "var(--medida)" };
+/** El sello de cada estado (.estado del sistema). */
+const SELLO: Record<string, "ok" | "alto" | "neutro"> = { hecho: "ok", fallido: "alto", pendiente: "neutro", tomado: "neutro" };
 
 function Dato({ etiqueta, children }: { etiqueta: string; children: React.ReactNode }) {
   return (
-    <div>
-      <div className="t-etiqueta">{etiqueta}</div>
+    <div className="dato">
+      <div className="t-rotulo">{etiqueta}</div>
       <div className="t-dato">{children}</div>
     </div>
   );
@@ -39,10 +40,10 @@ export default async function InspectorEjecucion({ params }: { params: Promise<{
         acciones={<Link href="/torre?vista=ejecuciones" className="boton boton--secundario">Volver a la torre</Link>}
       />
 
-      <section className="panel" style={{ marginBottom: 24, borderTop: `2.5px solid ${COLOR[r.estado] ?? "var(--linea)"}` }}>
+      <section className="panel p-5" style={{ marginBottom: 24 }}>
         <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))" }}>
           <Dato etiqueta="Estado">
-            <span style={{ color: COLOR[r.estado] ?? "var(--grafito)", fontWeight: 600 }}>{r.estado}</span>
+            <span className={`estado ${SELLO[r.estado] ?? "neutro"}`}>{r.estado}</span>
           </Dato>
           <Dato etiqueta="Empresa">
             {r.companyId ? <Link href={`/empresa/${r.companyId}`}>{r.empresa ?? r.companyId.slice(0, 8)}</Link> : "—"}
@@ -64,7 +65,7 @@ export default async function InspectorEjecucion({ params }: { params: Promise<{
       </section>
 
       {e.anteriorAlRegistro && (
-        <p className="t-dato" role="note" style={{ marginBottom: 20, padding: 10, borderLeft: "2px solid var(--caducado)", color: "var(--grafito)" }}>
+        <p className="aviso" role="note" style={{ marginBottom: 20 }}>
           Esta ejecución es <strong>anterior a que se registrara la procedencia</strong>. Sus fuentes, su configuración efectiva y su
           entrega al siguiente paso no se guardaron entonces — y no se reconstruyen aquí por inferencia. El hueco es de instrumentación,
           no de trabajo.
@@ -113,7 +114,7 @@ export default async function InspectorEjecucion({ params }: { params: Promise<{
       <section style={{ marginBottom: 24 }}>
         <h2 className="t-seccion mb-2">Con qué se disparó</h2>
         {e.payload && Object.keys(e.payload).length > 0 ? (
-          <pre className="t-dato" style={{ background: "var(--suave)", padding: 12, borderRadius: "var(--radio)", overflowX: "auto", margin: 0 }}>
+          <pre className="codigo">
             {JSON.stringify(e.payload, null, 2)}
           </pre>
         ) : (
@@ -181,7 +182,7 @@ export default async function InspectorEjecucion({ params }: { params: Promise<{
       <section style={{ marginBottom: 24 }}>
         <h2 className="t-seccion mb-2">Qué produjo</h2>
         {e.resultado != null ? (
-          <pre className="t-dato" style={{ background: "var(--suave)", padding: 12, borderRadius: "var(--radio)", overflowX: "auto", margin: 0, maxHeight: 320 }}>
+          <pre className="codigo" style={{ maxHeight: 320 }}>
             {JSON.stringify(e.resultado, null, 2)}
           </pre>
         ) : (
@@ -212,7 +213,7 @@ export default async function InspectorEjecucion({ params }: { params: Promise<{
       </section>
 
       {/* LOS HUECOS, NOMBRADOS */}
-      <section className="panel" style={{ borderTop: "2.5px solid var(--caducado)" }}>
+      <section className="panel p-5">
         <h2 className="t-seccion mb-1">Lo que NO quedó registrado de esta ejecución</h2>
         <p className="t-dato" style={{ color: "var(--grafito)", marginBottom: 10 }}>
           Se nombra en vez de rellenarse. Reconstruirlo por inferencia y mostrarlo como comprobado sería inventar con buena letra.

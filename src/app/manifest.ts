@@ -10,8 +10,9 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     display: "standalone",
     orientation: "any",
-    background_color: "#fcfcfb",
-    theme_color: "#0f2a3f",
+    // Arranca en noche con el ícono (la portada del ingreso); la franja de arriba, ya adentro, es perla.
+    background_color: "#0b1426",
+    theme_color: "#f5f3ee",
     lang: "es",
     icons: [
       { src: "/icon", sizes: "512x512", type: "image/png", purpose: "any" },

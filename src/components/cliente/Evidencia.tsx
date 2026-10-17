@@ -94,19 +94,18 @@ export function Evidencia({
           <button
             type="button"
             onClick={() => setAbierto(true)}
-            className="t-dato"
-            style={{ background: "none", border: "none", cursor: "pointer", font: "inherit", textDecoration: "underline", color: "var(--marca)", padding: 0 }}
+            className="boton-enlace"
           >
             {pruebas.length ? "Agregar otra prueba" : "Subir la prueba de que se hizo"}
           </button>
           {pruebas.length > 0 && (
-            <button type="button" className="boton boton--secundario" style={{ minHeight: 32, fontSize: 13 }} disabled={cerrando} onClick={avisarQueSeHizo}>
+            <button type="button" className="boton boton--secundario boton--chico" disabled={cerrando} onClick={avisarQueSeHizo}>
               {cerrando ? "Enviando" : "Ya lo hice: enviar para revisar"}
             </button>
           )}
         </div>
       ) : (
-        <div className="flex flex-col gap-2" style={{ borderLeft: "2px solid var(--linea)", paddingLeft: 12 }}>
+        <div className="pozo pozo--chico flex flex-col gap-2">
           <p className="t-dato" style={{ color: "var(--grafito)" }}>
             Una foto de lo que quedó hecho vale más que un informe: el cuaderno lleno, el cartel puesto, la lista firmada.
           </p>
@@ -118,14 +117,13 @@ export function Evidencia({
             aria-label="Qué se hizo"
           />
           <div className="flex gap-2 flex-wrap items-center">
-            <label className="boton boton--secundario" style={{ minHeight: 34, fontSize: 13, cursor: subiendo ? "wait" : "pointer" }}>
+            <label className="boton boton--secundario boton--chico" style={{ cursor: subiendo ? "wait" : "pointer" }}>
               {subiendo ? "Subiendo" : "Elegir foto o PDF"}
               <input type="file" accept="image/*,application/pdf" hidden disabled={subiendo} onChange={(e) => subir(e.target.files?.[0] ?? null)} />
             </label>
             <button
               type="button"
-              className="t-dato"
-              style={{ background: "none", border: "none", cursor: "pointer", font: "inherit", color: "var(--grafito)", textDecoration: "underline" }}
+              className="boton-enlace boton-enlace--tenue"
               disabled={subiendo}
               onClick={() => subir(null)}
             >
@@ -133,8 +131,7 @@ export function Evidencia({
             </button>
             <button
               type="button"
-              className="t-dato"
-              style={{ background: "none", border: "none", cursor: "pointer", font: "inherit", color: "var(--grafito)" }}
+              className="boton-enlace boton-enlace--tenue boton-enlace--sin-raya"
               onClick={() => { setAbierto(false); setError(null); }}
             >
               Cancelar

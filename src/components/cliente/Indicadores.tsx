@@ -172,7 +172,7 @@ export function Indicadores({
           <ul className="flex flex-col gap-3">
             {propuestos.map((i) => (
               <li key={i.id} className="panel p-4">
-                <p className="t-cuerpo" style={{ fontWeight: 600 }}>{i.nombre}</p>
+                <p className="t-cuerpo fuerte">{i.nombre}</p>
                 {i.origen_texto && <p className="t-dato mt-1" style={{ color: "var(--grafito)" }}>Sale de: {i.origen_texto}</p>}
                 <p className="t-dato mt-2">Cómo se mide: {i.como_se_mide}</p>
                 <p className="t-dato mt-1" style={{ color: "var(--grafito)" }}>
@@ -180,12 +180,11 @@ export function Indicadores({
                   {i.meta_texto ? ` · Meta: ${i.meta_texto}` : i.meta_valor != null ? ` · Meta: ${comoTexto(i.unidad, i.meta_valor)}` : ""}
                 </p>
                 <div className="flex gap-2 mt-3 flex-wrap">
-                  <button type="button" className="boton" style={{ minHeight: 34, fontSize: 13 }} disabled={trabajando} onClick={() => cambiar(i.id, { estado: "activo" })}>
+                  <button type="button" className="boton boton--chico" disabled={trabajando} onClick={() => cambiar(i.id, { estado: "activo" })}>
                     Vigilar este
                   </button>
                   <button
-                    type="button" className="t-dato" disabled={trabajando}
-                    style={{ background: "none", border: "none", cursor: "pointer", font: "inherit", color: "var(--grafito)", textDecoration: "underline" }}
+                    type="button" className="boton-enlace boton-enlace--tenue" disabled={trabajando}
                     onClick={() => { setDescartando(i.id); setError(null); }}
                   >
                     Este no me sirve
@@ -218,12 +217,12 @@ export function Indicadores({
                 <li key={i.id} className="panel p-4">
                   <div className="flex items-start justify-between gap-3 flex-wrap">
                     <div style={{ minWidth: 0 }}>
-                      <p className="t-cuerpo" style={{ fontWeight: 600 }}>{i.nombre}</p>
+                      <p className="t-cuerpo fuerte">{i.nombre}</p>
                       <p className="t-dato mt-1" style={{ color: "var(--grafito)" }}>{i.como_se_mide}</p>
                     </div>
                     {ultimo && (
                       <div style={{ textAlign: "right", flex: "none" }}>
-                        <p style={{ fontSize: 20, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: mejoro === true ? "var(--confirmado)" : mejoro === false ? "var(--contradicho)" : "var(--tinta)", lineHeight: 1.1 }}>
+                        <p className="cifra-media" style={{ color: mejoro === true ? "var(--confirmado)" : mejoro === false ? "var(--contradicho)" : "var(--tinta)" }}>
                           {comoTexto(i.unidad, ultimo.valor)}
                         </p>
                         <p className="t-dato" style={{ color: "var(--grafito)" }}>{nombreDePeriodo(ultimo.periodo)}</p>
@@ -257,7 +256,7 @@ export function Indicadores({
                         aria-label={`Valor de ${i.nombre}`}
                       />
                       <button
-                        type="button" className="boton" style={{ minHeight: 34, fontSize: 13 }} disabled={trabajando || !monto.trim()}
+                        type="button" className="boton boton--chico" disabled={trabajando || !monto.trim()}
                         onClick={() => {
                           const n = numeroEscrito(monto, { negativo: true });
                           if (typeof n !== "number") { setError("Escribe solo el número."); return; }
@@ -266,13 +265,13 @@ export function Indicadores({
                       >
                         Guardar
                       </button>
-                      <button type="button" className="t-dato" style={{ background: "none", border: "none", cursor: "pointer", font: "inherit", color: "var(--grafito)" }} onClick={() => setAnotando(null)}>
+                      <button type="button" className="boton-enlace boton-enlace--tenue boton-enlace--sin-raya" onClick={() => setAnotando(null)}>
                         Cancelar
                       </button>
                     </div>
                   ) : (
                     <button
-                      type="button" className="boton boton--secundario mt-3" style={{ minHeight: 34, fontSize: 13 }}
+                      type="button" className="boton boton--secundario mt-3 boton--chico"
                       onClick={() => { setAnotando(i.id); setMonto(""); setError(null); }}
                     >
                       Anotar el de {nombreDePeriodo(periodoActual)}
@@ -289,7 +288,7 @@ export function Indicadores({
       {aviso && <p className="t-cuerpo medida" style={{ color: "var(--caducado)" }} role="status">{aviso}</p>}
       {propuestos.length === 0 && (
         <div>
-          <button type="button" className="boton boton--secundario" style={{ minHeight: 36, fontSize: 14 }} disabled={trabajando} onClick={pedirPropuesta}>
+          <button type="button" className="boton boton--secundario boton--chico" disabled={trabajando} onClick={pedirPropuesta}>
             {trabajando ? "Buscando" : "Buscar más números en lo que contamos"}
           </button>
         </div>

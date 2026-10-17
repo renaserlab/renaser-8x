@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 function Linea({ l }: { l: LineaParaDueno }) {
   return (
     <li>
-      <p className="t-seccion" style={{ fontSize: 17 }}>{l.nombre}</p>
+      <p className="t-seccion">{l.nombre}</p>
       {l.promesa && <p className="t-cuerpo mt-1">Lo que le prometes al cliente: {l.promesa}</p>}
       {l.cliente && <p className="t-dato mt-1" style={{ color: "var(--grafito)" }}>Para: {l.cliente}</p>}
       <p className="t-dato mt-1" style={{ color: l.conDatos ? "var(--tinta)" : "var(--grafito)" }}>{l.deja}</p>
@@ -82,7 +82,7 @@ function VistaPorPeriodo({ lineas, config }: { lineas: LineaProducto[]; config: 
             </ul>
           ) : (
             <details className="mt-4">
-              <summary className="t-dato" style={{ cursor: "pointer", color: "var(--marca)" }}>
+              <summary className="plegado-enlace">
                 Ver {sinNumeros.length === 1 ? "el que todavía no tiene sus números" : `los ${sinNumeros.length} que todavía no tienen sus números`}
               </summary>
               <ul className="lista-editorial medida mt-3">
@@ -204,10 +204,10 @@ export default async function LoQueVendes() {
           />
           {/* Los módulos se encienden con una pregunta: con esta sección abierta, el dueño ya puede contestarlas. */}
           {editable && (
-            <section className="panel p-5 mt-8 medida" style={{ background: "var(--suave)" }}>
-              <h2 className="t-seccion" style={{ fontSize: 17 }}>Tres preguntas más, de sí o no</h2>
+            <section className="pozo mt-8 medida">
+              <h2 className="t-seccion">Tres preguntas más, de sí o no</h2>
               <p className="t-cuerpo mt-2">Sobre cómo te pagan, si fías y si guardas mercadería. Si alguna respuesta es sí, se abren unas pocas preguntas más.</p>
-              <Link href="/portal/cobros" className="boton boton--secundario mt-4" style={{ display: "inline-flex" }}>Responderlas</Link>
+              <Link href="/portal/cobros" className="boton boton--secundario mt-4">Responderlas</Link>
             </section>
           )}
         </>
@@ -231,7 +231,7 @@ export default async function LoQueVendes() {
               <ul className="lista-editorial medida">
                 {loDemas.map((l) => (
                   <li key={l.id}>
-                    <p className="t-seccion" style={{ fontSize: 17 }}>{l.nombre}</p>
+                    <p className="t-seccion">{l.nombre}</p>
                     <p className="t-dato mt-1" style={{ color: l.conDatos ? "var(--tinta)" : "var(--grafito)" }}>
                       {l.deja} {l.aOjo && <ChipEstado estado="estimado" />}
                     </p>

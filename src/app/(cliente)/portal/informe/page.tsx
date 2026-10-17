@@ -15,7 +15,8 @@ import { usuarioActual } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-const ESTADO_COLOR: Record<string, string> = { solido: "var(--confirmado)", mejorable: "var(--caducado)", critico: "var(--contradicho)", desconocido: "var(--grafito)" };
+/** El sello de cada área (.estado del sistema): sólida en ok, mejorable en espera, crítica en alto, sin datos en neutro. */
+const SELLO_AREA: Record<string, "ok" | "espera" | "alto" | "neutro"> = { solido: "ok", mejorable: "espera", critico: "alto", desconocido: "neutro" };
 const ESTADO_TEXTO: Record<string, string> = { solido: "Fortaleza", mejorable: "Requiere atención", critico: "Crítico", desconocido: "Información insuficiente" };
 
 /**
@@ -75,8 +76,9 @@ export default async function Informe() {
   // sostiene ya está confirmado, el informe imprimía ese rótulo y debajo «lo que lo sostiene ya está confirmado»: dos
   // frases que se desmienten. A ese punto se le dice por qué no es conclusión, no que falta corroborarlo.
   const rotuloDe = (p: PorConfirmarHoy) => (p.sustento.confirmadas > 0 && p.sustento.porConfirmar === 0 ? `Todavía no es conclusión: ${ROTULO_POR_CONFIRMAR[p.motivo]}` : ROTULO_PROVISIONAL);
-  const Rotulo = ({ texto, color, dashed }: { texto: string; color: string; dashed?: boolean }) => (
-    <span className="t-dato" style={{ flex: "none", fontSize: 11.5, fontWeight: 700, color, border: `1px ${dashed ? "dashed" : "solid"} ${color}`, borderRadius: "var(--radio)", padding: "2px 10px" }}>
+  // El rótulo es un sello del sistema (.estado): lo provisional, con su borde punteado (aún no es conclusión).
+  const Rotulo = ({ texto, tono, dashed }: { texto: string; tono: "espera" | "alto"; dashed?: boolean }) => (
+    <span className={dashed ? `estado ${tono} estado--provisional` : `estado ${tono}`} style={{ flex: "none" }}>
       {texto}
     </span>
   );
@@ -92,10 +94,10 @@ export default async function Informe() {
         {items.map((p) => (
           <article key={p.id} style={{ borderTop: "1px dashed var(--linea)", paddingTop: 12, marginBottom: 12, breakInside: "avoid" }}>
             <div className="flex items-start justify-between gap-3">
-              <p className="t-cuerpo" style={{ fontWeight: 550, minWidth: 0 }}>{p.titulo}</p>
+              <p className="t-cuerpo fuerte" style={{ minWidth: 0 }}>{p.titulo}</p>
               <span className="flex flex-wrap gap-2" style={{ flex: "none" }}>
-                <Rotulo texto={rotuloDe(p)} color="var(--caducado)" dashed />
-                {p.graveSiSeConfirma && <Rotulo texto={conMotivo ? "Grave si resulta ser así" : "Grave si se confirma"} color="var(--contradicho)" dashed />}
+                <Rotulo texto={rotuloDe(p)} tono="espera" dashed />
+                {p.graveSiSeConfirma && <Rotulo texto={conMotivo ? "Grave si resulta ser así" : "Grave si se confirma"} tono="alto" dashed />}
               </span>
             </div>
             {conMotivo && <p className="t-dato mt-1" style={{ color: "var(--grafito)" }}>{p.porQue}</p>}
@@ -107,15 +109,14 @@ export default async function Informe() {
 
   const Hallazgo = ({ h, n }: { h: HallazgoHoy; n: number }) => {
     const doc = documentoQueResuelve(h);
-    const color = h.impacto === "alto" ? "var(--contradicho)" : "var(--caducado)";
     const fuentes = h.evidencia.map((e) => e.fuente).filter((v, i, a) => a.indexOf(v) === i).join(" · ");
     return (
       <article style={{ borderTop: "1px solid var(--linea)", paddingTop: 16, marginBottom: 18, breakInside: "avoid" }}>
         <div className="flex items-start justify-between gap-3">
-          <h3 className="t-hero" style={{ fontSize: 18, minWidth: 0 }}>{n}. {h.titulo}</h3>
+          <h3 className="t-seccion" style={{ minWidth: 0 }}>{n}. {h.titulo}</h3>
           <span className="flex flex-wrap gap-2" style={{ flex: "none" }}>
-            {h.provisional && <Rotulo texto={ROTULO_PROVISIONAL} color="var(--caducado)" dashed />}
-            <Rotulo texto={h.impacto === "alto" ? "Crítico" : "Atención"} color={color} />
+            {h.provisional && <Rotulo texto={ROTULO_PROVISIONAL} tono="espera" dashed />}
+            <Rotulo texto={h.impacto === "alto" ? "Crítico" : "Atención"} tono={h.impacto === "alto" ? "alto" : "espera"} />
           </span>
         </div>
         {h.causa && <p className="t-cuerpo mt-2"><span style={{ color: "var(--grafito)" }}>Qué vemos: </span>{h.causa}</p>}
@@ -125,7 +126,7 @@ export default async function Informe() {
           <p className="t-cuerpo mt-1">
             <span style={{ color: "var(--grafito)" }}>Se resuelve con: </span>
             <strong>{doc.nombre}</strong>
-            <Link href={`/portal/activos?doc=${doc.clave}`} className="no-imprimir t-dato" style={{ marginLeft: 8, color: "var(--marca)", textDecoration: "underline" }}>construirlo</Link>
+            <Link href={`/portal/activos?doc=${doc.clave}`} className="no-imprimir t-dato enlace-texto enlace-texto--acero" style={{ marginLeft: 8 }}>construirlo</Link>
           </p>
         )}
         {fuentes && <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>Evidencia: {fuentes}</p>}
@@ -143,13 +144,13 @@ export default async function Informe() {
       </div>
 
       <article className="panel p-6" style={{ maxWidth: 820 }}>
-        <header style={{ borderBottom: "2px solid var(--tinta)", paddingBottom: 18, marginBottom: 20 }}>
+        <header className="informe-cabeza">
           {logo && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={logo} alt={`Logo de ${empresa?.nombre}`} style={{ maxHeight: 56, marginBottom: 12 }} />
+            <img src={logo} alt={`Logo de ${empresa?.nombre}`} className="informe-cabeza__logo" />
           )}
-          <p className="t-etiqueta" style={{ letterSpacing: "0.14em" }}>INFORME DE DIAGNÓSTICO EMPRESARIAL</p>
-          <h2 className="t-hero mt-2" style={{ fontSize: "clamp(24px, 4vw, 32px)" }}>{empresa?.nombre}</h2>
+          <p className="t-etiqueta">INFORME DE DIAGNÓSTICO EMPRESARIAL</p>
+          <h2 className="t-titulo mt-2">{empresa?.nombre}</h2>
           <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>
             {[empresa?.sector, ficha.ciudad, ficha.personas ? `${ficha.personas} personas` : null].filter(Boolean).join(" · ")}
           </p>
@@ -213,8 +214,8 @@ export default async function Informe() {
             <tbody>
               {hoy.pilares.map((p) => (
                 <tr key={p.pilar}>
-                  <td className="t-dato" style={{ fontWeight: 600 }}>{PILAR_CLIENTE[p.pilar] ?? p.pilar}</td>
-                  <td className="t-dato" style={{ color: ESTADO_COLOR[p.estado] }}>{ESTADO_TEXTO[p.estado] ?? ESTADO_PILAR[p.estado]}</td>
+                  <td className="t-dato fuerte">{PILAR_CLIENTE[p.pilar] ?? p.pilar}</td>
+                  <td><span className={`estado ${SELLO_AREA[p.estado] ?? "neutro"}`}>{ESTADO_TEXTO[p.estado] ?? ESTADO_PILAR[p.estado]}</span></td>
                   <td style={{ color: "var(--grafito)" }}>{p.resumen ?? "Falta información para una conclusión responsable."}</td>
                 </tr>
               ))}
@@ -254,7 +255,7 @@ export default async function Informe() {
             <ul className="lista-editorial">
               {fortalezas.map((f) => (
                 <li key={f.id}>
-                  <span className="t-cuerpo" style={{ fontWeight: 550 }}>{f.titulo}</span>
+                  <span className="t-cuerpo fuerte">{f.titulo}</span>
                   {f.recomendacion && <span className="block t-dato" style={{ color: "var(--grafito)" }}>Cómo protegerla: {f.recomendacion}</span>}
                 </li>
               ))}
@@ -276,7 +277,7 @@ export default async function Informe() {
             <ol className="lista-editorial">
               {hoy.tentativo.map((p) => (
                 <li key={p.n}>
-                  <span className="t-cuerpo" style={{ fontWeight: 550 }}>{p.n}. {p.problema}</span>
+                  <span className="t-cuerpo fuerte">{p.n}. {p.problema}</span>
                   <span className="block t-dato" style={{ color: "var(--grafito)" }}>Primer movimiento: {p.primerMovimiento}</span>
                 </li>
               ))}

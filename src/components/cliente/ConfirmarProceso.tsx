@@ -33,7 +33,7 @@ export function ConfirmarProceso({ processId, confirmacion, deseo }: { processId
   return (
     <section className="panel p-5 mt-6 flex flex-col gap-4">
       <div>
-        <h2 className="t-seccion" style={{ fontSize: 18 }}>Así entendimos que funciona hoy</h2>
+        <h2 className="t-seccion">Así entendimos que funciona hoy</h2>
         <p className="t-dato mt-1" style={{ color: "var(--grafito)" }}>
           {confirmacion === "confirmado" ? "Confirmaste que este dibujo refleja la realidad. Si algo cambia, corrígelo cuando quieras." : "¿Este dibujo refleja cómo pasa de verdad? Si algo no es así, corrígelo arriba con tus manos y confirma al terminar."}
         </p>

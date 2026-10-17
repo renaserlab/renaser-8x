@@ -28,17 +28,17 @@ export default async function Mapa() {
       <section className="fila-numeros" style={{ marginBottom: 18 }}>
         <div>
           <div className="t-etiqueta">Tipos de trabajo</div>
-          <div className="t-dato" style={{ fontSize: 24, fontWeight: 600 }}>{NODOS.length}</div>
+          <div className="cifra-media">{NODOS.length}</div>
           <div className="t-dato" style={{ color: "var(--grafito)" }}>{conEjecuciones} con ejecuciones recuperables</div>
         </div>
         <div>
           <div className="t-etiqueta">Se encadenan solos</div>
-          <div className="t-dato" style={{ fontSize: 24, fontWeight: 600 }}>{aristas.length}</div>
+          <div className="cifra-media">{aristas.length}</div>
           <div className="t-dato" style={{ color: "var(--grafito)" }}>enlaces automáticos entre trabajos</div>
         </div>
         <div>
           <div className="t-etiqueta">Necesitan que alguien los dispare</div>
-          <div className="t-dato" style={{ fontSize: 24, fontWeight: 600 }}>{soloManual}</div>
+          <div className="cifra-media">{soloManual}</div>
           <div className="t-dato" style={{ color: "var(--grafito)" }}>de {NODOS.length}: 8X encadena menos de lo que parece</div>
         </div>
       </section>

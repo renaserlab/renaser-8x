@@ -19,14 +19,14 @@ const S = ({ t, children }: { t: string; children: React.ReactNode }) => (
 
 export default function Privacidad() {
   return (
-    <main style={{ maxWidth: 720, margin: "0 auto", padding: "40px 20px 80px" }}>
-      <p className="t-etiqueta" style={{ letterSpacing: "0.14em" }}>POLÍTICA DE PRIVACIDAD</p>
+    <main className="pagina-sola">
+      <p className="t-etiqueta">POLÍTICA DE PRIVACIDAD</p>
       <h1 className="t-titulo mt-2">Cómo tratamos los datos</h1>
       <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>
         Versión {VERSION_PRIVACIDAD} · Vigente desde el 29 de agosto de 2026 · Ley N.° 29733 y su reglamento (D.S. 003-2013-JUS)
       </p>
 
-      <div style={{ borderTop: "1px solid var(--linea)", margin: "24px 0 28px" }} />
+      <hr className="separador" style={{ margin: "24px 0 28px" }} />
 
       <S t="Quién es responsable">
         <p>

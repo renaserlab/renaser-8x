@@ -10,7 +10,8 @@ import type { HallazgoHoy } from "@/lib/hoy";
 export function TarjetaHallazgo({ h, documento }: { h: HallazgoHoy; documento?: { clave: string; nombre: string } | null }) {
   const [abierto, setAbierto] = useState(false);
   const linea = h.costo_posible ?? h.causa ?? null;
-  const acento = h.preserva ? "var(--confirmado)" : h.impacto === "alto" ? "var(--contradicho)" : "var(--caducado)";
+  // El chip dice el estado con los sellos del sistema (.estado ok / alto / espera), no con un color suelto.
+  const tono = h.preserva ? "ok" : h.impacto === "alto" ? "alto" : "espera";
   const chip = h.preserva ? "Fortaleza" : h.impacto === "alto" ? "Crítico" : "Atención";
 
   useEffect(() => {
@@ -28,11 +29,11 @@ export function TarjetaHallazgo({ h, documento }: { h: HallazgoHoy; documento?: 
     <>
       <article className="panel p-5">
         <div className="flex items-start justify-between gap-3">
-          <h3 className="t-hero" style={{ fontSize: 18, minWidth: 0 }}>{h.titulo}</h3>
-          <span className="t-dato" style={{ flex: "none", fontSize: 12, fontWeight: 700, color: acento, border: `1px solid ${acento}`, borderRadius: "var(--radio)", padding: "2px 10px" }}>{chip}</span>
+          <h3 className="titulo-tarjeta" style={{ minWidth: 0 }}>{h.titulo}</h3>
+          <span className={`estado ${tono}`} style={{ flex: "none" }}>{chip}</span>
         </div>
         {linea && <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>{linea}</p>}
-        <button type="button" onClick={() => setAbierto(true)} className="t-dato mt-2" style={{ background: "none", border: "none", cursor: "pointer", padding: 0, font: "inherit", color: "var(--marca)", textDecoration: "underline" }}>
+        <button type="button" onClick={() => setAbierto(true)} className="boton-enlace mt-2">
           Ver más
         </button>
       </article>
@@ -42,10 +43,10 @@ export function TarjetaHallazgo({ h, documento }: { h: HallazgoHoy; documento?: 
           <button type="button" className="telon" aria-label="Cerrar el detalle" onClick={() => setAbierto(false)} />
           <aside className="panel-lateral" role="dialog" aria-modal="true" aria-label={h.titulo}>
             <div className="flex items-start justify-between gap-3 mb-4">
-              <span className="t-dato" style={{ fontSize: 12, fontWeight: 700, color: acento, border: `1px solid ${acento}`, borderRadius: "var(--radio)", padding: "2px 10px" }}>{chip}</span>
-              <button type="button" onClick={() => setAbierto(false)} className="t-dato" style={{ background: "none", border: "none", cursor: "pointer", padding: "2px 4px", font: "inherit", color: "var(--grafito)" }}>Cerrar</button>
+              <span className={`estado ${tono}`}>{chip}</span>
+              <button type="button" onClick={() => setAbierto(false)} className="boton-enlace boton-enlace--tenue boton-enlace--sin-raya">Cerrar</button>
             </div>
-            <h3 className="t-hero" style={{ fontSize: 22 }}>{h.titulo}</h3>
+            <h3 className="frase-panel">{h.titulo}</h3>
             <div className="mt-4 flex flex-col gap-3">
               {h.causa && <p className="t-cuerpo"><span style={{ color: "var(--grafito)" }}>Qué vemos: </span>{h.causa}</p>}
               {h.costo_posible && <p className="t-cuerpo"><span style={{ color: "var(--grafito)" }}>Qué puede estar costando: </span>{h.costo_posible}</p>}
@@ -59,7 +60,7 @@ export function TarjetaHallazgo({ h, documento }: { h: HallazgoHoy; documento?: 
               <div className="mt-5" style={{ borderTop: "1px solid var(--linea)", paddingTop: 16 }}>
                 <p className="t-etiqueta mb-2">¿Cómo se resuelve?</p>
                 <p className="t-cuerpo mb-3">Construyendo tu documento <strong>{documento.nombre}</strong>. Lo armamos contigo: tú cuentas cómo funciona hoy y nosotros lo dejamos por escrito.</p>
-                <a href={`/portal/activos?doc=${documento.clave}`} className="boton" style={{ width: "100%", justifyContent: "center" }}>
+                <a href={`/portal/activos?doc=${documento.clave}`} className="boton boton--grande">
                   Construirlo ahora
                 </a>
               </div>

@@ -2,7 +2,8 @@ import React from "react";
 
 /**
  * Presenta un documento (markdown sencillo del constructor) como DOCUMENTO, no como texto crudo.
- * Queja real: el cliente veía "##" y "**" en pantalla. Sin librerías: títulos, listas y negritas.
+ * Queja real: el cliente veía "##" y "**" en pantalla. Sin librerías: títulos, listas y negritas. La letra es la de
+ * los documentos; el estilo vive en src/design/portal.css (.doc-md).
  */
 function conNegritas(s: string): React.ReactNode[] {
   return s.split(/\*\*(.+?)\*\*/g).map((parte, i) => (i % 2 === 1 ? <strong key={i}>{parte}</strong> : parte));
@@ -14,7 +15,7 @@ export function DocMd({ texto }: { texto: string }) {
   const cerrarLista = (k: string) => {
     if (!lista.length) return;
     bloques.push(
-      <ul key={k} style={{ paddingLeft: 20, margin: "6px 0 12px", display: "flex", flexDirection: "column", gap: 4 }}>
+      <ul key={k} className="doc-md__lista">
         {lista.map((li, i) => (
           <li key={i}>{conNegritas(li)}</li>
         ))}
@@ -35,18 +36,18 @@ export function DocMd({ texto }: { texto: string }) {
     if (h) {
       const nivel = h[1].length;
       bloques.push(
-        <p key={i} style={{ fontWeight: 600, fontSize: nivel <= 2 ? 19 : 17, margin: "16px 0 6px" }}>
+        <p key={i} className={nivel <= 2 ? "doc-md__titulo" : "doc-md__subtitulo"}>
           {conNegritas(h[2])}
         </p>
       );
       return;
     }
     bloques.push(
-      <p key={i} style={{ margin: "0 0 10px" }}>
+      <p key={i} className="doc-md__parrafo">
         {conNegritas(l)}
       </p>
     );
   });
   cerrarLista("fin");
-  return <div className="t-doc" style={{ fontSize: 16.5, lineHeight: 1.6 }}>{bloques}</div>;
+  return <div className="t-doc doc-md">{bloques}</div>;
 }

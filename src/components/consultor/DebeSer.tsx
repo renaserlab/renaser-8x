@@ -72,7 +72,7 @@ export function DebeSer({ companyId, sueno, aspiracion, modelo, fecha }: { compa
           <p className="t-etiqueta mb-2">LO QUE EL DUEÑO QUIERE (de su propia voz)</p>
           <p className="t-cuerpo">{sueno ?? "Aún no declara su meta en la conversación — es el primer dato por levantar."}</p>
         </div>
-        <div className="panel p-5" style={{ borderTop: "2.5px solid var(--marca)" }}>
+        <div className="panel p-5">
           <p className="t-etiqueta mb-2" style={{ color: "var(--marca)" }}>CÓMO QUEREMOS QUE SEA (tu declaración de diseño)</p>
           {editando ? (
             <div className="flex flex-col gap-3">
@@ -112,7 +112,7 @@ export function DebeSer({ companyId, sueno, aspiracion, modelo, fecha }: { compa
         <div className="flex flex-col gap-5">
           <p className="t-cuerpo medida">{modelo.el_rubro_en_su_mejor_version}</p>
 
-          <div className="panel p-5" style={{ borderTop: "2.5px solid var(--contradicho)" }}>
+          <div className="panel p-5">
             <p className="t-etiqueta mb-2" style={{ color: "var(--contradicho)" }}>LAS BRECHAS MAYORES DE ESTA EMPRESA FRENTE AL MODELO</p>
             {modelo.las_tres_brechas_mayores.map((b, i) => <p key={i} className="t-cuerpo mt-1">{i + 1}. {b}</p>)}
           </div>

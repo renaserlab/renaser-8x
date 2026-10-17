@@ -1,84 +1,187 @@
-/* 8X — única fuente de color, tipo y espacio. Capítulo 17.
-   ESTILO DEL 13-10-2026 (pedido de Kelin con su imagen de referencia, «manda la imagen en toda la app»):
-   cielo azul suave de fondo, tarjetas blancas muy redondeadas con sombra suave, navegación en píldora,
-   numerales grandes en Manrope, gráficos finos. Sustituye la paleta «Apple» del 27-08 y la regla de «sin
-   sombras, un solo radio». Lo que NO cambia: lo que no hay se dibuja rayado y se nombra; nada se rellena. */
+/* 8X — única fuente de color, tipo, espacio y movimiento. Capítulo 17.
+   SISTEMA «NOCHE Y PERLA» (17-10-2026). Pedido de Kelin con el moodboard del logo (diseno/marca/moodboard-8x.webp):
+   «nada Apple, nada premium… quiero que realmente el aplicativo refleje ese premium». La idea en una frase:
+   LA LUZ SOBRE LA NOCHE, LA TINTA SOBRE EL PAPEL. El marco (barra lateral, ingreso, ícono) es azul noche y ahí vive el
+   logo con su luz dorada; el trabajo es papel perla con tarjetas blancas, tinta azul noche y datos en acero frío.
+   El oro es luz: marca dónde estás, nunca rellena. Títulos y cifras grandes en Bodoni Moda; lo que se opera en Manrope.
+   Lo que NO cambia: lo que no hay se dibuja rayado y se nombra; nada se rellena. Sombras, degradados y desenfoque
+   viven solo en src/design/*.css (tests/visual.test.ts). Spec: clientes/8x-plan/spec-diseno-premium.md. */
 :root {
-  --papel: #ffffff;
-  --fondo: #e4ecfb;
-  --tinta: #0e1a2b;
-  --grafito: #56657c;
-  --tenue: #8a97ab;
-  --linea: #e6ecf5;
-  --marca: #2f6fe4;
-  --marca-oscura: #0e1a2b;
-  --suave: #f3f6fc;
+  color-scheme: light;
 
-  --azul-medio: #7ea3ef;
-  --azul-claro: #bcd0f7;
-  --azul-velo: #e3ebfc;
-  --raya: #cbd4e3;
+  /* ── Marco (noche) ── */
+  --noche-profunda: #070c18;
+  --noche: #0b1426;
+  --noche-alta: #132038;
+  --noche-linea: #1d2a43;
+  --luna: #eef1f6;        /* 16.2:1 sobre noche */
+  --luna-tenue: #a7b3c8;  /* 8.7:1 sobre noche */
+  --luna-rotulo: #8190a8; /* 5.7:1 sobre noche */
 
-  --confirmado: #127049;
-  --confirmado-velo: #e2f4ec;
-  --caducado: #8d5609;
-  --caducado-velo: #fbf0dc;
-  --contradicho: #bf3b26;
-  --contradicho-velo: #fbe6e2;
-  --sin-verificar: #5f6b7d;
+  /* ── Papel y tinta (grises con tinte azul) ── */
+  --perla: #f5f3ee;
+  --perla-honda: #ebe9e3;
+  --blanco: #ffffff;
+  --tinta: #0f1a2e;       /* 17.4:1 blanco · 15.7:1 perla */
+  --tinta-suave: #1c2a44;
+  --grafito: #4a5772;     /* 7.3:1 blanco · 6.5:1 perla */
+  --tenue: #67738b;       /* 4.8:1 blanco: solo sobre blanco o en 18 px o más */
+  --linea: #e5e6e9;
+  --linea-fuerte: #cfd3da;
+  --borde-campo: #b8bec9;
+  --raya: #c3cad5;
+
+  /* ── Oro: luz, nunca relleno (lista cerrada en tests/visual.test.ts) ── */
+  --champan: #d8bd86;
+  --champan-claro: #f3e2b8;
+  --oro: #a8864a;
+
+  /* ── Acero: datos y gráficos. Una sola rampa: distingue series y recencia, nunca estado ── */
+  --acero-fuerte: #2c4c78; /* 8.7:1 blanco */
+  --acero: #4a6f9f;        /* 5.2:1 blanco */
+  --acero-medio: #8ea7c8;
+  --acero-claro: #c5d3e4;
+  --acero-velo: #e9eef5;
+
+  /* ── Semánticos: sellos sobre papel, siempre con su velo y su forma ── */
+  --confirmado: #2b6b52;
+  --confirmado-velo: #e6f0ea;
+  --caducado: #94561f;
+  --caducado-velo: #f6ece1;
+  --contradicho: #a5372c;
+  --contradicho-velo: #f7e7e4;
+  --sin-verificar: #5d6980;
 
   /* ejecutor: pinta el nodo */
-  --ej-humano: #0e1a2b;
-  --ej-software: #4a5a68;
-  --ej-ia: #127049;
-  --ej-hibrido: #8d5609;
+  --ej-humano: var(--tinta);
+  --ej-software: var(--acero);
+  --ej-ia: var(--confirmado);
+  --ej-hibrido: var(--caducado);
 
-  --font-ui: var(--font-public-sans), "Public Sans", system-ui, sans-serif;
-  --font-num: var(--font-manrope), "Manrope", var(--font-public-sans), system-ui, sans-serif;
+  /* ── Alias heredados: los nombres viejos apuntan a los nuevos (más de mil usos en componentes) ── */
+  --papel: var(--blanco);
+  --fondo: var(--perla);
+  --suave: var(--perla);
+  --marca: var(--acero-fuerte);
+  --marca-oscura: var(--tinta);
+  --azul-medio: var(--acero-medio);
+  --azul-claro: var(--acero-claro);
+  --azul-velo: var(--acero-velo);
+
+  /* ── Tipo: la Didone se pide con --font-display, por clase; todo lo demás es Manrope ── */
+  --font-display: var(--font-bodoni), "Bodoni Moda", Didot, "Bodoni 72", Georgia, serif;
+  --font-ui: var(--font-manrope), "Manrope", system-ui, sans-serif;
   --font-doc: var(--font-source-serif), "Source Serif 4", Georgia, serif;
+  --font-num: var(--font-ui);
+  --opsz-titulo: 24; /* títulos de 26–34 px */
+  --opsz-cifra: 28;  /* cifras de 30–44 px */
+  --opsz-frase: 18;  /* frases de 22–27 px y cifras medianas */
 
-  /* Radios: 14px controles, 24px tarjetas, 28px la hoja de página, 999px píldoras (navegación, botones, chips). */
-  --radio: 14px;
-  --radio-tarjeta: 24px;
-  --sombra: 0 1px 2px rgba(17, 41, 92, 0.05), 0 14px 34px -14px rgba(28, 72, 168, 0.22);
-  --sombra-flota: 0 1px 2px rgba(17, 41, 92, 0.08), 0 18px 40px -16px rgba(14, 26, 43, 0.35);
+  /* ── Radios concéntricos: lo de adentro = lo de afuera menos el relleno ── */
+  --radio-mini: 8px;
+  --radio: 12px;
+  --radio-fila: 14px;
+  --radio-tarjeta: 20px;
+  --radio-hoja: 24px;
+
+  /* ── Sombras con tinte noche (una por capa) ── */
+  --sombra: 0 0 0 1px rgba(15, 26, 46, 0.05), 0 1px 2px rgba(15, 26, 46, 0.04), 0 8px 24px -12px rgba(15, 26, 46, 0.12);
+  --sombra-flota: 0 0 0 1px rgba(15, 26, 46, 0.06), 0 2px 6px rgba(15, 26, 46, 0.06), 0 24px 48px -16px rgba(15, 26, 46, 0.28);
+  --sombra-pulgar: 0 0 0 0.5px rgba(15, 26, 46, 0.08), 0 1px 2px rgba(15, 26, 46, 0.08), 0 3px 8px -2px rgba(15, 26, 46, 0.1);
+  --sombra-globo: 0 6px 16px -6px rgba(15, 26, 46, 0.25);
+  --sombra-portada: 0 30px 80px -30px rgba(0, 0, 0, 0.6);
+
+  /* ── Vidrio: solo lo que se queda pegado arriba (la franja del celular y la ruta de la empresa) ── */
+  --vidrio: rgba(245, 243, 238, 0.72);
+  --vidrio-filtro: saturate(1.8) blur(20px);
+
+  /* ── Sin dato: rayado, y solo eso ── */
   --rayado: repeating-linear-gradient(135deg, var(--raya) 0 2px, transparent 2px 6px);
+  --rayado-fino: repeating-linear-gradient(135deg, #b9c1cd 0 1.5px, var(--perla-honda) 1.5px 3.5px);
 
+  /* ── Espacio: base 4 ── */
+  --e-1: 4px;
+  --e-2: 8px;
+  --e-3: 12px;
+  --e-4: 16px;
+  --e-5: 20px;
+  --e-6: 24px;
+  --e-8: 32px;
+  --e-10: 40px;
+  --e-12: 48px;
+  --e-16: 64px;
   --medida: 68ch;
+
+  /* ── Movimiento: ease-out fuerte, nada sobre 300 ms ── */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);     /* todo lo que responde a la persona */
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1); /* algo que ya está en pantalla y se mueve de lugar */
+  --ease-cajon: cubic-bezier(0.32, 0.72, 0, 1);   /* cajón y panel lateral */
+  --dur-presion: 160ms;
+  --dur-color: 150ms;
+  --dur-pop: 180ms;
+  --dur-cajon: 260ms;
   --dur: 200ms;
-  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 html {
   color: var(--tinta);
-  background-color: var(--fondo);
-  background-image:
-    radial-gradient(760px 560px at 0% 0%, #f5f8fe 0%, rgba(245, 248, 254, 0) 70%),
-    linear-gradient(165deg, #edf2fd 0%, #e1e9fb 55%, #d3e0f9 100%);
-  background-attachment: fixed;
+  background-color: var(--perla);
   min-height: 100%;
+  caret-color: var(--acero-fuerte);
+  scrollbar-color: rgba(15, 26, 46, 0.22) transparent;
+  -webkit-tap-highlight-color: transparent;
 }
 @media print { html { background: #fff; } }
 body {
   font-family: var(--font-ui);
   font-size: 16px;
-  line-height: 1.5;
+  font-weight: 450;
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
-::selection { background: var(--azul-claro); color: var(--tinta); }
+::selection { background: var(--champan-claro); color: var(--tinta); }
+:where(a) { text-underline-offset: 3px; text-decoration-thickness: 1px; }
+:where(h1, h2, h3) { text-wrap: balance; }
+:where(p, li) { text-wrap: pretty; }
 
-/* escala tipográfica: Manrope para títulos y números, Public Sans para leer */
-.t-titulo   { font-family: var(--font-num); font-size: 28px; font-weight: 700; line-height: 1.15; letter-spacing: -0.025em; text-wrap: balance; }
-.t-seccion  { font-family: var(--font-num); font-size: 18px; font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; }
-.t-cuerpo   { font-size: 16px; font-weight: 400; }
-.t-etiqueta { font-size: 12px; font-weight: 600; letter-spacing: 0.02em; color: var(--grafito); }
-.t-dato     { font-size: 13.5px; font-weight: 500; font-variant-numeric: tabular-nums; }
+/* ───────── ESCALA TIPOGRÁFICA (px fijos: es una herramienta) ─────────
+   La Didone (Bodoni Moda) solo en títulos, frases y cifras protagonistas; nunca en botones, campos, chips, tablas,
+   leyendas ni navegación. Una cifra protagonista suelta va en números proporcionales (en Didone «2,100» se abre si es
+   tabular); todo número en filas o columnas va en Manrope tabular. */
+.t-titulo {
+  font-family: var(--font-display); font-variation-settings: "opsz" var(--opsz-titulo);
+  font-size: 30px; font-weight: 500; line-height: 1.12; letter-spacing: -0.01em; text-wrap: balance;
+}
+.t-hero {
+  font-family: var(--font-display); font-variation-settings: "opsz" var(--opsz-frase);
+  font-size: 26px; font-weight: 500; line-height: 1.25; letter-spacing: -0.005em; text-wrap: balance;
+}
+.num-grande {
+  font-family: var(--font-display); font-variation-settings: "opsz" var(--opsz-cifra);
+  font-size: 40px; font-weight: 500; line-height: 1; letter-spacing: -0.01em;
+  font-variant-numeric: lining-nums proportional-nums;
+}
+.t-seccion  { font-family: var(--font-ui); font-size: 17px; font-weight: 650; line-height: 1.3; letter-spacing: -0.01em; }
+.t-cuerpo   { font-size: 16px; font-weight: 450; line-height: 1.55; }
+.t-etiqueta { font-family: var(--font-ui); font-size: 13px; font-weight: 600; line-height: 1.3; letter-spacing: 0; color: var(--grafito); }
+/* La etiqueta de un campo (dentro de su <label>) se lee en tinta; suelta, en grafito. */
+label > .t-etiqueta { color: var(--tinta); }
+.t-dato     { font-size: 14px; font-weight: 500; line-height: 1.4; font-variant-numeric: tabular-nums; }
+/* Rótulo en mayúsculas espaciadas (la voz del moodboard): grupos de navegación, cabeceras de tabla, pares clave-valor.
+   Nunca encima de un título. */
+.t-rotulo   { font-family: var(--font-ui); font-size: 11px; font-weight: 600; line-height: 1.2; letter-spacing: 0.14em; text-transform: uppercase; color: var(--grafito); }
 .t-doc      { font-family: var(--font-doc); font-size: 17px; line-height: 1.6; }
+@media (max-width: 760px) {
+  .t-titulo { font-size: 26px; }
+  .t-hero { font-size: 22px; }
+  .num-grande { font-size: 30px; }
+}
 
 .medida { max-width: var(--medida); }
 
-/* LIENZO: los tableros (portal y hoy) rompen el marco angosto del portal SOLO en pantallas grandes.
-   En celular y tablet no cambia nada; en PC el contenido usa la pantalla en vez de dejarla vacía. */
+/* LIENZO: los tableros (portal y hoy) rompen el marco angosto del portal SOLO en pantallas grandes. */
 @media (min-width: 1120px) {
   .lienzo {
     width: min(1080px, calc(100vw - 48px));
@@ -86,107 +189,169 @@ body {
   }
 }
 
-/* LA HOJA: toda pantalla vive en una tarjeta blanca grande sobre el cielo. Los tableros (que ya son
-   tarjetas sueltas) la apagan solos: .hoja:has(> .tablero). */
+/* LA HOJA: toda pantalla de trabajo vive en una hoja blanca sobre el lienzo perla. Los tableros (tarjetas sueltas) la
+   apagan solos: .hoja:has(> .tablero). */
 .hoja {
-  background: var(--papel);
-  border-radius: 28px;
+  background: var(--blanco);
+  border-radius: var(--radio-hoja);
   box-shadow: var(--sombra);
-  padding: 28px 32px 36px;
+  padding: 36px 40px 44px;
   min-width: 0;
 }
 .hoja:has(> .tablero) { background: none; box-shadow: none; padding: 0; border-radius: 0; }
 @media (max-width: 760px) {
-  .hoja { border-radius: 22px; padding: 20px 16px 26px; }
+  .hoja { border-radius: var(--radio-tarjeta); padding: 20px 16px 24px; }
 }
 @media print { .hoja { box-shadow: none; padding: 0; } }
 
-/* PANEL DE DETALLE: se despliega AL COSTADO (PC) o desde abajo (celular) — nunca empuja el contenido. */
-.telon { position: fixed; inset: 0; background: color-mix(in srgb, var(--tinta) 32%, transparent); z-index: 60; border: none; padding: 0; margin: 0; width: 100%; }
+/* PANEL DE DETALLE: se despliega AL COSTADO (PC) o desde abajo (celular), nunca empuja el contenido. */
+.telon {
+  position: fixed; inset: 0; z-index: 60; border: none; padding: 0; margin: 0; width: 100%;
+  background: color-mix(in srgb, var(--noche) 32%, transparent);
+  animation: aparece-velo var(--dur) var(--ease-out);
+}
 .panel-lateral {
-  position: fixed; z-index: 61; background: var(--papel); overflow-y: auto;
+  position: fixed; z-index: 61; background: var(--blanco); overflow-y: auto; overscroll-behavior: contain;
   right: 12px; top: 12px; bottom: 12px; width: min(420px, 92vw);
   border-radius: var(--radio-tarjeta); box-shadow: var(--sombra-flota); padding: 24px;
-  animation: entra-lado 240ms var(--ease-out);
+  animation: entra-lado 240ms var(--ease-cajon);
 }
 @media (max-width: 1023px) {
   .panel-lateral {
     top: auto; left: 0; right: 0; bottom: 0; width: auto; max-height: 82dvh;
     border-radius: var(--radio-tarjeta) var(--radio-tarjeta) 0 0;
-    animation: entra-abajo 260ms var(--ease-out);
+    animation: entra-abajo var(--dur-cajon) var(--ease-cajon);
     padding-bottom: calc(24px + env(safe-area-inset-bottom));
   }
 }
-@keyframes entra-lado { from { transform: translateX(24px); opacity: 0; } }
+@keyframes entra-lado { from { transform: translateX(16px); opacity: 0; } }
 @keyframes entra-abajo { from { transform: translateY(32px); opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .panel-lateral { animation: none; } }
+@keyframes aparece-velo { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .panel-lateral, .telon { animation: none; } }
 
-/* foco visible siempre */
-:focus-visible { outline: 2px solid var(--marca); outline-offset: 2px; }
+/* Foco visible siempre: acero sobre claro (sobre noche, champán: src/design/marco.css). */
+:focus-visible { outline: 2px solid var(--acero-fuerte); outline-offset: 2px; }
 
-/* controles: objetivo táctil 44px, píldora oscura como la navegación activa */
+/* ───────── BOTONES ─────────
+   Todos píldora, objetivo táctil de 44px. Primario en tinta; secundario blanco; terciario solo texto en acero.
+   Presionar: escala 0.97 con ease-out. Hover solo con puntero fino. Cargando: cambia el texto, sin ruedas. */
 .boton {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  min-height: 44px; padding: 0 22px;
+  min-height: 44px; padding: 0 20px;
   border: 1px solid var(--tinta); border-radius: 999px;
-  background: var(--tinta); color: var(--papel);
-  font: inherit; font-weight: 600; cursor: pointer; text-decoration: none;
-  transition: transform 160ms var(--ease-out), background-color var(--dur) ease, border-color var(--dur) ease, color var(--dur) ease;
+  background: var(--tinta); color: #f7f5f0;
+  font-family: var(--font-ui); font-size: 14.5px; font-weight: 600; line-height: 1.2; letter-spacing: 0; text-align: center;
+  cursor: pointer; text-decoration: none; -webkit-user-select: none; user-select: none;
+  transition: transform var(--dur-presion) var(--ease-out), background-color var(--dur-color) ease, border-color var(--dur-color) ease, color var(--dur-color) ease;
 }
+:where(.boton) > svg:not([width]) { width: 16px; height: 16px; flex: none; }
 .boton:active { transform: scale(0.97); }
-.boton:disabled { opacity: 0.45; cursor: default; transform: none; }
-.boton--secundario { background: var(--papel); color: var(--tinta); border-color: var(--linea); }
-.boton--grande { min-height: 56px; font-size: 18px; padding: 0 28px; width: 100%; }
-.boton--peligro { border-color: var(--contradicho); color: var(--contradicho); background: transparent; }
+.boton:disabled, .boton[aria-disabled="true"] { opacity: 0.4; cursor: default; transform: none; }
+.boton--secundario { background: var(--blanco); color: var(--tinta); border-color: var(--linea-fuerte); }
+.boton--terciario { background: transparent; color: var(--acero-fuerte); border-color: transparent; padding: 0 12px; }
+.boton--peligro { background: transparent; color: var(--contradicho); border-color: rgba(165, 55, 44, 0.35); }
+.boton--luna { background: var(--luna); color: var(--noche); border-color: var(--luna); }
+.boton--grande { min-height: 52px; font-size: 16px; padding: 0 24px; width: 100%; }
+/* Un botón secundario que queda elegido («No lo sé», «Cumple», «No ha bajado») se ve elegido: tinta llena. */
+.boton--secundario[aria-pressed="true"],
+.boton--secundario[aria-pressed="true"]:hover { background: var(--tinta); border-color: var(--tinta); color: #f7f5f0; }
 @media (hover: hover) and (pointer: fine) {
-  .boton:hover { background: #22324d; border-color: #22324d; }
-  .boton--secundario:hover { background: var(--azul-velo); border-color: var(--azul-claro); color: var(--tinta); }
-  .boton--peligro:hover { background: var(--contradicho); border-color: var(--contradicho); color: var(--papel); }
+  .boton:not(:disabled):hover { background: var(--tinta-suave); border-color: var(--tinta-suave); }
+  .boton--secundario:not(:disabled):hover { background: var(--perla); border-color: var(--linea-fuerte); color: var(--tinta); }
+  .boton--terciario:not(:disabled):hover { background: var(--acero-velo); border-color: transparent; color: var(--acero-fuerte); }
+  .boton--peligro:not(:disabled):hover { background: var(--contradicho-velo); border-color: rgba(165, 55, 44, 0.35); color: var(--contradicho); }
+  .boton--luna:not(:disabled):hover { background: #fff; border-color: #fff; color: var(--noche); }
 }
 
+/* Elegir un archivo (SubirProceso, ImportarProcesos): un botón con el input dentro, invisible pero enfocable; al lado,
+   el nombre elegido. */
+.archivo-boton { position: relative; cursor: pointer; }
+.archivo-boton input[type="file"] { position: absolute; width: 1px; height: 1px; padding: 0; margin: 0; opacity: 0; overflow: hidden; clip-path: inset(50%); }
+.archivo-boton:has(input:focus-visible) { outline: 2px solid var(--acero-fuerte); outline-offset: 2px; }
+.archivo-boton:has(input:disabled) { opacity: 0.4; cursor: default; }
+.archivo-nombre { min-width: 0; overflow-wrap: anywhere; color: var(--tinta); }
+
+/* ───────── CAMPOS ───────── */
 .campo {
   width: 100%; min-height: 44px; padding: 10px 14px;
-  border: 1px solid var(--linea); border-radius: var(--radio);
-  background: var(--papel); font: inherit; color: var(--tinta);
-  transition: border-color var(--dur) ease, box-shadow var(--dur) ease;
+  border: 1px solid var(--borde-campo); border-radius: var(--radio);
+  background: var(--blanco); color: var(--tinta);
+  font-family: var(--font-ui); font-size: 16px; font-weight: 450; line-height: 1.4;
+  caret-color: var(--acero-fuerte);
+  transition: border-color var(--dur-color) ease, box-shadow var(--dur-color) ease;
 }
-.campo:focus { border-color: var(--marca); outline: none; box-shadow: 0 0 0 3px var(--azul-velo); }
-textarea.campo { min-height: 120px; resize: vertical; }
-/* EL EJEMPLO NO SE PUEDE CONFUNDIR CON LO ESCRITO (30-08-2026). No había estilo de placeholder: salía
-   con el gris por defecto del navegador y la dueña de Qori lo leyó como datos suyos metidos en su
-   caja. Tenue y en cursiva se lee como guía, y desaparece sola al escribir o al dictar. */
+.campo:focus { border-color: var(--acero-fuerte); outline: none; box-shadow: 0 0 0 3px rgba(44, 76, 120, 0.16); }
+.campo[aria-invalid="true"] { border-color: var(--contradicho); }
+.campo[aria-invalid="true"]:focus { box-shadow: 0 0 0 3px rgba(165, 55, 44, 0.14); }
+.campo:disabled { background: var(--perla); color: var(--tenue); cursor: not-allowed; }
+textarea.campo { min-height: 120px; resize: vertical; line-height: 1.5; }
+select.campo {
+  appearance: none; -webkit-appearance: none; padding-right: 40px; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%234a5772' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m2.5 4.5 3.5 3.5 3.5-3.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center; background-size: 12px 12px;
+}
+/* EL EJEMPLO NO SE PUEDE CONFUNDIR CON LO ESCRITO (30-08-2026). Tenue y en cursiva se lee como guía, y desaparece sola
+   al escribir o al dictar. */
 .campo::placeholder { color: var(--grafito); opacity: 0.6; font-style: italic; }
 .campo:focus::placeholder { opacity: 0.38; }
+.error-campo { margin: 6px 0 0; font-size: 13px; color: var(--contradicho); }
+.ayuda-campo { margin: 6px 0 0; font-size: 12.5px; color: var(--grafito); }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--tinta); }
 
-/* tablas: cabecera en banda azul suave con los extremos redondos, filas con línea fina */
-.tabla { width: 100%; border-collapse: separate; border-spacing: 0; }
-.tabla th { text-align: left; padding: 11px 12px; font-size: 13px; font-weight: 600; color: var(--tinta); background: var(--azul-velo); white-space: nowrap; }
-.tabla th:first-child { border-radius: 12px 0 0 12px; }
-.tabla th:last-child { border-radius: 0 12px 12px 0; }
-.tabla td { padding: 14px 12px; border-bottom: 1px solid var(--linea); vertical-align: top; }
+/* ───────── TABLAS: cabecera en rótulo, sin banda de color; filas con línea fina ───────── */
+.tabla { width: 100%; border-collapse: separate; border-spacing: 0; font-variant-numeric: tabular-nums; }
+.tabla th {
+  text-align: left; padding: 10px 12px; background: none; white-space: nowrap;
+  font-family: var(--font-ui); font-size: 11px; font-weight: 600; line-height: 1.2; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--grafito); border-bottom: 1px solid var(--linea-fuerte);
+}
+.tabla td { padding: 14px 12px; border-bottom: 1px solid var(--linea); vertical-align: middle; font-size: 14px; }
 .tabla tr:last-child td { border-bottom: 0; }
-@media (hover: hover) and (pointer: fine) { .tabla tbody tr:hover td { background: #f7f9fe; } }
+@media (hover: hover) and (pointer: fine) { .tabla tbody tr:hover td { background: #faf9f6; } }
 
-/* panel: tarjeta blanca redonda con sombra suave */
-.panel { border: 0; border-radius: var(--radio-tarjeta); background: var(--papel); box-shadow: var(--sombra); }
+/* ───────── PANEL: tarjeta blanca; dentro de una hoja, borde fino y sin sombra (una sombra por capa) ───────── */
+.panel { border: 0; border-radius: var(--radio-tarjeta); background: var(--blanco); box-shadow: var(--sombra); }
 .hoja .panel { box-shadow: none; border: 1px solid var(--linea); }
 .separador { border: 0; border-top: 1px solid var(--linea); margin: 0; }
 
-/* Números y frases grandes: Manrope. La serif queda para los documentos impresos. */
-.t-hero { font-family: var(--font-num); font-size: clamp(21px, 3.4vw, 27px); font-weight: 650; line-height: 1.25; letter-spacing: -0.02em; text-wrap: balance; }
-.num-grande { font-family: var(--font-num); font-size: clamp(26px, 4.5vw, 36px); font-weight: 750; line-height: 1.05; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
 .lista-editorial { list-style: none; padding: 0; margin: 0; }
 .lista-editorial > li { border-top: 1px solid var(--linea); padding: 18px 0; }
 .lista-editorial > li:last-child { border-bottom: 1px solid var(--linea); }
 .fila-numeros { display: grid; gap: 24px; border-top: 1px solid var(--linea); border-bottom: 1px solid var(--linea); padding: 20px 0; }
 @media (min-width: 640px) { .fila-numeros { grid-template-columns: repeat(3, 1fr); } }
 
-/* marca de estado — el elemento firma */
+/* ───────── ESTADO: el elemento firma (MarcaEstado) y los chips. Los chips solo dicen estado ───────── */
 .marca-estado { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
 .marca-estado svg { flex: none; }
+.estado {
+  display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px 0 8px; border-radius: 999px;
+  font-family: var(--font-ui); font-size: 12px; font-weight: 600; line-height: 1; letter-spacing: 0; white-space: nowrap;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 14%, transparent);
+}
+.estado::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+.estado.ok { color: var(--confirmado); background: var(--confirmado-velo); }
+.estado.espera { color: var(--caducado); background: var(--caducado-velo); }
+.estado.alto { color: var(--contradicho); background: var(--contradicho-velo); }
+.estado.neutro { color: var(--grafito); background: var(--perla-honda); }
+.chip-estado {
+  display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; margin-left: 6px; vertical-align: 4px;
+  font-family: var(--font-ui); font-size: 11.5px; font-weight: 600; line-height: 1; letter-spacing: 0; white-space: nowrap;
+  color: var(--caducado); background: var(--caducado-velo);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 14%, transparent);
+}
 
-/* movimiento */
-.aparece { animation: aparece 220ms var(--ease-out); }
+/* Enlace de texto: acero, subrayado al pasar. */
+.enlace-azul { color: var(--acero-fuerte); font-weight: 600; text-decoration: none; font-size: 13.5px; }
+.enlace-azul:hover { text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+
+/* Aviso informativo (los que piden algo van en caducado, los errores en contradicho). */
+.aviso { background: var(--acero-velo); color: var(--tinta); border-radius: var(--radio-fila); padding: 12px 16px; font-size: 14px; line-height: 1.45; }
+.aviso--pide { background: var(--caducado-velo); color: var(--caducado); font-weight: 600; box-shadow: inset 0 0 0 1px rgba(148, 86, 31, 0.14); }
+.aviso--error { background: var(--contradicho-velo); color: var(--contradicho); }
+
+/* ───────── MOVIMIENTO ─────────
+   Contenido que aparece por una acción de la persona: opacidad y 4 px, 200 ms. Nada de cargas animadas. */
+.aparece { animation: aparece var(--dur) var(--ease-out); }
 @keyframes aparece { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }

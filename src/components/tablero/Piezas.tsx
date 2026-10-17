@@ -1,19 +1,23 @@
 /**
- * PIEZAS DE TABLERO (estilo del 13-10-2026). Cada una se dibuja desde sus datos: nada es una imagen pegada.
- * Regla de la casa que no cambió con el estilo: lo que no hay se dibuja rayado y se nombra, nunca como cero
- * ni como una altura cualquiera. Un cero contado sí es cero: una raya en la base.
+ * PIEZAS DE TABLERO (mundo «noche y perla», 17-10-2026). Cada una se dibuja desde sus datos: nada es una imagen pegada.
+ * Más finas que antes: la elegancia es el grosor. Los datos van en la rampa de acero (la cinta fría del logo); el oro
+ * nunca entra a un gráfico. Regla de la casa que no cambió con el estilo: lo que no hay se dibuja rayado y se nombra,
+ * nunca como cero ni como una altura cualquiera. Un cero contado sí es cero: una raya en la base.
  */
 
-const DE = [0xb9, 0xcf, 0xf7];
-const A = [0x2f, 0x6f, 0xe4];
+/** Las cápsulas llenas del medidor van de --acero-claro a --acero-fuerte (espejo de tokens.css: el SVG mezcla en rgb). */
+const DE = [0xc5, 0xd3, 0xe4];
+const A = [0x2c, 0x4c, 0x78];
 const mezcla = (t: number) => `rgb(${DE.map((d, i) => Math.round(d + (A[i] - d) * t)).join(",")})`;
 
 /** Medidor semicircular de catorce cápsulas. `pct` null = sin dato: todas vacías y lo dice. */
 export function Medidor({ pct, etiqueta }: { pct: number | null; etiqueta: string }) {
-  const n = 14, cx = 130, cy = 128, r1 = 84, r2 = 116;
+  // El arco termina en el borde de abajo del dibujo (cy + media cápsula): la cifra se apoya en esa línea, donde el
+  // hueco del arco es más ancho, y nunca pisa las cápsulas (17-10-2026).
+  const n = 14, cx = 130, cy = 128, r1 = 92, r2 = 116;
   const llenas = pct == null ? 0 : Math.round((Math.max(0, Math.min(100, pct)) / 100) * n);
   return (
-    <svg viewBox="0 0 260 140" role="img" aria-label={pct == null ? `${etiqueta}: sin dato` : `${etiqueta}: ${pct}%`}>
+    <svg viewBox="0 0 260 134" role="img" aria-label={pct == null ? `${etiqueta}: sin dato` : `${etiqueta}: ${pct}%`}>
       {Array.from({ length: n }, (_, i) => {
         const a = Math.PI - (i * Math.PI) / (n - 1);
         const t = llenas > 1 ? i / (llenas - 1) : 1;
@@ -22,8 +26,8 @@ export function Medidor({ pct, etiqueta }: { pct: number | null; etiqueta: strin
             key={i}
             x1={cx + r1 * Math.cos(a)} y1={cy - r1 * Math.sin(a)}
             x2={cx + r2 * Math.cos(a)} y2={cy - r2 * Math.sin(a)}
-            stroke={i < llenas ? mezcla(0.35 + 0.65 * t) : "var(--azul-velo)"}
-            strokeWidth={15} strokeLinecap="round"
+            stroke={i < llenas ? mezcla(0.3 + 0.7 * t) : "var(--acero-velo)"}
+            strokeWidth={12} strokeLinecap="round"
           />
         );
       })}
@@ -34,7 +38,7 @@ export function Medidor({ pct, etiqueta }: { pct: number | null; etiqueta: strin
 export type Barra = { valor: number | null; dicho?: boolean };
 
 /**
- * Barritas finas, una por periodo. Las tres últimas con dato van en azul fuerte. Sin dato: carril rayado entero.
+ * Barritas finas, una por periodo. Las tres últimas con dato van en acero fuerte. Sin dato: carril rayado entero.
  * Cero contado: raya en la base. Dicho pero sin confirmar: solo el contorno.
  */
 export function Barritas({ barras, etiqueta }: { barras: Barra[]; etiqueta: string }) {
@@ -52,7 +56,7 @@ export function Barritas({ barras, etiqueta }: { barras: Barra[]; etiqueta: stri
   );
 }
 
-/** Barra segmentada con leyenda: oscuro, gris, gris claro y rayado (el rayado siempre es lo que falta). */
+/** Barra segmentada con leyenda: acero fuerte, medio, claro y rayado (el rayado siempre es lo que falta). */
 export function Segmentos({ partes, etiqueta }: { partes: { n: number; texto: string; tipo: "s1" | "s2" | "s3" | "s4" }[]; etiqueta: string }) {
   const visibles = partes.filter((p) => p.n > 0);
   return (

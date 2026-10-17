@@ -92,7 +92,7 @@ export function MisNumeros({
     ) : revision.negativos.includes(campo) ? (
       <p className="t-dato mt-1" style={{ color: "var(--contradicho)" }} role="alert">{AVISO_NUMERO_NEGATIVO}</p>
     ) : revision.perdida && campo === campoDeValor(CLAVE_QUE_PUEDE_SER_PERDIDA) ? (
-      <p className="t-dato mt-1 medida" style={{ color: "var(--caducado)", fontWeight: 600 }} role="alert">{AVISO_PERDIDA}</p>
+      <p className="t-dato mt-1 medida texto-espera" role="alert">{AVISO_PERDIDA}</p>
     ) : null;
   const marcado = (campo: string) => revision.invalidos.includes(campo) || revision.negativos.includes(campo) || undefined;
 
@@ -138,21 +138,20 @@ export function MisNumeros({
    */
   const campoVital = (v: Vital, ayuda?: string) => (
     <div key={v.clave} className="py-4" style={{ borderTop: "1px solid var(--linea)" }}>
-      <p className="t-cuerpo" style={{ fontWeight: 550 }}>{v.pregunta}</p>
+      <p className="t-cuerpo fuerte">{v.pregunta}</p>
       {ayuda && <p className="t-dato mt-1 medida" style={{ color: "var(--grafito)" }}>{ayuda}</p>}
       {v.seguida && (
         <>
           <div className="mt-2">{cajaDeCifra(v, claveDeConteo(v.clave, "total"), `${v.nombre}: cuántas personas preguntaron`)}</div>
           {avisoDe(campoDeValor(claveDeConteo(v.clave, "total")))}
-          <p className="t-cuerpo mt-3" style={{ fontWeight: 550 }}>{v.seguida}</p>
+          <p className="t-cuerpo mt-3 fuerte">{v.seguida}</p>
         </>
       )}
       <div className="flex items-center gap-2 flex-wrap mt-2">
         {v.seguida ? cajaDeCifra(v, claveDeConteo(v.clave, "parte"), `${v.nombre}: cuántas compraron`) : cajaDeCifra(v, v.clave, v.nombre)}
         <button
           type="button"
-          className="t-dato"
-          style={{ background: "none", border: "none", cursor: "pointer", font: "inherit", textDecoration: "underline", color: sinDato.has(v.clave) ? "var(--marca)" : "var(--grafito)" }}
+          className={sinDato.has(v.clave) ? "boton-enlace" : "boton-enlace boton-enlace--tenue"}
           onClick={() =>
             setSinDato((s) => {
               const n = new Set(s);
@@ -202,8 +201,8 @@ export function MisNumeros({
         <div className="flex items-baseline justify-between gap-3 flex-wrap">
           <div>
             <p className="t-etiqueta">La radiografía de tu negocio</p>
-            <p style={{ fontSize: "clamp(26px, 5vw, 38px)", fontWeight: 700, lineHeight: 1.05, letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" }}>
-              {radiografia.listos} <span style={{ color: "var(--grafito)", fontWeight: 500 }}>de {radiografia.total}</span>
+            <p className="num-grande">
+              {radiografia.listos}<span className="unidad">de {radiografia.total}</span>
             </p>
           </div>
           <p className="t-cuerpo medida" style={{ color: "var(--grafito)", flex: "1 1 260px" }}>
@@ -245,7 +244,7 @@ export function MisNumeros({
 
         {mesPasado && (
           <div className="py-4" style={{ borderTop: "1px solid var(--linea)" }}>
-            <p className="t-cuerpo" style={{ fontWeight: 550 }}>¿Cuánto vendiste en {mesPasado.etiqueta}?</p>
+            <p className="t-cuerpo fuerte">¿Cuánto vendiste en {mesPasado.etiqueta}?</p>
             <input
               className="campo mt-2" style={{ maxWidth: 200 }} inputMode="decimal" placeholder={PISTA_CIFRA}
               value={meses[mesPasado.periodo] ?? ""}
@@ -263,7 +262,7 @@ export function MisNumeros({
           { t: "¿Y el mes que menos vendiste?", v: peor, set: setPeor, id: "peor" as const },
         ].map((f) => (
           <div key={f.id} className="py-4" style={{ borderTop: "1px solid var(--linea)" }}>
-            <p className="t-cuerpo" style={{ fontWeight: 550 }}>{f.t}</p>
+            <p className="t-cuerpo fuerte">{f.t}</p>
             <div className="flex gap-2 flex-wrap mt-2">
               <select
                 className="campo" style={{ maxWidth: 200 }} value={f.v.periodo}
@@ -335,13 +334,7 @@ export function MisNumeros({
               <button
                 key={m.clave} type="button" title={m.nota}
                 onClick={() => setAltas((s) => { const n = new Set(s); if (n.has(m.nombre)) n.delete(m.nombre); else n.add(m.nombre); return n; })}
-                className="t-dato"
-                style={{
-                  padding: "7px 13px", borderRadius: "var(--radio)", cursor: "pointer", font: "inherit", fontSize: 14,
-                  border: `1px solid ${activo ? "var(--marca)" : "var(--linea)"}`,
-                  background: activo ? "var(--marca)" : "var(--papel)",
-                  color: activo ? "#fff" : "var(--tinta)",
-                }}
+                className="boton boton--secundario boton--chico"
                 aria-pressed={activo}
               >
                 {m.nombre}
@@ -378,9 +371,9 @@ export function MisNumeros({
                     <span className="t-dato">
                       {nombreDePeriodo(s.periodo)}
                       {/* Leída de un documento que nadie revisó: no la «contó» el dueño, y se dice junto a la cifra. */}
-                      {s.provisional && <span style={{ color: "var(--caducado)", fontWeight: 600 }}> · {ROTULO_CIFRA_PROVISIONAL}</span>}
+                      {s.provisional && <span className="texto-espera"> · {ROTULO_CIFRA_PROVISIONAL}</span>}
                     </span>
-                    <span className="t-dato" style={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{soles(s.valor)}</span>
+                    <span className="t-dato fuerte">{soles(s.valor)}</span>
                   </li>
                 ))}
               </ul>
@@ -396,7 +389,7 @@ export function MisNumeros({
               {puestos.map((v) => (
                 <li key={v.clave} style={{ padding: "6px 0" }}>
                   <span className="t-dato" style={{ color: "var(--grafito)" }}>{v.nombre}</span>
-                  {soloDeDocumento.includes(v.clave) && <span className="t-dato" style={{ color: "var(--caducado)", fontWeight: 600 }}> · {ROTULO_CIFRA_PROVISIONAL}</span>}
+                  {soloDeDocumento.includes(v.clave) && <span className="t-dato texto-espera"> · {ROTULO_CIFRA_PROVISIONAL}</span>}
                 </li>
               ))}
             </ul>
@@ -420,7 +413,7 @@ export function MisNumeros({
                   {o.nombre}
                   <span style={{ color: "var(--grafito)" }}> · {nombreDePeriodo(o.periodo)} · {o.etiquetaEstado}</span>
                 </span>
-                <span className="t-dato" style={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+                <span className="t-dato fuerte">
                   {o.valor == null ? "sin dato" : o.reconocida ? soles(o.valor) : o.valor.toLocaleString("es-PE")}
                 </span>
               </li>

@@ -35,7 +35,7 @@ export function Decidir({ titulo, pideImplica, etiquetaMotivo = "Por qué", etiq
   };
 
   return (
-    <div className="flex flex-col gap-2 mt-2" style={{ borderLeft: `2px solid ${peligro ? "var(--contradicho)" : "var(--linea)"}`, paddingLeft: 12 }}>
+    <div className="flex flex-col gap-2 mt-2" style={{ borderLeft: `1px solid ${peligro ? "var(--contradicho)" : "var(--linea)"}`, paddingLeft: 12 }}>
       <p className="t-etiqueta">{titulo}</p>
       <textarea className="campo" rows={2} placeholder={`${etiquetaMotivo} (al menos 8 letras)`} aria-label={etiquetaMotivo} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
       {pideImplica && <textarea className="campo" rows={2} placeholder={etiquetaImplica} aria-label={etiquetaImplica} value={implica} onChange={(e) => setImplica(e.target.value)} />}

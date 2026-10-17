@@ -27,7 +27,7 @@ export function CargaConsultores({ carga, elegido }: { carga: readonly CargaCons
           return (
             <li key={clave} className={`grid ${REJILLA_CARGA}`} style={{ padding: "12px 0" }}>
               <Celda rotulo={ROTULOS_CARGA[0]} clase={ANCHA_CARGA}>
-                <Link href={`/cartera?consultor=${encodeURIComponent(clave)}`} aria-current={activo ? "true" : undefined} className="t-dato" style={{ color: c.id ? "var(--tinta)" : "var(--caducado)", fontWeight: activo ? 700 : 600 }}>
+                <Link href={`/cartera?consultor=${encodeURIComponent(clave)}`} aria-current={activo ? "true" : undefined} className="t-dato enlace-fila" style={c.id ? undefined : { color: "var(--caducado)" }}>
                   {c.nombre}
                 </Link>
                 {c.empresas > c.activas && (
@@ -35,7 +35,7 @@ export function CargaConsultores({ carga, elegido }: { carga: readonly CargaCons
                 )}
               </Celda>
               <Celda rotulo={ROTULOS_CARGA[1]}>
-                <span className="t-dato" style={{ fontWeight: 700 }}>{c.activas}</span>
+                <span className="t-dato fuerte">{c.activas}</span>
               </Celda>
               <Celda rotulo={ROTULOS_CARGA[2]}>
                 <span className="t-dato">{c.exigenDecision}</span>

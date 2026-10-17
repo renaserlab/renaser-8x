@@ -52,7 +52,7 @@ function TextoDictable({ etiqueta, valor, alCambiar, deshabilitado }: { etiqueta
 /** «No lo sé» (o «No ha bajado»): una respuesta, no un hueco. */
 function BotonNoSe({ activo, alPulsar, deshabilitado, texto = "No lo sé" }: { activo: boolean; alPulsar: () => void; deshabilitado: boolean; texto?: string }) {
   return (
-    <button type="button" className="boton boton--secundario" style={{ alignSelf: "flex-start", fontSize: 14 }} aria-pressed={activo} disabled={deshabilitado} onClick={alPulsar}>
+    <button type="button" className="boton boton--secundario" style={{ alignSelf: "flex-start" }} aria-pressed={activo} disabled={deshabilitado} onClick={alPulsar}>
       {texto}
     </button>
   );
@@ -68,8 +68,8 @@ function Tarjeta({ n, clave, children, alSalir, aviso }: { n: number; clave: Cla
         if (!e.currentTarget.contains(e.relatedTarget as Node | null)) alSalir();
       }}
     >
-      <h2 id={`historia-${clave}`} className="t-seccion" style={{ fontSize: 17 }}>
-        <span style={{ color: "var(--grafito)", fontWeight: 600 }}>{n} · </span>
+      <h2 id={`historia-${clave}`} className="t-seccion">
+        <span style={{ color: "var(--grafito)" }}>{n} · </span>
         {PREGUNTA[clave]}
       </h2>
       {children}
@@ -83,7 +83,7 @@ function Lectura({ historia, fmt }: { historia: Historia; fmt: (n: number) => st
   const h = historia;
   const fila = (n: number, clave: Clave, contenido: React.ReactNode) => (
     <li key={clave} style={{ padding: "12px 0" }}>
-      <p className="t-dato" style={{ fontWeight: 600 }}>{n} · {PREGUNTA[clave]}</p>
+      <p className="t-dato fuerte">{n} · {PREGUNTA[clave]}</p>
       <div className="t-cuerpo mt-1">{contenido}</div>
     </li>
   );
@@ -244,12 +244,12 @@ export function HistoriaNegocio({ companyId, modo, historia, editable, config, v
         {!e.mejorNoSe && (
           <>
             <label className="flex flex-col gap-1">
-              <span className="t-dato" style={{ fontWeight: 600 }}>El mes y el año</span>
+              <span className="t-dato fuerte">El mes y el año</span>
               <input aria-label="El mes que más vendiste" className="campo" maxLength={120} value={e.cuando} disabled={!editable} placeholder="Como lo recuerdes" onChange={(ev) => cambiar((x) => ({ ...x, cuando: ev.target.value }))} />
             </label>
             <CampoDato etiqueta="¿Cuánto vendiste ese mes?" valor={e.ventaMejor} alGuardar={(d) => cambiar((x) => ({ ...x, ventaMejor: d }))} modo={modo} formato={fmt} deshabilitado={!editable} ayuda={!historia.mejor_epoca?.venta_mes && ventaDorada != null ? "Lo trajimos de Tus números." : null} />
             <div className="flex flex-col gap-1">
-              <span className="t-dato" style={{ fontWeight: 600 }}>Ese mes, ¿qué estaba pasando en el negocio?</span>
+              <span className="t-dato fuerte">Ese mes, ¿qué estaba pasando en el negocio?</span>
               <TextoDictable etiqueta="Qué estaba pasando en el negocio ese mes" valor={e.quePasaba} deshabilitado={!editable} alCambiar={(t) => cambiar((x) => ({ ...x, quePasaba: t }))} />
             </div>
           </>
@@ -261,11 +261,11 @@ export function HistoriaNegocio({ companyId, modo, historia, editable, config, v
         {!e.noBajo && (
           <>
             <label className="flex flex-col gap-1">
-              <span className="t-dato" style={{ fontWeight: 600 }}>El mes y el año</span>
+              <span className="t-dato fuerte">El mes y el año</span>
               <input aria-label="El mes en que empezó a bajar" className="campo" maxLength={120} value={e.cuandoBajo} disabled={!editable} onChange={(ev) => cambiar((x) => ({ ...x, cuandoBajo: ev.target.value }))} />
             </label>
             <div className="flex flex-col gap-1">
-              <span className="t-dato" style={{ fontWeight: 600 }}>Ese mes, ¿qué cambió?</span>
+              <span className="t-dato fuerte">Ese mes, ¿qué cambió?</span>
               <TextoDictable etiqueta="Qué cambió el mes en que empezó a bajar" valor={e.queCambio} deshabilitado={!editable} alCambiar={(t) => cambiar((x) => ({ ...x, queCambio: t }))} />
             </div>
           </>

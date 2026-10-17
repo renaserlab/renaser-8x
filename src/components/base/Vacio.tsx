@@ -1,12 +1,16 @@
 import Link from "next/link";
 
-/** Una pantalla vacía es una invitación a actuar. Capítulo 20. */
+/**
+ * Una pantalla vacía es una invitación a actuar. Capítulo 20. Noche y perla (17-10-2026): un pozo perla dentro de la
+ * hoja (blanco con su sombra si cae sobre el lienzo), el texto en grafito y la acción como botón claro. Llega quieto:
+ * no es algo que la persona hizo aparecer. El estilo vive en src/design/portal.css (.vacio).
+ */
 export function Vacio({ texto, accion, href, children }: { texto: string; accion?: string; href?: string; children?: React.ReactNode }) {
   return (
-    <div className="panel medida p-6 aparece" style={{ background: "var(--suave)" }}>
-      <p className="t-cuerpo">{texto}</p>
+    <div className="vacio">
+      <p className="vacio__texto">{texto}</p>
       {accion && href && (
-        <Link href={href} className="boton boton--secundario mt-4">
+        <Link href={href} className="boton boton--secundario">
           {accion}
         </Link>
       )}
@@ -21,21 +25,21 @@ export function Etiqueta({ children }: { children: React.ReactNode }) {
 
 export function Encabezado({ titulo, sub, acciones }: { titulo: string; sub?: React.ReactNode; acciones?: React.ReactNode }) {
   return (
-    <header className="flex flex-wrap items-end justify-between gap-4 mb-8">
-      <div>
+    <header className="encabezado">
+      <div className="encabezado__texto">
         <h1 className="t-titulo">{titulo}</h1>
-        {sub && <p className="t-cuerpo mt-2" style={{ color: "var(--grafito)" }}>{sub}</p>}
+        {sub && <p className="encabezado__sub">{sub}</p>}
       </div>
-      {acciones && <div className="flex flex-wrap gap-3 no-imprimir">{acciones}</div>}
+      {acciones && <div className="encabezado__acciones no-imprimir">{acciones}</div>}
     </header>
   );
 }
 
 export function Dato({ etiqueta, valor }: { etiqueta: string; valor: React.ReactNode }) {
   return (
-    <div>
-      <div className="t-etiqueta">{etiqueta}</div>
-      <div className="t-dato mt-1">{valor}</div>
+    <div className="dato">
+      <div className="t-rotulo">{etiqueta}</div>
+      <div className="t-dato">{valor}</div>
     </div>
   );
 }

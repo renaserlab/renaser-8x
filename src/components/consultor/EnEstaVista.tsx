@@ -5,8 +5,8 @@ import { usePathname } from "next/navigation";
 import { subActiva, subrutaDe, vistaDe, vistaPorClave } from "@/lib/vistas-empresa";
 
 /**
- * «EN ESTA VISTA»: las pantallas que viven dentro de la vista abierta de la empresa, como píldoras claras sobre el cielo
- * (la misma pieza que «En esta sección» del portal, clase .en-seccion). Se monta UNA vez, en el layout de
+ * «EN ESTA VISTA»: las pantallas que viven dentro de la vista abierta de la empresa, como subpestañas bajo las vistas
+ * (la misma pieza que «En esta sección» del portal, clase .en-seccion; la elegida es el pulgar blanco). Se monta UNA vez, en el layout de
  * /empresa/[id]; ninguna página necesita saber que existe. Una vista con una sola pantalla no pinta la fila.
  * Nombres y orden salen de src/lib/vistas-empresa.ts: si una pantalla nace, se anota allí y aparece aquí sola.
  */

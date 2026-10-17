@@ -1,5 +1,5 @@
 /**
- * Un solo juego de íconos de línea para todo 8X (estilo del 13-10-2026): trazo 1.6, esquinas redondas,
+ * Un solo juego de íconos de línea para todo 8X (sistema «noche y perla», 17-10-2026): trazo 1.5, puntas y uniones redondas,
  * dibujados aquí, nunca emoji. El mismo juego del prototipo (diseno/prototipos/iconos.svg).
  */
 const TRAZOS = {
@@ -45,7 +45,7 @@ export type NombreIcono = keyof typeof TRAZOS;
 
 export function Icono({ nombre, tam }: { nombre: NombreIcono; tam?: number }) {
   return (
-    <svg viewBox="0 0 24 24" width={tam} height={tam} fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width={tam} height={tam} fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       {TRAZOS[nombre]}
     </svg>
   );

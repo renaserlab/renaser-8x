@@ -8,6 +8,7 @@ import type { Metrica } from "@/lib/rules/anomalias";
 import { ESTADO_PILAR, PILAR_CLIENTE, fechaMes } from "@/lib/textos";
 import { TarjetaHallazgo } from "@/components/cliente/TarjetaHallazgo";
 import { VerMasLateral } from "@/components/base/VerMasLateral";
+import { Icono } from "@/components/base/Icono";
 import { MapaMental } from "@/components/cliente/MapaMental";
 import { DatosEmpresa } from "@/components/cliente/DatosEmpresa";
 import { DeclararEquipo } from "@/components/cliente/DeclararEquipo";
@@ -24,7 +25,6 @@ const soles = (n: number) => `S/${Math.round(n).toLocaleString("es-PE")}`;
 
 export const dynamic = "force-dynamic";
 
-const ESTADO_COLOR: Record<string, string> = { solido: "var(--confirmado)", mejorable: "var(--caducado)", critico: "var(--contradicho)", desconocido: "var(--grafito)" };
 const ESTADO_CLIENTE_PILAR: Record<string, string> = { solido: "Fortaleza", mejorable: "Requiere atención", critico: "Crítico", desconocido: "Información insuficiente" };
 const CLASE_NOMBRE: Record<string, string> = { documento: "Tus documentos", equipo: "Tu equipo", datos: "Tus datos", dueno: "Tú" };
 
@@ -32,15 +32,15 @@ const CLASE_NOMBRE: Record<string, string> = { documento: "Tus documentos", equi
 /** Caja del árbol de la venta: número contado/verificado, o la invitación a contarlo. */
 function Caja({ titulo, dato, ancho }: { titulo: string; dato: { texto: string; estado: string } | null; ancho?: boolean }) {
   return (
-    <div style={{ border: `1.5px solid ${dato ? "var(--marca)" : "var(--linea)"}`, borderRadius: "var(--radio)", padding: "8px 12px", textAlign: "center", background: dato ? "color-mix(in srgb, var(--marca) 6%, var(--papel))" : "var(--papel)", minWidth: 0, ...(ancho ? { maxWidth: 260, margin: "0 auto" } : {}) }}>
-      <p className="t-etiqueta" style={{ fontSize: 11 }}>{titulo}</p>
+    <div className={ancho ? "caja-venta caja-venta--ancha" : "caja-venta"} data-con-dato={dato ? "" : undefined}>
+      <p className="caja-venta__titulo">{titulo}</p>
       {dato ? (
         <>
-          <p className="t-dato" style={{ fontWeight: 700, fontSize: 17 }}>{dato.texto}</p>
-          <p className="t-dato" style={{ fontSize: 11, color: "var(--grafito)" }}>{dato.estado === "verificado" ? "verificado" : "contado"}</p>
+          <p className="caja-venta__valor">{dato.texto}</p>
+          <p className="caja-venta__estado">{dato.estado === "verificado" ? "verificado" : "contado"}</p>
         </>
       ) : (
-        <Link href="/portal/conversacion" className="t-dato" style={{ fontSize: 12.5, color: "var(--marca)", textDecoration: "underline" }}>sin dato — cuéntanoslo</Link>
+        <Link href="/portal/conversacion" className="caja-venta__falta">sin dato — cuéntanoslo</Link>
       )}
     </div>
   );
@@ -107,11 +107,11 @@ function PorConfirmar({ titulo, intro, items, conMotivo }: { titulo: string; int
   const rotuloGrave = conMotivo ? "grave si resulta ser así" : "grave si se confirma";
   return (
     <details open={hayGrave}>
-      <summary className="t-seccion" style={{ cursor: "pointer", fontSize: 18 }}>
+      <summary className="t-seccion plegado-seccion">
         {titulo} · {items.length}
       </summary>
       {hayGrave && (
-        <p className="t-dato mt-2 medida" style={{ color: "var(--contradicho)", fontWeight: 600 }}>
+        <p className="t-dato mt-2 medida texto-alto">
           {conMotivo ? "Hay algo que sería grave si resulta ser así: revísalo con tu consultor." : "Hay algo grave si se confirma: revísalo con tu consultor."}
         </p>
       )}
@@ -210,7 +210,7 @@ export default async function Hoy() {
         <p className="t-dato" style={{ color: "var(--grafito)", marginTop: -28 }}>
           {hoy.stats.porValidar > 0 && (
             <>
-              <Link href="/portal/validar" style={{ textDecoration: "underline", color: "var(--marca)" }}>{hoy.stats.porValidar} punto(s) esperan tu confirmación</Link> — con eso la foto se afina.
+              <Link href="/portal/validar" className="enlace-texto enlace-texto--acero">{hoy.stats.porValidar} punto(s) esperan tu confirmación</Link> — con eso la foto se afina.
             </>
           )}
           {hoy.stats.porValidar > 0 && hoy.stats.porConfirmar > 0 && " · "}
@@ -269,12 +269,12 @@ export default async function Hoy() {
           <h2 className="t-seccion mb-3">¿Por dónde quieres empezar?</h2>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {caminos.map((k) => (
-              <Link key={k.pregunta} href={k.href} className="panel p-5 flex flex-col gap-2" style={{ borderColor: "var(--marca)" }}>
-                <span className="t-seccion" style={{ fontSize: 17 }}>{k.pregunta}</span>
+              <Link key={k.pregunta} href={k.href} className="camino-tarjeta">
+                <span className="titulo-tarjeta">{k.pregunta}</span>
                 <span className="t-dato" style={{ color: "var(--grafito)" }}>{k.detalle}</span>
-                <span className="t-dato flex items-center" style={{ color: "var(--marca)", fontWeight: 600, marginTop: "auto", gap: 4 }}>
+                <span className="camino-tarjeta__accion">
                   Empezar
-                  <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  <Icono nombre="abajo" tam={16} />
                 </span>
               </Link>
             ))}
@@ -284,7 +284,7 @@ export default async function Hoy() {
 
       {hoy.espejo.length > 0 && (
         <details>
-          <summary className="t-seccion" style={{ cursor: "pointer", fontSize: 18 }}>El espejo · {hoy.espejo.length} punto{hoy.espejo.length === 1 ? "" : "s"} donde una fuente contradice a otra</summary>
+          <summary className="t-seccion plegado-seccion">El espejo · {hoy.espejo.length} punto{hoy.espejo.length === 1 ? "" : "s"} donde una fuente contradice a otra</summary>
           <p className="t-dato mt-2 mb-4 medida" style={{ color: "var(--grafito)" }}>Aquí suele estar lo más valioso.</p>
           <div className="flex flex-col gap-4">
             {hoy.espejo.map((e, i) => (
@@ -322,7 +322,7 @@ export default async function Hoy() {
       )}
       {resto.length > 0 && (
         <details>
-          <summary className="t-seccion" style={{ cursor: "pointer", fontSize: 18 }}>Ver {resto.length} cosa{resto.length === 1 ? "" : "s"} más que encontramos</summary>
+          <summary className="t-seccion plegado-seccion">Ver {resto.length} cosa{resto.length === 1 ? "" : "s"} más que encontramos</summary>
           <div className="grid gap-4 lg:grid-cols-2 mt-4">
             {resto.map((h) => (
               <TarjetaHallazgo key={h.id} h={h} documento={documentoQueResuelve(h)} />
@@ -333,7 +333,7 @@ export default async function Hoy() {
 
       {hoy.fortalezas.length > 0 && (
         <details>
-          <summary className="t-seccion" style={{ cursor: "pointer", fontSize: 18 }}>Lo que no debes romper · {hoy.fortalezas.length} fortaleza{hoy.fortalezas.length === 1 ? "" : "s"}</summary>
+          <summary className="t-seccion plegado-seccion">Lo que no debes romper · {hoy.fortalezas.length} fortaleza{hoy.fortalezas.length === 1 ? "" : "s"}</summary>
           <div className="grid gap-4 lg:grid-cols-2 mt-4">
             {hoy.fortalezas.map((h) => (
               <TarjetaHallazgo key={h.id} h={h} documento={documentoQueResuelve(h)} />
@@ -353,7 +353,7 @@ export default async function Hoy() {
 
       {hoy.caleta.length > 0 && (
         <details>
-          <summary className="t-seccion" style={{ cursor: "pointer", fontSize: 18 }}>Lo que tu gente sabe (y no está escrito) · {hoy.caleta.length}</summary>
+          <summary className="t-seccion plegado-seccion">Lo que tu gente sabe (y no está escrito) · {hoy.caleta.length}</summary>
           <ul className="flex flex-col gap-3 mt-4">
             {hoy.caleta.map((k, i) => (
               <li key={i} className="panel p-4">
@@ -387,19 +387,17 @@ export default async function Hoy() {
       <section>
         <h2 className="t-seccion mb-3">Tu empresa, por áreas</h2>
         <div className="grid grid-cols-2 gap-3">
-          {hoy.pilares.map((p) => {
-            const color = ESTADO_COLOR[p.estado];
-            return (
-              <div key={p.pilar} style={{ borderRadius: "var(--radio)", border: `1.5px solid ${p.estado === "desconocido" ? "var(--linea)" : color}`, background: p.estado === "desconocido" ? "var(--papel)" : `color-mix(in srgb, ${color} 8%, var(--papel))`, padding: "14px 16px" }}>
-                <p className="t-etiqueta">{PILAR_CLIENTE[p.pilar] ?? p.pilar}</p>
-                <p className="t-dato" style={{ fontWeight: 700, fontSize: 16, color: p.estado === "desconocido" ? "var(--grafito)" : color }}>{ESTADO_CLIENTE_PILAR[p.estado] ?? ESTADO_PILAR[p.estado]}</p>
-                {p.resumen && <p className="t-dato mt-1" style={{ color: "var(--grafito)", fontSize: 13 }}>{p.resumen}</p>}
-                {p.estado === "desconocido" && !p.resumen && (
-                  <Link href="/portal/conversacion" className="t-dato" style={{ fontSize: 13, color: "var(--marca)", textDecoration: "underline" }}>faltan piezas — conversemos</Link>
-                )}
-              </div>
-            );
-          })}
+          {/* Cada área con el velo de su estado (los sellos del sistema): sólida, mejorable, crítica; sin datos, en blanco. */}
+          {hoy.pilares.map((p) => (
+            <div key={p.pilar} className="pilar-area" data-estado={p.estado}>
+              <p className="t-etiqueta">{PILAR_CLIENTE[p.pilar] ?? p.pilar}</p>
+              <p className="pilar-area__estado">{ESTADO_CLIENTE_PILAR[p.estado] ?? ESTADO_PILAR[p.estado]}</p>
+              {p.resumen && <p className="apunte mt-1">{p.resumen}</p>}
+              {p.estado === "desconocido" && !p.resumen && (
+                <Link href="/portal/conversacion" className="caja-venta__falta">faltan piezas — conversemos</Link>
+              )}
+            </div>
+          ))}
         </div>
       </section>
 
@@ -410,7 +408,7 @@ export default async function Hoy() {
           <ul className="lista-editorial">
             {hoy.sistematizar.map((s, i) => (
               <li key={i}>
-                <span className="t-cuerpo" style={{ fontWeight: 550 }}>{s.nombre}</span>
+                <span className="t-cuerpo fuerte">{s.nombre}</span>
                 <p className="t-dato mt-1" style={{ color: "var(--grafito)" }}>{s.motivo}</p>
               </li>
             ))}
@@ -425,9 +423,9 @@ export default async function Hoy() {
           <div className="flex flex-col gap-3">
             {hoy.tentativo.map((p) => (
               <article key={p.n} className="panel p-5 flex gap-4">
-                <span className="t-dato" aria-hidden="true" style={{ flex: "none", width: 30, height: 30, borderRadius: "50%", display: "grid", placeItems: "center", fontWeight: 700, background: "var(--marca)", color: "var(--papel)" }}>{p.n}</span>
+                <span className="paso-num" aria-hidden="true">{p.n}</span>
                 <div style={{ minWidth: 0 }}>
-                  <h3 className="t-hero" style={{ fontSize: 18 }}>{p.problema}</h3>
+                  <h3 className="titulo-tarjeta">{p.problema}</h3>
                   <p className="t-dato mt-1" style={{ color: "var(--grafito)" }}>Primer movimiento: {p.primerMovimiento}</p>
                   {(p.porQue || p.indicador) && (
                     <div className="mt-1">
@@ -442,18 +440,18 @@ export default async function Hoy() {
               </article>
             ))}
           </div>
-          <div className="panel p-5 mt-8" style={{ background: "var(--suave)", border: "none" }}>
+          <div className="pozo mt-8">
             <p className="t-cuerpo medida">Esto es un diagnóstico inicial. Convertir estas prioridades en sistemas que funcionen sin depender de la memoria es el trabajo que sigue.</p>
-            <Link href="/portal/conversacion" className="boton boton--secundario mt-4" style={{ display: "inline-flex" }}>Quiero trabajar este plan</Link>
+            <Link href="/portal/conversacion" className="boton boton--secundario mt-4">Quiero trabajar este plan</Link>
           </div>
         </section>
       )}
 
       {hoy.nivel < 3 && (
-        <section className="panel p-5" style={{ background: "var(--suave)", border: "none" }}>
+        <section className="pozo">
           <p className="t-cuerpo medida">
             Todavía nos faltan piezas para darte una conclusión responsable sobre {hoy.pilares.filter((p) => p.estado === "desconocido").map((p) => PILAR_CLIENTE[p.pilar] ?? p.pilar).join(", ") || "algunas áreas"}.
-            {" "}Sigue <Link href="/portal/conversacion" style={{ textDecoration: "underline" }}>contándonos</Link> o <Link href="/portal/documentos" style={{ textDecoration: "underline" }}>sube lo que tengas</Link>: la foto se completa sola.
+            {" "}Sigue <Link href="/portal/conversacion" className="enlace-texto">contándonos</Link> o <Link href="/portal/documentos" className="enlace-texto">sube lo que tengas</Link>: la foto se completa sola.
           </p>
         </section>
       )}

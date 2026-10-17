@@ -41,7 +41,7 @@ export function MatrizMargenVolumen({ t, config }: { t: TableroRentabilidad; con
 
   return (
     <section aria-labelledby="matriz-titulo" className="flex flex-col gap-3">
-      <h3 id="matriz-titulo" className="t-seccion" style={{ fontSize: 17 }}>Margen × volumen</h3>
+      <h3 id="matriz-titulo" className="t-seccion">Margen × volumen</h3>
       {um == null || uv == null || conPunto.length === 0 ? (
         <p className="t-dato" style={{ color: "var(--grafito)" }}>
           {t.faltan.find((f) => /comparar|matriz/.test(f)) ?? "Todavía no hay productos con precio, costo y cuánto se vende al mes: no hay matriz."}
@@ -56,21 +56,21 @@ export function MatrizMargenVolumen({ t, config }: { t: TableroRentabilidad; con
       )}
       <ul className="flex flex-wrap gap-x-4 gap-y-1" style={{ listStyle: "none", padding: 0, margin: 0 }} aria-label="Qué es cada cuadrante">
         {(Object.keys(CUADRANTE_TEXTO) as Cuadrante[]).map((c) => (
-          <li key={c} className="t-dato flex items-center gap-2" style={{ fontSize: 13 }}>
-            <span aria-hidden="true" style={{ width: 10, height: 10, borderRadius: 999, background: COLOR[c], display: "inline-block" }} />
+          <li key={c} className="dato-chico flex items-center gap-2">
+            <i aria-hidden="true" className="muestra-color" style={{ background: COLOR[c] }} />
             <b>{CUADRANTE_TEXTO[c].nombre}</b>: {CUADRANTE_TEXTO[c].que_es} ({t.matriz[c].length})
           </li>
         ))}
       </ul>
       {sinDato.length > 0 && (
         <details>
-          <summary className="t-dato" style={{ cursor: "pointer", minHeight: 44, display: "flex", alignItems: "center", gap: 8 }}>
+          <summary className="plegado-enlace plegado-enlace--tenue">
             <SinDato texto={`${sinDato.length} sin dato para la matriz`} />
           </summary>
           <ul className="lista-editorial mt-2">
             {sinDato.slice(0, 100).map((p) => (
               <li key={p.id} style={{ padding: "8px 0" }}>
-                <span className="t-dato" style={{ fontWeight: 600 }}>{p.nombre}</span>
+                <span className="t-dato fuerte">{p.nombre}</span>
                 <span className="t-dato" style={{ color: "var(--grafito)", display: "block" }}>{p.motivos.join("; ") || "sin dato"}</span>
               </li>
             ))}

@@ -1,115 +1,16 @@
-/* 8X · LAS VISTAS DE LA EMPRESA (16-10-2026).
+/* 8X · LAS VISTAS DE LA EMPRESA (16-10-2026; mundo «noche y perla» desde el 17-10-2026).
    Pedido de Kelin: «hace rato estaba simple y fácil: diagnóstico, qué hay en números, indicadores y el avance
    progresivo… son muchas pestañas que deberían estar en una sola… el diseño no ayuda a que se vea como una consultora
-   premium». La empresa deja la hoja grande del layout de la consultora y vive sobre el cielo, como la bandeja:
-   — arriba, el avance de la ruta en una línea y la cabecera de la empresa;
-   — bajo el nombre, una barra con cinco vistas y el Expediente aparte, y debajo las pantallas de la vista abierta
-     (revisión del 16-10-2026: la columna fija de la izquierda era una columna de más junto a la barra lateral);
-   — la pantalla a todo lo ancho. Una pantalla de formularios va en su hoja; un tablero, suelto.
+   premium». La empresa deja la hoja grande del layout de la consultora y vive sobre el lienzo perla, como la bandeja:
+   arriba la ruta, la cabecera y las vistas (marco.css); debajo, la pantalla a todo lo ancho. Una pantalla de
+   formularios va en su hoja blanca de 24 px; un tablero, suelto, en tarjetas de 20 px.
+   Aquí: la hoja de la pantalla, los procesos, la pantalla como contenedor y las piezas del tablero de Diagnóstico,
+   Avance y Expediente. La Didone solo en frases y cifras protagonistas, por clase; rayado = sin dato.
    Sombras, degradados y desenfoque solo aquí y en los demás archivos de src/design (tests/visual.test.ts). */
 
 /* ───────── EL MARCO: la empresa sale de la hoja del layout de la consultora ───────── */
 .hoja:has(> .empresa-marco) { background: none; box-shadow: none; padding: 0; border-radius: 0; }
 .empresa-marco { min-width: 0; }
-/* La barra de avance, ya no dentro de una hoja: tarjeta sobre el cielo. */
-.empresa-marco > .barra-ruta { box-shadow: var(--sombra); border: 0; border-radius: var(--radio-tarjeta); margin: 0 0 16px; }
-
-/* La ruta en UNA línea (BarraRuta compacta): la etapa con su %, los tramos sin rótulos y «Ver la ruta». */
-.barra-ruta--compacta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; padding: 10px 18px; }
-.empresa-marco > .barra-ruta--compacta { margin-bottom: 14px; border-radius: 999px; padding: 8px 10px 8px 20px; }
-.barra-ruta--compacta .barra-ruta__titulo { flex: none; font-size: 14px; white-space: nowrap; }
-.barra-ruta--compacta .tramos { flex: 1 1 200px; margin: 0; min-width: 0; }
-.barra-ruta--compacta .tramo, .barra-ruta--compacta .tramo[data-estado="en_curso"] { min-width: 24px; gap: 0; }
-.barra-ruta--compacta .tramo .pista { height: 8px; }
-/* Los nombres de los tramos siguen ahí para quien usa lector de pantalla; la línea de arriba ya dice la etapa. */
-.barra-ruta--compacta .tramo__texto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
-.barra-ruta--compacta .barra-ruta__dia { flex: none; font-size: 12.5px; align-items: center; }
-.barra-ruta--compacta .barra-ruta__dia a { display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border-radius: 999px; background: var(--azul-velo); text-decoration: none; font-weight: 650; }
-@media (max-width: 640px) {
-  .empresa-marco > .barra-ruta--compacta { border-radius: var(--radio-tarjeta); padding: 10px 12px 12px 16px; }
-  .barra-ruta--compacta .barra-ruta__titulo { flex: 1 1 100%; white-space: normal; font-size: 13.5px; }
-  .barra-ruta--compacta .tramos { flex: 1 1 120px; }
-}
-
-/* ───────── CABECERA DE LA EMPRESA ───────── */
-.empresa-cabeza {
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px;
-  margin: 2px 0 16px; padding: 0 4px; min-width: 0;
-}
-.empresa-cabeza__titulo { flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
-.empresa-cabeza__nombre {
-  margin: 0; font-family: var(--font-num); font-size: 28px; font-weight: 700; line-height: 1.15; letter-spacing: -0.025em;
-  color: var(--tinta); text-decoration: none; overflow-wrap: anywhere; text-wrap: balance;
-}
-@media (hover: hover) and (pointer: fine) { a.empresa-cabeza__nombre:hover { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1.5px; } }
-.empresa-cabeza__linea { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 13.5px; color: var(--grafito); }
-.empresa-cabeza__acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-@media (max-width: 760px) {
-  .empresa-cabeza { flex-direction: column; align-items: stretch; padding: 0 2px; }
-  .empresa-cabeza__titulo { flex: none; }
-  .empresa-cabeza__nombre { font-size: 26px; }
-  /* Las dos acciones en una sola fila: apiladas empujaban la pantalla medio celular hacia abajo. */
-  .empresa-cabeza__acciones { flex-wrap: nowrap; }
-  .empresa-cabeza__acciones > * { flex: 1 1 auto; min-width: 0; }
-  .empresa-cabeza__acciones > .boton, .empresa-cabeza__acciones summary { width: 100%; padding: 0 14px; font-size: 14px; }
-  /* «Administrar» con su flecha entera: a 390 px repartían el ancho por igual y la flecha quedaba en 0 px. */
-  .empresa-cabeza__acciones > .menu-administrar { flex: none; }
-}
-.menu-administrar > summary svg { flex: none; }
-
-/* ───────── MENÚ «ADMINISTRAR» (details nativo; el panel abre hacia la derecha) ───────── */
-.menu-administrar { position: relative; }
-.menu-administrar > summary { list-style: none; cursor: pointer; user-select: none; }
-.menu-administrar > summary::-webkit-details-marker { display: none; }
-.menu-administrar > summary svg { width: 16px; height: 16px; transition: transform 160ms var(--ease-out); }
-.menu-administrar[open] > summary { background: var(--azul-velo); border-color: var(--azul-claro); }
-.menu-administrar[open] > summary svg { transform: rotate(180deg); }
-.menu-administrar__panel {
-  position: absolute; right: 0; top: calc(100% + 8px); z-index: 40;
-  width: min(360px, calc(100vw - 32px)); padding: 8px 16px;
-  background: var(--papel); border-radius: var(--radio-tarjeta); box-shadow: var(--sombra-flota);
-  animation: aparece 180ms var(--ease-out);
-}
-.menu-administrar__fila {
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px;
-  padding: 12px 0; border-top: 1px solid var(--linea);
-}
-.menu-administrar__fila:first-child { border-top: 0; }
-.menu-administrar__fila > span { flex: 1 1 150px; min-width: 0; font-size: 13.5px; font-weight: 600; color: var(--tinta); }
-.menu-administrar__fila > span small { display: block; font-size: 12.5px; font-weight: 400; color: var(--grafito); margin-top: 1px; }
-/* Los botones de adentro traen su alto y su letra escritos en línea (38 px, de cuando vivían sueltos arriba del
-   Panorama): en el menú van todos iguales y con su objetivo táctil de 44 px. */
-.menu-administrar__fila .boton { min-height: 44px !important; font-size: 14px !important; padding: 0 16px; flex: none; }
-.menu-administrar__fila > label { flex: 1 1 auto; justify-content: space-between; min-width: 0; }
-.menu-administrar__fila > label > .t-etiqueta { font-size: 13.5px; font-weight: 600; color: var(--tinta); letter-spacing: 0; }
-.menu-administrar__fila .campo { min-height: 44px; font-size: 14px; }
-
-/* ───────── MENÚ DE ACCIONES DE UNA TARJETA (MenuAcciones: editar, quitar) ─────────
-   Los tres puntos, discretos; el panel flota sobre la tarjeta. Lo que borra va en rojo y pide confirmar aparte. */
-.menu-acciones { position: relative; flex: none; }
-.menu-acciones > summary {
-  list-style: none; cursor: pointer; user-select: none; width: 40px; height: 40px; border-radius: 50%;
-  display: inline-flex; align-items: center; justify-content: center; color: var(--grafito);
-  transition: background-color 150ms ease, color 150ms ease, transform 160ms var(--ease-out);
-}
-.menu-acciones > summary::-webkit-details-marker { display: none; }
-.menu-acciones > summary svg { width: 20px; height: 20px; }
-.menu-acciones > summary:active { transform: scale(0.94); }
-.menu-acciones[open] > summary { background: var(--suave); color: var(--tinta); }
-@media (hover: hover) and (pointer: fine) { .menu-acciones > summary:hover { background: var(--suave); color: var(--tinta); } }
-@media (pointer: coarse) { .menu-acciones > summary { width: 44px; height: 44px; } }
-.menu-acciones__panel {
-  position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; min-width: 180px; padding: 6px;
-  display: flex; flex-direction: column; background: var(--papel); border-radius: 16px; box-shadow: var(--sombra-flota);
-  animation: aparece 160ms var(--ease-out);
-}
-.menu-acciones__panel button, .menu-acciones__panel a {
-  display: flex; align-items: center; min-height: 44px; padding: 0 12px; border: 0; border-radius: 12px; background: none;
-  font: inherit; font-size: 14px; font-weight: 550; color: var(--tinta); text-align: left; text-decoration: none; cursor: pointer;
-}
-.menu-acciones__panel [data-peligro] { color: var(--contradicho); }
-@media (hover: hover) and (pointer: fine) { .menu-acciones__panel button:hover, .menu-acciones__panel a:hover { background: var(--suave); } }
-@media (prefers-reduced-motion: reduce) { .menu-acciones__panel { animation: none; } .menu-acciones > summary { transition: none; } }
 
 /* ───────── PROCESOS: una tarjeta por proceso, a todo lo ancho (ProcesosLista, consultora) ─────────
    Qué se hace (de dónde a dónde), área, quién responde, pasos; a la derecha su nivel y «Ver el flujo», que es cómo se
@@ -117,20 +18,24 @@
 .procesos-tarjetas { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .proceso-tarjeta {
   display: grid; grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "cuerpo estado acciones";
-  align-items: center; gap: 8px 18px; border: 1px solid var(--linea); border-radius: 18px; padding: 14px 10px 14px 18px; min-width: 0;
+  align-items: center; gap: 8px 20px; background: var(--blanco); border: 1px solid var(--linea); border-radius: var(--radio-fila);
+  padding: 14px 10px 14px 18px; min-width: 0;
 }
 .proceso-tarjeta__cuerpo { grid-area: cuerpo; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .proceso-tarjeta__nombre {
-  font-family: var(--font-num); font-size: 16px; font-weight: 700; line-height: 1.3; letter-spacing: -0.01em;
+  font-family: var(--font-ui); font-size: 15.5px; font-weight: 650; line-height: 1.35; letter-spacing: -0.005em;
   color: var(--tinta); text-decoration: none; text-wrap: pretty; overflow-wrap: anywhere;
 }
-@media (hover: hover) and (pointer: fine) { .proceso-tarjeta__nombre:hover { text-decoration: underline; text-underline-offset: 3px; } }
-.proceso-tarjeta__recorrido { margin: 0; font-size: 13.5px; color: var(--tinta); }
-.proceso-tarjeta__datos { margin: 0; font-size: 13px; color: var(--grafito); }
+@media (hover: hover) and (pointer: fine) {
+  .proceso-tarjeta__nombre:hover { text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+}
+.proceso-tarjeta__recorrido { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--tinta); }
+.proceso-tarjeta__datos { margin: 0; font-size: 13px; line-height: 1.45; color: var(--grafito); }
 .proceso-tarjeta__estado { grid-area: estado; display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
 .proceso-tarjeta__acciones { grid-area: acciones; display: flex; align-items: center; gap: 2px; }
 .proceso-tarjeta__acciones .boton { min-height: 40px; font-size: 14px; padding: 0 16px; }
-.proceso-tarjeta__confirmar { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; border-top: 1px solid var(--linea); padding-top: 10px; margin-top: 10px; }
+@media (pointer: coarse) { .proceso-tarjeta__acciones .boton { min-height: 44px; } }
+.proceso-tarjeta__confirmar { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; border-top: 1px solid var(--linea); padding-top: 12px; margin-top: 10px; }
 .proceso-tarjeta .proceso-tarjeta__confirmar { margin-top: 0; }
 /* Lo que falta dibujar (lo subido, lo de la lista): la misma tarjeta, un punto más chica. */
 .proceso-tarjeta--chica { padding: 10px 10px 10px 16px; }
@@ -143,64 +48,30 @@
   .proceso-tarjeta--chica { grid-template-areas: "cuerpo cuerpo" "estado acciones"; }
 }
 /* Lo que falta dibujar, una sola vez, y «Agregar procesos» plegado al final. */
-.por-dibujar-seccion { margin-top: 30px; display: flex; flex-direction: column; gap: 16px; }
-.por-dibujar-seccion > .por-dibujar { border: 1px solid var(--linea); border-radius: 18px; padding: 14px 18px; }
-.agregar-procesos { margin-top: 30px; border-top: 1px solid var(--linea); padding-top: 6px; }
+.por-dibujar-seccion { margin-top: 32px; display: flex; flex-direction: column; gap: 16px; }
+.por-dibujar-seccion > .por-dibujar { border: 1px solid var(--linea); border-radius: var(--radio-fila); padding: 14px 18px; }
+.agregar-procesos { margin-top: 32px; border-top: 1px solid var(--linea); padding-top: 6px; }
 .agregar-procesos > summary { min-height: 64px; font-size: 16px; }
-.agregar-procesos > summary small { display: block; margin-top: 2px; font-size: 13px; font-weight: 400; color: var(--grafito); }
+.agregar-procesos > summary small { display: block; margin-top: 2px; font-size: 13px; font-weight: 450; color: var(--grafito); }
 .agregar-procesos__cuerpo { display: flex; flex-direction: column; gap: 28px; padding: 8px 0 6px; }
 .agregar-procesos__cuerpo > .panel { margin-bottom: 0; }
-
-/* ───────── LAS VISTAS (TabsEmpresa) Y SUS PANTALLAS (EnEstaVista) ─────────
-   Una barra blanca bajo el nombre, como la navegación de la bandeja: la vista activa es la píldora oscura y el
-   Expediente va al final, discreto. Debajo, las pantallas de la vista abierta en la fila clara del portal. En un
-   celular la barra se desliza; la página nunca. */
-.empresa-navegacion { display: flex; flex-direction: column; gap: 8px; margin: 0 0 16px; min-width: 0; }
-.vistas-empresa {
-  display: flex; align-items: center; gap: 4px; min-width: 0; overflow-x: auto; scrollbar-width: none;
-  padding: 5px; margin: 0; background: var(--papel); border-radius: 999px; box-shadow: var(--sombra);
-}
-.vistas-empresa::-webkit-scrollbar { display: none; }
-.vistas-empresa a {
-  flex: none; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px 0 14px;
-  border-radius: 999px; background: none; border: 0; color: var(--grafito);
-  text-decoration: none; font-size: 14px; font-weight: 600; white-space: nowrap;
-  transition: transform 160ms var(--ease-out), background-color 150ms ease, color 150ms ease;
-}
-.vistas-empresa a svg { width: 18px; height: 18px; flex: none; color: currentColor; }
-.vistas-empresa a:active { transform: scale(0.97); }
-.vistas-empresa a[aria-current="page"] { background: var(--tinta); color: #fff; }
-@media (hover: hover) and (pointer: fine) { .vistas-empresa a:not([aria-current="page"]):hover { background: var(--suave); color: var(--tinta); } }
-.vistas-empresa__expediente { flex: none; display: flex; margin-left: auto; padding-left: 6px; border-left: 1px solid var(--linea); }
-.vistas-empresa a[data-discreto] { font-size: 13px; font-weight: 550; }
-.vistas-empresa a[data-discreto][aria-current="page"] { background: var(--tinta); color: #fff; }
-/* Las pantallas de la vista: la misma fila del portal, pegada a la barra. */
-.empresa-navegacion .en-seccion { margin: 0; padding: 2px 2px 2px 6px; }
-@media (min-width: 1180px) {
-  /* Con ancho de sobra, las vistas no se aprietan: cada una con su aire. */
-  .vistas-empresa { gap: 6px; }
-  .vistas-empresa a { padding: 0 20px 0 16px; }
-}
-@media (max-width: 640px) {
-  .vistas-empresa { border-radius: 22px; }
-  .vistas-empresa a { padding: 0 14px 0 12px; font-size: 13.5px; }
-}
 
 /* ───────── LA PANTALLA ─────────
    La pantalla es un contenedor: los tableros se acomodan al ancho que de verdad tienen (la barra lateral se lo come),
    no al de la ventana. */
 .empresa-pantalla { min-width: 0; container: empresa / inline-size; }
 .empresa-contenido { min-width: 0; }
-/* Una pantalla de formularios vive en su hoja; un tablero como hijo directo, suelto sobre el cielo. */
+/* Una pantalla de formularios vive en su hoja blanca; un tablero como hijo directo, suelto sobre el lienzo perla. */
 .empresa-contenido:not(:has(> .tablero)),
-.hoja-suelta { background: var(--papel); border-radius: 28px; box-shadow: var(--sombra); padding: 28px 32px 36px; min-width: 0; }
-.hoja-suelta { margin-top: 16px; }
+.hoja-suelta { background: var(--blanco); border-radius: var(--radio-hoja); box-shadow: var(--sombra); padding: 36px 40px 44px; min-width: 0; }
+.hoja-suelta { margin-top: 20px; }
+/* Dentro de la hoja, una sola sombra por capa: los paneles llevan línea fina. */
 .empresa-contenido:not(:has(> .tablero)) .panel,
 .hoja-suelta .panel { box-shadow: none; border: 1px solid var(--linea); }
-.hoja-suelta .barra-ruta { box-shadow: none; border: 1px solid var(--linea); border-radius: 16px; margin: 0 0 18px; }
+.hoja-suelta .barra-ruta { box-shadow: none; border: 1px solid var(--linea); border-radius: var(--radio-fila); margin: 0 0 18px; }
 @media (max-width: 760px) {
   .empresa-contenido:not(:has(> .tablero)),
-  .hoja-suelta { border-radius: 22px; padding: 20px 16px 26px; }
+  .hoja-suelta { border-radius: 20px; padding: 20px 16px 24px; }
 }
 /* En una pantalla angosta, una tabla ancha se desliza dentro de su hoja: sin esto ensanchaba la columna de la rejilla que
    la contiene y cortaba lo de al lado (la lista de procesos, la matriz de realidad). Su ancho propio deja de contar
@@ -210,21 +81,24 @@
   .hoja-suelta .tabla { display: block; overflow-x: auto; contain: inline-size; }
 }
 
-/* ───────── PIEZAS NUEVAS DEL TABLERO (Diagnóstico, Avance, Expediente) ───────── */
+/* ───────── PIEZAS DEL TABLERO (Diagnóstico, Avance, Expediente) ───────── */
 /* Una tarjeta a todo lo ancho, en 12 columnas o en 2. */
 .tablero .a-lo-ancho { grid-column: 1 / -1; }
 
 /* Una lectura chica dentro de una tarjeta de cifra (de cada 100 soles, cuánto aguantas): su rótulo, su «provisional»
-   al lado y su «Cómo se calculó». Con cifra propia, separada de la grande por una línea fina. */
-.tablero .lectura-chica { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.tablero .lectura-chica:has(> .num) { border-top: 1px solid var(--linea); padding-top: 10px; }
-.tablero .lectura-chica > .num { font-size: 20px; font-weight: 750; line-height: 1.1; }
+   al lado y su «Cómo se calculó». Con cifra propia (mediana, en la Didone), separada de la grande por una línea fina. */
+.tablero .lectura-chica { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.tablero .lectura-chica:has(> .num) { border-top: 1px solid var(--linea); padding-top: 12px; }
+.tablero .lectura-chica > .num {
+  font-family: var(--font-display); font-variation-settings: "opsz" var(--opsz-frase);
+  font-size: 26px; line-height: 1.05; font-weight: 500; letter-spacing: -0.01em; font-variant-numeric: lining-nums proportional-nums;
+}
 .tablero .lectura-chica details summary { min-height: 32px; display: flex; align-items: center; }
 
 /* Donde iría un gráfico que todavía no tiene con qué dibujarse: un marco punteado con su «sin dato», no un gráfico vacío. */
 .tablero .grafico-vacio {
   min-height: 140px; min-width: 0; display: flex; align-items: center; justify-content: center; text-align: center;
-  border: 1px dashed var(--raya); border-radius: 16px; padding: 16px;
+  border: 1px dashed var(--linea-fuerte); border-radius: var(--radio-fila); padding: 16px; color: var(--grafito);
 }
 
 /* Un panel dentro de una tarjeta del tablero: borde fino, sin una segunda sombra encima de la de la tarjeta. */
@@ -235,82 +109,107 @@
   justify-content: space-between; gap: 12px; font-size: 14px; font-weight: 650; color: var(--tinta);
 }
 .plegado > summary::-webkit-details-marker { display: none; }
-.plegado > summary svg { width: 18px; height: 18px; flex: none; color: var(--grafito); transition: transform 160ms var(--ease-out); }
+.plegado > summary svg { width: 18px; height: 18px; flex: none; color: var(--grafito); transition: transform var(--dur-presion) var(--ease-out); }
 .plegado[open] > summary svg { transform: rotate(180deg); }
-@media (prefers-reduced-motion: reduce) { .plegado > summary svg { transition: none; } }
 /* La ruta dentro de su tarjeta en Avance: los tramos con aire y lo que falta pegado debajo. En Avance la línea de
    arriba no se repite: la tarjeta ya dice la etapa, su % y el día. */
-.tablero .ruta-tarjeta .tramos { margin-top: 16px; }
+.tablero .ruta-tarjeta .tramos { margin-top: 20px; }
 .empresa-marco:has(.ruta-tarjeta) > .barra-ruta--compacta { display: none; }
 
-/* La flecha de un plegado gira al abrirlo (la del menú «Administrar» ya lo hace arriba). */
-.tablero details > summary svg { transition: transform 160ms var(--ease-out); }
+/* La flecha de un plegado gira al abrirlo (la del menú «Administrar» vive en marco.css). */
+.tablero details > summary svg { transition: transform var(--dur-presion) var(--ease-out); }
 .tablero details[open] > summary svg { transform: rotate(180deg); }
-@media (prefers-reduced-motion: reduce) { .tablero details > summary svg { transition: none; } }
 
 /* Una tarjeta que envuelve un panel que ya trae su propio título (¿Mejoró?): el panel pierde su marco, no se repite. */
 .tablero .contiene-panel > .panel { border: 0; box-shadow: none; padding: 0; margin: 0; background: none; }
 
 /* Un bloque del diagnóstico: 6 columnas (2 × 2 en escritorio), en columna. */
-.tablero .bloque { grid-column: span 6; display: flex; flex-direction: column; gap: 12px; }
+.tablero .bloque { grid-column: span 6; display: flex; flex-direction: column; gap: 14px; }
 .tablero .bloque > .segmentos, .tablero .bloque > .leyenda { margin-top: 0; }
+/* La frase protagonista del bloque, en la Didone; su cifra, más grande dentro de la misma línea. */
 .tablero .bloque .principal {
-  margin: 0; font-family: var(--font-num); font-size: clamp(21px, 3.4vw, 27px); font-weight: 650; line-height: 1.25; letter-spacing: -0.02em; text-wrap: balance;
+  margin: 0; font-family: var(--font-display); font-variation-settings: "opsz" var(--opsz-frase);
+  font-size: 26px; line-height: 1.25; font-weight: 500; letter-spacing: -0.005em; color: var(--tinta); text-wrap: balance;
 }
-.tablero .bloque .principal .grande { font-size: inherit; }
-/* Una cifra dentro de una frase se lee con números proporcionales: con los tabulares, «2,100» se leía «2, 100»
-   (el «1» angosto en una celda ancha). Las cifras sueltas de las tarjetas siguen tabulares, para que se alineen. */
-.tablero .principal .grande, .tablero .grande.en-frase { font-variant-numeric: proportional-nums; letter-spacing: -0.02em; }
+.tablero .bloque .principal .grande { font-size: 1.385em; font-variation-settings: "opsz" var(--opsz-cifra); line-height: 1; }
+/* Una cifra dentro de una frase se lee con números proporcionales (con los tabulares, «2,100» se leía «2, 100»). */
+.tablero .principal .grande, .tablero .grande.en-frase { font-variant-numeric: lining-nums proportional-nums; letter-spacing: -0.01em; }
 /* «S/ 41,800» no se parte al cortar la línea. */
 .tablero .principal .grande { white-space: nowrap; }
+/* El monto de la frase de arriba del Diagnóstico: el mismo cuerpo que la frase, debajo. */
+.tablero .grande.en-frase { font-size: 26px; font-variation-settings: "opsz" var(--opsz-frase); line-height: 1.25; }
 .tablero .bloque .nota { margin-top: auto; }
-.tablero .bloque details > summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--tinta); min-height: 44px; display: flex; align-items: center; }
+/* «Cada proceso (4)»: un plegado discreto, en una fila. */
+.tablero .bloque details > summary { min-height: 44px; display: flex; align-items: center; font-size: 13px; font-weight: 600; color: var(--tinta); }
+/* Un plegado del tablero sin flecha propia lleva la flecha fina dibujada, no el triángulo nativo (que el display: flex de
+   algunos borraba sin aviso): el mismo gesto en todos. En el plegado de una tarjeta, al final de su fila; en uno
+   anidado («Ver 3 más»), junto al texto. «Lo que falta» de la ruta trae su propia flecha (marco.css). */
+.tablero .tarjeta details:not(.barra-ruta__falta) > summary:not(:has(svg)) { list-style: none; cursor: pointer; user-select: none; }
+.tablero .tarjeta details:not(.barra-ruta__falta) > summary:not(:has(svg))::-webkit-details-marker { display: none; }
+.tablero .tarjeta details:not(.barra-ruta__falta) > summary:not(:has(svg))::after {
+  content: ""; display: inline-block; width: 6px; height: 6px; margin: 0 6px 3px 12px; flex: none; vertical-align: middle;
+  border-right: 1.5px solid var(--grafito); border-bottom: 1.5px solid var(--grafito);
+  transform: rotate(45deg); transition: transform var(--dur-presion) var(--ease-out);
+}
+.tablero .tarjeta details[open]:not(.barra-ruta__falta) > summary:not(:has(svg))::after { transform: translateY(3px) rotate(-135deg); }
+.tablero .tarjeta > details:not(.barra-ruta__falta) > summary:not(:has(svg)) { display: flex; align-items: center; min-height: 44px; }
+.tablero .tarjeta > details:not(.barra-ruta__falta) > summary:not(:has(svg))::after { margin-left: auto; }
 
 /* El medidor dentro de un bloque: más chico, con su lectura encima. */
 .tablero .medidor-en-bloque { position: relative; }
 .tablero .medidor-en-bloque svg { width: 100%; max-width: 200px; margin: 4px auto 0; display: block; overflow: visible; }
-.tablero .medidor-en-bloque .lectura { text-align: center; margin-top: -46px; }
-.tablero .medidor-en-bloque .lectura .num { font-size: 30px; font-weight: 750; }
-.tablero .medidor-en-bloque .lectura p { margin: 0; font-size: 13px; color: var(--grafito); }
+.tablero .medidor-en-bloque .lectura { text-align: center; margin-top: -34px; }
+.tablero .medidor-en-bloque .lectura .num {
+  font-family: var(--font-display); font-variation-settings: "opsz" var(--opsz-cifra);
+  font-size: 30px; line-height: 1; font-weight: 500; letter-spacing: -0.01em; font-variant-numeric: lining-nums proportional-nums;
+}
+.tablero .medidor-en-bloque .lectura p { margin: 6px 0 0; font-size: 13px; color: var(--grafito); }
 
-/* «N datos no cuadran · Ver»: una línea ámbar arriba de todo. */
+/* «N datos no cuadran · Ver»: una línea que pide algo, arriba de todo. Sello sobre papel, no semáforo. */
 .tablero .aviso-incongruencias {
-  grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 14px;
-  background: var(--caducado-velo); color: var(--caducado); border-radius: 16px; padding: 4px 8px 4px 16px;
-  font-size: 14px; font-weight: 650; min-height: 52px;
+  grid-column: 1 / -1; margin: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 14px;
+  background: var(--caducado-velo); color: var(--caducado); border-radius: var(--radio-fila);
+  box-shadow: inset 0 0 0 1px rgba(148, 86, 31, 0.14); padding: 6px 8px 6px 18px;
+  font-size: 14px; font-weight: 600; min-height: 52px;
 }
 .tablero .aviso-incongruencias a {
-  display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border-radius: 999px;
-  color: var(--caducado); background: var(--papel); font-weight: 700; text-decoration: none;
-  transition: transform 160ms var(--ease-out);
+  display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 18px; border-radius: 999px;
+  color: var(--caducado); background: var(--blanco); font-weight: 650; text-decoration: none;
+  transition: transform var(--dur-presion) var(--ease-out), background-color var(--dur-color) ease;
 }
 .tablero .aviso-incongruencias a:active { transform: scale(0.97); }
+@media (hover: hover) and (pointer: fine) { .tablero .aviso-incongruencias a:hover { background: var(--perla); } }
+@media (pointer: coarse) { .tablero .aviso-incongruencias a { min-height: 44px; } }
 
 /* Los datos que no cuadran, lado a lado. */
 .tablero .incongruencias { grid-column: 1 / -1; scroll-margin-top: 90px; }
-.tablero .incongruencias > ul, .tablero .incongruencias > ol { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.tablero .incongruencias > ul, .tablero .incongruencias > ol { list-style: none; margin: 16px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .tablero .incongruencia {
   display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px;
-  border: 1px solid var(--linea); border-radius: 16px; padding: 14px 16px;
+  border: 1px solid var(--linea); border-radius: var(--radio-fila); padding: 14px 16px;
 }
 .tablero .incongruencia > :not(.lado) { grid-column: 1 / -1; }
-.tablero .incongruencia .lado { min-width: 0; display: flex; flex-direction: column; gap: 4px; background: var(--suave); border-radius: 14px; padding: 12px 14px; }
-.tablero .incongruencia .lado .grande { font-size: 26px; overflow-wrap: anywhere; }
+.tablero .incongruencia .lado { min-width: 0; display: flex; flex-direction: column; gap: 4px; background: var(--perla); border-radius: var(--radio); padding: 12px 14px; }
+.tablero .incongruencia .lado .grande {
+  font-size: 26px; font-variation-settings: "opsz" var(--opsz-frase); line-height: 1.05; overflow-wrap: anywhere;
+}
 .tablero .incongruencia .lado .sub { margin: 0; }
-.tablero .incongruencia[data-resuelta] { color: var(--grafito); background: var(--suave); }
-.tablero .incongruencia[data-resuelta] .lado { background: var(--papel); }
+.tablero .incongruencia[data-resuelta] { color: var(--grafito); background: var(--perla); }
+.tablero .incongruencia[data-resuelta] .lado { background: var(--blanco); }
 .tablero .incongruencia[data-resuelta] .grande { color: var(--grafito); }
 
 /* Una fila de lista con un botón a la derecha («Pedírselo al cliente»). */
 .tablero .lista li > .fila {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px;
-  border: 1px solid var(--linea); border-radius: 16px; padding: 10px 12px; color: var(--tinta);
+  border: 1px solid var(--linea); border-radius: var(--radio-fila); padding: 10px 12px; color: var(--tinta);
 }
 .tablero .lista li > .fila > :first-child { flex: 1 1 220px; min-width: 0; }
 
 @media (max-width: 760px) {
   .tablero .bloque { grid-column: 1 / -1; }
+  .tablero .bloque .principal, .tablero .grande.en-frase { font-size: 22px; }
   .tablero .incongruencia { grid-template-columns: 1fr; }
+  .tablero .incongruencia .lado .grande, .tablero .lectura-chica > .num { font-size: 24px; }
 }
 
 /* ───────── EL TABLERO SEGÚN EL ANCHO DE LA PANTALLA DE LA EMPRESA ─────────
@@ -335,7 +234,7 @@
 /* Hasta 560 px: la misma regla que la de 760 px de ventana (2 columnas). */
 @container empresa (max-width: 560px) {
   .empresa-pantalla .tablero { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-  .empresa-pantalla .tablero .cifra-tarjeta { grid-column: span 1; padding: 14px; }
+  .empresa-pantalla .tablero .tarjeta { padding: 16px; }
   .empresa-pantalla .tablero .saludo,
   .empresa-pantalla .tablero .medidor,
   .empresa-pantalla .tablero .cifra-tarjeta.ancha,
@@ -346,21 +245,24 @@
   .empresa-pantalla .tablero .lista-tarjeta.completa,
   .empresa-pantalla .tablero .bloque,
   .empresa-pantalla .tablero .a-lo-ancho { grid-column: 1 / -1; grid-row: auto; }
+  .empresa-pantalla .tablero .cifra-tarjeta { grid-column: span 1; }
   .empresa-pantalla .tablero .fila-cifra { flex-direction: column; align-items: flex-start; gap: 10px; }
   .empresa-pantalla .tablero .cifra-tarjeta.ancha .fila-cifra { flex-direction: row; align-items: flex-end; }
-  .empresa-pantalla .tablero .grande { font-size: 26px; }
+  .empresa-pantalla .tablero .grande { font-size: 30px; }
   .empresa-pantalla .tablero .linea-tarjeta { grid-template-columns: 1fr; }
   .empresa-pantalla .tablero .linea-tarjeta .resumen { padding-bottom: 0; }
+  .empresa-pantalla .tablero .linea-tarjeta .resumen .num { font-size: 30px; }
   .empresa-pantalla .tablero .completa .lista { grid-template-columns: 1fr; }
   .empresa-pantalla .tablero .incongruencia { grid-template-columns: 1fr; }
+  .empresa-pantalla .tablero .bloque .principal, .empresa-pantalla .tablero .grande.en-frase { font-size: 22px; }
 }
 
 /* ───────── IMPRESIÓN ───────── */
 @media print {
-  .vistas-empresa, .en-seccion, .menu-administrar, .menu-acciones, .aviso-incongruencias, .empresa-cabeza__acciones { display: none !important; }
+  .aviso-incongruencias { display: none !important; }
   .empresa-contenido, .empresa-contenido:not(:has(> .tablero)), .hoja-suelta { box-shadow: none; padding: 0; border-radius: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .menu-administrar__panel { animation: none; }
-  .menu-administrar > summary svg { transition: none; }
+  .plegado > summary svg, .tablero details > summary svg, .tablero .tarjeta details > summary::after,
+  .tablero .aviso-incongruencias a { transition: none; }
 }

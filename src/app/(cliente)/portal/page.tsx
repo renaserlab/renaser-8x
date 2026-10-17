@@ -20,7 +20,8 @@ CONTRATO DE DIRECCIÓN — tablero de la imagen de referencia (pedido de Kelin, 
   híbrido del 27-08 sin gauges ni tarjetas)
 THESIS: el inicio del dueño como el tablero de la imagen: saludo con UNA acción dominante, cuánto entendemos su
   negocio en un medidor, sus números en tarjetas con barritas, su venta en una línea con peine.
-OWN-WORLD: cielo azul suave, tarjetas blancas de 24px con sombra suave, píldora oscura, Manrope en números.
+OWN-WORLD: noche y perla (17-10-2026): lienzo perla, tarjetas blancas de 20 px, la Didone en el saludo, la frase de
+  hoy y las cifras, acero en datos, rayado = sin dato.
 STORY: entiendo en 10 segundos cómo va mi empresa y qué me toca hacer hoy.
 FINISH: nada inventado; lo que falta va rayado, con su nombre, e invita a contarlo.
 */
@@ -155,9 +156,9 @@ export default async function Portal() {
           <h1 className="hola" id="t-hola">Hola,<strong>{saludoA || c.empresa?.nombre || "de nuevo"}</strong></h1>
           <p className="bienvenida">{fecha.charAt(0).toUpperCase() + fecha.slice(1)}{saludoA && c.empresa?.nombre ? ` · ${c.empresa.nombre}` : ""}</p>
           {/* LA VOZ: lo que toca hoy, con su fuente, y UNA acción */}
-          <p className="t-hero" style={{ fontSize: 19, marginTop: 18 }}>{lectura.texto}</p>
+          <p className="t-hero lectura-hoy">{lectura.texto}</p>
           {lectura.linea && <p className="voz" style={{ marginTop: 6 }}>{lectura.linea}</p>}
-          {lectura.fuente && <p className="voz" style={{ marginTop: 4, fontSize: 12.5 }}>{lectura.fuente}</p>}
+          {lectura.fuente && <p className="voz voz--fuente">{lectura.fuente}</p>}
           <div style={{ marginTop: 14 }}>
             <Link href={lectura.href} className="boton boton--grande">{lectura.accion}</Link>
           </div>

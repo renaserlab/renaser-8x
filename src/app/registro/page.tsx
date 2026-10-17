@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { CampoClave } from "@/components/base/CampoClave";
+import { Logo8X } from "@/components/base/Logo8X";
 
 export default function Registro() {
   const [nombre, setNombre] = useState("");
@@ -46,12 +47,12 @@ export default function Registro() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-6">
-      <div className="w-full" style={{ maxWidth: 420 }}>
-        <p className="t-etiqueta mb-6">8X</p>
-        <h1 className="t-titulo mb-8">Crear cuenta</h1>
+    <main className="portada">
+      <Logo8X variante="luz" alto={120} lema />
+      <div className="portada__hoja">
+        <h1 className="t-titulo">Crear cuenta</h1>
         {listo ? (
-          <p className="t-cuerpo">Te enviamos un correo a <strong>{email}</strong>. Abre el enlace para confirmar y entrar.</p>
+          <p className="portada__texto">Te enviamos un correo a <strong>{email}</strong>. Abre el enlace para confirmar y entrar.</p>
         ) : (
           <form onSubmit={crear} className="flex flex-col gap-5">
             <label className="flex flex-col gap-2">
@@ -68,17 +69,17 @@ export default function Registro() {
             </label>
             {/* LEY 29733: consentimiento informado, explícito y antes de crear la cuenta. */}
             <label className="flex items-start gap-3" style={{ cursor: "pointer" }}>
-              <input type="checkbox" required checked={acepta} onChange={(e) => setAcepta(e.target.checked)} style={{ marginTop: 3, width: 18, height: 18, flex: "none", accentColor: "var(--marca)" }} />
-              <span className="t-dato" style={{ color: "var(--grafito)" }}>
+              <input type="checkbox" required checked={acepta} onChange={(e) => setAcepta(e.target.checked)} style={{ marginTop: 2, width: 18, height: 18, flex: "none" }} />
+              <span className="portada__pie">
                 Acepto que RENASER trate los datos de mi empresa para diagnosticarla y sistematizarla, como explica la{" "}
-                <Link href="/privacidad" target="_blank" className="underline" style={{ color: "var(--marca)" }}>política de privacidad</Link>.
+                <Link href="/privacidad" target="_blank">política de privacidad</Link>.
                 Puedo pedir acceso, corrección o eliminación cuando quiera.
               </span>
             </label>
-            {error && <p className="t-cuerpo" style={{ color: "var(--contradicho)" }} role="alert">{error}</p>}
+            {error && <p className="aviso aviso--error" role="alert">{error}</p>}
             <button className="boton boton--grande" disabled={cargando || !acepta}>{cargando ? "Creando" : "Crear cuenta"}</button>
-            <p className="t-cuerpo" style={{ color: "var(--grafito)" }}>
-              ¿Ya tienes cuenta? <Link href="/entrar" className="underline">Entrar</Link>
+            <p className="portada__pie">
+              ¿Ya tienes cuenta? <Link href="/entrar">Entrar</Link>
             </p>
           </form>
         )}

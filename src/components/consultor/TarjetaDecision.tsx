@@ -23,14 +23,15 @@ const ETIQUETA_CAMPO: Record<CampoCorregible, string> = {
   que_pasa_si_se_aprueba: "Qué pasará si se aprueba",
 };
 
-const COLOR_ESTADO: Record<string, string> = {
-  pendiente: "var(--medida)",
-  aprobada: "var(--confirmado)",
-  modificada: "var(--marca)",
-  objetada: "var(--caducado)",
-  rechazada: "var(--contradicho)",
-  pospuesta: "var(--grafito)",
-  pide_evidencia: "var(--caducado)",
+/** El sello de cada estado de una decisión (.estado del sistema). */
+const SELLO_ESTADO: Record<string, "ok" | "espera" | "alto" | "neutro"> = {
+  pendiente: "espera",
+  aprobada: "ok",
+  modificada: "neutro",
+  objetada: "espera",
+  rechazada: "alto",
+  pospuesta: "neutro",
+  pide_evidencia: "espera",
 };
 
 const fecha = (iso: string) => iso.slice(0, 16).replace("T", " ");
@@ -39,13 +40,13 @@ const soles = (n: number) => `S/${Math.round(n).toLocaleString("es-PE")}`;
 /** El detalle desplegable de una cifra: cómo se calcula, periodo, fuentes, supuestos y limitaciones. */
 function DetalleCalculo({ calculo }: { calculo: Calculo<unknown> }) {
   return (
-    <details style={{ marginTop: 4 }}>
-      <summary className="t-dato" style={{ cursor: "pointer", color: "var(--grafito)", fontSize: 12 }}>Cómo se calculó</summary>
-      <dl style={{ marginTop: 6, display: "grid", gap: 6 }}>
+    <details className="detalle-calculo">
+      <summary>Cómo se calculó</summary>
+      <dl>
         {explicarCalculo(calculo).map((l) => (
           <div key={l.etiqueta}>
-            <dt className="t-etiqueta" style={{ fontSize: 10 }}>{l.etiqueta}</dt>
-            <dd className="t-dato" style={{ margin: 0, fontSize: 12, color: "var(--grafito)" }}>{l.texto}</dd>
+            <dt>{l.etiqueta}</dt>
+            <dd>{l.texto}</dd>
           </div>
         ))}
       </dl>
@@ -65,11 +66,11 @@ function CifraDerivada({ titulo, valor, calculo, provisional }: { titulo: string
       <div className="t-etiqueta">{titulo}</div>
       <div className="t-dato" style={{ fontVariantNumeric: "tabular-nums" }}>{valor ?? "—"}</div>
       {valor != null && provisional && (
-        <div className="t-dato" style={{ color: "var(--caducado)", fontSize: 12 }} role="status">
+        <div className="apunte texto-espera" role="status">
           Provisional: usa un número leído de un documento que nadie ha conciliado todavía.
         </div>
       )}
-      {valor == null && calculo.motivo_nulo && <div className="t-dato" style={{ color: "var(--caducado)", fontSize: 12 }}>{calculo.motivo_nulo}</div>}
+      {valor == null && calculo.motivo_nulo && <div className="apunte texto-espera">{calculo.motivo_nulo}</div>}
       <DetalleCalculo calculo={calculo} />
     </div>
   );
@@ -116,10 +117,10 @@ export function TarjetaDecision({
 
   return (
     <>
-      <article className="panel" style={{ borderTop: `2.5px solid ${COLOR_ESTADO[d.estado] ?? "var(--linea)"}` }}>
+      <article className="panel p-5">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <h2 className="t-seccion">{d.titulo}</h2>
-          <span className="t-dato" style={{ color: COLOR_ESTADO[d.estado] }}>{d.estado.replace("_", " ")}</span>
+          <span className={`estado ${SELLO_ESTADO[d.estado] ?? "neutro"}`}>{d.estado.replace("_", " ")}</span>
         </div>
         <p className="t-cuerpo" style={{ marginTop: 6 }}>
           <span className="t-etiqueta">POR QUÉ AHORA</span> · {d.por_que_ahora}
@@ -127,8 +128,8 @@ export function TarjetaDecision({
 
         {/* LO QUE FALTA PARA PODER DECIDIR. Va arriba: una tarjeta sin evidencia no es una decisión. */}
         {falta.length > 0 && (
-          <div style={{ marginTop: 14, padding: 10, borderLeft: "2px solid var(--caducado)" }}>
-            <p className="t-etiqueta" style={{ color: "var(--caducado)" }}>ESTA DECISIÓN NO ESTÁ LISTA PARA DECIDIRSE</p>
+          <div className="aviso aviso--pide" style={{ marginTop: 14 }}>
+            <p className="t-rotulo" style={{ color: "var(--caducado)" }}>ESTA DECISIÓN NO ESTÁ LISTA PARA DECIDIRSE</p>
             <ul className="lista-editorial" style={{ marginTop: 6 }}>
               {falta.map((f) => (
                 <li key={f}>{f}</li>
@@ -225,13 +226,13 @@ export function TarjetaDecision({
             {d.alternativas.map((a) => {
               const recomendada = d.recomendacion === a.clave;
               return (
-                <div key={a.clave} className="panel p-5" style={{ borderTop: `2px solid ${recomendada ? "var(--marca)" : "var(--linea)"}` }}>
+                <div key={a.clave} className={recomendada ? "panel p-5 alternativa alternativa--recomendada" : "panel p-5 alternativa"}>
                   <p className="t-etiqueta" style={{ color: recomendada ? "var(--marca)" : "var(--grafito)" }}>
                     {a.clave.toUpperCase()}{recomendada ? " · RECOMENDADA" : ""}
                   </p>
-                  <p style={{ fontWeight: 600, marginTop: 2 }}>{a.titulo}</p>
+                  <p className="titulo-tarjeta" style={{ marginTop: 2 }}>{a.titulo}</p>
                   <p className="t-cuerpo" style={{ marginTop: 4 }}>{a.que_implica}</p>
-                  <dl className="grid gap-1" style={{ gridTemplateColumns: "auto 1fr", marginTop: 8, fontSize: 14 }}>
+                  <dl className="grid gap-1 t-dato" style={{ gridTemplateColumns: "auto 1fr", marginTop: 8 }}>
                     {([["Impacto", a.impacto], ["Costo", a.costo], ["Velocidad", a.velocidad], ["Riesgo", a.riesgo], ["Reversible", a.reversibilidad]] as const).map(
                       ([k, v]) =>
                         v ? (
@@ -364,7 +365,7 @@ export function TarjetaDecision({
                 <p className="t-cuerpo" style={{ marginTop: 4 }}>{h.motivo}</p>
                 {h.despues && (
                   <details style={{ marginTop: 8 }}>
-                    <summary className="t-etiqueta" style={{ cursor: "pointer" }}>Qué cambió respecto a lo que proponía el sistema</summary>
+                    <summary className="plegado-enlace plegado-enlace--tenue">Qué cambió respecto a lo que proponía el sistema</summary>
                     <div className="grid gap-2" style={{ gridTemplateColumns: "1fr 1fr", marginTop: 8 }}>
                       {Object.keys(h.despues).map((k) => (
                         <div key={k} style={{ display: "contents" }}>

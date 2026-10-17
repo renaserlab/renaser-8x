@@ -131,7 +131,7 @@ export function PlanConsultor({ companyId, plan }: { companyId: string; plan: Pl
           })}
         </div>
         {a.estado_canonico === "propuesto" && a.falta.length > 0 && (
-          <div style={{ borderLeft: "2px solid var(--caducado)", paddingLeft: 10 }}>
+          <div style={{ borderLeft: "1px solid var(--caducado)", paddingLeft: 10 }}>
             <p className="t-etiqueta" style={{ color: "var(--caducado)" }}>PARA APROBARLA FALTA</p>
             <ul className="lista-editorial">
               {a.falta.map((f) => <li key={f} className="t-dato">· {f}</li>)}

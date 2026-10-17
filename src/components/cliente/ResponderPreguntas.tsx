@@ -69,7 +69,7 @@ function Tarjeta({ p, rotulo, editable, config, guardado, alResponder, alAvisar 
         ) : respondida ? (
           <span className="estado ok">{PORTAL.respondida}</span>
         ) : (
-          <span className="estado espera">{PORTAL.sin_responder}</span>
+          <span className="estado neutro">{PORTAL.sin_responder}</span>
         )}
       </div>
       <p className="pregunta-tarjeta__texto">{p.texto}</p>

@@ -25,7 +25,7 @@ export default async function IniciativasCliente() {
         Cada apuesta dice qué creemos que va a pasar, cómo sabremos si funcionó y hasta cuándo la probamos. Cuando llega la fecha se decide con lo que se vea: seguir, cambiar algo o parar.
       </p>
       {iniciativas.length === 0 ? (
-        <div className="panel medida p-6" style={{ background: "var(--suave)" }}>
+        <div className="pozo medida">
           <p className="t-cuerpo">Todavía no hay ninguna apuesta aprobada. Cuando acordemos la primera aparece aquí, con su plazo y con cómo sabremos si funcionó.</p>
           <Link href="/portal/plan" className="boton boton--secundario mt-4">Ver tu plan</Link>
         </div>

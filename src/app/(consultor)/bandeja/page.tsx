@@ -13,7 +13,8 @@ export const dynamic = "force-dynamic";
 CONTRATO DE DIRECCIÓN — tablero de la imagen de referencia (pedido de Kelin, 13-10-2026)
 THESIS: el panel de la consultora como el de la imagen: saludo con lo más urgente, un medidor, cifras con
   barritas, una línea con peine, barras con resto rayado, la cartera en tabla y lo demás del día en lista.
-OWN-WORLD: cielo azul suave, tarjetas blancas de 24px con sombra suave, píldora oscura, Manrope en números.
+OWN-WORLD: noche y perla (17-10-2026): lienzo perla, tarjetas blancas de 20 px, la Didone en el saludo y las cifras,
+  acero en datos, la acción de hoy en noche con su flecha de luz, rayado = sin dato.
 FINISH: cada trazo es un dato real de la base; lo que no hay va rayado y con su nombre, nunca como cero.
 Con treinta empresas, esta pantalla es el producto. Capítulo 33.
 */
@@ -240,12 +241,12 @@ export default async function Bandeja() {
             <tbody>
               {filas.map(({ e, propios, estado }) => (
                 <tr key={e.id}>
-                  <td><Link href={`/empresa/${e.id}`}>{e.nombre}</Link></td>
+                  <td><Link className="enlace-fila" href={`/empresa/${e.id}`}>{e.nombre}</Link></td>
                   <td>{ETAPA[e.etapa] ?? e.etapa}</td>
                   <td className="t-dato">{e.radiografia ? `${e.radiografia.listos}/9` : <span className="sin-dato">Sin números</span>}</td>
                   <td className="t-dato">{e.stats ? `${n(e.stats.confirmadas)} de ${n(e.stats.afirmaciones)}` : <span className="sin-dato">Sin datos</span>}</td>
                   <td><span className={`estado ${estado.clase}`}>{estado.texto}</span></td>
-                  <td>{propios[0] ? <Link href={propios[0].href} style={{ fontWeight: 500 }}>{propios[0].titulo}</Link> : <span style={{ color: "var(--grafito)" }}>Nada pendiente</span>}</td>
+                  <td>{propios[0] ? <Link className="enlace-fila enlace-fila--suave" href={propios[0].href}>{propios[0].titulo}</Link> : <span style={{ color: "var(--grafito)" }}>Nada pendiente</span>}</td>
                 </tr>
               ))}
             </tbody>

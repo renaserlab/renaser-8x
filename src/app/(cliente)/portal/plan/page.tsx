@@ -32,24 +32,24 @@ function BrechaAfuera({ personas, assets }: { personas: number | null; assets: {
         {b.items.map((i) => (
           <div key={i.clave} className="panel p-4 flex items-start justify-between gap-3">
             <div style={{ minWidth: 0 }}>
-              <p className="t-dato" style={{ fontWeight: 600 }}>{i.nombre}</p>
-              <p className="t-dato" style={{ color: "var(--grafito)", fontSize: 13 }}>{i.medio ? "a medio camino — ya empezaste" : "aún sin trabajar"}</p>
+              <p className="t-dato fuerte">{i.nombre}</p>
+              <p className="apunte">{i.medio ? "a medio camino — ya empezaste" : "aún sin trabajar"}</p>
             </div>
             <div style={{ flex: "none", textAlign: "right" }}>
-              <p className="t-dato" style={{ fontWeight: 700 }}>{soles(i.soles[0])}–{soles(i.soles[1])}</p>
-              <p className="t-dato" style={{ color: "var(--grafito)", fontSize: 12 }}>{i.semanas[0] === i.semanas[1] ? `${i.semanas[0]} sem` : `${i.semanas[0]}–${i.semanas[1]} sem`}</p>
+              <p className="t-dato fuerte">{soles(i.soles[0])}–{soles(i.soles[1])}</p>
+              <p className="apunte">{i.semanas[0] === i.semanas[1] ? `${i.semanas[0]} sem` : `${i.semanas[0]}–${i.semanas[1]} sem`}</p>
             </div>
           </div>
         ))}
       </div>
-      <div className="panel p-5 mt-4" style={{ background: "var(--marca)", border: "none" }}>
-        <p className="t-etiqueta mb-1" style={{ color: "color-mix(in srgb, var(--papel) 70%, transparent)" }}>Todo junto, afuera</p>
-        <p className="num-grande" style={{ color: "var(--papel)", fontSize: 28 }}>{soles(b.totalSoles[0])} – {soles(b.totalSoles[1])}</p>
-        <p className="t-dato" style={{ color: "color-mix(in srgb, var(--papel) 80%, transparent)" }}>
-          y entre {b.totalSemanas[0]} y {b.totalSemanas[1]} semanas haciéndolo por partes. Aquí este trabajo está dentro de tu acompañamiento: se construye contigo, pieza por pieza, en <Link href="/portal/activos" style={{ color: "var(--papel)", textDecoration: "underline" }}>Tu información</Link>.
+      <div className="tarjeta-noche mt-4">
+        <p className="tarjeta-noche__rotulo">Todo junto, afuera</p>
+        <p className="cifra-media">{soles(b.totalSoles[0])} – {soles(b.totalSoles[1])}</p>
+        <p className="tarjeta-noche__texto">
+          y entre {b.totalSemanas[0]} y {b.totalSemanas[1]} semanas haciéndolo por partes. Aquí este trabajo está dentro de tu acompañamiento: se construye contigo, pieza por pieza, en <Link href="/portal/activos" className="tarjeta-noche__enlace">Tu información</Link>.
         </p>
       </div>
-      <p className="t-dato mt-2" style={{ color: "var(--grafito)", fontSize: 12.5 }}>Rangos referenciales del mercado peruano de consultoría para pymes; el precio real varía por sector y alcance.</p>
+      <p className="apunte mt-2">Rangos referenciales del mercado peruano de consultoría para pymes; el precio real varía por sector y alcance.</p>
     </section>
   );
 }

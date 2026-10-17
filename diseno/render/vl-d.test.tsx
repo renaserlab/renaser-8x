@@ -212,9 +212,9 @@ const SALIDA = path.resolve(__dirname, "salida");
 function pagina(titulo: string, cuerpo: string) {
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>${titulo}</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Public+Sans:wght@400;500;600;700&family=Source+Serif+4:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400..700&family=Manrope:wght@400..800&family=Source+Serif+4:wght@400;600&display=swap">
 <link rel="stylesheet" href="vl-d.css">
-<style>:root{--font-manrope:"Manrope";--font-public-sans:"Public Sans";--font-source-serif:"Source Serif 4";}</style>
+<style>:root{--font-bodoni:"Bodoni Moda";--font-manrope:"Manrope";--font-source-serif:"Source Serif 4";}</style>
 </head><body>${cuerpo}</body></html>`;
 }
 

@@ -34,10 +34,10 @@ export default async function ProcesosCliente() {
       <p className="t-etiqueta">Tus procesos</p>
       <h1 className="t-titulo mt-2 mb-8">Así funciona tu empresa, dibujada</h1>
       {activa && (
-        <section className="panel p-5 mb-8 medida" style={{ background: "var(--suave)" }}>
-          <h2 className="t-seccion" style={{ fontSize: 18 }}>Tu consultora te pidió tus procesos</h2>
-          {activa.nota && <p className="t-cuerpo mt-2">«{activa.nota}»</p>}
-          <p className="t-cuerpo mt-2" style={{ color: "var(--grafito)" }}>
+        <section className="pozo pedido mb-8 medida">
+          <h2 className="t-seccion">Tu consultora te pidió tus procesos</h2>
+          {activa.nota && <p className="pedido__nota">«{activa.nota}»</p>}
+          <p className="pedido__como">
             Puedes contarlos y los dibujamos, subir el archivo que ya tienes de cada uno, o traer tu lista entera en un Excel. Cuando termines, avísale abajo.
           </p>
         </section>
@@ -57,7 +57,7 @@ export default async function ProcesosCliente() {
       )}
       {activa && quien.puede && (
         <details className="mt-10">
-          <summary className="t-etiqueta" style={{ cursor: "pointer", minHeight: 44, paddingTop: 12 }}>
+          <summary className="plegado-enlace">
             Traer la lista entera de tus procesos en un Excel{sinArchivo.length > 0 ? ` · ${sinArchivo.length} de tu lista por dibujar` : ""}
           </summary>
           <div className="mt-3">

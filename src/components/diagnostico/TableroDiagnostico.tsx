@@ -13,7 +13,8 @@ import type { ItemFalta, TableroDiagnostico as Tablero } from "@/lib/diagnostico
 CONTRATO DE DIRECCIÓN — el diagnóstico de una empresa (pedido de Kelin, 16-10-2026)
 THESIS: en diez segundos, qué frena a la empresa y cuánto cuesta; debajo, cuatro bloques con su gráfico —procesos,
   dependencia del dueño, dinero, resultado—, lo que no cuadra y lo que falta, con un botón para pedírselo al cliente.
-OWN-WORLD: el mismo tablero de la bandeja y del Inicio del dueño: cielo, tarjetas blancas, Manrope en las cifras.
+OWN-WORLD: noche y perla, el mismo tablero de la bandeja y del Inicio del dueño: lienzo perla, tarjetas blancas de 20 px,
+  la Didone en la frase y las cifras protagonistas, Manrope en lo que se opera, acero en los datos, rayado = sin dato.
 FINISH: cada trazo es un dato de la base; lo que no hay va rayado y con su nombre, nunca como cero. Lo que no cuadra
   se ve arriba, con las dos cifras a la vista.
 La consultora y el dueño ven el mismo tablero con palabras distintas: `t.para` decide cuáles.
@@ -325,11 +326,11 @@ function BloqueDependencia({ t, base }: { t: Tablero; base: string }) {
 
 function CifraChica({ rotulo, valor, provisional, porConfirmar, sinDato = "sin dato" }: { rotulo: string; valor: ReactNode | null; provisional?: boolean; porConfirmar?: boolean; sinDato?: ReactNode }) {
   return (
-    <div style={{ background: "var(--suave)", borderRadius: 14, padding: "9px 12px", minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
-      <span style={{ fontSize: 12, color: "var(--grafito)" }}>{rotulo}</span>
-      {valor == null ? (typeof sinDato === "string" ? <span className="sin-dato">{sinDato}</span> : sinDato) : <b className="num" style={{ fontSize: 17, fontWeight: 700, overflowWrap: "anywhere" }}>{valor}</b>}
-      {valor != null && provisional && <span style={{ fontSize: 11.5, color: "var(--caducado)" }}>{ROTULO_CIFRA_PROVISIONAL}</span>}
-      {valor != null && porConfirmar && <span style={{ fontSize: 11.5, color: "var(--caducado)" }}>sale de una cifra que no cuadra</span>}
+    <div className="pozo">
+      <span className="pozo__rotulo">{rotulo}</span>
+      {valor == null ? (typeof sinDato === "string" ? <span className="sin-dato">{sinDato}</span> : sinDato) : <b className="pozo__cifra">{valor}</b>}
+      {valor != null && provisional && <span className="pozo__aviso">{ROTULO_CIFRA_PROVISIONAL}</span>}
+      {valor != null && porConfirmar && <span className="pozo__aviso">sale de una cifra que no cuadra</span>}
     </div>
   );
 }

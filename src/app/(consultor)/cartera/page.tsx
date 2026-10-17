@@ -34,8 +34,8 @@ export default async function Cartera({ searchParams }: { searchParams: Promise<
       <Encabezado titulo="Cartera" sub={`${contar(r.empresas, "empresa", "empresas")}, ${r.activas} ${r.activas === 1 ? "activa" : "activas"} · al ${fechaDia(cartera.hoy)}`} />
 
       {cartera.avisos.length > 0 && (
-        <section className="panel p-4 mb-8" role="status" aria-label="Lo que no se pudo leer" style={{ borderColor: "var(--caducado)" }}>
-          <h2 className="t-etiqueta mb-2" style={{ color: "var(--caducado)" }}>Lo que esta pantalla no pudo leer</h2>
+        <section className="aviso aviso--pide mb-8" role="status" aria-label="Lo que no se pudo leer">
+          <h2 className="mb-2">Lo que esta pantalla no pudo leer</h2>
           <ul className="flex flex-col gap-1">
             {cartera.avisos.map((a) => (
               <li key={a} className="t-dato">{a}</li>

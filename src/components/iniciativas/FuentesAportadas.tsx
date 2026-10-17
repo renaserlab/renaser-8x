@@ -48,7 +48,7 @@ export function FuentesAportadas({ companyId, iniciativaId, fuentes, admite, hoy
       ) : (
         <ul className="flex flex-col gap-2" style={{ listStyle: "none", padding: 0, margin: 0 }}>
           {fuentes.map((x) => (
-            <li key={`${x.nombre}|${x.quien_la_aporto}|${x.fecha}`} className="t-dato" style={{ borderLeft: "2px solid var(--linea)", paddingLeft: 10 }}>
+            <li key={`${x.nombre}|${x.quien_la_aporto}|${x.fecha}`} className="t-dato" style={{ borderLeft: "1px solid var(--linea)", paddingLeft: 10 }}>
               <strong>{x.nombre}</strong>
               <span style={{ color: "var(--grafito)" }}> · la aportó {x.quien_la_aporto || "(no consta quién)"} · {diaCorto(x.fecha)}</span>
               <p style={{ margin: "2px 0 0" }}>{x.que_dice}</p>
@@ -62,7 +62,7 @@ export function FuentesAportadas({ companyId, iniciativaId, fuentes, admite, hoy
         </div>
       )}
       {admite && abierto && (
-        <div className="grid gap-2 md:grid-cols-2" style={{ borderLeft: "2px solid var(--linea)", paddingLeft: 12 }}>
+        <div className="grid gap-2 md:grid-cols-2" style={{ borderLeft: "1px solid var(--linea)", paddingLeft: 12 }}>
           <input className="campo" aria-label="Nombre de la fuente" placeholder="Qué es: documento, lista, conversación, registro" value={f.nombre} onChange={(e) => setF({ ...f, nombre: e.target.value })} />
           <input className="campo" aria-label="Quién la aportó" placeholder="Quién la aportó" value={f.quien} onChange={(e) => setF({ ...f, quien: e.target.value })} />
           <input className="campo" type="date" aria-label="Fecha de la fuente" max={hoy} style={{ maxWidth: 190 }} value={f.fecha} onChange={(e) => setF({ ...f, fecha: e.target.value })} />

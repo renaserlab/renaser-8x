@@ -5,6 +5,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { NavCliente } from "@/components/cliente/NavCliente";
 import { EnEstaSeccion } from "@/components/cliente/EnEstaSeccion";
 import { BarraRutaCliente } from "@/components/cliente/BarraRutaCliente";
+import { Logo8X } from "@/components/base/Logo8X";
 import { seccionesAbiertas, pantallasOcultas, pantallasSinPedido } from "@/lib/solicitudes";
 import { negocioDeEmpresa } from "@/lib/ruta-datos";
 import { ElegirEmpresa } from "./portal/elegir-empresa/ElegirEmpresa";
@@ -30,10 +31,15 @@ export default async function LayoutCliente({ children }: { children: React.Reac
       const { data: lista } = await supabaseAdmin().from("companies").select("id,nombre").in("id", r.empresas).order("nombre");
       return (
         <div className="min-h-screen flex flex-col">
-          <header className="no-imprimir px-4 flex items-center justify-end" style={{ paddingTop: "max(env(safe-area-inset-top), 10px)", paddingBottom: 8 }}>
-            <form action="/api/auth/salir" method="post">
-              <button className="t-dato" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--grafito)", padding: "4px 0", font: "inherit" }}>Salir</button>
-            </form>
+          <header className="cabecera-app sin-pildora no-imprimir">
+            <span className="marca-app">
+              <Logo8X variante="tinta" alto={24} />
+            </span>
+            <div className="acciones-app">
+              <form action="/api/auth/salir" method="post">
+                <button className="boton boton--secundario">Salir</button>
+              </form>
+            </div>
           </header>
           <main className="flex-1 px-4 py-6 w-full" style={{ maxWidth: 1100, margin: "0 auto" }}>
             <h1 className="t-titulo mt-2 mb-2 medida">¿Con cuál de tus empresas quieres trabajar?</h1>
@@ -78,7 +84,10 @@ export default async function LayoutCliente({ children }: { children: React.Reac
       <div className="columna-app">
         {!companyId && (
           <header className="cabecera-app sin-pildora no-imprimir">
-            <span className="marca-app">8X <small>Tu empresa</small></span>
+            <span className="marca-app">
+              <Logo8X variante="tinta" alto={24} />
+              <small className="marca-app__empresa">Tu empresa</small>
+            </span>
             <div className="acciones-app">
               <form action="/api/auth/salir" method="post">
                 <button className="boton boton--secundario">Salir</button>

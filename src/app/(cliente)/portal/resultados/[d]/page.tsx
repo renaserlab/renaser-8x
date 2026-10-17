@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icono } from "@/components/base/Icono";
 import { notFound } from "next/navigation";
 import { contextoPortal } from "@/lib/portal";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -17,7 +18,7 @@ export default async function VerResultado({ params }: { params: Promise<{ d: st
   return (
     <>
       <div className="no-imprimir flex justify-between items-center mb-8">
-        <Link href="/portal/resultados" className="t-dato">← Tus resultados</Link>
+        <Link href="/portal/resultados" className="volver"><Icono nombre="abajo" tam={16} />Tus resultados</Link>
         <Imprimir texto="Guardar como PDF" />
       </div>
       <VistaEntregable d={data} paraCliente marca={process.env.MARCA_CONSULTORIA || c.empresa?.nombre} />

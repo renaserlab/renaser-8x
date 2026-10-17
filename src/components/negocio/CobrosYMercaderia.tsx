@@ -94,7 +94,7 @@ async function guardarBloque(companyId: string, bloque: string, datos: Record<st
 function SiNo({ clave, valor, puede, alCambiar }: { clave: ClaveModulo; valor: boolean | null | undefined; puede: boolean; alCambiar: (v: boolean) => void }) {
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <h2 className="t-seccion" style={{ fontSize: 18 }}>{PREGUNTA_MODULO[clave]}</h2>
+      <h2 className="t-seccion">{PREGUNTA_MODULO[clave]}</h2>
       {puede ? (
         <div className="flex gap-2" role="group" aria-label={PREGUNTA_MODULO[clave]}>
           <button type="button" className={valor === true ? "boton" : "boton boton--secundario"} aria-pressed={valor === true} onClick={() => alCambiar(true)}>Sí</button>
@@ -114,7 +114,7 @@ function Pregunta({ etiqueta, valor, guardar, modo, puede, formato, max }: { eti
   if (!puede) {
     return (
       <div className="flex flex-wrap items-center gap-2" style={{ padding: "8px 0" }}>
-        <span className="t-dato" style={{ fontWeight: 600 }}>{etiqueta}</span>
+        <span className="t-dato fuerte">{etiqueta}</span>
         <span className="t-dato">{valor ? mostrarDato(valor, formato ?? cantidad) : <SinDato />}</span>
         <ChipEstado estado={valor?.estado === "no_lo_se" ? null : valor?.estado} />
       </div>
@@ -238,7 +238,7 @@ function EditorOperacion({ companyId, modo, o, monedaPorDefecto, puedeQuitar, al
   };
 
   return (
-    <div className="panel p-4 flex flex-col gap-3" style={{ background: "var(--suave)" }}>
+    <div className="pozo pozo--chico flex flex-col gap-3">
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="flex flex-col gap-1">
           <span className="t-dato">¿Qué día vendiste?</span>
@@ -309,7 +309,7 @@ function Operaciones({ companyId, modo, operaciones, fugas, puede, config, usuar
   const fmt = (n: number) => enMoneda(n, config);
   return (
     <div className="flex flex-col gap-3">
-      <h3 className="t-seccion" style={{ fontSize: 16 }}>Tus ventas cobradas en otra moneda</h3>
+      <h3 className="t-seccion">Tus ventas cobradas en otra moneda</h3>
       {operaciones.length === 0 && <p className="t-dato" style={{ color: "var(--grafito)" }}>{puede ? "Anota tus últimas ventas: con tres o cuatro ya se ve cuánto se queda en el camino." : "Todavía ninguna anotada."}</p>}
       <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
         {operaciones.map((o) => {
@@ -318,14 +318,14 @@ function Operaciones({ companyId, modo, operaciones, fugas, puede, config, usuar
           return (
             <li key={o.id} style={{ borderTop: "1px solid var(--linea)", padding: "12px 0" }}>
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="t-dato" style={{ fontWeight: 600 }}>
+                <span className="t-dato fuerte">
                   {o.monto.toLocaleString("es-PE", { maximumFractionDigits: 2 })} {o.moneda}
                   {o.fecha_venta ? ` · vendida el ${o.fecha_venta.split("-").reverse().join("/")}` : ""}
                 </span>
                 <span className="flex items-center gap-2">
                   <ChipEstado estado={o.estado} />
                   {editable && (
-                    <button type="button" className="boton boton--secundario" style={{ fontSize: 14, padding: "0 14px" }} aria-expanded={abierta === o.id} onClick={() => setAbierta(abierta === o.id ? null : o.id)}>
+                    <button type="button" className="boton boton--secundario boton--chico" aria-expanded={abierta === o.id} onClick={() => setAbierta(abierta === o.id ? null : o.id)}>
                       {abierta === o.id ? "Cerrar" : "Corregir"}
                     </button>
                   )}
@@ -398,16 +398,16 @@ function BloqueMoneda({ companyId, modo, moneda, puede, refrescar, hayVentas }: 
           }}
         >
           <label className="flex flex-col gap-1">
-            <span className="t-dato" style={{ fontWeight: 600 }}>¿En qué moneda te pagan?</span>
+            <span className="t-dato fuerte">¿En qué moneda te pagan?</span>
             <input aria-label="En qué moneda te pagan" className="campo" value={vendeEn} maxLength={60} list="monedas-comunes-bloque" onChange={(e) => setVendeEn(e.target.value)} />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="t-dato" style={{ fontWeight: 600 }}>¿En qué moneda pagas tus costos?</span>
+            <span className="t-dato fuerte">¿En qué moneda pagas tus costos?</span>
             <input aria-label="En qué moneda pagas tus costos" className="campo" value={costosEn} maxLength={20} list="monedas-comunes-bloque" onChange={(e) => setCostosEn(e.target.value)} />
           </label>
           {preguntarUltima(moneda.como_cobra) && (
             <label className="flex flex-col gap-1 sm:col-span-2">
-              <span className="t-dato" style={{ fontWeight: 600 }}>Tu última venta en otra moneda, ¿cómo te la pagaron?</span>
+              <span className="t-dato fuerte">Tu última venta en otra moneda, ¿cómo te la pagaron?</span>
               <input aria-label="Cómo te pagaron tu última venta en otra moneda" className="campo" value={comoCobra} maxLength={300} onChange={(e) => setComoCobra(e.target.value)} />
             </label>
           )}
@@ -441,11 +441,11 @@ function BloqueMoneda({ companyId, modo, moneda, puede, refrescar, hayVentas }: 
       )}
       {preguntarUltima(moneda.conversiones) && (
         <div className="flex flex-wrap items-center gap-2">
-          <span className="t-dato" style={{ fontWeight: 600 }}>La última vez que te pagaron, ¿cuántas veces se cambió tu dinero?</span>
+          <span className="t-dato fuerte">La última vez que te pagaron, ¿cuántas veces se cambió tu dinero?</span>
           {puede ? (
             <span className="flex flex-wrap gap-2" role="group" aria-label="Cuántas veces se cambió tu dinero la última vez">
               {([[1, "Una vez"], [2, "Dos veces"], ["no_lo_se", "No lo sé"]] as const).map(([v, t]) => (
-                <button key={String(v)} type="button" className={moneda.conversiones === v ? "boton" : "boton boton--secundario"} style={{ fontSize: 14 }} aria-pressed={moneda.conversiones === v} onClick={() => void guardar({ conversiones: v }).catch((e) => setAviso({ tipo: "error", texto: mensajeDe(e) }))}>
+                <button key={String(v)} type="button" className={moneda.conversiones === v ? "boton" : "boton boton--secundario"} aria-pressed={moneda.conversiones === v} onClick={() => void guardar({ conversiones: v }).catch((e) => setAviso({ tipo: "error", texto: mensajeDe(e) }))}>
                   {t}
                 </button>
               ))}

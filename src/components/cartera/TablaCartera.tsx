@@ -44,13 +44,13 @@ function Fila({ f, consultores, niveles }: { f: FilaCartera; consultores: readon
   return (
     <li style={{ padding: 0 }}>
       <details className="group">
-        <summary className={`grid ${REJILLA_FILA}`} style={{ cursor: "pointer", padding: "14px 0", listStyle: "none" }}>
+        <summary className={`grid ${REJILLA_FILA} fila-plegable`}>
           <Celda rotulo={ROTULOS[0]} clase={ANCHA_FILA}>
-            <span className="t-cuerpo" style={{ fontWeight: 600, display: "block", overflowWrap: "anywhere" }}>
+            <span className="t-cuerpo fuerte block" style={{ overflowWrap: "anywhere" }}>
               {f.empresa.nombre}
               {estado && <span className="t-dato" style={gris}> · {estado}</span>}
             </span>
-            <span className="t-dato no-imprimir" style={{ color: "var(--marca)" }}>
+            <span className="t-dato fuerte no-imprimir" style={{ color: "var(--acero-fuerte)" }}>
               <span className="group-open:hidden">Ver detalle</span>
               <span className="hidden group-open:inline">Cerrar detalle</span>
             </span>
@@ -71,7 +71,7 @@ function Fila({ f, consultores, niveles }: { f: FilaCartera; consultores: readon
           </Celda>
 
           <Celda rotulo={ROTULOS[2]}>
-            <span className="t-dato" title={f.fase.porQue} style={{ display: "block", fontWeight: 600, color: f.fase.clave ? "var(--tinta)" : "var(--caducado)" }}>{f.fase.nombre}</span>
+            <span title={f.fase.porQue} className="t-dato fuerte block" style={{ color: f.fase.clave ? "var(--tinta)" : "var(--caducado)" }}>{f.fase.nombre}</span>
             {f.fase.etapaNombre && <span className="t-dato" style={{ display: "block", ...gris }}>{f.fase.etapaNombre}</span>}
           </Celda>
 
@@ -126,7 +126,7 @@ function Fila({ f, consultores, niveles }: { f: FilaCartera; consultores: readon
               b.sinDato.length ? <SinDato motivo={`No se pudo mirar: ${b.sinDato.join(", ")}.`} /> : <span className="t-dato" style={gris}>ninguno</span>
             ) : (
               <>
-                <span className="t-dato" style={{ display: "block", fontWeight: 700, ...rojo }}>{b.total}{b.sinDato.length ? " o más" : ""}</span>
+                <span className="t-dato fuerte block" style={rojo}>{b.total}{b.sinDato.length ? " o más" : ""}</span>
                 <span className="t-dato" style={{ display: "block", ...gris }}>
                   {[b.acciones ? contar(b.acciones, "acción", "acciones") : "", b.fuentes ? contar(b.fuentes, "fuente", "fuentes") : "", b.trabajos ? contar(b.trabajos, "trabajo", "trabajos") : ""].filter(Boolean).join(" · ")}
                 </span>

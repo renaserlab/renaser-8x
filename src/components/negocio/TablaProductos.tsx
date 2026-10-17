@@ -455,7 +455,7 @@ function ParteCosto({ parte, i, modo, fmt, deshabilitado, placeholder, alCambiar
           onChange={(e) => alCambiar({ ...parte, nombre: e.target.value })}
         />
         {!deshabilitado && (
-          <button type="button" className="boton boton--secundario" style={{ flex: "none", fontSize: 14, padding: "0 14px" }} onClick={alQuitar} aria-label={`Quitar la parte ${parte.nombre || i + 1}`}>
+          <button type="button" className="boton boton--secundario" style={{ flex: "none" }} onClick={alQuitar} aria-label={`Quitar la parte ${parte.nombre || i + 1}`}>
             Quitar
           </button>
         )}
@@ -614,8 +614,7 @@ function EditorLinea({ companyId, modo, linea, partesAnteriores, modelos, totale
 
   return (
     <div
-      className="panel p-4 flex flex-col gap-5"
-      style={{ background: "var(--suave)" }}
+      className="pozo pozo--chico flex flex-col gap-5"
       onBlur={(e) => {
         // Se guarda al salir de la tarjeta, no por tecla ni al pasar de una caja a otra dentro de ella. La nueva
         // también, si ya tiene nombre y algo escrito: así no se pierde al abrir otra fila.
@@ -646,7 +645,7 @@ function EditorLinea({ companyId, modo, linea, partesAnteriores, modelos, totale
 
       {/* 1 · El precio */}
       <fieldset className="flex flex-col gap-3" style={{ border: 0, padding: 0, margin: 0 }}>
-        <legend className="t-seccion" style={{ fontSize: 16 }}>1 · El precio</legend>
+        <legend className="t-seccion">1 · El precio</legend>
         {def.clave === "intermedia_comision" && !bloqueados.has("precio") && (
           <label className="t-dato flex items-center gap-2" style={{ minHeight: 44 }}>
             <input type="checkbox" checked={b.porTicket} onChange={(e) => cambiar((x) => ({ ...x, porTicket: e.target.checked }))} />
@@ -688,7 +687,7 @@ function EditorLinea({ companyId, modo, linea, partesAnteriores, modelos, totale
               {def.preguntaSegundoPrecio}
             </label>
             {b.conSegundo && (
-              <div className="flex flex-col gap-3" style={{ paddingLeft: 12, borderLeft: "2px solid var(--linea)" }}>
+              <div className="pozo pozo--chico flex flex-col gap-3">
                 <label className="flex flex-col gap-1">
                   <span className="t-dato">Ese otro precio es…</span>
                   <select aria-label="Qué es el otro precio" className="campo" value={b.segundoEs} disabled={bloqueados.has("precio")} onChange={(e) => cambiar((x) => ({ ...x, segundoEs: e.target.value as Borrador["segundoEs"] }))}>
@@ -713,7 +712,7 @@ function EditorLinea({ companyId, modo, linea, partesAnteriores, modelos, totale
 
       {/* 2 · Lo que cuesta */}
       <fieldset className="flex flex-col gap-3" style={{ border: 0, padding: 0, margin: 0 }}>
-        <legend className="t-seccion" style={{ fontSize: 16 }}>2 · Lo que te cuesta</legend>
+        <legend className="t-seccion">2 · Lo que te cuesta</legend>
         <p className="t-dato" style={{ color: "var(--grafito)" }}>{b.porPartes ? def.preguntaCosto : `¿Cuánto te cuesta cada ${unidad.singular}, en total?`}</p>
         {!bloqueados.has("costo") && (
           <label className="t-dato flex items-center gap-2" style={{ minHeight: 44 }}>
@@ -742,16 +741,16 @@ function EditorLinea({ companyId, modo, linea, partesAnteriores, modelos, totale
             )}
             {!bloqueados.has("costo") && (
               <div className="flex flex-wrap gap-2">
-                <button type="button" className="boton boton--secundario" style={{ fontSize: 14 }} onClick={() => cambiar((x) => ({ ...x, partes: [...x.partes, { nombre: "", valor: null, desde: null, hasta: null, estado: "estimado" }] }))}>
+                <button type="button" className="boton boton--secundario" onClick={() => cambiar((x) => ({ ...x, partes: [...x.partes, { nombre: "", valor: null, desde: null, hasta: null, estado: "estimado" }] }))}>
                   Agregar una parte
                 </button>
                 {partesAnteriores.length > 0 && (
-                  <button type="button" className="boton boton--secundario" style={{ fontSize: 14 }} onClick={() => copiarPartes(false)}>
+                  <button type="button" className="boton boton--secundario" onClick={() => copiarPartes(false)}>
                     Copiar las partes del producto anterior
                   </button>
                 )}
                 {anterioresConMonto && (
-                  <button type="button" className="boton boton--secundario" style={{ fontSize: 14 }} onClick={() => copiarPartes(true)}>
+                  <button type="button" className="boton boton--secundario" onClick={() => copiarPartes(true)}>
                     Copiar las partes con sus montos
                   </button>
                 )}
@@ -788,7 +787,7 @@ function EditorLinea({ companyId, modo, linea, partesAnteriores, modelos, totale
 
       {/* 3 · Cuánto vende */}
       <fieldset className="flex flex-col gap-3" style={{ border: 0, padding: 0, margin: 0 }}>
-        <legend className="t-seccion" style={{ fontSize: 16 }}>3 · Cuánto vendes</legend>
+        <legend className="t-seccion">3 · Cuánto vendes</legend>
         {b.modoVolumen === "dicho" ? (
           <>
             {def.volumenSeDicePor === "dia" && <DiasAlMes companyId={companyId} modo={modo} totales={totales} editable={!bloqueados.has("unidades")} />}
@@ -802,7 +801,7 @@ function EditorLinea({ companyId, modo, linea, partesAnteriores, modelos, totale
               deshabilitado={bloqueados.has("unidades")}
             />
             {!bloqueados.has("unidades") && (
-              <button type="button" className="boton boton--secundario" style={{ fontSize: 14, alignSelf: "flex-start" }} onClick={() => cambiar((x) => ({ ...x, modoVolumen: "de_cada_10" }))}>
+              <button type="button" className="boton boton--secundario" style={{ alignSelf: "flex-start" }} onClick={() => cambiar((x) => ({ ...x, modoVolumen: "de_cada_10" }))}>
                 No sé cuántos vendo de cada uno
               </button>
             )}
@@ -820,7 +819,7 @@ function EditorLinea({ companyId, modo, linea, partesAnteriores, modelos, totale
               deshabilitado={bloqueados.has("unidades")}
             />
             {!bloqueados.has("unidades") && (
-              <button type="button" className="boton boton--secundario" style={{ fontSize: 14, alignSelf: "flex-start" }} onClick={() => cambiar((x) => ({ ...x, modoVolumen: "dicho" }))}>
+              <button type="button" className="boton boton--secundario" style={{ alignSelf: "flex-start" }} onClick={() => cambiar((x) => ({ ...x, modoVolumen: "dicho" }))}>
                 Mejor digo cuántos vendo
               </button>
             )}
@@ -868,7 +867,7 @@ const COLUMNAS_FILA = "lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)_minma
 function Celda({ titulo, texto, estado }: { titulo: string; texto: string | null; estado?: DatoOral["estado"] | null }) {
   return (
     <div className="flex flex-wrap items-baseline gap-2 lg:block">
-      <span className="t-etiqueta lg:hidden" style={{ minWidth: 120 }}>{titulo}</span>
+      <span className="t-rotulo lg:hidden" style={{ minWidth: 120 }}>{titulo}</span>
       <span className="t-dato">{texto ?? <SinDato />}</span>
       {texto && estado && (
         <span className="lg:block lg:mt-1">
@@ -888,18 +887,18 @@ function FilaProducto({ l, modo, modelos, config, deja, abierta, editable, error
     <div style={{ borderTop: "1px solid var(--linea)" }}>
       <div className={`flex flex-col gap-2 ${COLUMNAS_FILA}`} style={{ padding: "14px 0" }}>
         <div>
-          <p className="t-seccion" style={{ fontSize: 16 }}>{l.nombre}</p>
-          {subtitulo && <p className="t-dato" style={{ color: "var(--grafito)", fontSize: 13 }}>{subtitulo}</p>}
+          <p className="t-seccion">{l.nombre}</p>
+          {subtitulo && <p className="apunte">{subtitulo}</p>}
         </div>
         <Celda titulo="Precio" texto={textoPrecio(l, fmt)} estado={est.precio} />
         <Celda titulo="Te cuesta" texto={textoCosto(l, fmt)} estado={est.costo} />
         <Celda titulo="Al mes" texto={textoVolumen(l)} estado={est.unidades} />
         <div className="flex flex-wrap items-baseline gap-2 lg:block">
-          <span className="t-etiqueta lg:hidden" style={{ minWidth: 120 }}>Te deja</span>
+          <span className="t-rotulo lg:hidden" style={{ minWidth: 120 }}>Te deja</span>
           <span className="t-dato" style={{ color: "var(--grafito)" }}>{deja ?? "—"}</span>
         </div>
         <div>
-          <button type="button" className="boton boton--secundario" style={{ fontSize: 14, padding: "0 16px" }} aria-expanded={abierta} onClick={alAbrir}>
+          <button type="button" className="boton boton--secundario boton--chico" aria-expanded={abierta} onClick={alAbrir}>
             {abierta ? "Cerrar" : !editable ? "Ver" : modo === "consultora" ? "Editar" : "Llenar"}
           </button>
         </div>
@@ -920,14 +919,14 @@ function DetalleLinea({ l, config, modelos }: { l: LineaProducto; config: Config
   const def = defDe(l.modelo, l.tipo, modelos);
   const partes = l.componentes_costo ?? [];
   return (
-    <div className="panel p-4" style={{ background: "var(--suave)" }}>
+    <div className="pozo pozo--chico">
       {partes.length > 0 ? (
         <>
           <p className="t-etiqueta mb-2">Lo que cuesta cada {def.unidad.singular}, parte por parte</p>
           <ul className="flex flex-col gap-1" style={{ listStyle: "none", padding: 0, margin: 0 }}>
             {partes.map((p, i) => (
               <li key={i} className="t-dato flex flex-wrap items-center gap-2">
-                <span style={{ fontWeight: 600 }}>{p.nombre}:</span> {mostrarDato(p, fmt)} <ChipEstado estado={p.estado === "no_lo_se" ? null : p.estado} />
+                <span className="fuerte">{p.nombre}:</span> {mostrarDato(p, fmt)} <ChipEstado estado={p.estado === "no_lo_se" ? null : p.estado} />
               </li>
             ))}
           </ul>
@@ -1063,7 +1062,7 @@ export function TablaProductos({ companyId, modo, lineas, modelos, totales, edit
       )}
 
       <div>
-        <div className={`hidden ${COLUMNAS_FILA} t-etiqueta`} style={{ paddingBottom: 8 }} aria-hidden="true">
+        <div className={`hidden ${COLUMNAS_FILA} t-rotulo`} style={{ paddingBottom: 10 }} aria-hidden="true">
           <span>Producto o servicio</span>
           <span>Precio</span>
           <span>Te cuesta</span>
@@ -1130,9 +1129,9 @@ export function TablaProductos({ companyId, modo, lineas, modelos, totales, edit
             </>
           )}
           {varios && abierta !== "nueva" && (
-            <div className="panel p-4 flex flex-col gap-3" style={{ background: "var(--suave)" }}>
+            <div className="pozo pozo--chico flex flex-col gap-3">
               <label className="flex flex-col gap-1">
-                <span className="t-dato" style={{ fontWeight: 600 }}>Escribe un nombre por renglón</span>
+                <span className="t-dato fuerte">Escribe un nombre por renglón</span>
                 <textarea aria-label="Nombres, uno por renglón" className="campo" rows={6} value={nombres} onChange={(e) => setNombres(e.target.value)} />
               </label>
               <div className="flex flex-wrap gap-2">

@@ -49,7 +49,7 @@ function sumar(filas: { nombre: string; dato: DatoOral | null }[]): { total: Ran
  */
 function TextoSuma({ s, fmt, prefijo, conPrefijo = false }: { s: ReturnType<typeof sumar>; fmt: (n: number) => string; prefijo: string; conPrefijo?: boolean }) {
   if (!s) return null;
-  if (s.total) return <p className="t-dato" style={{ fontWeight: 600 }}>{prefijo}: {textoRango(s.total, fmt)}</p>;
+  if (s.total) return <p className="t-dato fuerte">{prefijo}: {textoRango(s.total, fmt)}</p>;
   return (
     <p className="t-dato" style={{ color: "var(--grafito)" }}>
       {conPrefijo ? `${prefijo}: sin` : "Sin"} el monto de {s.faltan.join(", ")} no hay total.
@@ -79,7 +79,7 @@ function FilaCosto({ fila, valor, modo, fmt, editable, puedeQuitar, placeholder,
   if (!editable || comprobado) {
     return (
       <li className="flex flex-wrap items-center gap-2" style={{ borderTop: "1px solid var(--linea)", padding: "12px 0" }}>
-        <span className="t-dato" style={{ fontWeight: 600 }}>{valor.nombre}</span>
+        <span className="t-dato fuerte">{valor.nombre}</span>
         <span className="t-dato">{valor.dato ? mostrarDato(valor.dato, fmt) : <SinDato />}</span>
         <ChipEstado estado={valor.dato?.estado === "no_lo_se" ? null : valor.dato?.estado} />
         {comprobado && editable && <span className="t-dato" style={{ color: "var(--grafito)" }}>Comprobado por tu consultora: si cambió, díselo.</span>}
@@ -107,7 +107,7 @@ function FilaCosto({ fila, valor, modo, fmt, editable, puedeQuitar, placeholder,
           onChange={(e) => alCambiar({ ...valor, nombre: e.target.value })}
         />
         {puedeQuitar && (
-          <button type="button" className="boton boton--secundario" style={{ flex: "none", fontSize: 14, padding: "0 14px" }} onClick={alQuitar} aria-label={`Quitar ${valor.nombre || "este gasto"}`}>
+          <button type="button" className="boton boton--secundario" style={{ flex: "none" }} onClick={alQuitar} aria-label={`Quitar ${valor.nombre || "este gasto"}`}>
             Quitar
           </button>
         )}
@@ -252,7 +252,7 @@ export function CostosMes({ companyId, modo, costos, editable, usuarioId, config
         );
       })}
 
-      <section className="panel p-5" style={{ background: "var(--suave)" }}>
+      <section className="pozo">
         <TextoSuma s={todo} fmt={fmt} prefijo="En total, al mes" conPrefijo />
         {!todo && <p className="t-dato" style={{ color: "var(--grafito)" }}>Cuando anotes tus gastos, aquí ves el total del mes.</p>}
         {vital != null && (

@@ -94,7 +94,7 @@ export function DetalleIniciativa({ companyId, iniciativa: i, participantes, ind
           </div>
         )}
         {i.estado === "propuesta" && i.falta.length > 0 && (
-          <div style={{ borderLeft: "2px solid var(--caducado)", paddingLeft: 10 }}>
+          <div style={{ borderLeft: "1px solid var(--caducado)", paddingLeft: 10 }}>
             <p className="t-etiqueta" style={{ color: "var(--caducado)" }}>PARA APROBARLA FALTA</p>
             <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
               {i.falta.map((f) => <li key={f.campo} className="t-dato">· <strong>{f.etiqueta}.</strong> <span style={{ color: "var(--grafito)" }}>{f.por_que}</span></li>)}

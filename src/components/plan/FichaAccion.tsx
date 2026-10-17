@@ -144,7 +144,7 @@ export function FichaAccion({ accion: a, participantes, indicadores, lineasBase,
         </label>
       </div>
       {decidida && haySinGuardar && (
-        <div className="flex flex-col gap-2" style={{ borderLeft: "2px solid var(--caducado)", paddingLeft: 12 }}>
+        <div className="flex flex-col gap-2" style={{ borderLeft: "1px solid var(--caducado)", paddingLeft: 12 }}>
           <input className="campo" placeholder="Por qué se cambia (al menos 8 letras)" aria-label="Por qué se cambia" value={motivo} onChange={(e) => setMotivo(e.target.value)} />
           <input className="campo" placeholder="Qué implica (plazo, recursos, otra acción)" aria-label="Qué implica" value={implica} onChange={(e) => setImplica(e.target.value)} />
           <div className="flex gap-2">

@@ -34,7 +34,7 @@ export function HistorialAccion({ historial, modo }: { historial: HistorialFila[
         const estadoAntes = (h.antes as { estado?: Estado } | null)?.estado;
         const cambioEstado = estadoAntes && estadoDespues && estadoAntes !== estadoDespues;
         return (
-          <li key={h.id} className="t-dato" style={{ borderLeft: "2px solid var(--linea)", paddingLeft: 10 }}>
+          <li key={h.id} className="t-dato" style={{ borderLeft: "1px solid var(--linea)", paddingLeft: 10 }}>
             <span style={{ color: "var(--grafito)" }}>{fechaCorta(h.created_at)} · </span>
             <strong>{quien}</strong> {verbos[h.accion] ?? h.accion}
             {cambioEstado && modo === "consultor" && <span style={{ color: "var(--grafito)" }}> ({etiquetas[estadoAntes]} → {etiquetas[estadoDespues]})</span>}

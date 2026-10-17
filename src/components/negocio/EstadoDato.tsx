@@ -14,8 +14,7 @@ export function EstadoDato({ estado, modo, alCambiar, etiqueta, deshabilitado = 
   return (
     <select
       aria-label={`Cómo lo sabes: ${etiqueta}`}
-      className="campo"
-      style={{ width: "auto", minWidth: 0, fontSize: 14 }}
+      className="campo campo--auto"
       value={estado}
       disabled={bloqueado}
       onChange={(e) => alCambiar(e.target.value as Estado)}

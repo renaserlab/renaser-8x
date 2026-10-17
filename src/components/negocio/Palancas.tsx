@@ -30,7 +30,7 @@ export function Palancas({ t, config, pct, conservar }: { t: TableroRentabilidad
 
   return (
     <section aria-labelledby="palancas-titulo" className="flex flex-col gap-3">
-      <h3 id="palancas-titulo" className="t-seccion" style={{ fontSize: 17 }}>Palancas: qué pasa si…</h3>
+      <h3 id="palancas-titulo" className="t-seccion">Palancas: qué pasa si…</h3>
       <form method="get" className="flex flex-wrap items-end gap-3 no-imprimir">
         {Object.entries(conservar).map(([k, v]) => (
           <input key={k} aria-label={`Conserva ${k}`} type="hidden" name={k} value={v} />
@@ -78,13 +78,13 @@ export function Palancas({ t, config, pct, conservar }: { t: TableroRentabilidad
                     {v.volumen_que_se_puede_perder_pct != null && ` Podría vender hasta un ${cantidad(v.volumen_que_se_puede_perder_pct)} % menos y seguiría dejando lo mismo que hoy.`}
                     {v.nuevo_equilibrio_unidades && ` El punto de equilibrio pasaría a ${textoRango(v.nuevo_equilibrio_unidades, (n) => cantidad(Math.ceil(n)))} unidades al mes.`}
                   </p>
-                  <details>
-                    <summary className="t-dato" style={{ cursor: "pointer", color: "var(--grafito)", fontSize: 13 }}>Cómo se calculó</summary>
-                    <dl className="mt-1">
+                  <details className="detalle-calculo">
+                    <summary>Cómo se calculó</summary>
+                    <dl>
                       {explicarCalculo(c).map((x) => (
-                        <div key={x.etiqueta} className="t-dato" style={{ fontSize: 13 }}>
-                          <dt style={{ fontWeight: 600, display: "inline" }}>{x.etiqueta}: </dt>
-                          <dd style={{ display: "inline", margin: 0 }}>{x.texto}</dd>
+                        <div key={x.etiqueta}>
+                          <dt>{x.etiqueta}</dt>
+                          <dd>{x.texto}</dd>
                         </div>
                       ))}
                     </dl>
@@ -98,12 +98,12 @@ export function Palancas({ t, config, pct, conservar }: { t: TableroRentabilidad
               <li key={id} className="flex flex-col gap-2">
                 {i === 0 ? (
                   <>
-                    <p className="t-dato" style={{ fontWeight: 650 }}>{nombre(id)}</p>
+                    <p className="t-dato fuerte">{nombre(id)}</p>
                     {cuentas}
                   </>
                 ) : (
                   <details>
-                    <summary className="t-dato" style={{ fontWeight: 650, cursor: "pointer", minHeight: 44, paddingTop: 10 }}>{nombre(id)}</summary>
+                    <summary className="plegado-enlace plegado-enlace--tinta">{nombre(id)}</summary>
                     <div className="flex flex-col gap-2 mt-1">{cuentas}</div>
                   </details>
                 )}

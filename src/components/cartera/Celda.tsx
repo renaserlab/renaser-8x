@@ -27,7 +27,7 @@ export const ANCHA_CARGA = "col-span-2 sm:col-span-3 lg:col-span-1";
 export function Celda({ rotulo, clase, children }: { rotulo: string; clase?: string; children: React.ReactNode }) {
   return (
     <div className={clase} style={{ minWidth: 0 }}>
-      <span className="t-etiqueta block lg:sr-only">{rotulo}</span>
+      <span className="t-rotulo celda__rotulo block lg:sr-only">{rotulo}</span>
       {children}
     </div>
   );
@@ -36,9 +36,9 @@ export function Celda({ rotulo, clase, children }: { rotulo: string; clase?: str
 /** La fila de rótulos de escritorio. En celular no se pinta: cada celda lleva el suyo. */
 export function Encabezados({ rejilla, rotulos }: { rejilla: string; rotulos: readonly string[] }) {
   return (
-    <div className={`hidden lg:grid ${rejilla}`} aria-hidden="true" style={{ padding: "10px 0", borderBottom: "1px solid var(--linea)" }}>
+    <div className={`hidden lg:grid ${rejilla} encabezados-lista`} aria-hidden="true">
       {rotulos.map((r) => (
-        <span key={r} className="t-etiqueta">{r}</span>
+        <span key={r} className="t-rotulo">{r}</span>
       ))}
     </div>
   );

@@ -52,8 +52,7 @@ export function BotonReintentarExtraccion({ sourceId }: { sourceId: string }) {
       <Progreso jobId={job} alTerminar={() => router.refresh()} />
       {error && <p className="t-dato" style={{ color: "var(--contradicho)", margin: 0 }} role="alert">{error}</p>}
       <button
-        className="boton boton--secundario"
-        style={{ minHeight: 34, fontSize: 13 }}
+        className="boton boton--secundario boton--chico"
         onClick={async () => {
           setError(null);
           try {

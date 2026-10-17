@@ -47,9 +47,9 @@ function Avance({ respondidas, total, actual }: { respondidas: number; total: nu
         aria-valuemin={0}
         aria-valuemax={total}
         aria-valuenow={respondidas}
-        style={{ height: 6, background: "var(--suave)", borderRadius: "var(--radio)", overflow: "hidden" }}
+        className="avance-fino"
       >
-        <div style={{ width: `${pct}%`, height: "100%", background: "var(--marca)", transition: "width var(--dur)" }} />
+        <div style={{ width: `${pct}%` }} />
       </div>
     </div>
   );
@@ -122,7 +122,7 @@ function Pregunta({
     <section className="flex flex-col gap-6 aparece">
       <div>
         <p className="t-etiqueta">{grupo}</p>
-        <h2 className="t-hero medida mt-2" style={{ fontSize: "clamp(22px, 4.2vw, 28px)" }}>
+        <h2 className="t-hero medida mt-2">
           {pregunta.pregunta}
         </h2>
         {pregunta.sabida_por && (
@@ -164,8 +164,8 @@ function Pregunta({
         {(hayTexto || audio) && (
           <button
             type="button"
-            className="t-dato"
-            style={{ background: "none", border: "none", cursor: "pointer", font: "inherit", textDecoration: "underline", color: "var(--grafito)", padding: 0, alignSelf: "flex-start" }}
+            className="boton-enlace boton-enlace--tenue"
+            style={{ alignSelf: "flex-start" }}
             onClick={() => {
               setTexto("");
               setAudio(null);
@@ -347,7 +347,7 @@ function LoQueEntendimos({
       )}
 
       {confirmada && (
-        <div className="panel p-5 medida" style={{ background: "var(--suave)" }}>
+        <div className="pozo medida">
           <p className="t-cuerpo" role="status">
             Listo. Con esto ya conocemos tu negocio lo suficiente para empezar a trabajar contigo.
           </p>
@@ -355,7 +355,7 @@ function LoQueEntendimos({
             <Link href="/portal" className="boton">
               Ir al inicio
             </Link>
-            <Link href="/portal/activos" className="t-dato" style={{ textDecoration: "underline", color: "var(--marca)" }}>
+            <Link href="/portal/activos" className="t-dato enlace-texto enlace-texto--acero">
               Subir documentos de tu negocio
             </Link>
           </div>
@@ -421,7 +421,7 @@ export function EntradaBreve({ companyId, inicial, puedeResponder, motivoSoloLec
       <Avance respondidas={estado.progreso.respondidas} total={estado.progreso.total} actual={abierta && !estado.sintesis ? abierta.n : null} />
 
       {!puedeResponder && motivoSoloLectura && (
-        <p className="t-dato panel p-4 medida" style={{ background: "var(--suave)" }}>
+        <p className="t-dato pozo pozo--chico medida">
           {motivoSoloLectura}
         </p>
       )}

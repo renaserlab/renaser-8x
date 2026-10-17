@@ -61,7 +61,7 @@ export default async function Resultados() {
         {[...ultimos.values()].map((d) => (
           <li key={d.id}>
             <Link href={`/portal/resultados/${d.id}`} className="panel p-4 flex justify-between items-center">
-              <span className="t-seccion" style={{ fontSize: 18 }}>{ENTREGABLE[d.tipo]}</span>
+              <span className="t-seccion">{ENTREGABLE[d.tipo]}</span>
               <span className="t-dato" style={{ color: "var(--grafito)" }}>{fechaCorta(d.publicado_at)}</span>
             </Link>
           </li>

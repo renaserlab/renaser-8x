@@ -57,7 +57,7 @@ export function DetalleFila({ f, consultores, niveles }: { f: FilaCartera; consu
         {d.sinDato.length > 0 && <p className="t-dato" style={aviso}>No se pudo mirar: {d.sinDato.join(", ")}.</p>}
         {d.origen !== "ninguna" && (
           <p>
-            <Link href={d.href} className="t-dato" style={{ color: "var(--marca)" }}>Ir a decidir</Link>
+            <Link href={d.href} className="enlace-azul">Ir a decidir</Link>
           </p>
         )}
       </Bloque>
@@ -137,7 +137,7 @@ export function DetalleFila({ f, consultores, niveles }: { f: FilaCartera; consu
           </ul>
         )}
         <p>
-          <Link href={`${f.empresa.href}/entrega`} className="t-dato" style={{ color: "var(--marca)" }}>Ver la entrega</Link>
+          <Link href={`${f.empresa.href}/entrega`} className="enlace-azul">Ver la entrega</Link>
         </p>
       </Bloque>
 
@@ -165,7 +165,7 @@ export function DetalleFila({ f, consultores, niveles }: { f: FilaCartera; consu
           <p className="t-dato" style={r.estado === "sin_dato" ? aviso : gris}>{r.estado === "sin_corte" ? "Sin corte. " : ""}{r.detalle}</p>
         )}
         <p>
-          <Link href={f.empresa.href} className="t-dato" style={{ color: "var(--marca)" }}>Abrir la empresa</Link>
+          <Link href={f.empresa.href} className="enlace-azul">Abrir la empresa</Link>
         </p>
       </Bloque>
 

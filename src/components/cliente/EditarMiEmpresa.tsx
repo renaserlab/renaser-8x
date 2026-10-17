@@ -67,7 +67,7 @@ export function EditarMiEmpresa({ nombre, ficha }: { nombre: string; ficha: Fich
 
   return (
     <>
-      <button type="button" onClick={() => setAbierto(true)} className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>
+      <button type="button" onClick={() => setAbierto(true)} className="boton boton--secundario boton--chico">
         Corregir mis datos
       </button>
       {abierto && (
@@ -76,7 +76,7 @@ export function EditarMiEmpresa({ nombre, ficha }: { nombre: string; ficha: Fich
           <aside className="panel-lateral" role="dialog" aria-modal="true" aria-label="Corregir los datos de tu empresa">
             <div className="flex items-start justify-between gap-3 mb-4">
               <h3 className="t-seccion">Corregir mis datos</h3>
-              <button type="button" onClick={() => setAbierto(false)} className="t-dato" style={{ background: "none", border: "none", cursor: "pointer", padding: "2px 4px", font: "inherit", color: "var(--grafito)" }}>Cerrar</button>
+              <button type="button" onClick={() => setAbierto(false)} className="boton-enlace boton-enlace--tenue boton-enlace--sin-raya">Cerrar</button>
             </div>
             <div className="flex flex-col gap-4">
               <label className="flex flex-col gap-1">
@@ -89,9 +89,9 @@ export function EditarMiEmpresa({ nombre, ficha }: { nombre: string; ficha: Fich
                 <div className="flex items-center gap-3 flex-wrap">
                   {f.logo_url && (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={f.logo_url} alt="Logo de tu empresa" style={{ maxHeight: 44, border: "1px solid var(--linea)", borderRadius: "var(--radio)", padding: 4 }} />
+                    <img src={f.logo_url} alt="Logo de tu empresa" className="logo-subido" />
                   )}
-                  <label className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14, cursor: "pointer" }}>
+                  <label className="boton boton--secundario boton--chico">
                     {subiendo ? "Subiendo" : f.logo_url ? "Cambiar logo" : "Subir logo"}
                     <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden onChange={(e) => subirLogo(e.target.files?.[0] ?? null)} />
                   </label>

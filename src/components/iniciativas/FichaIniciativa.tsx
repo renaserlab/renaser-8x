@@ -196,7 +196,7 @@ export function FichaIniciativa({ companyId, iniciativa: i, participantes, indic
       </details>
 
       {decidida && !soloLectura && haySinGuardar && (
-        <div className="flex flex-col gap-2" style={{ borderLeft: "2px solid var(--caducado)", paddingLeft: 12 }}>
+        <div className="flex flex-col gap-2" style={{ borderLeft: "1px solid var(--caducado)", paddingLeft: 12 }}>
           <input className="campo" aria-label="Por qué se cambia" placeholder={`Por qué se cambia (al menos ${MIN_LETRAS} letras)`} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
           <div className="flex gap-2 flex-wrap items-center">
             <button type="button" className="boton boton--secundario" style={{ minHeight: 34, fontSize: 13 }} disabled={guardando || motivo.trim().length < MIN_LETRAS} onClick={() => guardar(pendiente)}>

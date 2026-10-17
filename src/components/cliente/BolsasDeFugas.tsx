@@ -25,7 +25,7 @@ export function BolsasDeFugas({ fugas, Encabezado = "h2" }: { fugas: Fugas; Enca
             {monto ? (
               b === "caja" ? (
                 <p className="num-grande" style={{ color: "var(--contradicho)" }}>
-                  ~{monto} <span className="t-cuerpo" style={{ color: "var(--grafito)", fontFamily: "var(--font-ui)" }}>{porMes(b)}</span>
+                  ~{monto} <span className="unidad">{porMes(b)}</span>
                 </p>
               ) : (
                 <p className="t-cuerpo"><strong>{monto}</strong> {porMes(b)}</p>
@@ -40,7 +40,7 @@ export function BolsasDeFugas({ fugas, Encabezado = "h2" }: { fugas: Fugas; Enca
               <ul className="lista-editorial mt-3">
                 {bolsa.fugas.map((f) => (
                   <li key={f.concepto}>
-                    <span className="t-cuerpo" style={{ fontWeight: 550 }}>{f.concepto} · {cifraDeFuga(f)}</span>
+                    <span className="t-cuerpo fuerte">{f.concepto} · {cifraDeFuga(f)}</span>
                     <span className="block t-dato" style={{ color: "var(--grafito)" }}>De dónde sale: {f.base}.</span>
                   </li>
                 ))}

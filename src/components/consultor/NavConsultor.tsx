@@ -3,12 +3,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icono, type NombreIcono } from "@/components/base/Icono";
 import { Lateral } from "@/components/navegacion/Lateral";
+import { Logo8X } from "@/components/base/Logo8X";
 
 type EmpresaMini = { id: string; nombre: string };
 
 /**
  * Navegación de la consultora AL COSTADO (pedido de Kelin, 16-10-2026). Una sola barra (Lateral.tsx):
  * fija a la izquierda en escritorio, que se puede ocultar a un riel de íconos; en celular entra desde la izquierda.
+ * Desde el 17-10-2026 es la barra noche con el 8X en luz y «RENASER» al lado; el destino activo lleva la luz dorada
+ * del logo (src/design/marco.css).
  * Grupos, en este orden:
  *   1. los destinos de todos los días, con ícono (`principales`): lo único que se ve en el riel;
  *   2. «Empresas recientes», una por fila;
@@ -50,8 +53,9 @@ export function NavConsultor({ empresas, usuario, torre }: { empresas: EmpresaMi
     <Lateral
       etiqueta="Menú de 8X"
       marca={
-        <Link href="/bandeja" className="marca-app">
-          8X <small>RENASER</small>
+        <Link href="/bandeja" className="marca-app" title="8X · RENASER">
+          <Logo8X variante="luz" alto={28} />
+          <small className="marca-app__firma">RENASER</small>
         </Link>
       }
       enMovil={torre}
@@ -75,7 +79,7 @@ export function NavConsultor({ empresas, usuario, torre }: { empresas: EmpresaMi
           const enUnaEmpresa = href === "/empresas" && ruta.startsWith("/empresa/");
           return (
             <Link key={href} href={href} aria-current={a ? "page" : undefined} data-dentro={enUnaEmpresa ? "si" : undefined} aria-label={nombre} title={nombre}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICONOS[icono]}</svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICONOS[icono]}</svg>
               <span className="rotulo">{nombre}</span>
             </Link>
           );

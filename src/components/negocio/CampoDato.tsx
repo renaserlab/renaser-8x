@@ -65,17 +65,17 @@ export function CampoDato({ etiqueta, valor, alGuardar, modo, formato = cantidad
   return (
     <div className="flex flex-col gap-2">
       {conEtiqueta && (
-        <label htmlFor={id} className="t-dato" style={{ fontWeight: 600, color: "var(--tinta)" }}>
+        <label htmlFor={id} className="etiqueta-campo">
           {etiqueta}
         </label>
       )}
-      {ayuda && <p className="t-dato" style={{ color: "var(--grafito)", fontSize: 13.5 }}>{ayuda}</p>}
+      {ayuda && <p className="apunte">{ayuda}</p>}
       <div className="flex flex-wrap items-center gap-2">
         <input
           aria-label={etiqueta}
           id={id}
           className="campo"
-          style={{ flex: "1 1 160px", minWidth: 0 }}
+          style={{ flex: "1 1 240px", minWidth: 0 }}
           inputMode="text"
           autoComplete="off"
           value={texto}
@@ -91,7 +91,7 @@ export function CampoDato({ etiqueta, valor, alGuardar, modo, formato = cantidad
           <button
             type="button"
             className="boton boton--secundario"
-            style={{ flex: "none", padding: "0 16px", fontSize: 14 }}
+            style={{ flex: "none" }}
             aria-pressed={noLoSe}
             disabled={bloqueado}
             onClick={() => {
@@ -105,7 +105,7 @@ export function CampoDato({ etiqueta, valor, alGuardar, modo, formato = cantidad
         )}
       </div>
       {aviso && (
-        <p className="t-dato" role="alert" style={{ color: "var(--contradicho)" }}>
+        <p className="error-campo" role="alert">
           {aviso}
         </p>
       )}

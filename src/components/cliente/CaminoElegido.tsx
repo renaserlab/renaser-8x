@@ -8,8 +8,9 @@ import { diaDelCamino } from "@/lib/estrategia/dueno";
 CONTRATO DE DIRECCIÓN — el camino que elegimos, en la página del dueño (spec-estrategia-8x.md §8.2)
 THESIS: en una mirada, qué vamos a hacer con su empresa y por qué; debajo, los pasos con desde cuándo y quién, lo que
   esperamos ver —en rango y con «si»—, cómo sabremos que funciona y qué haremos si pasa algo. Nada más.
-OWN-WORLD: la hoja blanca del portal con los bloques del tablero de Diagnóstico: título en Manrope, bloques con borde
-  fino, la cifra grande en Manrope, el chip de estado al lado. Nada que maree.
+OWN-WORLD: noche y perla, la hoja blanca del portal con los bloques del tablero de Diagnóstico: el título del camino y la
+  cifra esperada en la Didone, los títulos de bloque en Manrope, bloques con borde fino, el chip de estado al lado.
+  Nada que maree.
 FINISH: lo que se pinta es lo que se congeló al aprobar (para_dueno), con las cifras ya escritas: sin ids, sin el otro
   camino, sin palabras del método. Un número que todavía no se puede calcular no es un hueco rayado: se dice que lo
   calculamos. El origen de cada cifra va con ella («estimado», «por confirmar», «lo que nos dijiste»).

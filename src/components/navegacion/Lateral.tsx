@@ -167,7 +167,7 @@ export function Lateral({
           title="Abrir el menú"
           onClick={() => setMovil(true)}
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M4 7h16M4 12h16M4 17h10" />
           </svg>
         </button>
@@ -193,13 +193,13 @@ export function Lateral({
             title={riel ? "Mostrar el menú" : "Ocultar el menú"}
             onClick={() => guardar(riel ? "abierta" : "riel")}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <rect x="3.5" y="4.5" width="17" height="15" rx="2.5" />
               <path d={riel ? "M9.5 4.5v15M13 10l2 2-2 2" : "M9.5 4.5v15M15 10l-2 2 2 2"} />
             </svg>
           </button>
           <button type="button" className="lateral__boton solo-celular" aria-label="Cerrar el menú" title="Cerrar el menú" onClick={cerrar}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M6 6l12 12M18 6 6 18" />
             </svg>
           </button>

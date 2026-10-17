@@ -336,18 +336,26 @@ describe("el layout de la empresa: sobre el cielo, con su cabecera y su menú", 
 
   it("el estilo: la hoja se apaga con .empresa-marco, la pantalla es un contenedor y lo que no es tablero va en su hoja", () => {
     const css = leer("design/vistas.css");
-    expect(leer("app/globals.css")).toMatch(/@import "\.\.\/design\/vistas\.css";/);
+    // Desde el 17-10-2026 (sistema «noche y perla») la cabecera, la ruta compacta, las vistas y los menús viven en marco.css.
+    const marco = leer("design/marco.css");
+    const globals = leer("app/globals.css");
+    expect(globals).toMatch(/@import "\.\.\/design\/vistas\.css";/);
+    expect(globals).toMatch(/@import "\.\.\/design\/marco\.css";/);
     expect(css).toMatch(/\.hoja:has\(> \.empresa-marco\) \{ background: none; box-shadow: none; padding: 0; border-radius: 0; \}/);
     expect(css).toMatch(/\.empresa-pantalla \{[^}]*container: empresa \/ inline-size;/);
     expect(css).toMatch(/\.empresa-contenido:not\(:has\(> \.tablero\)\),\n\.hoja-suelta \{[^}]*box-shadow: var\(--sombra\)/);
     expect(css).toMatch(/@container empresa \(min-width: 561px\) and \(max-width: 980px\)/);
     expect(css).toMatch(/@container empresa \(max-width: 560px\)/);
-    expect(css).toMatch(/@media \(min-width: 1180px\)/);
-    for (const clase of [".empresa-cabeza", ".empresa-navegacion", ".barra-ruta--compacta", ".vistas-empresa", ".vistas-empresa__expediente", ".menu-acciones", ".proceso-tarjeta", ".empresa-contenido", ".hoja-suelta", ".tablero .bloque", ".tablero .medidor-en-bloque", ".tablero .aviso-incongruencias", ".tablero .incongruencias", ".tablero .incongruencia", ".tablero .lista li > .fila", ".menu-administrar"]) {
+    expect(marco).toMatch(/@media \(min-width: 1180px\)/);
+    for (const clase of [".empresa-cabeza", ".empresa-navegacion", ".barra-ruta--compacta", ".vistas-empresa", ".vistas-empresa__expediente", ".menu-acciones", ".menu-administrar"]) {
+      expect(marco, `falta ${clase} en marco.css`).toContain(clase);
+    }
+    for (const clase of [".proceso-tarjeta", ".empresa-contenido", ".hoja-suelta", ".tablero .bloque", ".tablero .medidor-en-bloque", ".tablero .aviso-incongruencias", ".tablero .incongruencias", ".tablero .incongruencia", ".tablero .lista li > .fila"]) {
       expect(css, `falta ${clase} en vistas.css`).toContain(clase);
     }
-    const imprimir = css.slice(css.indexOf("@media print"));
-    for (const clase of [".vistas-empresa", ".en-seccion", ".menu-administrar", ".aviso-incongruencias"]) expect(imprimir).toContain(clase);
+    const imprimirMarco = marco.slice(marco.indexOf("@media print"));
+    for (const clase of [".vistas-empresa", ".en-seccion", ".menu-administrar"]) expect(imprimirMarco).toContain(clase);
+    expect(css.slice(css.indexOf("@media print"))).toContain(".aviso-incongruencias");
   });
 });
 

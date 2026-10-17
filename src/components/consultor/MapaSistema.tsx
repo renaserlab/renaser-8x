@@ -40,19 +40,19 @@ export function MapaSistema({ nodos, aristas, autoEncola }: { nodos: NodoConDato
           position: { x: col * (ANCHO + 56), y: fila * ALTO_FILA },
           data: {
             label: (
-              <div style={{ textAlign: "left", padding: "2px 4px" }}>
-                <div style={{ fontWeight: 600, fontSize: 14, lineHeight: 1.25 }}>{n.nombre}</div>
-                <div style={{ fontSize: 11, color: "var(--grafito)", marginTop: 3 }}>
+              <div className="nodo-mapa">
+                <div className="nodo-mapa__nombre">{n.nombre}</div>
+                <div className="nodo-mapa__agentes">
                   {n.agentes.length ? n.agentes.join(" · ") : "sin agente: no llama al modelo"}
                 </div>
-                <div style={{ fontSize: 11, marginTop: 5, fontVariantNumeric: "tabular-nums" }}>
+                <div className="nodo-mapa__cuenta">
                   {n.trabajos === 0 ? (
                     <span style={{ color: "var(--grafito)" }}>sin ejecuciones recuperables</span>
                   ) : (
                     <>
                       <span style={{ color: "var(--confirmado)" }}>{n.hechos} hechos</span>
                       {n.fallidos > 0 && <span style={{ color: "var(--contradicho)" }}> · {n.fallidos} fallidos</span>}
-                      {n.enCurso > 0 && <span style={{ color: "var(--medida)" }}> · {n.enCurso} en curso</span>}
+                      {n.enCurso > 0 && <span style={{ color: "var(--acero-fuerte)" }}> · {n.enCurso} en curso</span>}
                     </>
                   )}
                 </div>
@@ -62,7 +62,7 @@ export function MapaSistema({ nodos, aristas, autoEncola }: { nodos: NodoConDato
           style: {
             width: ANCHO,
             borderRadius: "var(--radio)",
-            border: `2px solid ${c.borde}`,
+            border: `1px solid ${c.borde}`,
             background: c.fondo,
             padding: 8,
             fontFamily: "var(--font-ui)",
@@ -80,8 +80,8 @@ export function MapaSistema({ nodos, aristas, autoEncola }: { nodos: NodoConDato
       animated: false,
       label: "encola",
       labelStyle: { fontSize: 10, fill: "var(--grafito)" },
-      style: { stroke: "var(--marca)", strokeWidth: 1.6 },
-      markerEnd: { type: MarkerType.ArrowClosed, color: "var(--marca)" },
+      style: { stroke: "var(--acero-medio)", strokeWidth: 1.5 },
+      markerEnd: { type: MarkerType.ArrowClosed, color: "var(--acero-medio)" },
     }));
 
     return { rfNodos, rfAristas };
@@ -89,7 +89,7 @@ export function MapaSistema({ nodos, aristas, autoEncola }: { nodos: NodoConDato
 
   return (
     <>
-      <div style={{ height: "62vh", border: "1px solid var(--linea)", borderRadius: "var(--radio)", background: "var(--papel)" }}>
+      <div className="lienzo-mapa">
         <ReactFlowProvider>
           <ReactFlow
             nodes={rfNodos}
@@ -108,9 +108,9 @@ export function MapaSistema({ nodos, aristas, autoEncola }: { nodos: NodoConDato
 
       {/* LA LEYENDA, DICIENDO LO QUE EL COLOR NO PRUEBA. */}
       <p className="t-dato" style={{ color: "var(--grafito)", marginTop: 10 }}>
-        <span style={{ color: "var(--confirmado)" }}>■</span> se ejecutó ·{" "}
-        <span style={{ color: "var(--contradicho)" }}>■</span> tiene fallos ·{" "}
-        <span style={{ color: "var(--linea)" }}>■</span> sin ejecuciones recuperables — que no es lo mismo que «no funciona»: las
+        <i className="muestra-color" style={{ background: "var(--confirmado)" }} aria-hidden="true" /> se ejecutó ·{" "}
+        <i className="muestra-color" style={{ background: "var(--contradicho)" }} aria-hidden="true" /> tiene fallos ·{" "}
+        <i className="muestra-color" style={{ background: "var(--linea-fuerte)" }} aria-hidden="true" /> sin ejecuciones recuperables — que no es lo mismo que «no funciona»: las
         ejecuciones se borran junto con la empresa. Ningún color afirma calidad: nadie ha evaluado las salidas todavía.
       </p>
       {autoEncola.length > 0 && (
@@ -121,12 +121,11 @@ export function MapaSistema({ nodos, aristas, autoEncola }: { nodos: NodoConDato
 
       {/* AL ABRIR UN NODO: qué lo dispara, qué entrega, y el contrato de sus agentes. */}
       {abierto && (
-        <section className="panel aparece" style={{ marginTop: 18, borderTop: "2.5px solid var(--marca)" }}>
+        <section className="panel p-5 aparece" style={{ marginTop: 18 }}>
           <div className="flex flex-wrap items-baseline justify-between gap-3">
             <h3 className="t-seccion">{abierto.nombre}</h3>
             <button
-              className="t-dato"
-              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--grafito)", textDecoration: "underline", font: "inherit" }}
+              className="boton-enlace boton-enlace--tenue"
               onClick={() => setAbierto(null)}
             >
               Cerrar
@@ -140,7 +139,7 @@ export function MapaSistema({ nodos, aristas, autoEncola }: { nodos: NodoConDato
               <div className="t-dato">
                 {abierto.disparadores.length ? (
                   abierto.disparadores.map((d) => (
-                    <div key={d} style={{ fontFamily: "var(--font-doc)" }}>{d}</div>
+                    <div key={d} className="codigo-en-linea">{d}</div>
                   ))
                 ) : (
                   <span style={{ color: "var(--grafito)" }}>Ninguna ruta: solo lo encola otro trabajo.</span>
@@ -163,7 +162,7 @@ export function MapaSistema({ nodos, aristas, autoEncola }: { nodos: NodoConDato
 
           {abierto.agentes.length > 0 && (
             <div style={{ marginTop: 16 }}>
-              <div className="t-etiqueta mb-2">LOS AGENTES QUE CORREN AQUÍ</div>
+              <div className="t-rotulo mb-2">LOS AGENTES QUE CORREN AQUÍ</div>
               <div className="flex flex-col gap-3">
                 {abierto.agentes.filter((a) => esAgenteConocido(a)).map((a) => {
                   const c = CONTRATOS[a];
@@ -172,7 +171,7 @@ export function MapaSistema({ nodos, aristas, autoEncola }: { nodos: NodoConDato
                     <div key={a} className="panel p-5">
                       <div className="flex flex-wrap items-baseline justify-between gap-2">
                         <strong>
-                          {c.clave} <span className="t-dato" style={{ color: "var(--grafito)", fontWeight: 400 }}>v{c.version}</span>
+                          {c.clave} <span className="t-dato" style={{ color: "var(--grafito)" }}>v{c.version}</span>
                         </strong>
                         <span className="t-dato" style={{ color: corrio ? "var(--confirmado)" : "var(--grafito)" }}>
                           {corrio ? "ha corrido" : "sin huella de ejecución"}

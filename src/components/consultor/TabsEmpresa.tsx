@@ -10,10 +10,11 @@ import { subrutaDe, vistaDe, type Vista } from "@/lib/vistas-empresa";
  * Antes: 20 pestañas en tres capas. Ahora: cinco vistas (Diagnóstico, Números, Indicadores, Estructura, Avance) y, al
  * final y aparte, el Expediente. Las pantallas de cada vista se enlazan en la fila «En esta vista» (EnEstaVista).
  * En todos los anchos es una barra horizontal bajo el nombre de la empresa, como la del portal (revisión del
- * 16-10-2026: la columna fija junto a la barra lateral era una columna de más); la activa es la píldora oscura. En un
- * celular la barra se desliza y la activa se trae a la vista.
+ * 16-10-2026: la columna fija junto a la barra lateral era una columna de más). Desde el 17-10-2026 es un control
+ * segmentado: una pista suave y la vista activa como pulgar blanco (src/design/marco.css). En un celular la pista se
+ * desliza y la activa se trae a la vista.
  * Qué vista está activa lo decide vistaDe() de src/lib/vistas-empresa.ts: /procesos/abc es Estructura, /entrega/x es
- * Avance. Los estilos viven en src/design/vistas.css (.vistas-empresa).
+ * Avance. Los estilos viven en src/design/marco.css (.vistas-empresa).
  */
 export function TabsEmpresa({ base, vistas, expediente }: { base: string; vistas: Vista[]; expediente: Vista }) {
   const ruta = usePathname();

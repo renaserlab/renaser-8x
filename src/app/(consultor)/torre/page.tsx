@@ -39,30 +39,30 @@ export default async function Torre({ searchParams }: { searchParams: Promise<{ 
       <section className="fila-numeros" style={{ marginBottom: 12 }}>
         <div>
           <div className="t-etiqueta">Trabajos</div>
-          <div className="t-dato" style={{ fontSize: 24, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{miles(t.trabajos)}</div>
+          <div className="cifra-media">{miles(t.trabajos)}</div>
           <div className="t-dato" style={{ color: "var(--grafito)" }}>{miles(t.trabajosHechos)} hechos · {t.trabajosEnCurso} en curso</div>
         </div>
         <div>
           <div className="t-etiqueta">Trabajos fallidos</div>
-          <div className="t-dato" style={{ fontSize: 24, fontWeight: 600, fontVariantNumeric: "tabular-nums", color: t.trabajosFallidos > 0 ? "var(--caducado)" : "var(--confirmado)" }}>{miles(t.trabajosFallidos)}</div>
+          <div className="cifra-media" style={{ color: t.trabajosFallidos > 0 ? "var(--caducado)" : "var(--confirmado)" }}>{miles(t.trabajosFallidos)}</div>
           <div className="t-dato" style={{ color: "var(--grafito)" }}>de {miles(t.trabajos)} trabajos</div>
         </div>
         <div>
           <div className="t-etiqueta">Reintentos</div>
-          <div className="t-dato" style={{ fontSize: 24, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{miles(t.reintentos)}</div>
+          <div className="cifra-media">{miles(t.reintentos)}</div>
           <div className="t-dato" style={{ color: "var(--grafito)" }}>en {t.trabajosConReintento} trabajos · no son trabajos nuevos</div>
         </div>
         <div>
           <div className="t-etiqueta">Llamadas al modelo</div>
-          <div className="t-dato" style={{ fontSize: 24, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{miles(t.llamadasModelo)}</div>
+          <div className="cifra-media">{miles(t.llamadasModelo)}</div>
           <div className="t-dato" style={{ color: "var(--grafito)" }}>
             {t.llamadasConError} con error · {(t.llamadasModelo / Math.max(t.trabajos, 1)).toFixed(1)} por trabajo
           </div>
         </div>
         <div>
           <div className="t-etiqueta">Con registro recuperable</div>
-          <div className="t-dato" style={{ fontSize: 24, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
-            {t.agentesConRegistroRecuperable} <span style={{ fontSize: 15, color: "var(--grafito)" }}>de {t.agentesConContrato}</span>
+          <div className="cifra-media">
+            {t.agentesConRegistroRecuperable} <span className="unidad">de {t.agentesConContrato}</span>
           </div>
           <div className="t-dato" style={{ color: "var(--grafito)" }}>{nunca} sin ejecuciones recuperables — no es lo mismo que «nunca corrieron»</div>
         </div>
@@ -72,7 +72,7 @@ export default async function Torre({ searchParams }: { searchParams: Promise<{ 
       {noSonAgentes.length > 0 && <NoSonAgentes filas={noSonAgentes} />}
 
       {/* LA COLA Y EL PROVEEDOR: si hay crédito, quién espera por él y qué se puede recuperar. */}
-      <section className="panel" style={{ marginTop: 20, borderTop: `2.5px solid ${cola.circuito.abierto ? "var(--caducado)" : "var(--confirmado)"}` }}>
+      <section className="panel p-5" style={{ marginTop: 20 }}>
         <h2 className="t-seccion mb-1">La cola y el proveedor</h2>
         <p className="t-dato" style={{ color: "var(--grafito)", marginBottom: 12 }}>
           Cuando el proveedor se queda sin crédito, la cola entera espera (circuito «{cola.circuito.clave}») en vez de gastar los intentos
@@ -83,9 +83,9 @@ export default async function Torre({ searchParams }: { searchParams: Promise<{ 
             etiqueta="Circuito de crédito"
             valor={
               cola.circuito.abierto ? (
-                <span style={{ color: "var(--caducado)", fontWeight: 600 }}>ABIERTO · la cola espera hasta {horaLima(cola.circuito.cortadoHasta)}</span>
+                <span className="texto-espera">ABIERTO · la cola espera hasta {horaLima(cola.circuito.cortadoHasta)}</span>
               ) : (
-                <span style={{ color: "var(--confirmado)", fontWeight: 600 }}>cerrado · la cola trabaja</span>
+                <span className="texto-ok">cerrado · la cola trabaja</span>
               )
             }
           />
@@ -113,9 +113,9 @@ export default async function Torre({ searchParams }: { searchParams: Promise<{ 
         ) : (
           <ul className="flex flex-col gap-2" style={{ listStyle: "none", padding: 0, margin: 0 }}>
             {atascadas.map((f) => (
-              <li key={f.id} className="panel flex flex-wrap items-center gap-3" style={{ justifyContent: "space-between" }}>
+              <li key={f.id} className="panel p-4 flex flex-wrap items-center gap-3" style={{ justifyContent: "space-between" }}>
                 <div>
-                  <div className="t-dato" style={{ fontWeight: 600 }}>{f.nombre}</div>
+                  <div className="t-dato fuerte">{f.nombre}</div>
                   <div className="t-dato" style={{ color: "var(--grafito)" }}>
                     <Link href={`/empresa/${f.companyId}`}>{f.empresa ?? f.companyId.slice(0, 8)}</Link> · {miles(f.horas)} h en «leyendo» desde {horaLima(f.desde)}
                   </div>
@@ -150,9 +150,9 @@ export default async function Torre({ searchParams }: { searchParams: Promise<{ 
               : `${lista!.filas.length} trabajos. Abre uno para ver sus llamadas al modelo, su resultado y qué NO quedó registrado.`}
           </p>
           <div className="no-imprimir flex flex-wrap gap-2" style={{ marginBottom: 14 }}>
-            <Link href="/torre?vista=ejecuciones" className="boton boton--secundario" style={{ minHeight: 34, fontSize: 13 }}>Todos</Link>
-            <Link href="/torre?vista=ejecuciones&estado=fallido" className="boton boton--secundario" style={{ minHeight: 34, fontSize: 13 }}>Solo fallidos</Link>
-            <Link href="/torre?vista=ejecuciones&estado=pendiente" className="boton boton--secundario" style={{ minHeight: 34, fontSize: 13 }}>Pendientes</Link>
+            <Link href="/torre?vista=ejecuciones" className="boton boton--secundario boton--chico">Todos</Link>
+            <Link href="/torre?vista=ejecuciones&estado=fallido" className="boton boton--secundario boton--chico">Solo fallidos</Link>
+            <Link href="/torre?vista=ejecuciones&estado=pendiente" className="boton boton--secundario boton--chico">Pendientes</Link>
           </div>
           <Cobertura cobertura={lista!.cobertura} />
           <div style={{ marginTop: 14 }}>

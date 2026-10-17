@@ -8,15 +8,16 @@ import { SubirPrueba } from "@/components/plan/SubirPrueba";
 import { Decidir } from "@/components/plan/Decidir";
 import { HistorialAccion } from "@/components/plan/HistorialAccion";
 
-const COLOR: Record<Estado, string> = {
-  propuesto: "var(--grafito)",
-  aprobado: "var(--marca)",
-  en_ejecucion: "var(--marca)",
-  reportado: "var(--caducado)",
-  verificado: "var(--confirmado)",
-  rechazado: "var(--contradicho)",
-  pospuesto: "var(--grafito)",
-  bloqueado: "var(--contradicho)",
+/** El sello de cada estado (.estado del sistema): en marcha en neutro, enviado en espera, comprobada en ok, trabada en alto. */
+const TONO: Record<Estado, "ok" | "espera" | "alto" | "neutro"> = {
+  propuesto: "neutro",
+  aprobado: "neutro",
+  en_ejecucion: "neutro",
+  reportado: "espera",
+  verificado: "ok",
+  rechazado: "alto",
+  pospuesto: "neutro",
+  bloqueado: "alto",
 };
 
 /**
@@ -65,19 +66,19 @@ export function PlanCliente({ companyId, acciones }: { companyId: string; accion
         const vencida = a.vence_at && a.vence_at < hoy && (e === "aprobado" || e === "en_ejecucion" || e === "bloqueado");
         const puedeReportar = e === "aprobado" || e === "en_ejecucion";
         return (
-          <article key={a.id} className="panel p-4 flex flex-col gap-3" style={{ borderTop: `2.5px solid ${COLOR[e]}` }}>
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <span className="t-dato" style={{ color: COLOR[e] }}>{ESTADO_CLIENTE[e]}</span>
+          <article key={a.id} className="accion-plan flex flex-col gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className={`estado ${TONO[e]}`}>{ESTADO_CLIENTE[e]}</span>
               <span className="t-dato" style={{ color: vencida ? "var(--contradicho)" : "var(--grafito)" }}>{a.vence_at ? `${vencida ? "Venció el" : "Para el"} ${fechaCorta(a.vence_at)}` : "Sin fecha todavía"}</span>
             </div>
-            <p className="t-cuerpo">{a.accion}</p>
+            <p className="titulo-tarjeta">{a.accion}</p>
             <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <div className="t-etiqueta">Quién</div>
+              <div className="dato">
+                <div className="t-rotulo">Quién</div>
                 <p className="t-dato">{a.responsable_nombre ?? a.responsable ?? "Por definir con la consultora"}</p>
               </div>
-              <div>
-                <div className="t-etiqueta">Qué se espera</div>
+              <div className="dato">
+                <div className="t-rotulo">Qué se espera</div>
                 <p className="t-dato">{a.resultado_esperado ?? a.criterio_aceptacion ?? a.evidencia ?? "Lo acordado con la consultora"}</p>
               </div>
             </div>
@@ -86,9 +87,9 @@ export function PlanCliente({ companyId, acciones }: { companyId: string; accion
             )}
 
             {e === "bloqueado" && (
-              <div style={{ borderLeft: "2px solid var(--contradicho)", paddingLeft: 10 }}>
+              <div className="trabada">
                 <p className="t-dato" style={{ color: "var(--contradicho)" }}>Trabada: {a.bloqueo ?? "sin detalle"}. La consultora ya lo ve.</p>
-                <button type="button" className="boton boton--secundario mt-2" style={{ minHeight: 34, fontSize: 13 }} onClick={() => transicion(a.id, { evento: "desbloquear" }).catch(() => {})}>Ya se destrabó</button>
+                <button type="button" className="boton boton--secundario mt-2 boton--chico" onClick={() => transicion(a.id, { evento: "desbloquear" }).catch(() => {})}>Ya se destrabó</button>
               </div>
             )}
             {e === "reportado" && <p className="t-dato" style={{ color: "var(--caducado)" }}>Enviado para revisar. La consultora comprobará la prueba y te avisa aquí si falta algo.</p>}
@@ -101,7 +102,7 @@ export function PlanCliente({ companyId, acciones }: { companyId: string; accion
             {puedeReportar && subiendo !== a.id && trabando !== a.id && (
               <div className="flex gap-3 flex-wrap items-center">
                 <button type="button" className="boton" onClick={() => setSubiendo(a.id)}>Ya lo hice</button>
-                <button type="button" className="t-dato" style={{ background: "none", border: "none", cursor: "pointer", font: "inherit", color: "var(--grafito)", textDecoration: "underline" }} onClick={() => setTrabando(a.id)}>
+                <button type="button" className="boton-enlace boton-enlace--tenue" onClick={() => setTrabando(a.id)}>
                   Estoy trabado
                 </button>
               </div>
@@ -123,12 +124,12 @@ export function PlanCliente({ companyId, acciones }: { companyId: string; accion
             )}
 
             <details>
-              <summary className="t-etiqueta" style={{ cursor: "pointer" }}>Comentarios</summary>
+              <summary className="plegado-enlace plegado-enlace--tenue">Comentarios</summary>
               <div className="flex flex-col gap-2 mt-2">
                 <HistorialAccion historial={a.historial} modo="cliente" />
                 <div className="flex gap-2">
                   <input className="campo" placeholder="Escribe a la consultora" aria-label="Comentario" value={comentario[a.id] ?? ""} onChange={(ev) => setComentario((c) => ({ ...c, [a.id]: ev.target.value }))} />
-                  <button type="button" className="boton boton--secundario" style={{ minHeight: 34, fontSize: 13 }} disabled={!(comentario[a.id] ?? "").trim()} onClick={() => comentar(a.id)}>Enviar</button>
+                  <button type="button" className="boton boton--secundario boton--chico" disabled={!(comentario[a.id] ?? "").trim()} onClick={() => comentar(a.id)}>Enviar</button>
                 </div>
               </div>
             </details>

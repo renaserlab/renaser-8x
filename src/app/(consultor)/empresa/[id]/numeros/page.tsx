@@ -46,8 +46,8 @@ CONTRATO DE DIRECCIÓN — vista «Números» de una empresa (pedido de Kelin, 1
   indicadores y el avance progresivo… el diseño no ayuda a que se vea como una consultora premium»)
 THESIS: en una sola pantalla, lo que la empresa vende mes a mes, sus nueve números con de dónde sale cada uno, lo que se
   calcula con ellos, lo que deja cada producto, lo que se escapa y lo que no cuadra.
-OWN-WORLD: el tablero de la bandeja y del portal: tarjetas blancas sobre el cielo, Manrope en las cifras, una cifra
-  protagonista por tarjeta.
+OWN-WORLD: noche y perla, el tablero de la bandeja y del portal: tarjetas blancas de 20 px sobre el lienzo perla, la
+  Didone en la cifra protagonista de cada tarjeta, Manrope en las filas, acero en los datos, rayado = sin dato.
 FINISH: lo que no hay va rayado y con su nombre; «no se pudo leer» nunca se pinta como «no hay»; ningún «S/ 0» inventado;
   lo que sale de un documento sin revisar lleva su rótulo junto a la cifra.
 Spec: clientes/8x-plan/spec-vistas-limpias.md §5.
@@ -160,11 +160,11 @@ function TarjetaDerivada({ c }: { c: CifraDerivada }) {
 /** Una fuga: la cifra, «no aplica» (chip, sin rayado) o rayado con lo que falta. */
 function CeldaFuga({ f }: { f: Fuga }) {
   return (
-    <div style={{ background: "var(--suave)", borderRadius: 16, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
-      <p style={{ margin: 0, fontSize: 13.5, fontWeight: 650 }}>{f.titulo}</p>
+    <div className="pozo pozo--fuga">
+      <p className="pozo__titulo">{f.titulo}</p>
       {f.estado === "valor" ? (
         // El símbolo de la moneda no se separa de su cifra al partir la línea («entre S/ 520 y S/» arriba y «751» abajo).
-        <span className="grande" style={{ fontSize: 24, lineHeight: 1.15, textWrap: "balance" }}>{f.cifra?.replace(/ (?=\d)/g, " ")}</span>
+        <span className="grande">{f.cifra?.replace(/ (?=\d)/g, " ")}</span>
       ) : f.estado === "no_aplica" ? (
         <span><span className="estado neutro">no aplica</span></span>
       ) : (

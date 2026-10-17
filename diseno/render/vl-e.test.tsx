@@ -13,6 +13,7 @@ import { writeFileSync, mkdirSync } from "fs";
 import path from "path";
 import { prerenderToNodeStream } from "react-dom/static";
 import Link from "next/link";
+import { Icono } from "@/components/base/Icono";
 import type { Fila } from "../../tests/fixtures/base-falsa";
 import { crearBaseEstrategia } from "../../tests/fixtures/base-estrategia";
 import { entradasFrutas, HOY as HOY_FIXTURE, LENTE_DINERO_BUENA, LENTE_TERRENO_BUENA, ROJO_BUENO } from "../../tests/fixtures/estrategia-falsa";
@@ -155,9 +156,9 @@ const SALIDA = path.resolve(__dirname, "salida");
 function pagina(titulo: string, cuerpo: string) {
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>${titulo}</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Public+Sans:wght@400;500;600;700&family=Source+Serif+4:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400..700&family=Manrope:wght@400..800&family=Source+Serif+4:wght@400;600&display=swap">
 <link rel="stylesheet" href="app-nuevo.css">
-<style>:root{--font-manrope:"Manrope";--font-public-sans:"Public Sans";--font-source-serif:"Source Serif 4";}</style>
+<style>:root{--font-bodoni:"Bodoni Moda";--font-manrope:"Manrope";--font-source-serif:"Source Serif 4";}</style>
 </head><body>${cuerpo}</body></html>`;
 }
 
@@ -179,7 +180,7 @@ async function consultora(sub: string, cuerpo: () => Promise<React.ReactElement>
       <NavConsultor
         empresas={[{ id: EMP, nombre: NOMBRE }, { id: "e2", nombre: "Estudio Contable de Ejemplo (ficticia)" }]}
         usuario="Consultora de Ejemplo"
-        torre={<Link className="boton-redondo solo-celular lg:hidden" href="/torre" aria-label="Torre de control" title="Torre de control">T</Link>}
+        torre={<Link className="boton-redondo solo-celular lg:hidden" href="/torre" aria-label="Torre de control" title="Torre de control"><Icono nombre="torre" /></Link>}
       />
       <div className="columna-app">
         <main className="contenido-app">

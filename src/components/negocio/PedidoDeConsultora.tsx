@@ -32,10 +32,10 @@ export function AvisoPedido({ p, que }: { p: PedidoDeSecciones; que?: string }) 
   return (
     <div className="flex flex-col gap-3 mb-8">
       {activas.map(({ seccion, activa }) => (
-        <section key={seccion} className="panel p-5 medida" style={{ background: "var(--suave)" }} aria-label="Lo que te pidió tu consultora">
-          <h2 className="t-seccion" style={{ fontSize: 18 }}>Tu consultora te pidió: {SECCION[seccion].paraDueno.toLowerCase()}</h2>
-          {activa!.nota && <p className="t-cuerpo mt-2">«{activa!.nota}»</p>}
-          <p className="t-cuerpo mt-2" style={{ color: "var(--grafito)" }}>{que ?? "Está aquí abajo."} Cuando termines, avísale al final de esta pantalla.</p>
+        <section key={seccion} className="pozo pedido medida" aria-label="Lo que te pidió tu consultora">
+          <h2 className="t-seccion">Tu consultora te pidió: {SECCION[seccion].paraDueno.toLowerCase()}</h2>
+          {activa!.nota && <p className="pedido__nota">«{activa!.nota}»</p>}
+          <p className="pedido__como">{que ?? "Está aquí abajo."} Cuando termines, avísale al final de esta pantalla.</p>
         </section>
       ))}
     </div>

@@ -1,0 +1,574 @@
+/* 8X · EL MARCO Y LA MARCA (sistema «noche y perla», 17-10-2026).
+   Pedido de Kelin con el logo: «nada Apple, nada premium… quiero que realmente el aplicativo refleje ese premium».
+   Aquí vive lo que rodea al trabajo: el logo, la barra lateral en azul noche (la luz dorada marca dónde estás), la franja
+   del celular y la ruta en vidrio, la cabecera de la empresa con su nombre en Didone, el control segmentado de las vistas
+   y las subpestañas, los menús y la portada del ingreso. La estructura no cambió (navegación al costado del 16-10,
+   vistas de la empresa, «En esta sección»): cambió cómo se ve.
+   Reglas: el oro solo en el logo, el destino activo, el contador y el punto «aquí estás»; el vidrio solo en lo que se
+   queda pegado arriba; hover solo con puntero fino; presionar con escala y ease-out; nada sobre 300 ms.
+   Spec: clientes/8x-plan/spec-diseno-premium.md (§4.1–4.6, §4.14, §5, §7). */
+
+/* ───────── EL LOGO (src/components/base/Logo8X.tsx) ───────── */
+.logo8x { display: inline-flex; flex-direction: column; align-items: center; gap: 16px; line-height: 0; flex: none; }
+.logo8x svg { display: block; }
+.logo8x--tinta { color: var(--tinta); }
+.logo8x__lema {
+  font: 500 11px/1 var(--font-ui); letter-spacing: 0.32em; padding-left: 0.32em; text-transform: uppercase;
+  color: var(--luna-rotulo); white-space: nowrap;
+}
+.logo8x--tinta .logo8x__lema { color: var(--grafito); }
+
+/* ───────── MARCO: BARRA LATERAL + COLUMNA ─────────
+   Una sola navegación (src/components/navegacion/Lateral.tsx):
+   — Escritorio (≥1024 px): la barra noche pegada al borde, de arriba abajo, 248 px, o plegada a un riel de 72 px.
+   — Celular y tablet (<1024 px): una franja en vidrio arriba y la misma barra noche entra desde la izquierda como cajón.
+   Sin empresa elegida no hay barra lateral: .marco-app queda en una sola columna. */
+.marco-app { min-height: 100dvh; }
+.columna-app { min-width: 0; display: flex; flex-direction: column; min-height: 100dvh; }
+.columna-app > .contenido-app { flex: 1 0 auto; }
+.contenido-app { max-width: 1280px; margin: 0 auto; width: 100%; padding: 24px 40px 64px; overflow-x: clip; }
+@media (max-width: 1279px) { .contenido-app { padding: 20px 28px 56px; } }
+
+.lateral {
+  display: flex; flex-direction: column; gap: 0; min-width: 0;
+  background: var(--noche); color: var(--luna-tenue); color-scheme: dark;
+  box-shadow: none; border-radius: 0;
+  overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;
+  scrollbar-width: thin; scrollbar-color: rgba(238, 241, 246, 0.16) transparent;
+}
+.lateral :focus-visible { outline-color: var(--champan); }
+.lateral__cabeza { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 40px; padding: 0; margin: 0 0 20px; }
+.lateral__boton {
+  width: 40px; height: 40px; flex: none; border-radius: 10px; border: 0; padding: 0; background: none; color: var(--luna-tenue);
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font: inherit;
+  transition: transform var(--dur-presion) var(--ease-out), background-color var(--dur-color) ease, color var(--dur-color) ease;
+}
+.lateral__boton svg { width: 18px; height: 18px; }
+.lateral__boton:active { transform: scale(0.95); }
+@media (hover: hover) and (pointer: fine) { .lateral__boton:hover { background: rgba(238, 241, 246, 0.06); color: var(--luna); } }
+.lateral__cuerpo { flex: 1 0 auto; padding-bottom: 16px; }
+
+/* La marca: el 8X en luz y, al lado, RENASER (consultora) o el nombre de la empresa (dueño). */
+.marca-app {
+  justify-self: start; display: inline-flex; align-items: center; gap: 12px; min-width: 0;
+  margin: 0; padding: 4px 8px; border-radius: 10px; background: none; box-shadow: none;
+  font: inherit; color: var(--tinta); text-decoration: none;
+}
+.marca-app small { min-width: 0; max-width: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.marca-app__firma { font-size: 10.5px; font-weight: 600; line-height: 1; letter-spacing: 0.22em; text-transform: uppercase; color: var(--grafito); }
+.marca-app__empresa { font-size: 12.5px; font-weight: 500; line-height: 1.25; letter-spacing: 0; color: var(--grafito); }
+.lateral .marca-app { color: var(--luna); padding: 4px 8px 4px 12px; }
+.lateral .marca-app__firma { color: var(--luna-rotulo); }
+/* El nombre de la empresa cabe en dos renglones; entero, en el title. */
+.lateral .marca-app__empresa {
+  color: var(--luna-tenue); white-space: normal;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
+}
+
+.menu-lateral { display: flex; flex-direction: column; gap: 2px; }
+.menu-lateral a {
+  position: relative; display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 0 12px;
+  border-radius: 10px; background: none; color: var(--luna-tenue); text-decoration: none;
+  font-size: 14px; font-weight: 500; line-height: 1.25;
+  transition: transform var(--dur-presion) var(--ease-out), background-color var(--dur-color) ease, color var(--dur-color) ease;
+}
+.menu-lateral a svg { width: 18px; height: 18px; flex: none; }
+.menu-lateral .rotulo { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu-lateral a:active { transform: scale(0.98); }
+@media (pointer: coarse) { .menu-lateral a { min-height: 44px; } }
+/* El destino activo es la luz dorada del logo sobre la noche, no una píldora. */
+.menu-lateral a[aria-current="page"] {
+  color: #f6f1e6; font-weight: 600;
+  background: radial-gradient(130% 180% at 0% 50%, rgba(216, 189, 134, 0.2), rgba(216, 189, 134, 0) 62%), var(--noche-alta);
+  box-shadow: inset 0 0 0 1px rgba(216, 189, 134, 0.16);
+}
+.menu-lateral a[aria-current="page"] svg { color: var(--champan); }
+/* Dentro de una empresa, «Empresas» queda señalada sin ser la página actual. */
+.menu-lateral a[data-dentro] { background: none; color: var(--luna); font-weight: 600; }
+@media (hover: hover) and (pointer: fine) {
+  .menu-lateral a:not([aria-current="page"]):hover { background: rgba(238, 241, 246, 0.05); color: var(--luna); }
+}
+.menu-lateral .punto { width: 18px; flex: none; display: inline-flex; justify-content: center; }
+.menu-lateral .punto::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--acero-medio); }
+.menu-lateral a[aria-current="page"] .punto::before { background: var(--champan); }
+.titulo-menu {
+  margin: 24px 12px 8px; font-size: 10.5px; font-weight: 600; line-height: 1.2; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--luna-rotulo);
+}
+/* Lo que la consultora pidió llenar y sigue abierto, junto al destino donde se llena. */
+.contador {
+  margin-left: auto; flex: none; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center; box-shadow: none;
+  background: var(--champan); color: var(--noche);
+  font-size: 11.5px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums;
+}
+.menu-lateral a[aria-current="page"] .contador { background: var(--champan); color: var(--noche); }
+
+.lateral__pie {
+  margin-top: auto; padding: 12px 0 0 4px; border-top: 1px solid var(--noche-linea);
+  display: flex; align-items: center; gap: 10px; min-width: 0;
+}
+.lateral__quien { flex: 1; min-width: 0; font-size: 12.5px; font-weight: 500; color: var(--luna-tenue); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lateral__pie .boton-redondo { width: 40px; height: 40px; background: transparent; color: var(--luna-tenue); }
+.lateral__pie .boton-redondo svg { width: 18px; height: 18px; }
+@media (hover: hover) and (pointer: fine) { .lateral__pie .boton-redondo:hover { background: rgba(238, 241, 246, 0.06); color: var(--luna); } }
+.lateral__salir { flex: 1; min-width: 0; }
+.lateral__salir button {
+  width: 100%; min-height: 40px; display: flex; align-items: center; gap: 12px; padding: 0 12px; border: 0; border-radius: 10px;
+  background: none; color: var(--luna-tenue); font: inherit; font-size: 14px; font-weight: 500; cursor: pointer;
+  transition: transform var(--dur-presion) var(--ease-out), background-color var(--dur-color) ease, color var(--dur-color) ease;
+}
+.lateral__salir button:active { transform: scale(0.98); }
+.lateral__salir svg { width: 18px; height: 18px; flex: none; }
+@media (hover: hover) and (pointer: fine) { .lateral__salir button:hover { background: rgba(238, 241, 246, 0.05); color: var(--luna); } }
+
+.avatar-app {
+  width: 32px; height: 32px; border-radius: 50%; flex: none; border: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--noche-alta); color: var(--luna); box-shadow: inset 0 0 0 1px var(--noche-linea);
+  font-family: var(--font-ui); font-size: 12px; font-weight: 700; letter-spacing: 0.02em;
+}
+
+.barra-movil { display: none; }
+
+@media (min-width: 1024px) {
+  .marco-app:has(> .lateral) { display: grid; grid-template-columns: var(--ancho-lateral, 248px) minmax(0, 1fr); align-items: start; }
+  .marco-app:has(> .lateral[data-estado="riel"]) { --ancho-lateral: 72px; }
+  .marco-app > .lateral {
+    grid-column: 1; grid-row: 1; position: sticky; top: 0;
+    height: 100dvh; margin: 0; padding: 20px 12px 16px; border-radius: 0; box-shadow: none;
+  }
+  .marco-app > .columna-app { grid-column: 2; grid-row: 1; }
+  .marco-app > .telon { display: none; }
+
+  /* Riel: solo los destinos principales con su ícono; el nombre queda en aria-label y en title. Plegar no se anima:
+     cambia el ancho de la rejilla. */
+  .lateral[data-estado="riel"] { padding: 20px 12px 16px; align-items: center; }
+  .lateral[data-estado="riel"] .lateral__cabeza { flex-direction: column; gap: 8px; margin-bottom: 16px; }
+  .lateral[data-estado="riel"] .marca-app { padding: 4px; }
+  .lateral[data-estado="riel"] .marca-app small,
+  .lateral[data-estado="riel"] .rotulo,
+  .lateral[data-estado="riel"] [data-grupo="secundario"] { display: none; }
+  .lateral[data-estado="riel"] .lateral__cuerpo { width: 100%; }
+  .lateral[data-estado="riel"] .menu-lateral { align-items: center; }
+  .lateral[data-estado="riel"] .menu-lateral a { width: 40px; padding: 0; justify-content: center; }
+  .lateral[data-estado="riel"] .contador {
+    position: absolute; top: -4px; right: -6px; min-width: 18px; height: 18px; padding: 0 5px; font-size: 11px;
+    box-shadow: 0 0 0 2px var(--noche);
+  }
+  .lateral[data-estado="riel"] .lateral__pie { flex-direction: column; width: 100%; padding: 12px 0 0; }
+  .lateral[data-estado="riel"] .lateral__salir { width: 100%; }
+  .lateral[data-estado="riel"] .lateral__salir button { justify-content: center; padding: 0; }
+}
+@media (min-width: 1024px) and (pointer: coarse) {
+  .lateral[data-estado="riel"] .menu-lateral a { width: 44px; }
+}
+
+@media (max-width: 1023px) {
+  /* La franja de arriba, en vidrio: abrir el menú, la marca (el mismo nodo que en la barra, aquí en tinta) y, a la
+     derecha, la torre o «Salir». Pone su propia zona segura: el cuerpo no la suma otra vez. */
+  body:has(.barra-movil) { padding-top: 0; }
+  .barra-movil {
+    display: flex; align-items: center; gap: 4px; position: sticky; top: 0; z-index: 30;
+    min-height: calc(56px + env(safe-area-inset-top)); padding: env(safe-area-inset-top) 8px 0;
+    background: var(--vidrio); -webkit-backdrop-filter: var(--vidrio-filtro); backdrop-filter: var(--vidrio-filtro);
+    border-bottom: 1px solid rgba(15, 26, 46, 0.08);
+  }
+  .barra-movil .boton-redondo { width: 44px; height: 44px; background: none; color: var(--tinta); }
+  .barra-movil__marca { flex: 1; min-width: 0; display: flex; }
+  .barra-movil .marca-app { padding: 6px 4px; max-width: 100%; gap: 10px; color: var(--tinta); }
+  .barra-movil .marca-app__empresa { font-size: 13.5px; font-weight: 600; color: var(--tinta); }
+  .barra-movil .logo8x svg { height: 22px; width: auto; }
+  .barra-movil .logo8x__trazo { stroke: var(--tinta); stroke-width: 4.8; }
+  .barra-movil .logo8x__halo { display: none; }
+  .barra-movil__derecha { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+
+  /* El cajón: la misma barra noche entra desde la izquierda con transform; cerrado no se ve ni recibe el foco. */
+  .lateral {
+    position: fixed; z-index: 61; top: 0; bottom: 0; left: 0; width: min(304px, 86vw); height: auto; margin: 0;
+    padding: calc(16px + env(safe-area-inset-top)) 12px calc(16px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));
+    border-radius: 0 var(--radio-tarjeta) var(--radio-tarjeta) 0; box-shadow: var(--sombra-flota);
+    transform: translateX(-104%); visibility: hidden;
+    transition: transform var(--dur-cajon) var(--ease-cajon), visibility 0s linear var(--dur-cajon);
+  }
+  .lateral[data-movil="abierta"] { transform: none; visibility: visible; transition: transform var(--dur-cajon) var(--ease-cajon), visibility 0s; }
+  .marco-app > .telon { background: color-mix(in srgb, var(--noche) 40%, transparent); animation: aparece-telon var(--dur-cajon) var(--ease-out); }
+
+  .contenido-app { padding: 12px 16px calc(40px + env(safe-area-inset-bottom)); }
+  .solo-escritorio { display: none !important; }
+}
+@keyframes aparece-telon { from { opacity: 0; } }
+@media (min-width: 1024px) { .solo-celular { display: none !important; } }
+@media (prefers-reduced-motion: reduce) {
+  .lateral, .lateral[data-movil="abierta"] { transition: none; }
+  .marco-app > .telon, .portada > .logo8x, .menu-administrar__panel, .menu-acciones__panel { animation: none; }
+  .menu-administrar > summary svg, .menu-acciones > summary { transition: none; }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .barra-movil, .empresa-marco > .barra-ruta--compacta { background: rgba(245, 243, 238, 0.96); }
+}
+
+/* ───────── CABECERA SIN BARRA LATERAL (cliente sin empresa) Y PIEZAS COMPARTIDAS ───────── */
+.cabecera-app {
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px;
+  padding: 20px 40px 8px; max-width: 1280px; margin: 0 auto; width: 100%;
+}
+.cabecera-app.sin-pildora { grid-template-columns: 1fr auto; }
+.cabecera-app .marca-app { padding: 4px 0; }
+.acciones-app { justify-self: end; display: flex; align-items: center; gap: 8px; }
+
+/* Botón redondo sin fondo (menú, torre, salir): 44 px, presionar a 0.95. */
+.boton-redondo {
+  width: 44px; height: 44px; padding: 0; border-radius: 50%; flex: none; border: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; color: var(--tinta); cursor: pointer; text-decoration: none; font: inherit;
+  transition: transform var(--dur-presion) var(--ease-out), background-color var(--dur-color) ease, color var(--dur-color) ease;
+}
+.boton-redondo:active { transform: scale(0.95); }
+@media (hover: hover) and (pointer: fine) { .boton-redondo:hover { background: rgba(15, 26, 46, 0.05); } }
+.boton-redondo svg { width: 20px; height: 20px; }
+
+/* «Viendo como el empresario»: una banda noche, con su acción en luna. */
+.aviso-vista {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap;
+  background: var(--noche); color: var(--luna); border-radius: var(--radio-fila);
+  padding: 8px 8px 8px 18px; font-size: 13.5px; font-weight: 600; line-height: 1.35;
+}
+.aviso-vista a {
+  display: inline-flex; align-items: center; min-height: 36px; padding: 0 14px; border-radius: 999px;
+  background: var(--luna); color: var(--noche); font-weight: 650; text-decoration: none;
+  transition: transform var(--dur-presion) var(--ease-out), background-color var(--dur-color) ease;
+}
+.aviso-vista a:active { transform: scale(0.97); }
+.aviso-vista :focus-visible { outline-color: var(--champan); }
+@media (hover: hover) and (pointer: fine) { .aviso-vista a:hover { background: #fff; } }
+
+/* Lo que va arriba de la columna (la ruta del dueño, el aviso de la vista) se alinea con el contenido de abajo. */
+.columna-app > .barra-ruta,
+.columna-app > .aviso-vista { width: calc(100% - 80px); max-width: 1200px; margin: 24px auto 0; }
+@media (max-width: 1279px) {
+  .columna-app > .barra-ruta,
+  .columna-app > .aviso-vista { width: calc(100% - 56px); margin-top: 20px; }
+  .cabecera-app { padding: 16px 28px 8px; }
+}
+@media (max-width: 1023px) {
+  .columna-app > .barra-ruta,
+  .columna-app > .aviso-vista { width: calc(100% - 32px); margin-top: 12px; }
+  .cabecera-app { grid-template-columns: 1fr auto; padding: 14px 16px 6px; }
+}
+
+/* ───────── SUBPESTAÑAS: «En esta sección» (portal) y «En esta vista» (empresa) ─────────
+   El vocabulario del control segmentado un nivel más quieto: sin pista; la elegida es el pulgar blanco. */
+.en-seccion {
+  display: flex; align-items: center; gap: 4px; overflow-x: auto; scrollbar-width: none;
+  margin: 0 -4px 20px; padding: 4px; max-width: calc(100% + 8px);
+}
+.en-seccion::-webkit-scrollbar { display: none; }
+.en-seccion a {
+  flex: none; display: inline-flex; align-items: center; min-height: 36px; padding: 0 14px; border-radius: 10px;
+  border: 0; background: none; box-shadow: none; color: var(--grafito);
+  font-size: 13.5px; font-weight: 500; line-height: 1.2; text-decoration: none; white-space: nowrap;
+  transition: transform var(--dur-presion) var(--ease-out), background-color var(--dur-color) ease, color var(--dur-color) ease;
+}
+.en-seccion a:active { transform: scale(0.97); }
+.en-seccion a[aria-current="page"] { background: var(--blanco); color: var(--tinta); font-weight: 650; box-shadow: var(--sombra-pulgar); }
+@media (hover: hover) and (pointer: fine) {
+  .en-seccion a:not([aria-current="page"]):hover { background: rgba(15, 26, 46, 0.04); color: var(--tinta); }
+  .en-seccion a.cambiar:hover { background: none; text-decoration-color: currentColor; }
+}
+@media (pointer: coarse) { .en-seccion a { min-height: 44px; } }
+.en-seccion a.cambiar {
+  margin-left: auto; padding: 0 8px; background: none; color: var(--grafito);
+  text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px;
+  text-decoration-color: rgba(74, 87, 114, 0.45);
+}
+
+/* ───────── BARRA DE AVANCE DE LA RUTA (BarraRuta, BarraRutaCliente) ─────────
+   No es navegación: un tramo por etapa, ancho según sus días. Pasada en tinta, en curso en acero con su punto
+   «aquí estás» en oro, por venir en perla honda. Lo que no se pudo leer va rayado (.sin-medir), nunca como un cero. */
+.barra-ruta {
+  background: var(--blanco); border: 0; border-radius: var(--radio-tarjeta); box-shadow: var(--sombra);
+  padding: 16px 20px 14px; min-width: 0;
+}
+.hoja .barra-ruta { box-shadow: none; border: 1px solid var(--linea); border-radius: var(--radio-fila); margin: 0 0 20px; }
+.barra-ruta--linea {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px;
+  padding: 12px 18px; font-size: 13.5px; color: var(--grafito);
+}
+.barra-ruta__cabeza { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 16px; }
+.barra-ruta__titulo { margin: 0; font-size: 14.5px; line-height: 1.4; color: var(--grafito); font-variant-numeric: tabular-nums; }
+.barra-ruta__titulo b { font-family: var(--font-ui); font-weight: 650; color: var(--tinta); }
+.barra-ruta__dia { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; font-size: 12.5px; color: var(--grafito); font-variant-numeric: tabular-nums; }
+
+.tramos { list-style: none; margin: 14px 0 0; padding: 0; display: flex; gap: 6px; }
+.tramo { flex: 1 1 0; min-width: 56px; display: flex; flex-direction: column; gap: 8px; }
+.tramo .pista { position: relative; display: block; height: 6px; border-radius: 999px; background: var(--perla-honda); box-shadow: none; }
+.tramo .relleno { position: absolute; left: 0; top: 0; bottom: 0; border-radius: inherit; background: var(--acero-fuerte); }
+/* Aquí estás: el punto de oro al final de lo andado en la etapa en curso. */
+.tramo .relleno::after {
+  content: ""; position: absolute; right: -4px; top: 50%; width: 8px; height: 8px; margin-top: -4px; border-radius: 50%;
+  background: var(--oro); box-shadow: 0 0 0 2px var(--blanco);
+}
+.tramo[data-estado="pasada"] .pista { background: var(--tinta); box-shadow: none; }
+.tramo[data-estado="en_curso"] .pista { background: var(--acero-velo); box-shadow: none; }
+.sin-medir { background: var(--rayado); }
+.tramo .pista.sin-medir { background: var(--rayado); box-shadow: inset 0 0 0 1px var(--raya); }
+.tramo .compuerta {
+  position: absolute; right: 0; top: 50%; width: 9px; height: 9px; border-radius: 0;
+  transform: translate(50%, -50%) rotate(45deg); background: var(--blanco); border: 1.5px solid var(--grafito);
+}
+.tramo .compuerta[data-veredicto="verde"] { background: var(--confirmado); border-color: var(--confirmado); }
+.tramo .compuerta[data-veredicto="ambar"] { background: var(--caducado); border-color: var(--caducado); }
+.tramo .compuerta[data-veredicto="rojo"] { background: var(--contradicho); border-color: var(--contradicho); }
+.tramo__texto { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.tramo__nombre { font-size: 12.5px; font-weight: 500; line-height: 1.3; color: var(--grafito); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tramo__dato { font-size: 12px; line-height: 1.3; color: var(--grafito); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.tramo[data-estado="en_curso"] .tramo__nombre { font-weight: 650; color: var(--tinta); }
+/* La etapa en curso es lo único que hay que leer en la barra: nunca la más angosta, aunque dure 7 días de 120. */
+.tramo[data-estado="en_curso"] { min-width: 150px; flex-shrink: 0; }
+
+.barra-ruta__falta { margin-top: 12px; border-top: 1px solid var(--linea); padding-top: 2px; font-size: 13.5px; }
+.barra-ruta__falta summary {
+  display: block; list-style: none; cursor: pointer; padding: 10px 0 8px 20px; position: relative;
+  font-weight: 600; color: var(--tinta); line-height: 1.4;
+}
+.barra-ruta__falta summary::-webkit-details-marker { display: none; }
+.barra-ruta__falta summary::before {
+  content: ""; position: absolute; left: 3px; top: 16px; width: 7px; height: 7px;
+  border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg); transition: transform var(--dur-presion) var(--ease-out);
+}
+.barra-ruta__falta[open] summary::before { transform: rotate(45deg); }
+.barra-ruta__sugerido { font-weight: 500; color: var(--grafito); }
+.barra-ruta__falta ul { list-style: none; margin: 2px 0 8px; padding: 0; display: grid; gap: 8px; }
+.barra-ruta__falta li { display: flex; align-items: baseline; gap: 10px; color: var(--grafito); }
+.barra-ruta__falta li b { color: var(--tinta); font-weight: 600; }
+.barra-ruta__falta .senal { flex: none; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--grafito); }
+.barra-ruta__falta .senal.sin-medir { width: 22px; height: 10px; border-radius: 999px; border: 0; }
+
+@media (max-width: 640px) {
+  .barra-ruta { padding: 14px 16px 12px; }
+  .tramos { gap: 4px; }
+  .tramo { min-width: 28px; }
+  .tramo[data-estado="en_curso"] { min-width: 34%; }
+  /* En un celular no caben los nombres bajo cada tramo: la cabecera ya dice la etapa en curso y su %.
+     Los nombres siguen ahí para quien usa lector de pantalla. */
+  .tramo__texto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+}
+
+/* ───────── LA EMPRESA (consultora): la ruta en una cápsula, la cabecera, las vistas y los menús ───────── */
+/* La barra de avance sin ruta dibujada (falta el tipo de trabajo, o la lectura falló): una tarjeta sobre el lienzo. */
+.empresa-marco > .barra-ruta { box-shadow: var(--sombra); border: 0; border-radius: var(--radio-tarjeta); margin: 0 0 28px; }
+
+/* La ruta en UNA línea (BarraRuta compacta): la etapa con su %, los tramos sin rótulos y «Ver la ruta».
+   En escritorio es una cápsula en vidrio que se queda pegada arriba al bajar. */
+.barra-ruta--compacta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; padding: 8px 8px 8px 20px; }
+.empresa-marco > .barra-ruta--compacta { margin: 0 0 28px; border-radius: 999px; padding: 6px 6px 6px 20px; }
+.barra-ruta--compacta .barra-ruta__titulo { flex: none; font-size: 13px; white-space: nowrap; }
+.barra-ruta--compacta .tramos { flex: 1 1 200px; margin: 0; min-width: 0; gap: 6px; }
+.barra-ruta--compacta .tramo, .barra-ruta--compacta .tramo[data-estado="en_curso"] { min-width: 24px; gap: 0; }
+.barra-ruta--compacta .tramo .pista { height: 4px; }
+.barra-ruta--compacta .tramo[data-estado="en_curso"] { min-width: 64px; }
+.barra-ruta--compacta .tramo .relleno::after { box-shadow: 0 0 0 2px var(--perla); }
+/* En la pista de 4 px, la compuerta es un rombo más chico: se ve, no grita. */
+.barra-ruta--compacta .tramo .compuerta { width: 7px; height: 7px; border-width: 1.25px; }
+/* Los nombres de los tramos siguen ahí para quien usa lector de pantalla; la línea ya dice la etapa. */
+.barra-ruta--compacta .tramo__texto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+.barra-ruta--compacta .barra-ruta__dia { flex: none; font-size: 13px; align-items: center; gap: 4px 8px; }
+.barra-ruta--compacta .barra-ruta__dia a {
+  display: inline-flex; align-items: center; min-height: 36px; padding: 0 14px; border-radius: 999px;
+  background: transparent; color: var(--acero-fuerte); font-size: 13.5px; font-weight: 600; text-decoration: none;
+  transition: transform var(--dur-presion) var(--ease-out), background-color var(--dur-color) ease;
+}
+.barra-ruta--compacta .barra-ruta__dia a:active { transform: scale(0.97); }
+@media (hover: hover) and (pointer: fine) { .barra-ruta--compacta .barra-ruta__dia a:hover { background: var(--acero-velo); text-decoration: none; } }
+@media (pointer: coarse) { .barra-ruta--compacta .barra-ruta__dia a { min-height: 44px; } }
+@media (min-width: 1024px) {
+  .empresa-marco > .barra-ruta--compacta {
+    position: sticky; top: 12px; z-index: 20;
+    background: var(--vidrio); -webkit-backdrop-filter: var(--vidrio-filtro); backdrop-filter: var(--vidrio-filtro);
+  }
+}
+@media (max-width: 640px) {
+  .empresa-marco > .barra-ruta--compacta { border-radius: var(--radio-tarjeta); padding: 12px 8px 8px 16px; gap: 8px 12px; margin-bottom: 24px; }
+  .barra-ruta--compacta .barra-ruta__titulo { flex: 1 1 100%; white-space: normal; font-size: 13.5px; padding-right: 8px; }
+  .barra-ruta--compacta .tramos { flex: 1 1 120px; }
+}
+
+/* La cabecera: el nombre de la empresa en Didone, su línea y, a la derecha, las dos acciones. */
+.empresa-cabeza {
+  display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 24px;
+  margin: 0 0 20px; padding: 0; min-width: 0;
+}
+.empresa-cabeza__titulo { flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.empresa-cabeza__nombre {
+  margin: 0; font-family: var(--font-display); font-variation-settings: "opsz" var(--opsz-titulo);
+  font-size: 34px; font-weight: 500; line-height: 1.1; letter-spacing: -0.01em;
+  color: var(--tinta); text-decoration: none; overflow-wrap: anywhere; text-wrap: balance;
+}
+@media (hover: hover) and (pointer: fine) {
+  a.empresa-cabeza__nombre:hover { text-decoration: underline; text-underline-offset: 5px; text-decoration-thickness: 1px; text-decoration-color: rgba(15, 26, 46, 0.35); }
+}
+.empresa-cabeza__linea { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 13.5px; color: var(--grafito); }
+.empresa-cabeza__acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+@media (max-width: 760px) {
+  .empresa-cabeza { flex-direction: column; align-items: stretch; gap: 16px; }
+  .empresa-cabeza__titulo { flex: none; }
+  .empresa-cabeza__nombre { font-size: 28px; }
+  /* Las dos acciones en una sola fila: apiladas empujaban la pantalla medio celular hacia abajo. */
+  .empresa-cabeza__acciones { flex-wrap: nowrap; }
+  .empresa-cabeza__acciones > * { flex: 1 1 auto; min-width: 0; }
+  .empresa-cabeza__acciones > .boton, .empresa-cabeza__acciones summary { width: 100%; padding: 0 14px; font-size: 14px; }
+  /* «Administrar» con su flecha entera: a 390 px repartían el ancho por igual y la flecha quedaba en 0 px. */
+  .empresa-cabeza__acciones > .menu-administrar { flex: none; }
+}
+.menu-administrar > summary svg { flex: none; }
+
+/* ───────── MENÚ «ADMINISTRAR» (details nativo; el panel abre bajo su botón, hacia la izquierda) ─────────
+   Entra desde su esquina con opacidad y 4 px; al cerrar, sin animación. */
+.menu-administrar { position: relative; }
+.menu-administrar > summary { list-style: none; cursor: pointer; user-select: none; }
+.menu-administrar > summary::-webkit-details-marker { display: none; }
+.menu-administrar > summary svg { width: 16px; height: 16px; transition: transform var(--dur-presion) var(--ease-out); }
+.menu-administrar[open] > summary.boton--secundario { background: var(--perla-honda); border-color: var(--linea-fuerte); }
+.menu-administrar[open] > summary svg { transform: rotate(180deg); }
+.menu-administrar__panel {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 40;
+  width: min(360px, calc(100vw - 32px)); padding: 6px 16px;
+  background: var(--blanco); border-radius: 16px; box-shadow: var(--sombra-flota);
+  transform-origin: top right; animation: aparece-menu var(--dur-pop) var(--ease-out);
+}
+@keyframes aparece-menu { from { opacity: 0; transform: translateY(-4px) scale(0.98); } }
+.menu-administrar__fila {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px;
+  padding: 12px 0; border-top: 1px solid var(--linea);
+}
+.menu-administrar__fila:first-child { border-top: 0; }
+.menu-administrar__fila > span { flex: 1 1 150px; min-width: 0; font-size: 14px; font-weight: 600; line-height: 1.35; color: var(--tinta); }
+.menu-administrar__fila > span small { display: block; font-size: 12.5px; font-weight: 450; color: var(--grafito); margin-top: 2px; }
+/* Los botones de adentro traen su alto y su letra escritos en línea: en el menú van todos iguales y con 44 px. */
+.menu-administrar__fila .boton { min-height: 44px !important; font-size: 14px !important; padding: 0 16px; flex: none; }
+.menu-administrar__fila > label { flex: 1 1 auto; justify-content: space-between; min-width: 0; }
+.menu-administrar__fila > label > .t-etiqueta { font-size: 14px; font-weight: 600; color: var(--tinta); letter-spacing: 0; }
+.menu-administrar__fila .campo { min-height: 44px; font-size: 14px; }
+
+/* ───────── MENÚ DE ACCIONES DE UNA TARJETA (MenuAcciones: editar, quitar) ─────────
+   Los tres puntos, discretos; el panel flota sobre la tarjeta. Lo que borra va en contradicho y pide confirmar aparte. */
+.menu-acciones { position: relative; flex: none; }
+.menu-acciones > summary {
+  list-style: none; cursor: pointer; user-select: none; width: 40px; height: 40px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center; color: var(--grafito);
+  transition: background-color var(--dur-color) ease, color var(--dur-color) ease, transform var(--dur-presion) var(--ease-out);
+}
+.menu-acciones > summary::-webkit-details-marker { display: none; }
+.menu-acciones > summary svg { width: 20px; height: 20px; }
+.menu-acciones > summary:active { transform: scale(0.95); }
+.menu-acciones[open] > summary { background: var(--perla); color: var(--tinta); }
+@media (hover: hover) and (pointer: fine) { .menu-acciones > summary:hover { background: var(--perla); color: var(--tinta); } }
+@media (pointer: coarse) { .menu-acciones > summary { width: 44px; height: 44px; } }
+.menu-acciones__panel {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; min-width: 180px; padding: 6px;
+  display: flex; flex-direction: column; background: var(--blanco); border-radius: var(--radio-fila); box-shadow: var(--sombra-flota);
+  transform-origin: top right; animation: aparece-menu 160ms var(--ease-out);
+}
+.menu-acciones__panel button, .menu-acciones__panel a {
+  display: flex; align-items: center; min-height: 40px; padding: 0 12px; border: 0; border-radius: var(--radio-mini); background: none;
+  font: inherit; font-size: 14px; font-weight: 500; color: var(--tinta); text-align: left; text-decoration: none; cursor: pointer;
+  transition: background-color var(--dur-color) ease;
+}
+@media (pointer: coarse) { .menu-acciones__panel button, .menu-acciones__panel a { min-height: 44px; } }
+.menu-acciones__panel [data-peligro] { color: var(--contradicho); }
+@media (hover: hover) and (pointer: fine) {
+  .menu-acciones__panel button:hover, .menu-acciones__panel a:hover { background: var(--perla); }
+  .menu-acciones__panel [data-peligro]:hover { background: var(--contradicho-velo); }
+}
+
+/* ───────── LAS VISTAS (TabsEmpresa): el control segmentado ─────────
+   Una pista gris muy suave con las vistas; la elegida es el pulgar blanco. El pulgar no se desliza entre vistas: cada
+   vista es otra página y llega quieta. El Expediente va al final, tras un divisor. En un celular la pista ocupa el ancho
+   y se desliza; la página nunca. Debajo, las pantallas de la vista abierta (.en-seccion). */
+.empresa-navegacion { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin: 0 0 20px; min-width: 0; }
+.vistas-empresa {
+  display: inline-flex; align-items: center; gap: 2px; min-width: 0; max-width: 100%; overflow-x: auto; scrollbar-width: none;
+  padding: 3px; margin: 0; background: rgba(15, 26, 46, 0.055); border-radius: var(--radio); box-shadow: none;
+}
+.vistas-empresa::-webkit-scrollbar { display: none; }
+.vistas-empresa a {
+  flex: none; display: inline-flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 16px;
+  border-radius: 9px; background: none; border: 0; box-shadow: none; color: var(--grafito);
+  text-decoration: none; font-size: 14px; font-weight: 500; line-height: 1.2; white-space: nowrap;
+  transition: transform var(--dur-presion) var(--ease-out), background-color var(--dur-color) ease, color var(--dur-color) ease;
+}
+.vistas-empresa a svg { width: 16px; height: 16px; flex: none; color: currentColor; }
+.vistas-empresa a:active { transform: scale(0.97); }
+/* La pista se desliza (overflow): el anillo de foco va pegado al segmento para que no lo recorte. */
+.vistas-empresa a:focus-visible { outline-offset: 0; }
+.vistas-empresa a[aria-current="page"] { background: var(--blanco); color: var(--tinta); font-weight: 650; box-shadow: var(--sombra-pulgar); }
+@media (hover: hover) and (pointer: fine) { .vistas-empresa a:not([aria-current="page"]):hover { background: rgba(15, 26, 46, 0.04); color: var(--tinta); } }
+@media (pointer: coarse) { .vistas-empresa a { min-height: 44px; } }
+.vistas-empresa__expediente { flex: none; display: flex; align-items: center; margin: 0; padding: 0; border: 0; }
+.vistas-empresa__expediente::before { content: ""; width: 1px; height: 20px; margin: 0 6px; background: rgba(15, 26, 46, 0.12); }
+.vistas-empresa a[data-discreto] { font-size: 13px; }
+.vistas-empresa a[data-discreto][aria-current="page"] { background: var(--blanco); color: var(--tinta); }
+/* Las pantallas de la vista, pegadas a la pista: el pulgar de abajo se alinea con el de arriba. */
+.empresa-navegacion .en-seccion { margin: 0 -4px; }
+@media (min-width: 1180px) {
+  /* Con ancho de sobra, las vistas no se aprietan: cada una con su aire. */
+  .vistas-empresa a { padding: 0 18px; }
+}
+@media (max-width: 760px) {
+  .empresa-navegacion { align-items: stretch; }
+  .vistas-empresa { display: flex; width: 100%; }
+  .vistas-empresa a { padding: 0 14px; font-size: 13.5px; }
+}
+
+/* ───────── LA PORTADA: el ingreso (/entrar, /registro, /recuperar, /restablecer) ─────────
+   Toda la pantalla en noche con la luz del logo; debajo, la hoja perla con el formulario. El logo aparece una vez, al
+   cargar (opacidad y 4 px, 280 ms); nunca en bucle. */
+body:has(.portada) { padding: 0; }
+html:has(.portada) { background-color: var(--noche-profunda); }
+.portada {
+  min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 40px;
+  padding: calc(48px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(48px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
+  background:
+    radial-gradient(560px 380px at 50% 30%, rgba(216, 189, 134, 0.1), rgba(216, 189, 134, 0) 70%),
+    radial-gradient(1200px 900px at 50% 28%, #14223e 0%, var(--noche) 45%, var(--noche-profunda) 100%);
+  color: var(--luna);
+}
+.portada > .logo8x { animation: logo-entra 280ms var(--ease-out) both; }
+@keyframes logo-entra { from { opacity: 0; transform: translateY(4px); } }
+.portada__hoja {
+  width: min(420px, 100%); background: var(--perla); color: var(--tinta);
+  border-radius: var(--radio-hoja); padding: 32px 32px 28px; box-shadow: var(--sombra-portada);
+}
+.portada__hoja > .t-titulo { margin: 0 0 8px; }
+/* Sin frase debajo del título, el formulario toma el aire que ella dejaba. */
+.portada__hoja > .t-titulo + form,
+.portada__hoja > .t-titulo + .portada__texto { margin-top: 24px; }
+.portada__frase { margin: 0 0 28px; font-size: 14.5px; line-height: 1.5; color: var(--grafito); }
+.portada__texto { margin: 0 0 16px; font-size: 15px; line-height: 1.55; color: var(--tinta); }
+.portada__pie { margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--grafito); }
+.portada__pie a, .portada__pie button, .portada__hoja .enlace-tinta {
+  color: var(--tinta); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px;
+  text-decoration-color: rgba(15, 26, 46, 0.4); background: none; border: 0; padding: 0; font: inherit; cursor: pointer;
+  transition: text-decoration-color var(--dur-color) ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .portada__pie a:hover, .portada__pie button:hover, .portada__hoja .enlace-tinta:hover { text-decoration-color: currentColor; }
+}
+/* Cada enlace con su pregunta se queda entero: la línea se parte en el punto, no a mitad de «¿Olvidaste tu contraseña?». */
+.portada__par { white-space: nowrap; }
+.portada__volver { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--linea); }
+@media (max-width: 639px) {
+  .portada { gap: 32px; padding-top: calc(40px + env(safe-area-inset-top)); padding-bottom: calc(40px + env(safe-area-inset-bottom)); }
+  .portada > .logo8x svg { height: 92px; width: auto; }
+  .portada__hoja { padding: 28px 20px 24px; }
+}
+
+/* ───────── IMPRESIÓN: ni navegación, ni barra de avance, ni menús ───────── */
+@media print {
+  .barra-movil, .lateral, .telon, .barra-ruta, .cabecera-app, .aviso-vista,
+  .vistas-empresa, .en-seccion, .menu-administrar, .menu-acciones, .empresa-cabeza__acciones { display: none !important; }
+  .marco-app { display: block !important; }
+  .contenido-app { padding: 0; max-width: none; }
+}

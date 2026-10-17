@@ -1,6 +1,7 @@
 "use client";
 import { useRef, useState } from "react";
 import { useEsCliente } from "@/lib/hooks";
+import { Icono } from "@/components/base/Icono";
 
 type SR = { start: () => void; stop: () => void; abort: () => void; lang: string; continuous: boolean; interimResults: boolean; onresult: ((e: { resultIndex: number; results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }) => void) | null; onend: (() => void) | null; onerror: ((e: { error: string }) => void) | null };
 
@@ -91,7 +92,7 @@ export function BotonGrabar({ alTexto, alAudio, grande = true }: { alTexto: (t: 
       setGrabando(true);
     } catch (e) {
       // EL FALLO YA NO SE TRAGA (30-08-2026). Antes este catch dejaba el botón muerto sin decir
-      // nada: la dueña de Qori Home tocaba "Responder hablando" y no pasaba absolutamente nada.
+      // nada: una dueña tocaba "Responder hablando" y no pasaba absolutamente nada.
       // En el iPhone, lo más común es que el micrófono esté denegado para esa página.
       setGrabando(false);
       const nombre = (e as { name?: string })?.name ?? "";
@@ -119,11 +120,8 @@ export function BotonGrabar({ alTexto, alAudio, grande = true }: { alTexto: (t: 
 
   return (
     <div className="flex flex-col gap-3">
-      <button type="button" onClick={alternar} className={`boton ${grande ? "boton--grande" : ""}`} aria-pressed={grabando} style={grabando ? { background: "var(--contradicho)", borderColor: "var(--contradicho)" } : undefined}>
-        <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" fill="currentColor">
-          <rect x="7" y="2" width="6" height="10" rx="3" />
-          <path d="M4 9a6 6 0 0 0 12 0h-1.5a4.5 4.5 0 0 1-9 0H4zM9.25 15h1.5v3h-1.5z" />
-        </svg>
+      <button type="button" onClick={alternar} className={`boton${grande ? " boton--grande" : ""}${grabando ? " boton--grabando" : ""}`} aria-pressed={grabando}>
+        <Icono nombre="voz" tam={18} />
         {grabando ? "Detener y usar lo dicho" : "Responder hablando"}
       </button>
       {grabando && (
@@ -133,7 +131,7 @@ export function BotonGrabar({ alTexto, alAudio, grande = true }: { alTexto: (t: 
       )}
       {/* SI EL MICRÓFONO FALLA, SE DICE. Antes el fallo se tragaba y el botón quedaba muerto. */}
       {falloMicro && !grabando && (
-        <p className="t-cuerpo" role="alert" style={{ color: "var(--contradicho)", border: "1px solid var(--contradicho)", borderRadius: "var(--radio)", padding: "10px 12px" }}>
+        <p className="aviso aviso--error" role="alert">
           {falloMicro}
         </p>
       )}

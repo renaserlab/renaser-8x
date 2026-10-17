@@ -34,7 +34,7 @@ export function HistorialIniciativa({ historial, zona }: { historial: FilaHistor
         const esDecision = observado !== null;
         const mismoEstado = h.de_estado === h.a_estado;
         return (
-          <li key={h.id} className="t-dato" style={{ borderLeft: "2px solid var(--linea)", paddingLeft: 10 }}>
+          <li key={h.id} className="t-dato" style={{ borderLeft: "1px solid var(--linea)", paddingLeft: 10 }}>
             <span style={{ color: "var(--grafito)" }}>{momentoCorto(h.created_at, zona)} · </span>
             <strong>{h.actor_nombre ?? "La consultora"}</strong> {quePaso(h)}
             {h.motivo && !(mismoEstado && fuente) && h.de_estado != null && (

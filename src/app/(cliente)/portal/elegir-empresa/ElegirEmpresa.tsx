@@ -32,14 +32,13 @@ export function ElegirEmpresa({ empresas, activa }: { empresas: { id: string; no
         <button
           key={e.id}
           type="button"
-          className="panel p-4 flex items-center justify-between gap-3"
+          className="fila-eleccion"
           onClick={() => elegir(e.id)}
           disabled={cargando !== null || activa === e.id}
           aria-current={activa === e.id ? "true" : undefined}
-          style={{ textAlign: "left", cursor: activa === e.id ? "default" : "pointer", font: "inherit" }}
         >
-          <span className="t-cuerpo" style={{ fontWeight: 600, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>{e.nombre}</span>
-          <span className="t-dato" style={{ color: activa === e.id ? "var(--confirmado)" : "var(--marca)", whiteSpace: "nowrap" }}>
+          <span className="t-cuerpo fuerte" style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>{e.nombre}</span>
+          <span className="t-dato fuerte" style={{ color: activa === e.id ? "var(--confirmado)" : "var(--acero-fuerte)", whiteSpace: "nowrap" }}>
             {activa === e.id ? "Estás aquí" : cargando === e.id ? "Entrando…" : "Entrar"}
           </span>
         </button>

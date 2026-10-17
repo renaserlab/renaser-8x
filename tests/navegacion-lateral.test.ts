@@ -39,7 +39,8 @@ const navCliente = leer("components/cliente/NavCliente.tsx");
 const layoutConsultor = leer("app/(consultor)/layout.tsx");
 const layoutCliente = leer("app/(cliente)/layout.tsx");
 const layoutEmpresa = leer("app/(consultor)/empresa/[id]/layout.tsx");
-const css = leer("design/tablero.css");
+// Desde el 17-10-2026 (sistema «noche y perla») el marco, la barra lateral y la ruta viven en src/design/marco.css.
+const css = leer("design/marco.css");
 
 /** Un «0 %» que no sea parte de otro número (10 %, 40 %…). */
 const CERO_POR_CIENTO = /(^|[^\d])0\s?%/;
@@ -125,7 +126,7 @@ describe("los dos marcos: barra a la izquierda, columna con el contenido", () =>
   });
 });
 
-describe("el estilo vive en tablero.css", () => {
+describe("el estilo vive en marco.css", () => {
   it("marco, riel, cajón bajo 1024 px, movimiento reducido, rayado e impresión", () => {
     expect(css).toMatch(/\.marco-app\b/);
     expect(css).toMatch(/grid-template-columns: var\(--ancho-lateral, 248px\) minmax\(0, 1fr\)/);

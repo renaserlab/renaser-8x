@@ -37,9 +37,9 @@ export default async function Activos({ searchParams }: { searchParams: Promise<
       {/* Todo lo tuyo, a un toque: los procesos dibujados y lo subido viven aquí dentro. */}
       <div className="flex flex-wrap gap-2 mb-8">
         <EditarMiEmpresa nombre={emp2?.nombre ?? ""} ficha={(emp2?.ficha as Record<string, string>) ?? {}} />
-        <Link href="/portal/procesos" className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>Tus procesos dibujados</Link>
-        <Link href="/portal/documentos" className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>Todo lo que subiste</Link>
-        <Link href="/portal/validar" className="boton boton--secundario" style={{ minHeight: 38, fontSize: 14 }}>Puntos por confirmar</Link>
+        <Link href="/portal/procesos" className="boton boton--secundario boton--chico">Tus procesos dibujados</Link>
+        <Link href="/portal/documentos" className="boton boton--secundario boton--chico">Todo lo que subiste</Link>
+        <Link href="/portal/validar" className="boton boton--secundario boton--chico">Puntos por confirmar</Link>
       </div>
       <InventarioActivos
         companyId={c.companyId}

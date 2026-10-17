@@ -31,13 +31,13 @@ const MAX_FILAS = 25;
 
 function ComoSeCalculo({ c }: { c: Calculo<unknown> }) {
   return (
-    <details className="mt-2">
-      <summary className="t-dato" style={{ cursor: "pointer", color: "var(--grafito)", fontSize: 13 }}>Cómo se calculó</summary>
-      <dl className="mt-1 flex flex-col gap-1">
+    <details className="detalle-calculo mt-2">
+      <summary>Cómo se calculó</summary>
+      <dl>
         {explicarCalculo(c).map((x) => (
-          <div key={x.etiqueta} className="t-dato" style={{ fontSize: 13 }}>
-            <dt style={{ fontWeight: 600, display: "inline" }}>{x.etiqueta}: </dt>
-            <dd style={{ display: "inline", margin: 0 }}>{x.texto}</dd>
+          <div key={x.etiqueta}>
+            <dt>{x.etiqueta}</dt>
+            <dd>{x.texto}</dd>
           </div>
         ))}
       </dl>
@@ -49,8 +49,8 @@ function ComoSeCalculo({ c }: { c: Calculo<unknown> }) {
 function Barra({ lleno, total, etiqueta }: { lleno: number; total: number; etiqueta: string }) {
   const pct = total > 0 ? Math.max(0, Math.min(100, (100 * lleno) / total)) : 0;
   return (
-    <div role="img" aria-label={etiqueta} style={{ display: "flex", height: 14, borderRadius: 999, overflow: "hidden", background: "var(--rayado)", border: "1px solid var(--raya)" }}>
-      <span style={{ width: `${pct}%`, background: "var(--marca)" }} />
+    <div role="img" aria-label={etiqueta} className="barra-cubierta">
+      <span style={{ width: `${pct}%` }} />
     </div>
   );
 }
@@ -61,16 +61,16 @@ function FilaProducto({ p, fmt }: { p: ProductoRentable; fmt: (n: number) => str
   return (
     <tr>
       <td style={{ minWidth: 180 }}>
-        <span style={{ fontWeight: 650 }}>{p.nombre}</span>
-        {p.grupo && <span className="t-dato" style={{ display: "block", color: "var(--grafito)", fontSize: 12.5 }}>{p.grupo}</span>}
-        {p.motivos.length > 0 && <span className="t-dato" style={{ display: "block", color: "var(--grafito)", fontSize: 12.5, maxWidth: 260 }}>{p.motivos.join("; ")}</span>}
+        <span className="fuerte">{p.nombre}</span>
+        {p.grupo && <span className="apunte block">{p.grupo}</span>}
+        {p.motivos.length > 0 && <span className="apunte block" style={{ maxWidth: 260 }}>{p.motivos.join("; ")}</span>}
       </td>
       <td>{p.cuadrante ? CUADRANTE_TEXTO[p.cuadrante].nombre : <SinDato />}</td>
       <td>{p.precio_efectivo ? <span className="cifra">{textoRango(p.precio_efectivo, fmt)}</span> : <SinDato />}</td>
       <td>
         {p.costo ? <span className="cifra">{textoRango(p.costo, fmt)}</span> : <SinDato />}
         {p.costo_partes.length > 0 && (
-          <span className="t-dato" style={{ display: "block", color: "var(--grafito)", fontSize: 12.5, maxWidth: 220 }}>
+          <span className="apunte block" style={{ maxWidth: 220 }}>
             {p.costo_partes.map((c, i) => (
               <span key={i}>
                 {i > 0 && " · "}
@@ -82,18 +82,18 @@ function FilaProducto({ p, fmt }: { p: ProductoRentable; fmt: (n: number) => str
       </td>
       <td>
         {p.margen_unitario ? <span className="cifra">{textoRango(p.margen_unitario, fmt)}</span> : <SinDato />}
-        {p.margen_pct && <span className="t-dato" style={{ display: "block", color: "var(--grafito)", fontSize: 12.5 }}>{pctTexto(p.margen_pct)}</span>}
+        {p.margen_pct && <span className="apunte block">{pctTexto(p.margen_pct)}</span>}
       </td>
       <td>
         {p.unidades_mes ? <span className="cifra">{textoRango(p.unidades_mes, cantidad)}</span> : <SinDato />}
-        {p.fuente_unidades && <span className="t-dato" style={{ display: "block", color: "var(--grafito)", fontSize: 12.5 }}>{FUENTE_UNIDADES[p.fuente_unidades]}</span>}
+        {p.fuente_unidades && <span className="apunte block">{FUENTE_UNIDADES[p.fuente_unidades]}</span>}
       </td>
       <td>{p.contribucion_mes ? <span className="cifra">{textoRango(p.contribucion_mes, fmt)}</span> : <SinDato />}</td>
       <td>
         {estados.length ? (
           <span className="flex flex-col gap-1">
             {estados.map((k) => (
-              <span key={k} className="t-dato" style={{ fontSize: 12.5, whiteSpace: "nowrap" }}>
+              <span key={k} className="dato-chico" style={{ whiteSpace: "nowrap" }}>
                 {k}: <ChipEstado estado={p.estados[k]} />
               </span>
             ))}
@@ -150,7 +150,7 @@ export function TableroRentabilidad({ t, config, noLeido, operaciones, pct, cons
   const eq = t.equilibrio;
   const faltan = t.faltan.length > 0 && (
     <section aria-labelledby="faltan-titulo">
-      <h3 id="faltan-titulo" className="t-seccion" style={{ fontSize: 17 }}>Lo que falta para completar las cuentas</h3>
+      <h3 id="faltan-titulo" className="t-seccion">Lo que falta para completar las cuentas</h3>
       <ul className="mt-2 flex flex-col gap-1" style={{ paddingLeft: 20, listStyle: "disc" }}>
         {t.faltan.map((f) => (
           <li key={f} className="t-dato">{f}</li>
@@ -183,13 +183,13 @@ export function TableroRentabilidad({ t, config, noLeido, operaciones, pct, cons
           <div className="grid gap-4 md:grid-cols-3">
             <div className="panel p-4">
               <p className="t-etiqueta">Lo que dejan los productos al mes</p>
-              <p className="num-grande mt-1" style={{ fontSize: 24 }}>{dejanTodas ? textoRango(dejanTodas, fmt) : <SinDato />}</p>
-              <p className="t-dato" style={{ color: "var(--grafito)", fontSize: 13 }}>{conDatos.length} de {t.productos.length} con precio, costo y unidades al mes</p>
+              <p className="cifra-media mt-1">{dejanTodas ? textoRango(dejanTodas, fmt) : <SinDato />}</p>
+              <p className="apunte">{conDatos.length} de {t.productos.length} con precio, costo y unidades al mes</p>
             </div>
             <div className="panel p-4">
               <p className="t-etiqueta">Gastos del mes</p>
-              <p className="num-grande mt-1" style={{ fontSize: 24 }}>{t.fijos.total ? textoRango(t.fijos.total, fmt) : <SinDato />}</p>
-              <p className="t-dato" style={{ color: "var(--grafito)", fontSize: 13 }}>
+              <p className="cifra-media mt-1">{t.fijos.total ? textoRango(t.fijos.total, fmt) : <SinDato />}</p>
+              <p className="apunte">
                 {t.fijos.fuente === "costos_mes"
                   ? `de la tabla de gastos (${t.fijos.filas})${t.fijos.solo_fijos ? ` · fijos ${textoRango(t.fijos.solo_fijos, fmt)}` : ""}${t.fijos.comercializacion ? ` · para vender ${textoRango(t.fijos.comercializacion, fmt)}` : ""}`
                   : t.fijos.fuente === "vital"
@@ -197,7 +197,7 @@ export function TableroRentabilidad({ t, config, noLeido, operaciones, pct, cons
                     : "ni en la tabla de gastos ni en los 9 números"}
               </p>
               {t.fijos.diferencia_pct != null && Math.abs(t.fijos.diferencia_pct) > 10 && t.fijos.vital != null && (
-                <p className="t-dato mt-1" style={{ color: "var(--caducado)", fontSize: 13 }}>
+                <p className="apunte texto-espera mt-1">
                   Los 9 números dicen {fmt(t.fijos.vital)} de gasto fijo: difieren {Math.abs(t.fijos.diferencia_pct)} %. No se elige: se conversa.
                 </p>
               )}
@@ -206,8 +206,8 @@ export function TableroRentabilidad({ t, config, noLeido, operaciones, pct, cons
               <p className="t-etiqueta">Punto de equilibrio</p>
               {eq.valor ? (
                 <>
-                  <p className="num-grande mt-1" style={{ fontSize: 24 }}>{textoRango(eq.valor.unidades, (n) => cantidad(Math.ceil(n)))}</p>
-                  <p className="t-dato" style={{ color: "var(--grafito)", fontSize: 13 }}>unidades al mes con la mezcla de hoy · {fmt(eq.valor.soles)} de venta</p>
+                  <p className="cifra-media mt-1">{textoRango(eq.valor.unidades, (n) => cantidad(Math.ceil(n)))}</p>
+                  <p className="apunte">unidades al mes con la mezcla de hoy · {fmt(eq.valor.soles)} de venta</p>
                 </>
               ) : (
                 <p className="t-dato mt-1" style={{ color: "var(--grafito)" }}><SinDato texto="sin cifra" /> · {eq.motivo_nulo}</p>
@@ -219,11 +219,11 @@ export function TableroRentabilidad({ t, config, noLeido, operaciones, pct, cons
           {faltan}
 
           <section aria-labelledby="por-producto" className="flex flex-col gap-2">
-            <h3 id="por-producto" className="t-seccion" style={{ fontSize: 17 }}>Por producto</h3>
+            <h3 id="por-producto" className="t-seccion">Por producto</h3>
             <TablaPorProducto productos={primeras} fmt={fmt} />
             {resto.length > 0 && (
               <details>
-                <summary className="t-dato" style={{ cursor: "pointer", minHeight: 44, display: "flex", alignItems: "center", color: "var(--marca)" }}>Ver los {resto.length} restantes</summary>
+                <summary className="plegado-enlace">Ver los {resto.length} restantes</summary>
                 <TablaPorProducto productos={resto} fmt={fmt} />
               </details>
             )}
@@ -232,7 +232,7 @@ export function TableroRentabilidad({ t, config, noLeido, operaciones, pct, cons
           <MatrizMargenVolumen t={t} config={config} />
 
           <section aria-labelledby="noventa-diez" className="flex flex-col gap-2">
-            <h3 id="noventa-diez" className="t-seccion" style={{ fontSize: 17 }}>90/10: los pocos que dejan casi todo</h3>
+            <h3 id="noventa-diez" className="t-seccion">90/10: los pocos que dejan casi todo</h3>
             {nd.valor ? (
               <>
                 <p className="t-cuerpo">
@@ -249,7 +249,7 @@ export function TableroRentabilidad({ t, config, noLeido, operaciones, pct, cons
           </section>
 
           <section aria-labelledby="equilibrio" className="flex flex-col gap-2">
-            <h3 id="equilibrio" className="t-seccion" style={{ fontSize: 17 }}>Cuánto hay que vender para cubrir el mes</h3>
+            <h3 id="equilibrio" className="t-seccion">Cuánto hay que vender para cubrir el mes</h3>
             {eq.valor ? (
               <>
                 <p className="t-cuerpo">
@@ -257,7 +257,7 @@ export function TableroRentabilidad({ t, config, noLeido, operaciones, pct, cons
                   {eq.valor.vendes_hoy ? <>; hoy vendes <b>{textoRango(eq.valor.vendes_hoy, cantidad)}</b>.</> : "."}
                 </p>
                 <details>
-                  <summary className="t-dato" style={{ cursor: "pointer", color: "var(--marca)" }}>Por producto</summary>
+                  <summary className="plegado-enlace">Por producto</summary>
                   <ul className="mt-2 flex flex-col gap-1" style={{ listStyle: "none", padding: 0 }}>
                     {eq.valor.por_producto.map((x) => (
                       <li key={x.id} className="t-dato">{nombre(x.id)}: {textoRango(x.unidades, (n) => cantidad(Math.ceil(n)))}</li>
@@ -277,7 +277,7 @@ export function TableroRentabilidad({ t, config, noLeido, operaciones, pct, cons
 
       {t.moneda && (
         <section aria-labelledby="moneda-titulo" className="flex flex-col gap-2">
-          <h3 id="moneda-titulo" className="t-seccion" style={{ fontSize: 17 }}>Lo que se queda en el camino al cobrar en otra moneda</h3>
+          <h3 id="moneda-titulo" className="t-seccion">Lo que se queda en el camino al cobrar en otra moneda</h3>
           {t.moneda.resumen.valor ? (
             <p className="t-cuerpo">
               En las ventas con lo que llegó a la cuenta, se esperaban <b>{fmt(t.moneda.resumen.valor.esperado)}</b> y llegaron <b>{fmt(t.moneda.resumen.valor.recibido)}</b>: se quedaron <b>{fmt(t.moneda.resumen.valor.perdido)}</b> ({Math.round(t.moneda.resumen.valor.pct * 1000) / 10} %).
@@ -309,8 +309,8 @@ export function TableroRentabilidad({ t, config, noLeido, operaciones, pct, cons
                       <tr key={f.id}>
                         <td>
                           {o ? `${o.monto.toLocaleString("es-PE", { maximumFractionDigits: 2 })} ${o.moneda}` : "—"}
-                          {o?.fecha_venta && <span className="t-dato" style={{ display: "block", color: "var(--grafito)", fontSize: 12.5 }}>{o.fecha_venta.split("-").reverse().join("/")}</span>}
-                          {f.motivos.length > 0 && <span className="t-dato" style={{ display: "block", color: "var(--grafito)", fontSize: 12.5, maxWidth: 240 }}>{f.motivos.join("; ")}</span>}
+                          {o?.fecha_venta && <span className="apunte block">{o.fecha_venta.split("-").reverse().join("/")}</span>}
+                          {f.motivos.length > 0 && <span className="apunte block" style={{ maxWidth: 240 }}>{f.motivos.join("; ")}</span>}
                         </td>
                         <td>{celda(f.esperado)}</td>
                         <td>{celda(o?.recibido ?? null)}</td>
@@ -319,7 +319,7 @@ export function TableroRentabilidad({ t, config, noLeido, operaciones, pct, cons
                         <td>{celda(f.por_conversion)}</td>
                         <td>
                           {f.total != null && !f.completa ? <>al menos <span className="cifra">{fmt(f.total)}</span></> : celda(f.total)}
-                          {f.pct != null && <span className="t-dato" style={{ display: "block", color: "var(--grafito)", fontSize: 12.5 }}>{f.completa ? "" : "al menos "}{Math.round(f.pct * 1000) / 10} %</span>}
+                          {f.pct != null && <span className="apunte block">{f.completa ? "" : "al menos "}{Math.round(f.pct * 1000) / 10} %</span>}
                         </td>
                       </tr>
                     );

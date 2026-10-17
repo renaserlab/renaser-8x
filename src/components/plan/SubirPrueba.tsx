@@ -37,7 +37,7 @@ export function SubirPrueba({ companyId, actionId, onSubida, onCancelar, titulo 
   };
 
   return (
-    <div className="flex flex-col gap-2" style={{ borderLeft: "2px solid var(--linea)", paddingLeft: 12 }}>
+    <div className="flex flex-col gap-2" style={{ borderLeft: "1px solid var(--linea)", paddingLeft: 12 }}>
       <p className="t-dato" style={{ color: "var(--grafito)" }}>Una foto de lo que quedó hecho vale más que un informe: el cuaderno lleno, el cartel puesto, la lista firmada.</p>
       <input className="campo" placeholder={`${titulo} (opcional si subes foto)`} value={nota} onChange={(e) => setNota(e.target.value)} aria-label={titulo} />
       <div className="flex gap-2 flex-wrap items-center">

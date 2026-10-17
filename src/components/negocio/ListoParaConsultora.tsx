@@ -71,7 +71,7 @@ export function ListoParaConsultora({ companyId, solicitudId, completadaAt, pued
   };
 
   return (
-    <section className="panel p-5 mt-8 medida" style={{ background: "var(--suave)" }}>
+    <section className="pozo mt-8 medida">
       <p className="t-cuerpo">{que ? `Cuando termines «${que}», avísale a tu consultora.` : "Cuando termines, avísale a tu consultora."} Lo que no sepas puede quedar como «No lo sé»: también sirve.</p>
       <button type="button" className="boton mt-4" onClick={listo} disabled={trabajando}>
         {trabajando ? "Avisando…" : boton}

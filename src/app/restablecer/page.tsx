@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { CampoClave } from "@/components/base/CampoClave";
+import { Logo8X } from "@/components/base/Logo8X";
 
 /**
  * CREAR CONTRASEÑA NUEVA: aquí aterriza el enlace del correo de recuperación. El cliente de
@@ -57,20 +58,20 @@ export default function Restablecer() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-6">
-      <div className="w-full" style={{ maxWidth: 420 }}>
-        <p className="t-etiqueta mb-6">8X</p>
-        <h1 className="t-titulo mb-2">Crear contraseña nueva</h1>
-        {listo === "cargando" && <p className="t-cuerpo" style={{ color: "var(--grafito)" }}>Verificando tu enlace…</p>}
+    <main className="portada">
+      <Logo8X variante="luz" alto={120} lema />
+      <div className="portada__hoja">
+        <h1 className="t-titulo">Crear contraseña nueva</h1>
+        {listo === "cargando" && <p className="portada__frase">Verificando tu enlace…</p>}
         {listo === "vencido" && (
           <>
-            <p className="t-cuerpo mb-4">Este enlace venció o ya fue usado — pasa por seguridad.</p>
-            <Link href="/recuperar" className="boton boton--grande" style={{ display: "inline-flex" }}>Pedir un enlace nuevo</Link>
+            <p className="portada__texto">Este enlace venció o ya fue usado — pasa por seguridad.</p>
+            <Link href="/recuperar" className="boton boton--grande">Pedir un enlace nuevo</Link>
           </>
         )}
         {listo === "si" && (
           <>
-            <p className="t-cuerpo mb-8" style={{ color: "var(--grafito)" }}>Tu enlace es válido. Escribe tu contraseña nueva y listo: entras de inmediato.</p>
+            <p className="portada__frase">Tu enlace es válido. Escribe tu contraseña nueva y listo: entras de inmediato.</p>
             <form onSubmit={guardar} className="flex flex-col gap-5">
               <label className="flex flex-col gap-2">
                 <span className="t-etiqueta">Contraseña nueva</span>
@@ -80,7 +81,7 @@ export default function Restablecer() {
                 <span className="t-etiqueta">Repítela</span>
                 <CampoClave value={clave2} onChange={setClave2} autoComplete="new-password" />
               </label>
-              {error && <p className="t-cuerpo" style={{ color: "var(--contradicho)" }} role="alert">{error}</p>}
+              {error && <p className="aviso aviso--error" role="alert">{error}</p>}
               <button className="boton boton--grande" disabled={guardando}>{guardando ? "Guardando" : "Guardar y entrar"}</button>
             </form>
           </>

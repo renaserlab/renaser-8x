@@ -35,7 +35,7 @@ export function FiltrosCartera({ consultores, filtro, visibles, total }: { consu
       </label>
       <button type="submit" className="boton boton--secundario">Filtrar</button>
       {hayFiltro && (
-        <Link href="/cartera" className="t-dato" style={{ color: "var(--marca)", padding: "12px 4px" }}>Quitar filtros</Link>
+        <Link href="/cartera" className="enlace-azul" style={{ padding: "12px 4px" }}>Quitar filtros</Link>
       )}
       <p className="t-dato" style={{ color: "var(--grafito)", flexBasis: "100%" }} aria-live="polite">
         {hayFiltro ? `Se muestran ${visibles} de ${total} empresas.` : `${total} ${total === 1 ? "empresa" : "empresas"} en la cartera.`}

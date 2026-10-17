@@ -61,21 +61,21 @@ export function DeclararEquipo({ puestos }: { puestos: PuestoCliente[] }) {
       {propios.length > 0 && (
         <div className="grid gap-3 mb-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))" }}>
           {propios.map((p) => (
-            <article key={p.id} className="panel p-4" style={{ borderTop: "2.5px solid var(--marca)" }}>
-              <p className="t-seccion" style={{ fontSize: 15 }}>{p.nombre}</p>
-              <p className="t-dato" style={{ fontWeight: 600 }}>{p.persona || "Sin nombre aún"}</p>
+            <article key={p.id} className="puesto">
+              <p className="titulo-tarjeta">{p.nombre}</p>
+              <p className="t-dato fuerte">{p.persona || "Sin nombre aún"}</p>
               {p.mision && <p className="t-dato mt-1" style={{ color: "var(--grafito)" }}>{p.mision}</p>}
-              <p className="t-dato mt-1" style={{ color: "var(--grafito)", fontSize: 12 }}>{nombreDe(p.reporta_a) ? `Le responde a ${nombreDe(p.reporta_a)}` : "No le responde a nadie (es la cabeza)"}</p>
+              <p className="apunte mt-1">{nombreDe(p.reporta_a) ? `Le responde a ${nombreDe(p.reporta_a)}` : "No le responde a nadie (es la cabeza)"}</p>
               <div className="mt-2 flex gap-3">
-                <button type="button" className="t-dato" style={{ background: "none", border: "none", cursor: "pointer", font: "inherit", textDecoration: "underline", color: "var(--marca)", padding: 0 }} onClick={() => setAbierto(p)}>Corregir</button>
+                <button type="button" className="boton-enlace" onClick={() => setAbierto(p)}>Corregir</button>
                 {borrando === p.id ? (
                   <span className="t-dato">
                     ¿Quitarlo?{" "}
-                    <button type="button" style={{ background: "none", border: "none", cursor: "pointer", font: "inherit", color: "var(--contradicho)", textDecoration: "underline", padding: 0 }} disabled={guardando} onClick={() => { setAbierto(p); void guardar(true); }}>Sí</button>{" "}
-                    <button type="button" style={{ background: "none", border: "none", cursor: "pointer", font: "inherit", color: "var(--grafito)", padding: 0 }} onClick={() => setBorrando(null)}>No</button>
+                    <button type="button" className="boton-enlace boton-enlace--peligro" disabled={guardando} onClick={() => { setAbierto(p); void guardar(true); }}>Sí</button>{" "}
+                    <button type="button" className="boton-enlace boton-enlace--tenue boton-enlace--sin-raya" onClick={() => setBorrando(null)}>No</button>
                   </span>
                 ) : (
-                  <button type="button" className="t-dato" style={{ background: "none", border: "none", cursor: "pointer", font: "inherit", textDecoration: "underline", color: "var(--grafito)", padding: 0 }} onClick={() => setBorrando(p.id)}>Quitar</button>
+                  <button type="button" className="boton-enlace boton-enlace--tenue" onClick={() => setBorrando(p.id)}>Quitar</button>
                 )}
               </div>
             </article>
@@ -94,7 +94,7 @@ export function DeclararEquipo({ puestos }: { puestos: PuestoCliente[] }) {
           <aside className="panel-lateral" role="dialog" aria-modal="true" aria-label="Puesto de tu empresa">
             <div className="flex items-start justify-between gap-3 mb-4">
               <h3 className="t-seccion">{abierto.id ? "Corregir puesto" : "Un puesto de tu empresa"}</h3>
-              <button type="button" onClick={() => setAbierto(null)} className="t-dato" style={{ background: "none", border: "none", cursor: "pointer", padding: "2px 4px", font: "inherit", color: "var(--grafito)" }}>Cerrar</button>
+              <button type="button" onClick={() => setAbierto(null)} className="boton-enlace boton-enlace--tenue boton-enlace--sin-raya">Cerrar</button>
             </div>
             <div className="flex flex-col gap-4">
               <label className="flex flex-col gap-1">

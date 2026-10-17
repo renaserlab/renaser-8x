@@ -4,6 +4,8 @@
 @import "../design/vistas.css";
 @import "../design/camino.css";
 @import "../design/estrategia.css";
+@import "../design/portal.css";
+@import "../design/marco.css";
 
 @theme inline {
   --color-papel: var(--papel);
@@ -12,6 +14,9 @@
   --color-linea: var(--linea);
   --color-marca: var(--marca);
   --color-suave: var(--suave);
+  --color-perla: var(--perla);
+  --color-noche: var(--noche);
+  --color-acero-fuerte: var(--acero-fuerte);
   --color-confirmado: var(--confirmado);
   --color-caducado: var(--caducado);
   --color-contradicho: var(--contradicho);
@@ -19,7 +24,9 @@
   --radius-tarjeta: var(--radio-tarjeta);
 }
 
-/* PWA / iPhone-iPad: con viewport-fit=cover el contenido respeta las zonas seguras (notch, barra inferior). */
+/* PWA / iPhone-iPad: con viewport-fit=cover el contenido respeta las zonas seguras (notch, barra inferior).
+   La franja del celular (.barra-movil) y la portada del ingreso (.portada) ponen su propia zona segura arriba:
+   ahí el cuerpo no la suma otra vez (src/design/marco.css). */
 body {
   padding-top: env(safe-area-inset-top);
   padding-right: env(safe-area-inset-right);

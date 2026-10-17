@@ -3,13 +3,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icono, type NombreIcono } from "@/components/base/Icono";
 import { Lateral } from "@/components/navegacion/Lateral";
+import { Logo8X } from "@/components/base/Logo8X";
 
 /**
  * Navegación del portal AL COSTADO (pedido de Kelin, 16-10-2026: «navegación al costado, que se vea la barra
  * lateral o pueda ocultarla»). Una sola barra (Lateral.tsx) para escritorio y celular:
  * — Escritorio: fija a la izquierda con los cinco destinos; se oculta a un riel de íconos y se vuelve a mostrar.
  * — Celular/tablet: franja fina arriba con «Abrir el menú» y «Salir»; la barra entra desde la izquierda.
- * El destino activo es la píldora oscura. Los íconos son trazos (Icono.tsx), nunca emoji. Junto a un destino
+ * El destino activo lleva la luz dorada del logo sobre la barra noche (src/design/marco.css). Los íconos son trazos
+ * (Icono.tsx), nunca emoji. Junto a un destino
  * puede ir un contador con lo que la consultora pidió llenar (`avisos`, lo pasa el layout).
  */
 
@@ -82,8 +84,9 @@ export function NavCliente({ enlaces, empresa, avisos }: { enlaces: [string, str
     <Lateral
       etiqueta="Menú de tu empresa"
       marca={
-        <Link href="/portal" className="marca-app">
-          8X {empresa && <small>{empresa}</small>}
+        <Link href="/portal" className="marca-app" title={empresa ? `8X · ${empresa}` : "8X"}>
+          <Logo8X variante="luz" alto={28} />
+          {empresa && <small className="marca-app__empresa">{empresa}</small>}
         </Link>
       }
       enMovil={salir}

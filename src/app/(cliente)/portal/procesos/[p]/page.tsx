@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icono } from "@/components/base/Icono";
 import { notFound } from "next/navigation";
 import { contextoPortal } from "@/lib/portal";
 import { procesoConToBe } from "@/lib/procesos";
@@ -37,7 +38,7 @@ export default async function ProcesoCliente({ params }: { params: Promise<{ p: 
   const subidos = <ArchivosDelProceso processId={r.asis.id} fuentes={fuentes} dibujado={dibujado} modo="dueno" />;
   return (
     <>
-      <Link href="/portal/procesos" className="t-dato">← Tus procesos</Link>
+      <Link href="/portal/procesos" className="volver"><Icono nombre="abajo" tam={16} />Tus procesos</Link>
       <h1 className="t-titulo mt-4 mb-2">{r.asis.nombre}</h1>
       <p className="t-cuerpo mb-6 medida" style={{ color: "var(--grafito)" }}>
         {dibujado

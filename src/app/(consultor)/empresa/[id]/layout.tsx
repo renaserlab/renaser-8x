@@ -25,8 +25,10 @@ import { avanceDeEmpresa } from "@/lib/ruta-datos";
  * De arriba abajo (revisión del 16-10-2026: «sidebar + una columna fija» era una columna de más): el avance de la ruta
  * en UNA línea, la cabecera (nombre, «Ver como el empresario» y «Administrar»), las vistas en una barra horizontal bajo
  * el nombre —como el portal— con sus pantallas debajo, y la pantalla a todo lo ancho. La barra entera de la ruta, con
- * lo que falta para la compuerta, vive en Avance. La empresa vive sobre el cielo, como la bandeja: .empresa-marco apaga
- * la hoja del layout de la consultora (src/design/vistas.css).
+ * lo que falta para la compuerta, vive en Avance. La empresa vive sobre el lienzo perla, como la bandeja: .empresa-marco
+ * apaga la hoja del layout de la consultora (src/design/vistas.css). Desde el 17-10-2026 (sistema «noche y perla»,
+ * src/design/marco.css): la ruta es una cápsula en vidrio pegada arriba, el nombre va en la letra de títulos y las vistas
+ * son un control segmentado con el pulgar blanco.
  */
 
 const COLUMNAS = "id,nombre,sector,etapa,estado_admision,ficha,pais,moneda,idioma,zona_horaria";

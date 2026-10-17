@@ -21,7 +21,7 @@ export function PedidosCliente({ solicitudes, zona }: { solicitudes: Solicitud[]
         <ol className="lista-editorial medida">
           {activas.map((s, i) => (
             <li key={s.id} className="flex flex-col gap-2">
-              <p className="t-seccion" style={{ fontSize: 18 }}>{SECCION[s.seccion].paraDueno}</p>
+              <p className="t-seccion">{SECCION[s.seccion].paraDueno}</p>
               {s.nota && <p className="t-cuerpo" style={{ whiteSpace: "pre-line" }}>«{s.nota}»</p>}
               <p className="t-dato" style={{ color: "var(--grafito)" }}>Te lo pidió el {diaLargo(s.activada_at, zona) ?? "día que lo activó"}.</p>
               <div>
@@ -35,13 +35,13 @@ export function PedidosCliente({ solicitudes, zona }: { solicitudes: Solicitud[]
 
       {entregadas.length > 0 && (
         <details className="mt-8 medida">
-          <summary className="t-dato" style={{ cursor: "pointer", color: "var(--marca)", minHeight: 44, display: "flex", alignItems: "center" }}>
+          <summary className="plegado-enlace">
             Ya entregaste ({entregadas.length})
           </summary>
           <ul className="lista-editorial mt-2">
             {entregadas.map((s) => (
               <li key={s.id} className="flex flex-wrap items-baseline justify-between gap-2">
-                <Link href={SECCION[s.seccion].href} className="t-dato" style={{ fontWeight: 600 }}>{SECCION[s.seccion].paraDueno}</Link>
+                <Link href={SECCION[s.seccion].href} className="t-dato fuerte">{SECCION[s.seccion].paraDueno}</Link>
                 <span className="t-dato" style={{ color: "var(--grafito)" }}>Avisaste el {diaLargo(s.completada_at, zona) ?? "—"}</span>
               </li>
             ))}
