@@ -19,9 +19,9 @@ const RAIZ = path.resolve(__dirname, "../..");
 
 /**
  * Lo que producción ya tiene: el esquema base, las 15 migraciones anteriores a la rama del 13-10, la que solo
- * documenta, las 13 de la rama del 13-10 (aplicadas en producción el 15-10-2026) y la del 16-10 que deja entrar
+ * documenta, las 13 de la rama del 13-10 (aplicadas en producción el 15-10-2026), la del 16-10 que deja entrar
  * al cliente (aplicada el 16-10-2026; el archivo que se pegó es clientes/8x-ejecucion/produccion-2026-10-16.sql,
- * fuera del repositorio).
+ * fuera del repositorio), la de la estrategia y la de RENASER OS.
  */
 export const YA_EN_PRODUCCION: readonly string[] = [
   "schema.sql", "migracion-gobierno.sql", "migracion-circuito.sql", "migracion-mediciones.sql",
@@ -37,63 +37,35 @@ export const YA_EN_PRODUCCION: readonly string[] = [
   "migracion-vistas-cliente-solo-lectura.sql",
   // Aplicada en producción el 16-10-2026.
   "migracion-entrar-hoy.sql",
+  // Ya estaba en producción el 19-10-2026, aunque este registro la seguía dando por pendiente. Se comprobó en la base:
+  // las 3 tablas con RLS, las 2 funciones solo para el servidor, los 2 checks ampliados y el disparador de ediciones.
+  "migracion-estrategia.sql",
+  // Aplicada en producción el 19-10-2026 (CLI de Supabase, una sola transacción, después de un ensayo que se deshizo
+  // a propósito). Comprobado: 16 tablas con RLS y sin permisos para el navegador, 7 funciones, pg_cron con sus 5 trabajos.
+  "migracion-renaser-os.sql",
 ];
 
 /**
- * Checks que se amplían: tabla, un valor que ya admitía y uno nuevo que debe admitir. Los seis de la rama del
- * 13-10 ya se comprobaron al aplicarla en producción (15-10). Lo pendiente hoy (migracion-estrategia.sql) amplía dos:
- * el bloque de comprobación final mira que de verdad admitan el valor nuevo. Con la lista vacía ese bloque no se
- * escribe: un `values` vacío es un error de sintaxis.
+ * LO QUE DESCRIBE LA PRÓXIMA TANDA. Hoy no hay nada pendiente, así que todas estas listas están vacías. Cuando nazca
+ * una migración nueva, se llenan con lo suyo y tests/sql/paso-a-produccion.test.ts vuelve a ensayarla. La tanda
+ * anterior (estrategia y RENASER OS), con su ensayo completo, está en el historial del repositorio, commit 4fdb45b.
+ *
+ * - CHECKS_AMPLIADOS: tabla, un valor que ya admitía y uno nuevo que debe admitir; el archivo comprueba al final que
+ *   de verdad los admita (con la lista vacía ese bloque no se escribe: un `values` vacío es un error de sintaxis).
+ * - TABLAS_NUEVAS: la última fila del archivo dice cuáles quedaron, cuántas y con RLS.
+ * - COLUMNAS_NUEVAS: exactamente cada `add column if not exists` de lo pendiente (`tabla.columna`).
+ * - FUNCIONES_SOLO_SERVIDOR: las que solo debe ejecutar service_role (una que el navegador pudiera ejecutar saltaría
+ *   las reglas de la aplicación).
+ * - QUE_HACE: la cabecera del archivo, con la verdad de lo que está pendiente hoy y no la de una tanda anterior.
  */
-export const CHECKS_AMPLIADOS: readonly (readonly [string, string, string])[] = [
-  ["solicitudes_cliente", "productos", "preguntas_estrategia"],
-  ["deliverables", "plan_90", "plan_estrategico"],
-];
-
-/** Las tablas que crea lo pendiente: la última fila del archivo dice cuáles quedaron, cuántas y con RLS. */
-export const TABLAS_NUEVAS: readonly string[] = [
-  "estrategias", "estrategia_ediciones", "estrategia_preguntas",
-  // RENASER OS (19-10-2026): las 16 tablas os_* de migracion-renaser-os.sql.
-  "os_personas", "os_proyectos", "os_tareas", "os_bloqueos", "os_reprogramaciones", "os_registros_tiempo", "os_aperturas",
-  "os_cierres", "os_cierres_semanales", "os_entregables", "os_objetivos", "os_legajos", "os_acompanamientos",
-  "os_evaluaciones", "os_avisos", "os_reglas",
-];
-
-/**
- * Las columnas que lo pendiente añade a tablas que ya existían (`tabla.columna`): la última fila dice cuáles quedaron
- * y cuántas. Tiene que ser exactamente cada `add column if not exists` de lo pendiente (lo comprueba
- * tests/sql/paso-a-produccion.test.ts). Hoy ninguna: con la lista vacía, la fila final no las cuenta (un `values`
- * vacío sería un error de sintaxis).
- */
+export const CHECKS_AMPLIADOS: readonly (readonly [string, string, string])[] = [];
+export const TABLAS_NUEVAS: readonly string[] = [];
 export const COLUMNAS_NUEVAS: readonly string[] = [];
+export const FUNCIONES_SOLO_SERVIDOR: readonly string[] = [];
+export const QUE_HACE: readonly string[] = [];
 
-/**
- * Las funciones que crea lo pendiente y que solo debe poder ejecutar el servidor (service_role): la fila final dice
- * cuántas quedaron así. Una que el navegador pudiera ejecutar saltaría las reglas de la aplicación.
- */
-export const FUNCIONES_SOLO_SERVIDOR: readonly string[] = [
-  "estrategia_lente_lista", "aprobar_estrategia",
-  // RENASER OS: las cinco reglas que agenda pg_cron y sus dos ayudantes.
-  "os_regla_activa", "os_marcar_corrida", "os_regla_inactividad", "os_regla_bloqueos", "os_regla_plan_manana",
-  "os_regla_cierre_semanal", "os_regla_diagnostico",
-];
-
-/** Lo que dice la cabecera del archivo: la verdad de lo que hoy está pendiente, no la de una tanda anterior. */
-export const QUE_HACE: readonly string[] = [
-  "QUÉ HACE: añade 3 tablas con RLS para la estrategia que 8X genera sola (estrategias: una fila por versión;",
-  "estrategia_ediciones: el rastro de lo que corrige la consultora, que no se cambia; estrategia_preguntas: lo que falta",
-  "saber, convertido en preguntas para el dueño), 2 funciones que solo ejecuta el servidor (estrategia_lente_lista y",
-  "aprobar_estrategia), y amplía 2 checks agregando un valor a cada uno: solicitudes_cliente.seccion admite",
-  "preguntas_estrategia y deliverables.tipo admite plan_estrategico. Desde el navegador nadie escribe en las 3 tablas (la",
-  "consultora solo las lee; el dueño, nada): todo pasa por la aplicación. Aprobar compara la hora de la fila (bloqueo optimista).",
-  "NO borra ni cambia ningún dato existente. El código que hoy está en producción sigue funcionando igual con esto aplicado.",
-  "Se puede ejecutar dos veces sin daño. Para deshacerlo sin perder filas: supabase/revertir/migracion-estrategia.sql.",
-  "Y RENASER OS: añade 16 tablas os_* con RLS y sin permisos para el navegador (el equipo de cada empresa, sus tareas con",
-  "cronómetro, la apertura y el cierre del día y de la semana, entregables, proyectos, objetivo semanal, legajos,",
-  "acompañamiento, evaluaciones 360 y avisos), el bucket privado os-entregables y 7 funciones que solo ejecuta el",
-  "servidor (las cinco reglas de avisos y dos ayudantes). Agenda las cinco reglas en pg_cron y activa la extensión si",
-  "no lo estaba. Para deshacerlo sin perder filas: supabase/revertir/migracion-renaser-os.sql.",
-];
+/** Lo que se dice cuando no hay nada que pasar a producción: mejor eso que un archivo vacío que alguien pegue. */
+export const NADA_PENDIENTE = "No hay migraciones pendientes: producción ya tiene todo lo de supabase/orden-aplicacion.json.";
 
 export function migracionesPendientes(): string[] {
   const orden = JSON.parse(readFileSync(path.join(RAIZ, "supabase", "orden-aplicacion.json"), "utf8")) as { archivos: { archivo: string }[] };
@@ -102,6 +74,7 @@ export function migracionesPendientes(): string[] {
 
 export function armarSql(): string {
   const nuevas = migracionesPendientes();
+  if (!nuevas.length) throw new Error(NADA_PENDIENTE);
   const raya = "-- " + "─".repeat(100);
   const partes: string[] = [];
   partes.push(
@@ -209,6 +182,10 @@ if (typeof require !== "undefined" && typeof module !== "undefined" && require.m
   if (!salida) {
     console.error("Falta la ruta de salida. Uso: node --import=tsx scripts/produccion/armar-sql.ts <salida.sql>");
     process.exit(2);
+  }
+  if (!migracionesPendientes().length) {
+    console.log(NADA_PENDIENTE);
+    process.exit(0);
   }
   const texto = armarSql();
   writeFileSync(salida, texto, "utf8");
