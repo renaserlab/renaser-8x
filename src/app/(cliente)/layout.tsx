@@ -10,6 +10,7 @@ import { seccionesAbiertas, pantallasOcultas, pantallasSinPedido } from "@/lib/s
 import { negocioDeEmpresa } from "@/lib/ruta-datos";
 import { ElegirEmpresa } from "./portal/elegir-empresa/ElegirEmpresa";
 import { tieneFichaOS } from "@/lib/os/acceso";
+import { finanzasDisponible } from "@/lib/fin/acceso";
 import { gruposOS, PERFIL_OS } from "@/lib/os/menu";
 import { iniciales } from "@/lib/os/calculos";
 
@@ -83,6 +84,8 @@ export default async function LayoutCliente({ children }: { children: React.Reac
     ? await supabaseAdmin().from("memberships").select("nivel").eq("company_id", companyId).eq("user_id", u.id).maybeSingle()
     : { data: null };
   const gestionOS = vistaConsultor || (ficha ? ficha.rol !== "persona" : membresia?.nivel !== "participante");
+  // Finanzas («Mi negocio»): el dueño, el gerente (un líder lo es) y la consultora mirando.
+  const finanzasOS = vistaConsultor || (ficha ? ficha.rol === "dueno" || ficha.rol === "gerente" : membresia?.nivel === "dueno" || membresia?.nivel === "lider");
   const nombreOS = ficha?.nombre ?? u.nombre ?? u.email ?? "";
   const quien = companyId && !vistaConsultor
     ? { href: PERFIL_OS, nombre: nombreOS, sub: "Mi perfil", iniciales: iniciales(nombreOS) }
@@ -110,7 +113,7 @@ export default async function LayoutCliente({ children }: { children: React.Reac
           enlaces={enlaces as [string, string][]}
           empresa={empresa?.nombre}
           avisos={abiertas ? { "/portal": abiertas } : undefined}
-          grupos={conOS ? gruposOS({ gestion: gestionOS }) : undefined}
+          grupos={conOS ? gruposOS({ gestion: gestionOS, finanzas: finanzasOS && (await finanzasDisponible()) }) : undefined}
           perfil={conOS ? quien : undefined}
         />
       )}

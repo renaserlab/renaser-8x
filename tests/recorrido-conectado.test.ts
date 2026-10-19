@@ -37,7 +37,7 @@ import { describe, it, expect } from "vitest";
 import { existsSync, readdirSync, readFileSync } from "fs";
 import path from "path";
 import { VISTAS, EXPEDIENTE, PANTALLAS_MUDADAS } from "@/lib/vistas-empresa";
-import { MI_DIA, MI_EQUIPO, AVISOS_OS, PERFIL_OS, CONSULTORIA, RUTAS_MENU_OS, gruposOS } from "@/lib/os/menu";
+import { MI_DIA, MI_EQUIPO, MI_NEGOCIO, AVISOS_OS, PERFIL_OS, CONSULTORIA, RUTAS_MENU_OS, PESTANAS_FINANZAS, gruposOS } from "@/lib/os/menu";
 
 const SRC = path.resolve(__dirname, "../src");
 const leer = (rel: string) => readFileSync(path.join(SRC, rel), "utf8").replace(/\r\n/g, "\n");
@@ -448,7 +448,7 @@ describe("RENASER OS: toda pantalla de /os está en el menú, y el menú no camb
     // En el portal, solo si la base ya tiene RENASER OS (`conOS`): el código puede llegar antes que la migración.
     expect(layoutCliente).toMatch(/<NavCliente[\s\S]*?grupos=\{conOS \? gruposOS\(/);
     expect(layoutCliente).toMatch(/const conOS = !!companyId && !sinOS;/);
-    expect(layoutOS).toMatch(/<NavCliente[\s\S]*?grupos=\{gruposOS\(c\)\}/);
+    expect(layoutOS).toMatch(/<NavCliente[\s\S]*?grupos=\{gruposOS\(\{ gestion: c\.gestion, finanzas: conFinanzas \}\)\}/);
     expect(layoutOS.match(/<NavCliente\b/g) ?? []).toHaveLength(1);
     // El personal no recibe los destinos de la consultoría: solo quien la tiene.
     expect(layoutOS).toMatch(/enlaces=\{c\.consultoria \? CONSULTORIA : \[\]\}/);
@@ -461,5 +461,56 @@ describe("RENASER OS: toda pantalla de /os está en el menú, y el menú no camb
     expect(RUTAS_CONSULTORA).toEqual(expect.arrayContaining(["/pulso", "/pulso/avisos"]));
     // El pulso no se enciende cuando se está en sus avisos.
     expect(navConsultor).toMatch(/item\("\/pulso", "Pulso de empresas", "pulso", true\)/);
+  });
+});
+
+// ———————————————————————————————————————————————— FINANZAS ————————————————————————————————————————————————
+//
+// FINANZAS (19-10-2026, prototipo aprobado): el grupo «Mi negocio» con un solo destino, Finanzas, y dentro sus cuatro
+// pestañas (Caja, Cobros, Pagos, Informe del mes). Lo ven el dueño, el gerente y la consultora (`veFinanzas`); el resto
+// del equipo no ve el grupo. Cada pantalla de /os/finanzas monta su fila de pestañas: las cuatro están a un toque.
+
+const FINANZAS = "app/(os)/os/finanzas";
+
+describe("Finanzas: «Mi negocio» con sus cuatro pestañas", () => {
+  it("las cuatro pestañas existen, en este orden, y son las de PESTANAS_FINANZAS", () => {
+    expect(PESTANAS_FINANZAS.map(([h]) => h)).toEqual(["/os/finanzas", "/os/finanzas/cobros", "/os/finanzas/pagos", "/os/finanzas/informe"]);
+    expect(PESTANAS_FINANZAS.map(([, n]) => n)).toEqual(["Caja", "Cobros", "Pagos", "Informe del mes"]);
+    for (const [href] of PESTANAS_FINANZAS) {
+      expect(RUTAS_OS, `la pestaña ${href} no tiene page.tsx`).toContain(href);
+      expect(RUTAS_MENU_OS, `la pestaña ${href} no está en el menú`).toContain(href);
+    }
+    // Ninguna pantalla de /os/finanzas queda fuera de las pestañas (una dinámica se abre desde su madre).
+    for (const ruta of RUTAS_OS.filter((r) => r.startsWith("/os/finanzas"))) {
+      expect(PESTANAS_FINANZAS.map(([h]) => h), `${ruta} no está en las pestañas de Finanzas`).toContain(madreDe(ruta));
+    }
+  });
+
+  it("cada pantalla de Finanzas monta la fila de pestañas", () => {
+    for (const [href] of PESTANAS_FINANZAS) {
+      const archivo = `${FINANZAS}${href.slice("/os/finanzas".length)}/page.tsx`;
+      expect(existsSync(path.join(SRC, archivo)), `${archivo} no existe`).toBe(true);
+      expect(leer(archivo), `${archivo} no monta <PestanasFinanzas />`).toMatch(/<PestanasFinanzas\s*\/>/);
+    }
+  });
+
+  it("«Mi negocio» sale solo con finanzas: true, al final, con Finanzas y su ícono", () => {
+    for (const gestion of [true, false]) {
+      expect(gruposOS({ gestion }).map((g) => g.titulo)).not.toContain("Mi negocio");
+      expect(gruposOS({ gestion, finanzas: false }).map((g) => g.titulo)).not.toContain("Mi negocio");
+      const grupos = gruposOS({ gestion, finanzas: true });
+      expect(grupos.at(-1)).toEqual({ titulo: "Mi negocio", items: MI_NEGOCIO });
+    }
+    expect(MI_NEGOCIO).toEqual([["/os/finanzas", "Finanzas", "finanzas"]]);
+    expect(leer("components/base/Icono.tsx")).toMatch(/\bfinanzas: </);
+  });
+
+  it("el layout de /os pasa veFinanzas, y el del portal lo calcula con la misma regla (dueño, gerente o la consultora)", () => {
+    // Y solo si la base ya tiene Finanzas (el código puede llegar a producción antes que su migración).
+    expect(layoutOS).toMatch(/const conFinanzas = veFinanzas\(c\) && \(await finanzasDisponible\(\)\);/);
+    expect(layoutOS).toMatch(/import \{ veFinanzas, finanzasDisponible \} from "@\/lib\/fin\/acceso"/);
+    expect(layoutCliente).toMatch(/gruposOS\(\{ gestion: gestionOS, finanzas: finanzasOS && \(await finanzasDisponible\(\)\) \}\)/);
+    expect(layoutCliente).toMatch(/finanzasOS =\s*vistaConsultor \|\|/);
+    expect(layoutCliente).toMatch(/rol === "dueno" \|\| ficha\.rol === "gerente"/);
   });
 });

@@ -1,6 +1,6 @@
 import { Barritas, Segmentos } from "@/components/tablero/Piezas";
 import type { ConfigEmpresa } from "@/lib/formato";
-import { conteoMarcas, partesMarcas, cifraVital, nombrePeriodo, type FilaVital, type MarcaNumero } from "@/lib/numeros-vista";
+import { conteoMarcas, partesMarcas, cifraVital, nombrePeriodo, MARCA_DE_CAJA, type FilaVital, type MarcaNumero } from "@/lib/numeros-vista";
 
 /**
  * LOS NUEVE NÚMEROS DE UNA EMPRESA, VISTOS POR LA CONSULTORA (16-10-2026). Componente de servidor: no escribe nada.
@@ -28,7 +28,8 @@ export function NueveNumeros({ filas, config }: { filas: FilaVital[] | null; con
   }
   const c = conteoMarcas(filas);
   const respondidos = filas.length - c.falta;
-  const partes = partesMarcas(c);
+  // Lo que sale de su caja (Finanzas) se nombra en la barra: cuenta como sin comprobar, pero no «de memoria».
+  const partes = partesMarcas(c, filas.filter((f) => f.marca === MARCA_DE_CAJA).length);
   return (
     <section className="tarjeta tabla-tarjeta" style={{ gridColumn: "1 / -1" }} aria-labelledby="n-nueve">
       <div className="cabeza">

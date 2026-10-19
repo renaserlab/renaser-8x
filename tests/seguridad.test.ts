@@ -142,7 +142,8 @@ describe("gobierno · lo que la auditoría del 29-08-2026 exigió", () => {
       const porFormulario = /form(?:Data)?\.get\(\s*["']company_id["']\s*\)/.test(src);
       if (!porJson && !porFormulario) return false;
       // RENASER OS (19-10-2026): `exigirOS` saca la empresa de la sesión (src/lib/os/acceso.ts), igual que empresaDelCliente.
-      return !/exigirAcceso|exigirPertenencia|consultor: true|empresaDelCliente|exigirOS/.test(src);
+      // FINANZAS (19-10-2026): `exigirFinanzas` también (src/lib/fin/acceso.ts, sobre exigirOS).
+      return !/exigirAcceso|exigirPertenencia|consultor: true|empresaDelCliente|exigirOS|exigirFinanzas/.test(src);
     });
     expect(huecos, `posible acceso indirecto: ${huecos.join(", ")}`).toEqual([]);
   });
@@ -156,6 +157,40 @@ describe("gobierno · lo que la auditoría del 29-08-2026 exigió", () => {
       expect(src, `${rel} no pasa por exigirOS`).toMatch(/exigirOS\(/);
       for (const m of src.matchAll(/company_id\??:\s*([^,}\n]+)/g)) expect(m[1]!.trim(), rel).toBe("c.companyId");
       expect(src, `${rel} lee company_id de un formulario`).not.toMatch(/form(?:Data)?\.get\(\s*["']company_id["']\s*\)/);
+    }
+  });
+
+  it("FINANZAS: ninguna ruta de /api/fin toma la empresa del navegador; el company_id que escribe es siempre el de la sesión", () => {
+    // Las rutas y sus ayudantes (_comun.ts): una consulta armada en un ayudante también tiene que filtrar por la empresa
+    // que le pasan, nunca por una que venga del cuerpo.
+    const fin = path.join(raiz, "fin");
+    const archivos: string[] = [];
+    (function recorrer(d: string) {
+      for (const e of readdirSync(d, { withFileTypes: true })) {
+        const p = path.join(d, e.name);
+        if (e.isDirectory()) recorrer(p);
+        else if (e.name.endsWith(".ts")) archivos.push(p);
+      }
+    })(fin);
+    const rutasFin = archivos.filter((f) => f.endsWith(`${path.sep}route.ts`));
+    expect(rutasFin.length, "se encontraron las rutas de /api/fin").toBeGreaterThanOrEqual(10);
+    for (const f of archivos) {
+      const src = readFileSync(f, "utf8");
+      const rel = path.relative(raiz, f);
+      // El company_id que se escribe o con que se llama a la base es el de la sesión (o el que recibe un ayudante).
+      for (const m of src.matchAll(/(?:company_id|p_company)\??:\s*([^,}\n]+)/g)) expect(m[1]!.trim(), rel).toBe("c.companyId");
+      for (const m of src.matchAll(/\.eq\(\s*["']company_id["']\s*,\s*([^)]+)\)/g)) expect(m[1]!.trim(), rel).toMatch(/^(c\.companyId|companyId)$/);
+      // Del cuerpo nunca llega una empresa: ni en el esquema ni en un formulario.
+      expect(src, `${rel} acepta una empresa en el cuerpo`).not.toMatch(/(?:company_id|companyId|empresa_id)\??:\s*z\./);
+      expect(src, `${rel} lee company_id de un formulario`).not.toMatch(/form(?:Data)?\.get\(\s*["']company_id["']\s*\)/);
+    }
+    for (const f of rutasFin) {
+      const src = readFileSync(f, "utf8");
+      const rel = path.relative(raiz, f);
+      expect(src, `${rel} no pasa por protegido()`).toMatch(/= protegido(<\w+>)?\(/);
+      expect(src, `${rel} no pasa por exigirFinanzas`).toMatch(/exigirFinanzas\(perfil/);
+      // Lo que escribe exige poder registrar (dueño o gerente con su ficha): la consultora solo mira.
+      if (/export const (POST|PATCH|PUT|DELETE)\b/.test(src)) expect(src, `${rel} escribe sin { escribir: true }`).toMatch(/exigirFinanzas\(perfil, \{ escribir: true \}\)/);
     }
   });
 

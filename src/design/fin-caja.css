@@ -1,0 +1,144 @@
+/* FINANZAS (19-10-2026) · fin-caja: la Caja y el Informe del mes. Clases con prefijo fin-; colores y medidas, de tokens.css;
+   sin oro (tests/visual.test.ts). Lo que entra va en verde (--confirmado); lo que sale, en tinta; lo que no es venta ni
+   gasto, en grafito. Nunca un número de soles junto a uno de dólares sin decir cuál es cuál. */
+
+.fin-hoja { display: flex; flex-direction: column; gap: 22px; max-width: 1120px; }
+
+.fin-cabeza { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; }
+.fin-cabeza__textos { display: flex; flex-direction: column; gap: 6px; }
+.fin-cabeza__titulo { margin: 0; font-family: var(--font-display); font-size: 28px; font-weight: 600; line-height: 1.1; color: var(--tinta); }
+.fin-cabeza__titulo::first-letter { text-transform: uppercase; }
+.fin-mes { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.fin-mes__flecha {
+  width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radio);
+  border: 1px solid var(--linea-fuerte); background: var(--papel); color: var(--tinta); text-decoration: none; font-size: 18px;
+}
+.fin-mes__flecha[aria-disabled="true"] { opacity: 0.4; pointer-events: none; }
+.fin-mes__nombre { font-size: 15px; font-weight: 700; padding: 0 4px; text-transform: capitalize; }
+
+.fin-chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; white-space: nowrap;
+  font-size: 12.5px; font-weight: 700; background: var(--perla-honda); color: var(--grafito);
+}
+.fin-chip--abierto, .fin-chip--costo_variable, .fin-chip--gasto_fijo { background: var(--acero-velo); color: var(--acero-fuerte); }
+.fin-chip--cerrado { background: var(--tinta); color: var(--blanco); }
+.fin-chip--venta { background: var(--confirmado-velo); color: var(--confirmado); }
+.fin-chip--ninguno { background: var(--perla-honda); color: var(--grafito); }
+
+/* Las cifras del mes: tarjetas blancas y la de la caja en noche. */
+.fin-cifras { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 980px) { .fin-cifras { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.fin-cifras__rotulo { grid-column: 1 / -1; margin: 4px 0 -4px; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--grafito); }
+.fin-cifra {
+  display: flex; flex-direction: column; gap: 6px; padding: 18px; border-radius: var(--radio-tarjeta); background: var(--papel);
+  box-shadow: var(--sombra); color: var(--grafito);
+}
+.fin-cifra--noche { background: var(--noche); color: var(--luna-tenue); box-shadow: none; }
+.fin-cifra__rotulo { font-size: 13px; font-weight: 600; }
+.fin-cifra__valor { font-family: var(--font-display); font-size: 30px; font-weight: 600; line-height: 1.05; color: var(--tinta); font-variant-numeric: tabular-nums; }
+.fin-cifra--noche .fin-cifra__valor { color: var(--luna); }
+.fin-cifra__valor--entra { color: var(--confirmado); }
+.fin-cifra__nota { font-size: 13px; line-height: 1.4; }
+.fin-cifra__nota a { color: inherit; }
+
+/* Dos columnas: lo del mes a la izquierda, lo que se hace a la derecha; en celular, una debajo de otra. */
+.fin-rejilla { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+.fin-rejilla__principal { flex: 2 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+.fin-rejilla__lado { flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+
+.fin-panel {
+  display: flex; flex-direction: column; gap: 14px; padding: 22px; border-radius: var(--radio-tarjeta); background: var(--papel);
+  box-shadow: var(--sombra); min-width: 0;
+}
+.fin-panel--noche { background: var(--noche); color: var(--luna-tenue); box-shadow: none; }
+.fin-panel--noche h2 { color: var(--luna); }
+.fin-panel h2 { margin: 0; font-size: 17px; font-weight: 700; }
+.fin-panel h3 { margin: 0; font-size: 14px; font-weight: 700; }
+.fin-texto { margin: 0; font-size: 14px; line-height: 1.5; color: var(--tinta-suave); }
+.fin-tenue { color: var(--grafito); font-size: 13.5px; line-height: 1.45; }
+
+/* Movimientos del mes. */
+.fin-lista { display: flex; flex-direction: column; }
+.fin-mov {
+  display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 4px 14px; align-items: start; padding: 12px 4px;
+  border-bottom: 1px solid var(--linea);
+}
+.fin-mov:last-child { border-bottom: 0; }
+.fin-mov__fecha { font-size: 13px; font-weight: 600; color: var(--grafito); padding-top: 2px; }
+.fin-mov__cuerpo { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.fin-mov__titulo { font-size: 14.5px; font-weight: 600; color: var(--tinta); overflow-wrap: anywhere; }
+.fin-mov__detalle { font-weight: 500; color: var(--grafito); }
+.fin-mov__marcas { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.fin-mov__origen { font-size: 12.5px; color: var(--grafito); }
+.fin-mov__origen a { color: var(--acero-fuerte); }
+.fin-mov__monto { font-size: 15px; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--tinta); text-align: right; }
+.fin-mov__monto--entra { color: var(--confirmado); }
+.fin-mov__acciones { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13.5px; }
+.fin-mov__editor { grid-column: 1 / -1; }
+
+/* Formularios. */
+.fin-form { display: flex; flex-direction: column; gap: 14px; }
+.fin-form label { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.fin-form__fila { display: flex; flex-wrap: wrap; gap: 10px; }
+.fin-form__fila > * { flex: 1 1 140px; min-width: 0; }
+.fin-form__acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.fin-segmento { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; padding: 4px; border-radius: var(--radio); background: var(--perla-honda); }
+.fin-segmento button {
+  min-height: 40px; border: 0; border-radius: 9px; background: transparent; color: var(--grafito); font: inherit; font-size: 14.5px;
+  font-weight: 600; cursor: pointer;
+}
+.fin-segmento button[aria-checked="true"] { background: var(--papel); color: var(--tinta); font-weight: 700; box-shadow: var(--sombra-pulgar); }
+.fin-opciones { display: flex; flex-wrap: wrap; gap: 6px; }
+.fin-opciones button {
+  min-height: 40px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--linea-fuerte); background: var(--papel);
+  color: var(--tinta-suave); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer;
+}
+.fin-opciones button[aria-checked="true"] { border-color: var(--tinta); background: var(--tinta); color: var(--blanco); font-weight: 700; }
+.fin-pista { margin: 0; padding: 10px 12px; border-radius: var(--radio); font-size: 13.5px; line-height: 1.45; background: var(--acero-velo); color: var(--acero-fuerte); }
+.fin-pista--venta { background: var(--confirmado-velo); color: var(--confirmado); }
+.fin-pista--ninguno { background: var(--perla-honda); color: var(--grafito); }
+.fin-ok { margin: 0; padding: 12px 14px; border-radius: var(--radio); background: var(--confirmado-velo); color: var(--confirmado); font-size: 14px; line-height: 1.45; }
+.fin-error { margin: 0; padding: 10px 12px; border-radius: var(--radio); background: var(--contradicho-velo); color: var(--contradicho); font-size: 14px; line-height: 1.45; }
+.fin-aviso { margin: 0; padding: 14px 16px; border-radius: var(--radio); background: var(--acero-velo); color: var(--tinta-suave); font-size: 14px; line-height: 1.5; }
+.fin-aviso--cerrado { background: var(--perla-honda); }
+
+/* Categorías. */
+.fin-categorias { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px 28px; }
+.fin-cat { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 0; border-bottom: 1px solid var(--linea); }
+.fin-cat__nombre { flex: 1 1 160px; min-width: 0; font-size: 14.5px; font-weight: 600; }
+.fin-cat__destino { flex: 0 1 240px; min-height: 44px; }
+.fin-cat__acciones { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13.5px; }
+.fin-cat--archivada .fin-cat__nombre { color: var(--grafito); text-decoration: line-through; }
+.fin-destinos { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px 18px; }
+.fin-destinos li { display: flex; flex-direction: column; gap: 4px; font-size: 13.5px; line-height: 1.4; color: var(--tinta-suave); }
+.fin-plegable > summary { cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; }
+.fin-plegable > summary::-webkit-details-marker { display: none; }
+.fin-plegable > summary h2 { margin: 0; }
+.fin-plegable[open] > summary { margin-bottom: 8px; }
+
+/* Informe del mes: barras de gastos y el panel de «Tus números». */
+.fin-barras { display: flex; flex-direction: column; gap: 14px; }
+.fin-barra { display: grid; grid-template-columns: minmax(140px, 200px) minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+.fin-barra__nombre { display: flex; flex-direction: column; font-size: 14.5px; font-weight: 600; }
+.fin-barra__nombre small { font-size: 12px; font-weight: 500; color: var(--grafito); }
+.fin-barra__pista { height: 10px; border-radius: 5px; background: var(--perla-honda); overflow: hidden; display: flex; }
+.fin-barra__relleno { height: 100%; background: var(--acero-medio); }
+.fin-barra__relleno--costo_variable { background: var(--acero); }
+.fin-barra__monto { font-size: 14.5px; font-weight: 700; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.fin-llega { display: flex; justify-content: space-between; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--noche-linea); font-size: 14px; }
+.fin-llega b { color: var(--luna); font-variant-numeric: tabular-nums; }
+.fin-fila { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--linea); font-size: 14.5px; }
+.fin-fila:last-child { border-bottom: 0; }
+.fin-fila b { white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 640px) {
+  .fin-barra { grid-template-columns: minmax(0, 1fr) auto; }
+  .fin-barra__pista { grid-column: 1 / -1; grid-row: 2; }
+  .fin-mov { grid-template-columns: minmax(0, 1fr) auto; }
+  .fin-mov__fecha { grid-column: 1 / -1; }
+  .fin-mov__acciones { grid-column: 1 / -1; }
+  .fin-cifras { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .fin-cifra { padding: 14px; }
+  .fin-cifra__valor { font-size: 23px; }
+  .fin-cifra--noche { grid-column: 1 / -1; }
+}

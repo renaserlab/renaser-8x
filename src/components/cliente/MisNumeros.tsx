@@ -1,16 +1,20 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { pedir } from "@/lib/cliente";
 import {
-  VITALES, RECONOCIDA_POR_CLAVE, cuerpoDeNumeros, costoVariableDeclarado, revisarNumerosEscritos, campoDeValor, campoDeMes,
+  VITALES, RECONOCIDA_POR_CLAVE, cuerpoDeNumeros, deDondeSaleDeCaja, costoVariableDeclarado, revisarNumerosEscritos, campoDeValor, campoDeMes,
   AVISO_NUMERO_NO_ENTENDIDO, AVISO_NUMERO_NEGATIVO, AVISO_PERDIDA, AVISO_FALTA_EL_MES, CLAVE_QUE_PUEDE_SER_PERDIDA, ROTULO_CIFRA_PROVISIONAL,
   AVISO_CONTEO, claveDeConteo, esCampoDeConteo, lecturaDeCampo,
   type Radiografia, type Vital,
 } from "@/lib/metricas";
 import { MESES, nombreDePeriodo } from "@/lib/temporadas";
 
-/** `provisional`: esa venta salió de un documento que nadie revisó todavía. Se rotula junto a la cifra. */
-type Serie = { periodo: string; valor: number; provisional?: boolean }[];
+/**
+ * `provisional`: esa venta salió de un documento que nadie revisó todavía. Se rotula junto a la cifra. `deCaja`: la suma
+ * la caja de Finanzas.
+ */
+type Serie = { periodo: string; valor: number; provisional?: boolean; deCaja?: true }[];
 
 const soles = (n: number) => `S/${Math.round(n).toLocaleString("es-PE")}`;
 
@@ -34,10 +38,25 @@ const PISTA_CIFRA = "Escribe la cifra";
 const AYUDA_COSTO_VARIABLE =
   "Cuenta solo lo que sube y baja con la venta, no el alquiler ni los sueldos; si no lo sabes, marca «No lo sé» en vez de poner cero.";
 
+/**
+ * DONDE ANTES HABÍA UNA CAJA PARA ESCRIBIR (Finanzas, 19-10-2026): ese número de ese mes lo suma la caja, y aquí no se
+ * escribe dos veces. Se dice de dónde sale y adónde ir a corregirlo. La ruta lo rechaza igual (409) si llegara.
+ */
+function SaleDeCaja({ clave, que }: { clave: string; que?: string }) {
+  const d = deDondeSaleDeCaja(clave);
+  return (
+    <p className="fin-sale-de-caja" role="note">
+      {que && <b>{que}: </b>}
+      Sale {d.texto}: <Link href={d.href}>corrígelo en Finanzas</Link>.
+    </p>
+  );
+}
+
 export function MisNumeros({
   radiografia,
   serieVenta,
   soloDeDocumento = [],
+  deCaja = [],
   temporadasAltas,
   mesesDisponibles,
   conRadiografia = true,
@@ -51,6 +70,8 @@ export function MisNumeros({
   serieVenta: Serie;
   /** Claves de los vitales de los que solo hay un número leído de un documento sin revisar (`vitalesSoloDeDocumento`). */
   soloDeDocumento?: string[];
+  /** «clave|periodo» de lo que sale de la caja de Finanzas (`clavesDeCaja`): eso no se ofrece escribir aquí. */
+  deCaja?: string[];
   temporadasAltas: string[];
   mesesDisponibles: { periodo: string; etiqueta: string }[];
 }) {
@@ -64,6 +85,10 @@ export function MisNumeros({
   const [error, setError] = useState<string | null>(null);
 
   const mesPasado = mesesDisponibles[0];
+  // Lo que suma la caja, por número y mes, y qué números tienen algo de la caja (para rotularlos en «Lo que ya nos contaste»).
+  const esDeCaja = (clave: string, periodo: string | null | undefined) => periodo != null && deCaja.includes(`${clave}|${periodo}`);
+  const clavesConCaja = new Set(deCaja.map((k) => k.split("|")[0]));
+  const ventaDelMesPasado = mesPasado ? serieVenta.find((s) => s.periodo === mesPasado.periodo) : undefined;
 
   // LO QUE SE VA A ENVIAR, calculado en cada pintada con la misma función que usa «Guardar». Las
   // preguntas que hablan del mes pasado (ventas, lo que quedó libre, costos variables) quedan en ese
@@ -231,7 +256,16 @@ export function MisNumeros({
           <p className="t-dato mb-1" style={{ color: "var(--grafito)" }}>
             Contesta de memoria, como si te lo preguntaran hablando. No busques papeles: si no lo sabes, dilo — eso también nos dice algo.
           </p>
-          {radiografia.faltan.map((v) => campoVital(v))}
+          {radiografia.faltan.map((v) =>
+            esDeCaja(v.clave, "actual") || (v.mensual && esDeCaja(v.clave, mesPasado?.periodo)) ? (
+              <div key={v.clave} className="py-4" style={{ borderTop: "1px solid var(--linea)" }}>
+                <p className="t-cuerpo fuerte">{v.pregunta}</p>
+                <SaleDeCaja clave={v.clave} />
+              </div>
+            ) : (
+              campoVital(v)
+            )
+          )}
         </section>
       )}
 
@@ -242,7 +276,12 @@ export function MisNumeros({
           Con tres meses ya se ve tu curva: si vienes subiendo o bajando, y cuánto pesa la temporada. No hace falta el año entero.
         </p>
 
-        {mesPasado && (
+        {mesPasado && esDeCaja("venta_mes", mesPasado.periodo) ? (
+          <div className="py-4" style={{ borderTop: "1px solid var(--linea)" }}>
+            <p className="t-cuerpo fuerte">Tus ventas de {mesPasado.etiqueta}{ventaDelMesPasado ? `: ${soles(ventaDelMesPasado.valor)}` : ""}</p>
+            <SaleDeCaja clave="venta_mes" />
+          </div>
+        ) : mesPasado && (
           <div className="py-4" style={{ borderTop: "1px solid var(--linea)" }}>
             <p className="t-cuerpo fuerte">¿Cuánto vendiste en {mesPasado.etiqueta}?</p>
             <input
@@ -270,7 +309,14 @@ export function MisNumeros({
                 aria-label={`Mes ${f.id}`}
               >
                 <option value="">Elige el mes</option>
-                {mesesDisponibles.map((m) => <option key={m.periodo} value={m.periodo}>{m.etiqueta}</option>)}
+                {/* Un mes que suma la caja no se elige aquí: se ve, apagado, con de dónde sale. */}
+                {mesesDisponibles.map((m) =>
+                  esDeCaja("venta_mes", m.periodo) ? (
+                    <option key={m.periodo} value={m.periodo} disabled>{m.etiqueta} · de tu caja</option>
+                  ) : (
+                    <option key={m.periodo} value={m.periodo}>{m.etiqueta}</option>
+                  )
+                )}
               </select>
               <input
                 className="campo" style={{ maxWidth: 180 }} inputMode="decimal" placeholder="Cuánto vendiste ese mes"
@@ -296,6 +342,16 @@ export function MisNumeros({
           <p className="t-dato mb-1 medida" style={{ color: "var(--grafito)" }}>
             Es el número que hace falta para esa cuenta.{mesPasado ? ` Piensa en ${mesPasado.etiqueta}, el mismo mes de tus ventas.` : ""}
           </p>
+          {mesPasado && esDeCaja("costo_variable_mes", mesPasado.periodo) ? (
+            <div className="py-4" style={{ borderTop: "1px solid var(--linea)" }}>
+              <p className="t-cuerpo fuerte">
+                Lo que te costó lo que vendiste en {mesPasado.etiqueta}
+                {costoVariableGuardado?.valor != null && costoVariableGuardado.periodo === mesPasado.periodo ? `: ${soles(costoVariableGuardado.valor)}` : ""}
+              </p>
+              <SaleDeCaja clave="costo_variable_mes" />
+            </div>
+          ) : (
+          <>
           {costoVariableGuardado && costoVariableEnCero && (
             <p className="t-dato mb-1 medida" style={{ color: "var(--caducado)" }} role="status">
               Tienes anotado cero ({nombreDePeriodo(costoVariableGuardado.periodo)}). Un cero lo tomamos como «no lo sé» y no entra en
@@ -317,6 +373,8 @@ export function MisNumeros({
               Para hacer la cuenta faltan tus ventas de {mesPasado.etiqueta}: anótalas arriba, en «Tu año en tres preguntas». Los dos
               números tienen que ser del mismo mes.
             </p>
+          )}
+          </>
           )}
         </section>
       )}
@@ -372,11 +430,18 @@ export function MisNumeros({
                       {nombreDePeriodo(s.periodo)}
                       {/* Leída de un documento que nadie revisó: no la «contó» el dueño, y se dice junto a la cifra. */}
                       {s.provisional && <span className="texto-espera"> · {ROTULO_CIFRA_PROVISIONAL}</span>}
+                      {/* La suma la caja de Finanzas: lleno en acero; lo contado, sin rótulo (la leyenda lo dice). */}
+                      {s.deCaja && <> <span className="fin-de-caja">de tu caja</span></>}
                     </span>
                     <span className="t-dato fuerte">{soles(s.valor)}</span>
                   </li>
                 ))}
               </ul>
+              {serieVenta.some((s) => s.deCaja) && serieVenta.some((s) => !s.deCaja) && (
+                <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>
+                  Los meses «de tu caja» los suma Finanzas y se corrigen allá; los demás los contaste tú y los puedes corregir aquí.
+                </p>
+              )}
               {serieVenta.length < 3 && (
                 <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>
                   Con {serieVenta.length === 1 ? "un solo mes" : "dos meses"} todavía no se ve una curva. Con tres ya podemos decirte si vienes subiendo o bajando.
@@ -390,6 +455,7 @@ export function MisNumeros({
                 <li key={v.clave} style={{ padding: "6px 0" }}>
                   <span className="t-dato" style={{ color: "var(--grafito)" }}>{v.nombre}</span>
                   {soloDeDocumento.includes(v.clave) && <span className="t-dato texto-espera"> · {ROTULO_CIFRA_PROVISIONAL}</span>}
+                  {clavesConCaja.has(v.clave) && <> <span className="fin-de-caja">{deDondeSaleDeCaja(v.clave).texto}</span></>}
                 </li>
               ))}
             </ul>

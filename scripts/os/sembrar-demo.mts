@@ -19,6 +19,12 @@
  *    todas las empresas): los avisos de la demo se escriben con las mismas claves que usan las reglas, así pg_cron no
  *    los repite.
  *  - Las horas son de Lima (UTC−5 todo el año, sin horario de verano): «09:00» de un día es 09:00-05:00.
+ *
+ * FINANZAS (19-10-2026): además, la caja de la demo, para ver cómo alimenta a «Tus números» (ver `sembrarFinanzas`):
+ * el saldo inicial en soles el día 1 del mes pasado, los movimientos del mes pasado (con una venta en dólares, y el mes
+ * cerrado con su tipo de cambio) y los de este mes hasta hoy, cinco cobros y seis pagos que se repiten. Los cobros y
+ * los pagos se pagan con las funciones de la base (como lo hace la aplicación): el pago y su movimiento nacen juntos.
+ * Los tres meses anteriores quedan «contados de memoria» en «Tus números»: así se ve qué sale de la caja y qué no.
  */
 import path from "path";
 import { randomUUID } from "crypto";
@@ -26,6 +32,7 @@ import { pathToFileURL } from "url";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { exigirDestinoEscritura, DestinoNoAutorizado, type Variables } from "../../src/lib/entorno";
 import { hoyEn, sumarDias, lunesDe, siguienteDiaHabil } from "../../src/lib/os/calculos";
+import { sumarMeses } from "../../src/lib/fin/calculos";
 
 export const EMPRESA_DEMO = "Distribuidora Andina (demo)";
 export const CLAVE_DEMO = "andina-demo-2026";
@@ -131,7 +138,166 @@ async function borrarDemoAnterior(sb: Admin): Promise<number> {
   return (viejas ?? []).length;
 }
 
-export type ResultadoDemo = { destino: string; companyId: string; reemplazadas: number; personas: number; tareas: number; avisos: number };
+export type ResultadoDemo = {
+  destino: string; companyId: string; reemplazadas: number; personas: number; tareas: number; avisos: number;
+  finanzas: ResultadoFinanzas;
+};
+
+export type ResultadoFinanzas = { movimientos: number; cobros: number; pagos: number; pagosHechos: number; mesCerrado: string };
+
+/** «2026-10» y un día → «2026-10-05»; un día que el mes no tiene, su último día (el 31 de un mes de 30 es el 30). */
+function diaDelMes(mes: string, dia: number): string {
+  const ultimo = new Date(Date.UTC(Number(mes.slice(0, 4)), Number(mes.slice(5, 7)), 0)).getUTCDate();
+  return `${mes}-${String(Math.min(dia, ultimo)).padStart(2, "0")}`;
+}
+
+/** Un movimiento escrito a mano: [día del mes, categoría, monto, detalle, moneda]. El tipo lo dice la categoría. */
+type Mov = [dia: number, categoria: string, monto: number, detalle: string, moneda?: "PEN" | "USD"];
+
+/** Lo que entra y sale a mano el mes pasado: ventas 41,000 en soles + US$ 600; costos variables 24,800; un retiro. */
+const MOVIMIENTOS_MES_PASADO: Mov[] = [
+  [2, "Venta al por mayor", 6800, "Pedido Constructora Lima Sur"],
+  [3, "Mercadería e insumos", 9800, "Compra de pinturas al proveedor"],
+  [5, "Venta en tienda", 3950, "Ventas de la semana"],
+  [8, "Fletes y envíos", 700, "Flete a Huacho"],
+  [9, "Venta al por mayor", 7200, "Ferretería Huáscar"],
+  [11, "Mercadería e insumos", 7200, "Herramientas y fijaciones"],
+  [12, "Venta en tienda", 4100, "Ventas de la semana"],
+  [16, "Venta al por mayor", 5600, "Pinturas Rímac"],
+  [18, "Venta al por mayor", 600, "Pedido de un cliente que paga en dólares", "USD"],
+  [19, "Venta en tienda", 3850, "Ventas de la semana"],
+  [20, "Mercadería e insumos", 5500, "Reposición de stock"],
+  [22, "Fletes y envíos", 800, "Flete a Chimbote"],
+  [23, "Venta al por mayor", 4700, "Ferretería El Progreso"],
+  [26, "Venta en tienda", 4800, "Ventas de la semana"],
+  [28, "Retiro del dueño", 3000, "Retiro de Rosa"],
+  [29, "Comisiones de venta", 800, "Comisiones de Carla"],
+];
+
+/** Lo de este mes hasta el día 18 (lo que caiga después de hoy no se siembra): ventas 43,520 + US$ 250, costos 26,740. */
+const MOVIMIENTOS_MES_ACTUAL: Mov[] = [
+  [1, "Venta al por mayor", 7400, "Pedido Constructora Lima Sur"],
+  [2, "Mercadería e insumos", 10400, "Compra de pinturas al proveedor"],
+  [3, "Venta en tienda", 4250, "Ventas de la semana"],
+  [6, "Fletes y envíos", 820, "Flete a Huaral"],
+  [7, "Venta al por mayor", 8100, "Ferretería Huáscar"],
+  [9, "Mercadería e insumos", 8300, "Herramientas y fijaciones"],
+  [10, "Venta en tienda", 4420, "Ventas de la semana"],
+  [13, "Venta al por mayor", 6900, "Pinturas Rímac"],
+  [14, "Fletes y envíos", 820, "Flete a Chimbote"],
+  [14, "Venta al por mayor", 250, "Pedido de un cliente que paga en dólares", "USD"],
+  [15, "Venta en tienda", 4050, "Ventas de la semana"],
+  [15, "Retiro del dueño", 3000, "Retiro de Rosa"],
+  [16, "Mercadería e insumos", 5500, "Reposición de stock"],
+  [17, "Venta al por mayor", 5200, "Ferretería El Progreso"],
+  [17, "Comisiones de venta", 900, "Comisiones de Carla"],
+  [18, "Venta en tienda", 3200, "Ventas de la semana"],
+];
+
+/** Los seis pagos que se repiten: día del mes en que vencen, monto y su categoría de egreso. */
+const PAGOS_QUE_SE_REPITEN: { nombre: string; monto: number; categoria: string; dia: number }[] = [
+  { nombre: "Publicidad en redes", monto: 350, categoria: "Publicidad", dia: 1 },
+  { nombre: "Alquiler del local", monto: 4500, categoria: "Alquiler", dia: 5 },
+  { nombre: "Contador", monto: 600, categoria: "Contador y trámites", dia: 10 },
+  { nombre: "Planilla (quincena)", monto: 2900, categoria: "Sueldos y planilla", dia: 15 },
+  { nombre: "Luz, agua e internet", monto: 680, categoria: "Luz, agua e internet", dia: 20 },
+  { nombre: "Cuota del préstamo", monto: 1200, categoria: "Pago de préstamo", dia: 25 },
+  { nombre: "Planilla (fin de mes)", monto: 2900, categoria: "Sueldos y planilla", dia: 30 },
+];
+
+/**
+ * LA CAJA DE LA DEMO. Con lo de arriba, hoy (19-10-2026) «Tus números» recibe de la caja: el mes pasado ventas 45,900
+ * (con los US$ 600 al 3.75 del cierre), costos variables 24,800, gastos fijos 11,930 y 9,170 de lo que quedó; este mes,
+ * ventas 48,320 (sin los US$ 250: el mes sigue abierto), y hoy S/ 21,600 en caja, S/ 9,750 que te deben y S/ 4,780 que
+ * vence hasta fin de mes. Todo con fechas relativas a hoy: el mes pasado es el anterior al de hoy.
+ */
+export async function sembrarFinanzas(sb: Admin, E: string, rosa: string, hoy: string): Promise<ResultadoFinanzas> {
+  const mesActual = hoy.slice(0, 7);
+  const mesPasado = sumarMeses(mesActual, -1);
+  const hastaHoy = (fecha: string) => fecha <= hoy;
+
+  // Los tres meses de antes, contados de memoria (como si la dueña los hubiera dicho antes de usar Finanzas), y el
+  // precio de lo que más vende. Antes que la caja: lo de la caja no se pisa, y lo contado de otros meses se queda.
+  await insertar(sb, "company_metricas", [
+    { company_id: E, clave: "venta_mes", periodo: sumarMeses(mesActual, -4), valor: 39800, estado: "contado", origen: "declarado" },
+    { company_id: E, clave: "venta_mes", periodo: sumarMeses(mesActual, -3), valor: 41500, estado: "contado", origen: "declarado" },
+    { company_id: E, clave: "venta_mes", periodo: sumarMeses(mesActual, -2), valor: 43200, estado: "contado", origen: "declarado" },
+    { company_id: E, clave: "precio_producto_estrella", periodo: "actual", valor: 38, estado: "contado", origen: "declarado", nota: "Galón de pintura látex" },
+  ]);
+
+  // Las categorías con que arranca toda empresa (las mismas que pone la aplicación al abrir Finanzas).
+  const { error: eC } = await sb.rpc("fin_asegurar_categorias", { p_company: E });
+  if (eC) fallo("crear las categorías de Finanzas", eC);
+  const { data: cats, error: eL } = await sb.from("fin_categorias").select("id,nombre,tipo").eq("company_id", E);
+  if (eL || !cats) fallo("leer las categorías de Finanzas", eL);
+  const categoria = new Map(cats.map((c) => [c.nombre as string, { id: c.id as string, tipo: c.tipo as string }] as const));
+  const cat = (nombre: string) => categoria.get(nombre) ?? fallo(`encontrar la categoría «${nombre}»`, null);
+
+  await insertar(sb, "fin_saldos_iniciales", [{ company_id: E, moneda: "PEN", monto: 8650, fecha: diaDelMes(mesPasado, 1), registrado_por: rosa }]);
+
+  const movimientos = (mes: string, lista: Mov[]) =>
+    lista
+      .map(([dia, nombre, monto, detalle, moneda]) => ({
+        company_id: E, fecha: diaDelMes(mes, dia), tipo: cat(nombre).tipo, categoria_id: cat(nombre).id, monto, moneda: moneda ?? "PEN", detalle, registrado_por: rosa,
+      }))
+      .filter((m) => hastaHoy(m.fecha));
+
+  const rpc = async (fn: string, args: Record<string, unknown>) => {
+    const { error } = await sb.rpc(fn, args);
+    if (error) fallo(`ejecutar ${fn}`, error);
+  };
+
+  // Los cobros: uno pagado el mes pasado, uno pagado este mes, uno con un pago a cuenta y vencido, uno al día y otro
+  // que vence en cuatro días. Los que se emiten después de hoy no se siembran.
+  const venta = cat("Venta al por mayor").id;
+  const cobros = [
+    { cliente: "Ferretería San Martín", concepto: "Factura F001-2287", total: 2650, emitido: diaDelMes(mesPasado, 15), vence: diaDelMes(mesPasado, 30), pagos: [[diaDelMes(mesPasado, 28), 2650, "transferencia"]] },
+    { cliente: "Ferretería El Sol", concepto: "Factura F001-2301", total: 3800, emitido: diaDelMes(mesPasado, 10), vence: diaDelMes(mesActual, 10), pagos: [[diaDelMes(mesActual, 8), 3800, "transferencia"]] },
+    { cliente: "Bodega Rosita", concepto: "Pedido de pinturas", total: 2400, emitido: diaDelMes(mesPasado, 20), vence: diaDelMes(mesActual, 5), pagos: [[diaDelMes(mesActual, 3), 1000, "efectivo"]] },
+    { cliente: "Constructora Huaraz", concepto: "Obra de Independencia", total: 6500, emitido: diaDelMes(mesActual, 1), vence: diaDelMes(mesActual, 31), pagos: [] },
+    { cliente: "Pinturas del Norte", concepto: "Factura F001-2334", total: 1850, emitido: diaDelMes(mesActual, 6) < hoy ? diaDelMes(mesActual, 6) : hoy, vence: sumarDias(hoy, 4), pagos: [] },
+  ].filter((c) => hastaHoy(c.emitido)) as { cliente: string; concepto: string; total: number; emitido: string; vence: string; pagos: [string, number, string][] }[];
+  const filasCobro = await insertar(
+    sb, "fin_cobros",
+    cobros.map((c) => ({ company_id: E, cliente: c.cliente, concepto: c.concepto, total: c.total, emitido: c.emitido, vence: c.vence, categoria_id: venta, creado_por: rosa })),
+    "id,cliente"
+  );
+  const idCobro = new Map(filasCobro.map((c) => [c.cliente, c.id]));
+
+  const pagos = await insertar(
+    sb, "fin_pagos_recurrentes",
+    PAGOS_QUE_SE_REPITEN.map((p) => ({ company_id: E, nombre: p.nombre, monto: p.monto, categoria_id: cat(p.categoria).id, dia: p.dia, proximo_vencimiento: diaDelMes(mesPasado, p.dia) })),
+    "id,nombre"
+  );
+  const idPago = new Map(pagos.map((p) => [p.nombre, p.id]));
+
+  /** Lo de un mes, en el orden en que pasó: los movimientos a mano, los pagos de cobros y los pagos que se repiten. */
+  let pagosHechos = 0;
+  const sembrarMes = async (mes: string, lista: Mov[]) => {
+    const filas = movimientos(mes, lista);
+    await insertar(sb, "fin_movimientos", filas);
+    for (const c of cobros) {
+      for (const [fecha, monto, medio] of c.pagos) {
+        if (fecha.slice(0, 7) !== mes || !hastaHoy(fecha)) continue;
+        await rpc("fin_registrar_pago_cobro", { p_cobro: idCobro.get(c.cliente), p_monto: monto, p_fecha: fecha, p_medio: medio, p_por: rosa });
+      }
+    }
+    for (const p of PAGOS_QUE_SE_REPITEN) {
+      const ciclo = diaDelMes(mes, p.dia);
+      if (!hastaHoy(ciclo) || ciclo === hoy) continue; // lo que vence hoy o después, todavía no se pagó
+      await rpc("fin_pagar_recurrente", { p_pago: idPago.get(p.nombre), p_monto: p.monto, p_fecha: ciclo, p_por: rosa });
+      pagosHechos++;
+    }
+    return filas.length;
+  };
+
+  let n = await sembrarMes(mesPasado, MOVIMIENTOS_MES_PASADO);
+  // El mes pasado se cierra con su tipo de cambio (tuvo dólares): desde ese momento sus dólares cuentan en soles.
+  await rpc("fin_cerrar_mes", { p_company: E, p_mes: diaDelMes(mesPasado, 1), p_tipo_cambio: 3.75, p_fuente: "SBS, tipo de cambio de cierre", p_por: rosa });
+  n += await sembrarMes(mesActual, MOVIMIENTOS_MES_ACTUAL);
+
+  return { movimientos: n, cobros: cobros.length, pagos: pagos.length, pagosHechos, mesCerrado: mesPasado };
+}
 
 export async function sembrarDemo(opciones: { env?: Variables; log?: (l: string) => void; ahora?: Date } = {}): Promise<ResultadoDemo> {
   const env = opciones.env ?? process.env;
@@ -363,8 +529,11 @@ export async function sembrarDemo(opciones: { env?: Variables; log?: (l: string)
   ];
   await insertar(sb, "os_avisos", avisos.map((a) => ({ company_id: E, ...a })));
 
+  // ---- Finanzas: la caja que alimenta a «Tus números» ----
+  const finanzas = await sembrarFinanzas(sb, E, usuario.rosa!, hoy);
+
   const { count: tareas } = await sb.from("os_tareas").select("id", { count: "exact", head: true }).eq("company_id", E);
-  return { destino, companyId: E, reemplazadas, personas: EQUIPO.length, tareas: tareas ?? 0, avisos: avisos.length };
+  return { destino, companyId: E, reemplazadas, personas: EQUIPO.length, tareas: tareas ?? 0, avisos: avisos.length, finanzas };
 }
 
 async function main() {
@@ -372,10 +541,12 @@ async function main() {
     const r = await sembrarDemo({ log: (l) => console.log(l) });
     console.log("");
     console.log(`Demo sembrada en «${r.destino}»: ${EMPRESA_DEMO} (${r.companyId}) · ${r.personas} personas · ${r.tareas} tareas · ${r.avisos} avisos.`);
+    const f = r.finanzas;
+    console.log(`Finanzas: ${f.movimientos} movimientos a mano · ${f.cobros} cobros · ${f.pagos} pagos que se repiten (${f.pagosHechos} pagados) · ${f.mesCerrado} cerrado.`);
     console.log("Cuentas (todas con la misma contraseña, solo para este Supabase local):");
     for (const p of EQUIPO) console.log(`  ${p.email.padEnd(20)} ${p.nombre} · ${p.rol}${p.cuenta ? "" : " · SIN CUENTA (su ficha espera a que entre con ese correo)"}`);
     console.log(`  Contraseña: ${CLAVE_DEMO}`);
-    console.log("Entra como la dueña en http://localhost:3000/entrar y abre /os.");
+    console.log("Entra como la dueña en http://localhost:3000/entrar y abre /os (Finanzas: /os/finanzas; lo que alimenta: /portal/numeros).");
   } catch (e) {
     if (e instanceof DestinoNoAutorizado) {
       console.error(`\nCANDADO (${e.clase}): ${e.message}\nNo se escribió nada.`);

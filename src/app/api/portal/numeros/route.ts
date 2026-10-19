@@ -5,7 +5,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { empresaDelCliente } from "@/lib/auth";
 import { registrar, ipDe } from "@/lib/auditoria";
 import { registrarError } from "@/lib/errores";
-import { filasDeNumeros, VITAL_POR_CLAVE, RECONOCIDA_POR_CLAVE } from "@/lib/metricas";
+import { filasDeNumeros, VITAL_POR_CLAVE, RECONOCIDA_POR_CLAVE, AVISO_SALE_DE_CAJA, ORIGEN_CAJA } from "@/lib/metricas";
 import { conCifraDesplazada, escribirConservando, type MetricaGuardada } from "@/lib/rules/contradiccion-numerica";
 import { nombreDePeriodo } from "@/lib/temporadas";
 import { refrescarRuta } from "@/lib/ruta-datos";
@@ -58,7 +58,13 @@ import {
  *    quedó y la huella de después). Si el rastro falla, el número queda y la respuesta lo dice (`aviso`).
  * Sin `correccion`, la ruta hace exactamente lo de siempre.
  */
-type NoGuardado = { clave: string; periodo: string; motivo: "verificado" | "error"; texto: string };
+/**
+ * LO QUE SALE DE LA CAJA NO SE ESCRIBE AQUÍ (Finanzas, 19-10-2026). Un número de un mes (o de hoy) que ya tiene una fila
+ * con origen 'caja' lo suma Finanzas con los movimientos, cobros y pagos: se corrige allá. No se toca la fila y se dice
+ * («sale de tu caja: corrígelo en Finanzas»), con 409, como lo verificado. Lo demás del mismo envío se guarda igual. La
+ * base tampoco lo dejaría pisar (fin_la_caja_manda), pero en silencio: aquí se le dice al dueño.
+ */
+type NoGuardado = { clave: string; periodo: string; motivo: "verificado" | "caja" | "error"; texto: string };
 
 const nombreDe = (clave: string) => VITAL_POR_CLAVE.get(clave)?.nombre ?? RECONOCIDA_POR_CLAVE.get(clave)?.nombre ?? clave.replace(/_/g, " ");
 /** «Ventas del mes» (Setiembre 2026); lo que no es de un mes va sin paréntesis. Al dueño se le habla de tú. */
@@ -150,6 +156,10 @@ export const POST = protegido({}, async (perfil, req) => {
       continue;
     }
     const existentes = (previas ?? []) as (MetricaGuardada & { id: string })[];
+    if (existentes.some((p) => p.origen === ORIGEN_CAJA)) {
+      noGuardados.push({ clave: f.clave, periodo: f.periodo, motivo: "caja", texto: `${numeroEnPalabras(f.clave, f.periodo)} ${AVISO_SALE_DE_CAJA.charAt(0).toLowerCase()}${AVISO_SALE_DE_CAJA.slice(1)}` });
+      continue;
+    }
     // Un dato verificado o conciliado (salido de un documento y revisado) no lo pisa uno contado de
     // memoria, y se le dice al dueño. Pero el dueño SÍ puede corregir lo suyo: contado sobre contado
     // se reemplaza sin preguntar. (Lo que entra por aquí nunca es «verificado»: `filasDeNumeros` solo
@@ -241,6 +251,7 @@ export const POST = protegido({}, async (perfil, req) => {
   });
   const fallidos = noGuardados.filter((n) => n.motivo === "error");
   const verificados = noGuardados.filter((n) => n.motivo === "verificado");
+  const deCaja = noGuardados.filter((n) => n.motivo === "caja");
   // Lo que viaja en la respuesta: qué números no se guardaron y por qué, sin el mensaje de la base.
   const no_guardados = noGuardados.map(({ clave, periodo, motivo, texto }) => ({ clave, periodo, motivo, texto }));
   if (fallidos.length > 0) {
@@ -254,14 +265,17 @@ export const POST = protegido({}, async (perfil, req) => {
       guardados > 0
         ? `No pudimos guardar ${fallidos.length} de tus números; los demás sí quedaron. ${cuales} Intenta de nuevo.`
         : `No pudimos guardar tus números. ${cuales} Intenta de nuevo.`;
-    return NextResponse.json({ error: `${mensaje}${verificados.length ? ` ${verificados.map((n) => n.texto).join(" ")}` : ""}`, guardados, no_guardados }, { status: 500 });
+    const otros = [...verificados, ...deCaja].map((n) => n.texto).join(" ");
+    return NextResponse.json({ error: `${mensaje}${otros ? ` ${otros}` : ""}`, guardados, no_guardados }, { status: 500 });
   }
-  if (verificados.length > 0) {
+  if (verificados.length > 0 || deCaja.length > 0) {
     // No es un fallo de la base, pero tampoco es «guardado»: el dueño tiene que saber que ese número
     // sigue como estaba. 409 para que la pantalla lo muestre en vez de recargar como si nada.
     const guardadosTexto = guardados === 0 ? "" : guardados === 1 ? "Guardamos 1 de tus números. " : `Guardamos ${guardados} de tus números. `;
+    const textoVerificados = verificados.length ? `${verificados.map((n) => n.texto).join(" ")} Si ese dato cambió, cuéntaselo a tu consultor.` : "";
+    const textoCaja = deCaja.map((n) => n.texto).join(" ");
     return NextResponse.json(
-      { error: `${guardadosTexto}${verificados.map((n) => n.texto).join(" ")} Si ese dato cambió, cuéntaselo a tu consultor.`, guardados, no_guardados },
+      { error: `${guardadosTexto}${[textoVerificados, textoCaja].filter(Boolean).join(" ")}`, guardados, no_guardados },
       { status: 409 }
     );
   }

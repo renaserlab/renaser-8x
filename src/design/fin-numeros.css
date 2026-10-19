@@ -1,0 +1,49 @@
+/* FINANZAS (19-10-2026) · fin-numeros. Clases con prefijo fin-; colores y medidas, de tokens.css; sin oro.
+   «Tus números» alimentado por la caja: el rótulo «de tu caja» al lado de cada cifra que la suma Finanzas, el aviso de
+   arriba («Estos meses salen de tu caja») y, en «Tus ventas mes a mes», qué mes salió de la caja y cuál contó el dueño.
+   Lo de la caja va lleno en acero; lo contado, en contorno: la misma regla que las barritas («dicho» = contorno). */
+
+/* El rótulo junto a la cifra: un chip en velo de acero, con enlace a la pestaña de Finanzas de donde sale. */
+.fin-de-caja {
+  display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: var(--radio-mini);
+  background: var(--acero-velo); color: var(--acero-fuerte); font-size: 12.5px; font-weight: 700; line-height: 1.6;
+  white-space: nowrap; text-decoration: none;
+}
+a.fin-de-caja { min-height: 28px; }
+a.fin-de-caja:hover { background: var(--acero-claro); }
+.fin-origen { margin-top: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12.5px; color: var(--grafito); }
+
+/* El aviso de arriba: qué meses salen de la caja, y el botón a Finanzas. */
+.fin-aviso-caja {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 14px 18px; border-radius: var(--radio-fila);
+  background: var(--acero-velo); color: var(--tinta-suave);
+}
+.fin-aviso-caja p { flex: 1 1 420px; margin: 0; font-size: 14.5px; line-height: 1.5; }
+.fin-aviso-caja .boton-fin {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: var(--radio);
+  background: var(--noche); color: var(--luna); font-weight: 700; font-size: 14.5px; text-decoration: none;
+}
+
+/* «Tus ventas mes a mes»: la leyenda y la tira de meses, cada uno con su origen. */
+.fin-leyenda { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; font-size: 13px; color: var(--grafito); grid-column: 1 / -1; }
+.fin-leyenda span { display: inline-flex; align-items: center; gap: 6px; }
+.fin-leyenda i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.fin-leyenda i.caja, .fin-meses-origen li.caja .marca { background: var(--acero-fuerte); }
+.fin-leyenda i.contado, .fin-meses-origen li.contado .marca { background: var(--blanco); border: 2px solid var(--acero-medio); }
+.fin-meses-origen {
+  grid-column: 1 / -1; list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px;
+}
+.fin-meses-origen li {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: var(--radio-mini);
+  border: 1px solid var(--linea); font-size: 12.5px; color: var(--tinta-suave); white-space: nowrap;
+}
+.fin-meses-origen li.caja { background: var(--acero-velo); border-color: var(--acero-velo); }
+.fin-meses-origen .marca { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.fin-meses-origen b { font-weight: 700; }
+
+/* En el formulario: donde antes había una caja para escribir, la frase de dónde sale y adónde ir a corregirlo. */
+.fin-sale-de-caja {
+  margin-top: 8px; padding: 10px 14px; border-radius: var(--radio); background: var(--acero-velo); color: var(--tinta-suave);
+  font-size: 14px; line-height: 1.5; max-width: 62ch;
+}
+.fin-sale-de-caja a { color: var(--acero-fuerte); font-weight: 700; }

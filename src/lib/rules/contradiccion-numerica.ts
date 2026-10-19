@@ -290,6 +290,13 @@ const QUIEN_DECLARO: Record<Declarante | "nadie", { rotulo: string; fuente: stri
 /** El rótulo de la cifra declarada: con quién la dijo si consta; si no, «Declarado» a secas. */
 export const rotuloDeDeclarado = (quien: Declarante | null | undefined): string => QUIEN_DECLARO[quien ?? "nadie"].rotulo;
 
+/**
+ * FINANZAS (19-10-2026): una cifra con origen 'caja' la sumó la base con lo que el dueño registró en su caja. Es su lado,
+ * el declarado (no un documento), pero no la dijo de memoria: el rótulo y la fuente lo dicen.
+ */
+export const ROTULO_DE_CAJA = "De su caja (Finanzas)";
+const FUENTE_DE_CAJA = "lo que registró en su caja (Finanzas)";
+
 // ─── Declarado frente a extraído ────────────────────────────────────────────────────────────────
 
 export type Rotulo = "declarado" | "extraido";
@@ -665,7 +672,7 @@ function armarPar(d: FilaNormalizada, declaracion: CifraLeida, e: FilaNormalizad
   const clase: ClaseTolerancia = declaracion.clase === "exacta" ? "exacta" : "aproximada";
   const dicho = declaracion.texto && declaracion.texto !== String(valorDeclarado) ? `: «${declaracion.texto}»` : "";
   const veredicto = contradiccionesNumericas(
-    { concepto: nombre, valor: valorDeclarado, periodo: nombreDePeriodo(d.periodo), fuente: `${QUIEN_DECLARO[declarante ?? "nadie"].fuente}${dicho}`, rotulo: "declarado" },
+    { concepto: nombre, valor: valorDeclarado, periodo: nombreDePeriodo(d.periodo), fuente: d.origen === "caja" ? FUENTE_DE_CAJA : `${QUIEN_DECLARO[declarante ?? "nadie"].fuente}${dicho}`, rotulo: "declarado" },
     { concepto: nombre, valor: valorExtraido, periodo: nombreDePeriodo(e.periodo), fuente: e.nota?.trim() ? `documento: ${e.nota.trim().slice(0, 80)}` : "lo que muestra el documento", rotulo: "extraido" },
     { clase, unidad }
   );

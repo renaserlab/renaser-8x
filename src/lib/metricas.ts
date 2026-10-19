@@ -199,14 +199,45 @@ export function normalizarMetrica(clave: string, periodo: string | null | undefi
 export type EstadoMetrica = "contado" | "verificado" | "extraido" | "descartado" | "sin_dato";
 
 /** Un número tal como está guardado. `estado` es uno de EstadoMetrica; se deja abierto porque llega de la base. */
-export type Metrica = { clave: string; periodo: string; valor: number | null; estado?: EstadoMetrica | string | null };
+export type Metrica = {
+  clave: string;
+  periodo: string;
+  valor: number | null;
+  estado?: EstadoMetrica | string | null;
+  /** declarado / extraido / conciliado / calculado / caja. Quien no lo lee (select sin `origen`) lo deja sin poner. */
+  origen?: string | null;
+};
+
+/**
+ * FINANZAS (19-10-2026): la caja alimenta a «Tus números». Una cifra con origen 'caja' la escribió la base al registrar
+ * movimientos, cobros o pagos en Finanzas (supabase/migracion-finanzas.sql): no se escribe a mano aquí, se corrige en
+ * Finanzas. En el lado de las contradicciones es lo declarado por el dueño (su propio registro), no un documento.
+ */
+export const ORIGEN_CAJA = "caja";
+export const esDeCaja = (m: { origen?: string | null } | null | undefined): boolean => m?.origen === ORIGEN_CAJA;
+
+/** De qué parte de Finanzas sale cada número que llena la caja, y adónde se va a corregirlo. */
+export function deDondeSaleDeCaja(clave: string): { texto: string; href: string } {
+  if (clave === "deuda_clientes") return { texto: "de tus cobros", href: "/os/finanzas/cobros" };
+  if (clave === "deuda_propia") return { texto: "de tus pagos", href: "/os/finanzas/pagos" };
+  return { texto: "de tu caja", href: "/os/finanzas" };
+}
+
+/** La marca de lo que sale de la caja, al lado de la cifra: «de tu caja», «de tus cobros», «de tus pagos». */
+export const AVISO_SALE_DE_CAJA = "Sale de tu caja: corrígelo en Finanzas.";
+
+/** «clave|periodo» de cada cifra que sale de la caja: lo que el formulario de «Tus números» ya no ofrece escribir. */
+export function clavesDeCaja(metricas: Metrica[]): string[] {
+  return metricas.filter(esDeCaja).map((m) => `${m.clave}|${m.periodo}`);
+}
 
 /**
  * Cómo se le dice al dueño de dónde viene un número. «extraído» es lo que un lector de PDF/CSV sacó
  * de un documento y nadie concilió todavía: NO se rotula «verificado», aunque venga de un papel.
  * «descartado» es lo que la revisión desechó: se dice así, no «sin rotular».
  */
-export function etiquetaEstado(estado: string | null | undefined): string {
+export function etiquetaEstado(estado: string | null | undefined, origen?: string | null): string {
+  if (origen === ORIGEN_CAJA) return "de tu caja (Finanzas)";
   switch (estado) {
     case "contado": return "contado de memoria";
     case "verificado": return "verificado";
@@ -231,6 +262,8 @@ export type OtroNumero = {
   etiquetaEstado: string;
   /** true si es una clave reconocida (p. ej. costo_variable_mes), false si es específica de la empresa. */
   reconocida: boolean;
+  /** Solo si sale de la caja (Finanzas): no se escribe a mano. */
+  deCaja?: true;
 };
 
 export type Radiografia = {
@@ -275,8 +308,9 @@ export function radiografia(metricas: Metrica[]): Radiografia {
       otros.push({
         clave, periodo, valor: m.valor, estado: m.estado ?? null,
         nombre: reconocida?.nombre ?? clave.replace(/_/g, " "),
-        etiquetaEstado: etiquetaEstado(m.estado),
+        etiquetaEstado: etiquetaEstado(m.estado, m.origen),
         reconocida: reconocida != null,
+        ...(esDeCaja(m) ? { deCaja: true as const } : {}),
       });
       continue;
     }
@@ -308,7 +342,7 @@ export function radiografia(metricas: Metrica[]): Radiografia {
 }
 
 /** El número elegido para un cálculo, con de dónde salió: sin esto no hay fuentes que mostrar. */
-type Elegido = { clave: string; periodo: string; valor: number; estado: string | null };
+type Elegido = { clave: string; periodo: string; valor: number; estado: string | null; origen?: string | null };
 
 export type Derivados = {
   /** Utilidad declarada sobre ventas, en %. NO es margen de contribución: no sirve para el equilibrio. */
@@ -445,9 +479,9 @@ export function derivados(metricas: Metrica[]): Derivados {
   // suerte de que quien lo descartó también lo haya vaciado.
   const candidatosDe = (clave: string) =>
     metricas
-      .map((m) => ({ n: normalizarMetrica(m.clave, m.periodo), valor: m.valor, estado: m.estado ?? null }))
+      .map((m) => ({ n: normalizarMetrica(m.clave, m.periodo), valor: m.valor, estado: m.estado ?? null, origen: m.origen ?? null }))
       .filter((c) => c.n.clave === clave && c.n.periodo !== PERIODO_DORADA && c.valor != null && c.estado !== "descartado")
-      .map((c): Elegido => ({ clave, periodo: c.n.periodo, valor: Number(c.valor), estado: c.estado }));
+      .map((c): Elegido => ({ clave, periodo: c.n.periodo, valor: Number(c.valor), estado: c.estado, origen: c.origen }));
 
   /** El mes más reciente manda; "actual" solo si no hay ningún mes fechado. */
   const masReciente = (candidatos: Elegido[]): Elegido | null => {
@@ -466,7 +500,7 @@ export function derivados(metricas: Metrica[]): Derivados {
   };
 
   const nombreDe = (clave: string) => VITAL_POR_CLAVE.get(clave)?.nombre ?? RECONOCIDA_POR_CLAVE.get(clave)?.nombre ?? clave.replace(/_/g, " ");
-  const fuente = (e: Elegido) => `${nombreDe(e.clave)} · ${nombreDePeriodo(e.periodo)} · ${etiquetaEstado(e.estado)}`;
+  const fuente = (e: Elegido) => `${nombreDe(e.clave)} · ${nombreDePeriodo(e.periodo)} · ${etiquetaEstado(e.estado, e.origen)}`;
   const fuentes = (...es: (Elegido | null)[]) => es.filter((e): e is Elegido => e != null).map(fuente);
   const periodoDe = (...es: (Elegido | null)[]) => {
     const ps = [...new Set(es.filter((e): e is Elegido => e != null).map((e) => nombreDePeriodo(e.periodo)))];
@@ -935,8 +969,11 @@ export function filasDeNumeros(b: CuerpoNumeros): FilaNumero[] {
   return filas;
 }
 
-/** Un mes de «Tus ventas mes a mes». `provisional`: la cifra salió de un documento y nadie la revisó todavía. */
-export type MesDeVenta = { periodo: string; valor: number; provisional: boolean };
+/**
+ * Un mes de «Tus ventas mes a mes». `provisional`: la cifra salió de un documento y nadie la revisó todavía. `deCaja`
+ * (solo cuando lo es): la suman los movimientos de ese mes en Finanzas.
+ */
+export type MesDeVenta = { periodo: string; valor: number; provisional: boolean; deCaja?: true };
 
 /**
  * LAS VENTAS MES A MES QUE VE EL DUEÑO, la más reciente primero. La lista se pinta bajo «Lo que ya nos
@@ -947,7 +984,7 @@ export type MesDeVenta = { periodo: string; valor: number; provisional: boolean 
 export function serieDeVentas(metricas: Metrica[]): MesDeVenta[] {
   return metricas
     .filter((m) => m.clave === "venta_mes" && m.valor != null && m.estado !== "descartado" && ES_MES.test(m.periodo))
-    .map((m) => ({ periodo: m.periodo, valor: Number(m.valor), provisional: m.estado === "extraido" }))
+    .map((m): MesDeVenta => ({ periodo: m.periodo, valor: Number(m.valor), provisional: m.estado === "extraido", ...(esDeCaja(m) ? { deCaja: true as const } : {}) }))
     .sort((a, b) => b.periodo.localeCompare(a.periodo));
 }
 

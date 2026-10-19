@@ -1,0 +1,93 @@
+/* FINANZAS (19-10-2026) · fin-cobros: Cobros y Pagos que se repiten. Clases con prefijo fin-c-; colores y medidas, de
+   tokens.css; sin oro (tests/visual.test.ts). Reusa las piezas de RENASER OS (os-kpis, os-tarjeta, os-pildora, os-form). */
+
+.fin-c-solo-mirar { margin: 0; padding: 12px 16px; border-radius: var(--radio); background: var(--acero-velo); color: var(--acero-fuerte); font-size: 14px; }
+
+/* Las cifras de los indicadores: con dos monedas, una al lado de la otra, sin saltar de línea a lo bruto. */
+.fin-c-cifra { font-size: 28px; line-height: 1.15; overflow-wrap: anywhere; }
+.fin-c-cifra--mal { color: var(--contradicho); }
+.fin-c-cifra--bien { color: var(--confirmado); }
+
+.fin-c-como { font-size: 14px; color: var(--grafito); }
+.fin-c-como summary { cursor: pointer; min-height: 32px; display: inline-flex; align-items: center; font-weight: 600; color: var(--acero-fuerte); }
+.fin-c-como p { margin: 6px 0 0; max-width: 72ch; line-height: 1.55; }
+
+/* La lista a la izquierda y el cobro elegido a la derecha; en celular, uno debajo del otro. */
+.fin-c-rejilla { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+.fin-c-lista { flex: 2 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+.fin-c-detalle { flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.fin-c-detalle__cabeza { display: flex; flex-direction: column; gap: 6px; }
+.fin-c-detalle__cabeza h2 { margin: 0; font-size: 20px; font-weight: 700; color: var(--tinta); }
+.fin-c-detalle__cabeza p { margin: 0; }
+
+.fin-c-tabla .fin-c-num { text-align: right; white-space: nowrap; }
+.fin-c-tabla tr[aria-current="true"] td { background: var(--acero-velo); }
+.fin-c-fila-enlace { display: flex; flex-direction: column; gap: 2px; min-height: 40px; justify-content: center; color: var(--tinta); text-decoration: none; }
+.fin-c-fila-enlace span { font-size: 12.5px; color: var(--grafito); }
+@media (hover: hover) and (pointer: fine) { .fin-c-fila-enlace:hover b { text-decoration: underline; } }
+
+/* Los estados: rojo vencido, ámbar pronto, verde pagado o al día, gris anulado. */
+.fin-c-chip {
+  display: inline-flex; align-items: center; white-space: nowrap; padding: 4px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 700;
+  justify-self: start; align-self: flex-start;
+}
+.fin-c-chip--vencido { background: var(--contradicho-velo); color: var(--contradicho); }
+.fin-c-chip--vence_pronto, .fin-c-chip--vence_hoy { background: var(--caducado-velo); color: var(--caducado); }
+.fin-c-chip--al_dia, .fin-c-chip--pagado { background: var(--confirmado-velo); color: var(--confirmado); }
+.fin-c-chip--anulado { background: var(--perla-honda); color: var(--grafito); }
+
+/* Registrar o hacer un pago. */
+.fin-c-pagar { display: flex; flex-direction: column; gap: 10px; padding: 16px; border-radius: var(--radio-fila); background: var(--perla); }
+.fin-c-pagar--linea { padding: 12px; }
+.fin-c-fila { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.fin-c-crece { flex: 1 1 140px; min-width: 0; }
+.fin-c-crece .campo, .fin-c-crece.campo { width: 100%; }
+.fin-c-fecha { display: flex; flex-direction: column; gap: 6px; }
+.fin-c-ok { margin: 0; padding: 12px 14px; border-radius: var(--radio); background: var(--confirmado-velo); color: var(--confirmado); font-size: 14px; line-height: 1.45; }
+.fin-c-pista { margin: 0; grid-column: 1 / -1; padding: 10px 12px; border-radius: var(--radio); background: var(--acero-velo); color: var(--acero-fuerte); font-size: 13.5px; }
+/* El monto se lleva el ancho; la moneda (S/ o US$), lo justo. */
+.fin-c-monto { display: flex; gap: 8px; }
+.fin-c-monto > input.campo { flex: 1 1 0; min-width: 0; width: auto; }
+.fin-c-monto > select.campo { flex: 0 0 96px; width: 96px; }
+
+.fin-c-pagos h3 { margin: 0 0 8px; font-size: 14px; font-weight: 700; }
+.fin-c-pagos ul, .fin-c-historial { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.fin-c-pagos li, .fin-c-historial li {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px;
+  padding-left: 12px; box-shadow: inset 2px 0 0 var(--acero-medio); font-size: 14px;
+}
+.fin-c-anular { display: inline-flex; align-items: center; gap: 8px; }
+.fin-c-motivo { display: flex; flex-direction: column; gap: 8px; }
+.fin-c-motivo label { display: flex; flex-direction: column; gap: 6px; }
+
+/* Pagos que se repiten. */
+.fin-c-pagos-lista { display: flex; flex-direction: column; gap: 12px; }
+.fin-c-recurrentes { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; }
+.fin-c-recurrente { box-shadow: inset 0 -1px 0 var(--linea); padding: 12px 4px; }
+.fin-c-recurrente__fila { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.fin-c-recurrente__nombre { flex: 1 1 240px; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.fin-c-recurrente__nombre b { font-size: 15px; color: var(--tinta); }
+.fin-c-recurrente__nombre span { font-size: 13px; color: var(--grafito); }
+.fin-c-recurrente__monto { width: 120px; text-align: right; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.fin-c-recurrente__accion { flex: 0 1 300px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.fin-c-aviso-pago { flex: 1 1 100%; }
+.fin-c-recurrente__mas summary { cursor: pointer; margin-top: 8px; min-height: 32px; display: inline-flex; align-items: center; font-size: 13.5px; font-weight: 600; color: var(--acero-fuerte); }
+.fin-c-recurrente__cuerpo { display: flex; flex-direction: column; gap: 14px; padding: 10px 0 4px; }
+.fin-c-editar { display: flex; flex-direction: column; gap: 14px; padding-top: 12px; border-top: 1px solid var(--linea); }
+.fin-c-baja summary, .fin-c-nuevo__boton { cursor: pointer; font-weight: 700; }
+.fin-c-baja { display: flex; flex-direction: column; gap: 10px; }
+
+/* «Nuevo cobro» / «Nuevo pago»: la cabecera del desplegable se ve como un botón. */
+.fin-c-nuevo { display: flex; flex-direction: column; gap: 16px; }
+.fin-c-nuevo__boton {
+  list-style: none; align-self: flex-start; display: inline-flex; align-items: center; min-height: 48px; padding: 0 20px;
+  border-radius: 14px; background: var(--noche); color: var(--luna); font-size: 15px;
+}
+.fin-c-nuevo__boton::-webkit-details-marker { display: none; }
+.fin-c-nuevo[open] .fin-c-nuevo__boton { background: var(--perla-honda); color: var(--tinta); }
+.fin-c-form { margin-top: 4px; }
+
+@media (max-width: 640px) {
+  .fin-c-recurrente__monto { width: auto; text-align: left; }
+  .fin-c-recurrente__accion { flex: 1 1 100%; justify-content: flex-start; }
+}

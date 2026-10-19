@@ -9,6 +9,10 @@
 @import "../design/os-dia.css";
 @import "../design/os-equipo.css";
 @import "../design/os-consultora.css";
+@import "../design/fin.css";
+@import "../design/fin-caja.css";
+@import "../design/fin-cobros.css";
+@import "../design/fin-numeros.css";
 
 @theme inline {
   --color-papel: var(--papel);

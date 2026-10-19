@@ -1,0 +1,11 @@
+/* FINANZAS (19-10-2026) · lo común a sus pantallas. Clases con prefijo fin-; colores y medidas, de tokens.css. Sin oro
+   (tests/visual.test.ts): el oro es del logo, el marco y la acción de hoy. */
+.fin-pestanas {
+  display: flex; gap: 4px; padding: 4px; border-radius: 14px; background: var(--perla-honda); align-self: flex-start;
+  max-width: 100%; overflow-x: auto; margin-bottom: 20px;
+}
+.fin-pestanas a {
+  min-height: 40px; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 10px; white-space: nowrap;
+  color: var(--grafito); font-size: 14px; font-weight: 600; text-decoration: none;
+}
+.fin-pestanas a[aria-current="page"] { background: var(--papel); color: var(--tinta); font-weight: 700; box-shadow: var(--sombra-pulgar); }

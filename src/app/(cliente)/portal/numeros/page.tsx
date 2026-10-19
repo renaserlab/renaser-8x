@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { contextoPortal } from "@/lib/portal";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { radiografia, derivados, serieDeVentas, vitalesSoloDeDocumento, PERIODO_DORADA, ROTULO_CIFRA_PROVISIONAL, type Metrica } from "@/lib/metricas";
+import {
+  radiografia, derivados, serieDeVentas, vitalesSoloDeDocumento, clavesDeCaja, deDondeSaleDeCaja, esDeCaja,
+  CLAVES_VITALES, PERIODO_DORADA, ROTULO_CIFRA_PROVISIONAL, type Metrica,
+} from "@/lib/metricas";
 import { explicarCalculo, type Calculo } from "@/lib/finanzas";
 import { ultimosMeses, MESES } from "@/lib/temporadas";
 import { zonaDe } from "@/lib/kpis";
@@ -41,17 +44,42 @@ function sumarMeses(p: string, k: number): string {
   return `${Math.floor(total / 12)}-${String((total % 12) + 1).padStart(2, "0")}`;
 }
 
-/** El número de un mes más reciente con cifra, sin lo descartado. `provisional`: salió de un documento sin revisar. */
-function ultimoDelMes(metricas: Metrica[], clave: string): { valor: number; periodo: string; provisional: boolean } | null {
+/**
+ * El número de un mes más reciente con cifra, sin lo descartado. `provisional`: salió de un documento sin revisar.
+ * `deCaja`: lo suma Finanzas con los movimientos de ese mes.
+ */
+function ultimoDelMes(metricas: Metrica[], clave: string): { valor: number; periodo: string; provisional: boolean; deCaja: boolean } | null {
   const m = metricas
     .filter((x) => x.clave === clave && x.valor != null && x.estado !== "descartado" && ES_MES.test(x.periodo))
     .sort((a, b) => b.periodo.localeCompare(a.periodo))[0];
-  return m ? { valor: Number(m.valor), periodo: m.periodo, provisional: m.estado === "extraido" } : null;
+  return m ? { valor: Number(m.valor), periodo: m.periodo, provisional: m.estado === "extraido", deCaja: esDeCaja(m) } : null;
+}
+
+/**
+ * «DE TU CAJA» (Finanzas, 19-10-2026): la cifra la suma la caja, no la contó el dueño. Va al lado de la cifra, con
+ * enlace a donde se corrige: la caja, los cobros (lo que te deben) o los pagos (lo que debes). `texto` reemplaza la
+ * frase cuando la cifra es una cuenta hecha con la caja («calculado con tu caja»).
+ */
+function DeTuCaja({ clave, texto, extra }: { clave: string; texto?: string; extra?: string }) {
+  const d = deDondeSaleDeCaja(clave);
+  return (
+    <p className="fin-origen">
+      <Link className="fin-de-caja" href={d.href}>{texto ?? d.texto}</Link>
+      {extra && <span>{extra}</span>}
+    </p>
+  );
+}
+
+/** «Septiembre y Octubre», «Agosto, Septiembre y Octubre»; con más de tres, «De Mayo a Octubre». */
+function mesesEnPalabras(meses: string[]): string {
+  const nombres = meses.map(mesLargo);
+  if (nombres.length > 3) return `De ${nombres[0]} a ${nombres.at(-1)!.toLowerCase()}`;
+  return nombres.length === 1 ? nombres[0]! : `${nombres.slice(0, -1).join(", ")} y ${nombres.at(-1)!.toLowerCase()}`;
 }
 
 /** Los meses seguidos entre `desde` y `hasta`: un mes sin venta contada queda como hueco (rayado), nunca como cero. */
-function mesesSeguidos(serie: { periodo: string; valor: number; provisional: boolean }[], desde: string, hasta: string) {
-  const salida: { periodo: string; valor: number | null; provisional: boolean }[] = [];
+function mesesSeguidos(serie: { periodo: string; valor: number; provisional: boolean; deCaja?: true }[], desde: string, hasta: string) {
+  const salida: { periodo: string; valor: number | null; provisional: boolean; deCaja?: true }[] = [];
   for (let p = desde; p <= hasta; p = sumarMeses(p, 1)) {
     const s = serie.find((x) => x.periodo === p);
     salida.push(s ?? { periodo: p, valor: null, provisional: false });
@@ -112,7 +140,8 @@ export default async function Numeros() {
 
   const sb = supabaseAdmin();
   const [{ data: metricasRaw }, { data: empresa }, meds, { data: indicadoresRaw }, { data: reloj }, horaCierre, incongruencias] = await Promise.all([
-    sb.from("company_metricas").select("clave,periodo,valor,estado").eq("company_id", c.companyId).limit(200),
+    // `origen` para saber qué sale de la caja de Finanzas: eso se rotula «de tu caja» y no se ofrece escribir aquí.
+    sb.from("company_metricas").select("clave,periodo,valor,estado,origen").eq("company_id", c.companyId).limit(200),
     sb.from("companies").select("ficha").eq("id", c.companyId).single(),
     cargarMediciones(sb, c.companyId),
     sb.from("indicadores").select("id,clave,nombre,como_se_mide,unidad,mejor_si,meta_valor,meta_texto,frecuencia,origen_texto,estado").eq("company_id", c.companyId).neq("estado", "archivado").order("created_at"),
@@ -194,6 +223,18 @@ export default async function Numeros() {
   const quedaEnDuda = !!queda && enDuda("ganancia_mes", queda.periodo);
   const vendioEnDuda = !!vendio && enDuda("venta_mes", vendio.periodo);
 
+  // ── LO QUE SALE DE LA CAJA (Finanzas, 19-10-2026). La caja escribe con origen 'caja' las ventas, los costos, los gastos
+  // fijos y lo que quedó de cada mes, y hoy: el dinero en caja y lo que te deben y debes. Eso no se escribe dos veces:
+  // se rotula, se avisa arriba y el formulario no lo ofrece (la ruta lo rechaza igual).
+  const deCaja = metricas.filter((m) => esDeCaja(m) && m.valor != null && m.estado !== "descartado");
+  const mesesDeCaja = [...new Set(deCaja.map((m) => m.periodo).filter((p) => ES_MES.test(p)))].sort();
+  const cajaDe = (clave: string) => deCaja.find((m) => m.clave === clave && m.periodo === "actual") ?? null;
+  const cajaHoy = cajaDe("caja_hoy");
+  const vitalesDeCaja = new Set(deCaja.map((m) => m.clave).filter((k) => CLAVES_VITALES.has(k))).size;
+  // La línea dice de dónde sale cada mes solo si hay de los dos: con todo de la caja (o todo contado) basta el subtítulo.
+  const mesesDeLinea = vendio && desdeLinea ? mesesSeguidos(ventasAsc, desdeLinea, vendio.periodo).filter((m) => m.valor != null) : [];
+  const lineaMezclada = mesesDeLinea.some((m) => m.deCaja) && mesesDeLinea.some((m) => !m.deCaja);
+
   return (
     <>
       <div className="tablero">
@@ -201,10 +242,29 @@ export default async function Numeros() {
           <p className="t-etiqueta">Los números de tu negocio</p>
           <h1 className="hola"><strong>Tus números</strong></h1>
           <p className="bienvenida medida">
-            Nueve números cuentan la salud de cualquier negocio. No hace falta contabilidad ni buscar papeles:
-            contesta de memoria, como si te lo preguntáramos hablando.
+            {deCaja.length > 0
+              ? "Nueve números cuentan la salud de cualquier negocio. Desde que usas Finanzas, los que salen de tu caja se llenan solos; el resto, contesta de memoria."
+              : "Nueve números cuentan la salud de cualquier negocio. No hace falta contabilidad ni buscar papeles: contesta de memoria, como si te lo preguntáramos hablando."}
           </p>
         </header>
+
+        {deCaja.length > 0 && (
+          <div className="fin-aviso-caja a-lo-ancho" role="note">
+            <p>
+              {mesesDeCaja.length > 0 ? (
+                <>
+                  <b>{mesesEnPalabras(mesesDeCaja)} {mesesDeCaja.length === 1 ? "sale" : "salen"} de tu caja.</b> Si un número de{" "}
+                  {mesesDeCaja.length === 1 ? "ese mes" : "esos meses"} no cuadra, se corrige el movimiento en Finanzas: aquí no se escribe dos veces.
+                </>
+              ) : (
+                <>
+                  <b>Algunos de tus números salen de tu caja.</b> Si uno no cuadra, se corrige en Finanzas: aquí no se escribe dos veces.
+                </>
+              )}
+            </p>
+            <Link className="boton-fin" href="/os/finanzas">Ir a Finanzas</Link>
+          </div>
+        )}
 
         <section className="tarjeta cifra-tarjeta" aria-labelledby="n-queda">
           <div className="cabeza">
@@ -225,6 +285,7 @@ export default async function Numeros() {
               <span className="sin-dato">Todavía no lo contaste</span>
             )}
           </div>
+          {queda?.deCaja && <DeTuCaja clave="ganancia_mes" />}
           {queda?.provisional && <RotuloProvisional />}
           {quedaEnDuda && <PorConfirmar que="Esta cifra" />}
           {/* De cada 100 soles: sale de lo que le queda, así que va con él y con la misma duda. */}
@@ -253,6 +314,7 @@ export default async function Numeros() {
                 <Barritas barras={seisMeses} etiqueta="Ventas de los últimos seis meses" />
               </div>
               {huecos > 0 && <p className="pie-barritas">Rayado: {huecos === 1 ? "un mes" : `${huecos} meses`} sin venta contada</p>}
+              {vendio.deCaja && <DeTuCaja clave="venta_mes" />}
               {vendio.provisional && <RotuloProvisional />}
               {vendioEnDuda && <PorConfirmar que="Esta cifra" />}
             </>
@@ -280,6 +342,7 @@ export default async function Numeros() {
           {equilibrio != null ? (
             <div className="lectura-chica">
               <p className="nota">tienes que vender al mes para cubrir tus costos</p>
+              {vendio?.deCaja && <DeTuCaja clave="venta_mes" texto="calculado con tu caja" />}
               {d.provisional.equilibrio && <RotuloProvisional />}
               <DetalleCalculo calculo={d.detalle.equilibrio} />
             </div>
@@ -305,11 +368,15 @@ export default async function Numeros() {
           {d.diasAguante != null ? (
             <div className="lectura-chica">
               <p className="nota">aguantas si mañana no entra nada</p>
+              {cajaHoy && <DeTuCaja clave="caja_hoy" extra={`${enSoles(Number(cajaHoy.valor))} en caja hoy`} />}
               {d.provisional.diasAguante && <RotuloProvisional />}
               <DetalleCalculo calculo={d.detalle.diasAguante} />
             </div>
           ) : (
-            <p className="nota">Hacen falta tu dinero en caja y lo que pagas sí o sí cada mes.</p>
+            <>
+              <p className="nota">Hacen falta tu dinero en caja y lo que pagas sí o sí cada mes.</p>
+              {cajaHoy && <DeTuCaja clave="caja_hoy" extra={`${enSoles(Number(cajaHoy.valor))} en caja hoy`} />}
+            </>
           )}
         </section>
 
@@ -317,7 +384,13 @@ export default async function Numeros() {
           <div className="cabeza">
             <div>
               <h2 id="n-linea">Tus ventas mes a mes</h2>
-              <p className="sub">{equilibrio != null ? "La raya es lo que necesitas vender para cubrir tus gastos" : "De lo que contaste y de tus documentos"}</p>
+              <p className="sub">
+                {equilibrio != null
+                  ? "La raya es lo que necesitas vender para cubrir tus gastos"
+                  : mesesDeCaja.length > 0
+                    ? "De tu caja, de lo que contaste y de tus documentos"
+                    : "De lo que contaste y de tus documentos"}
+              </p>
             </div>
           </div>
           {conVenta >= 2 && vendio ? (
@@ -346,6 +419,24 @@ export default async function Numeros() {
                 etiqueta="Ventas por mes"
                 referencia={equilibrio != null ? { valor: equilibrio, texto: `lo que necesitas para cubrir tus gastos: ${enSoles(equilibrio)}` } : null}
               />
+              {/* QUÉ MES SALE DE LA CAJA Y CUÁL CONTASTE (Finanzas): con los dos en la misma línea, cada mes dice el suyo. */}
+              {lineaMezclada && (
+                <>
+                  <div className="fin-leyenda" aria-hidden="true">
+                    <span><i className="caja" />De tu caja</span>
+                    <span><i className="contado" />Lo contaste</span>
+                  </div>
+                  <ul className="fin-meses-origen" aria-label="De dónde sale cada mes">
+                    {mesesDeLinea.map((m) => (
+                      <li key={m.periodo} className={m.deCaja ? "caja" : "contado"}>
+                        <span className="marca" aria-hidden="true" />
+                        {mesCorto(m.periodo)} <b>{enSoles(m.valor!)}</b>
+                        <span className="sr-only">{m.deCaja ? ", de tu caja" : ", lo contaste"}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
             </>
           ) : (
             <p className="sin-dato" style={{ gridColumn: "1 / -1", marginTop: 12 }}>
@@ -381,7 +472,7 @@ export default async function Numeros() {
         <section className="tarjeta fuentes-tarjeta a-lo-ancho" aria-labelledby="n-nueve">
           <div className="cabeza">
             <div>
-              <h2 id="n-nueve">De tus 9 números: {r.listos}</h2>
+              <h2 id="n-nueve">De tus 9 números: {r.listos}{vitalesDeCaja > 0 ? ` · ${vitalesDeCaja} ${vitalesDeCaja === 1 ? "sale solo" : "salen solos"} de Finanzas` : ""}</h2>
               <p className="sub">Lleno: ya nos lo dijiste, aunque sea «no lo sé». Rayado: falta.</p>
             </div>
             <Link className="ir" href="#formulario" aria-label="Completar tus números"><Icono nombre="diagonal" /></Link>
@@ -418,6 +509,7 @@ export default async function Numeros() {
           radiografia={{ ...r, otros: r.otros.filter((o) => !clavesInd.has(o.clave)) }}
           serieVenta={serieVenta}
           soloDeDocumento={vitalesSoloDeDocumento(metricas)}
+          deCaja={clavesDeCaja(deCaja)}
           temporadasAltas={altas}
           mesesDisponibles={mesesDisponibles}
         />

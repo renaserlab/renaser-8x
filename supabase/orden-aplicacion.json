@@ -244,6 +244,17 @@
         "migracion-entrada-y-direccion.sql"
       ],
       "por_que": "19-10. RENASER OS dentro de 8X: 16 tablas os_* (equipo, tareas, cronómetro, rituales, talento, proyectos, avisos), el bucket os-entregables, las cinco reglas que generan avisos y su agenda en pg_cron (solo si la extensión existe). Usa companies.zona_horaria."
+    },
+    {
+      "archivo": "migracion-finanzas.sql",
+      "depende_de": [
+        "schema.sql",
+        "migracion-deriva-esquema.sql",
+        "migracion-evidencia-dimensiones.sql",
+        "migracion-cifra-desplazada.sql",
+        "migracion-entrada-y-direccion.sql"
+      ],
+      "por_que": "19-10. Finanzas: 8 tablas fin_* (categorías, saldo inicial, movimientos, cierres, cobros y sus pagos, pagos que se repiten y los hechos), disparadores que llevan la caja a company_metricas (origen 'caja', que amplía su check) y hacen que la caja mande, y las operaciones que son una sola cosa (pagar un cobro, pagar algo que se repite, cerrar y reabrir un mes)."
     }
   ],
   "notas": [

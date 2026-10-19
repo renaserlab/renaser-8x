@@ -33,7 +33,7 @@ import { centro, textoRango } from "./dato-oral";
 import type { Calculo } from "./finanzas";
 import type { Modulos } from "./esquemas-negocio";
 import { CUADRANTE_TEXTO, type TableroRentabilidad } from "./rentabilidad";
-import { formatoCifra, rotuloDeDeclarado, type ParDeclaradoExtraido } from "./rules/contradiccion-numerica";
+import { formatoCifra, rotuloDeDeclarado, ROTULO_DE_CAJA, type ParDeclaradoExtraido } from "./rules/contradiccion-numerica";
 
 const ES_MES = /^[0-9]{4}-(0[1-9]|1[0-2])$/;
 
@@ -56,6 +56,12 @@ export type ClaveMarca = "comprobado" | "de_memoria" | "documento" | "no_lo_sabe
 /** `clase` es la del chip `.estado` (ok · neutro · espera); null = no hay chip: se dibuja rayado (`.sin-dato`). */
 export type MarcaNumero = { clave: ClaveMarca; texto: string; clase: "ok" | "neutro" | "espera" | null };
 
+/**
+ * LO QUE SALE DE SU CAJA (Finanzas, 19-10-2026). No es una sexta marca: cuenta con «de memoria» en la barra (nadie lo
+ * comprobó con un documento), pero la fila dice de dónde salió. La registró el dueño en su caja, no la recordó.
+ */
+export const MARCA_DE_CAJA: MarcaNumero = Object.freeze({ clave: "de_memoria", texto: "de su caja (Finanzas)", clase: "neutro" });
+
 export const MARCAS: Readonly<Record<ClaveMarca, MarcaNumero>> = Object.freeze({
   comprobado: { clave: "comprobado", texto: "comprobado", clase: "ok" },
   de_memoria: { clave: "de_memoria", texto: "de memoria", clase: "neutro" },
@@ -73,8 +79,9 @@ export const MARCAS: Readonly<Record<ClaveMarca, MarcaNumero>> = Object.freeze({
  *  - sin_dato → no lo sabe: es un hallazgo, no un vacío;
  *  - descartado → falta: su valor no cuenta, como en la radiografía.
  */
-export function marcaDe(estado: string | null | undefined, hayFila = true): MarcaNumero {
+export function marcaDe(estado: string | null | undefined, hayFila = true, origen?: string | null): MarcaNumero {
   if (!hayFila || estado === "descartado") return MARCAS.falta;
+  if (origen === "caja" && estado !== "verificado") return MARCA_DE_CAJA;
   switch (estado) {
     case "verificado":
       return MARCAS.comprobado;
@@ -110,7 +117,7 @@ export type FilaVital = {
   barras: BarraMes[] | null;
 };
 
-type Guardado = { periodo: string; valor: number | null; estado: string | null };
+type Guardado = { periodo: string; valor: number | null; estado: string | null; origen?: string | null };
 
 /** El mes más reciente manda; «actual» (lo de hoy) solo si no hay ningún mes fechado. Igual que `derivados`. */
 function masReciente(lista: Guardado[]): Guardado | null {
@@ -134,7 +141,7 @@ export function filasVitales(metricas: Metrica[], mesPasado: string | null): Fil
     if (!vital || periodo === PERIODO_DORADA) continue;
     const estado = m.estado == null ? null : String(m.estado);
     if (estado === "descartado") continue;
-    porClave.set(clave, [...(porClave.get(clave) ?? []), { periodo, valor: aNumero(m.valor), estado }]);
+    porClave.set(clave, [...(porClave.get(clave) ?? []), { periodo, valor: aNumero(m.valor), estado, origen: m.origen ?? null }]);
   }
   const finPedido = mesPasado && ES_MES.test(mesPasado) ? mesPasado : null;
 
@@ -142,7 +149,7 @@ export function filasVitales(metricas: Metrica[], mesPasado: string | null): Fil
     const guardados = porClave.get(v.clave) ?? [];
     const conCifra = guardados.filter((g) => g.valor != null);
     const elegida = masReciente(conCifra);
-    const marca = elegida ? marcaDe(elegida.estado) : guardados.some((g) => g.estado === "sin_dato") ? MARCAS.no_lo_sabe : MARCAS.falta;
+    const marca = elegida ? marcaDe(elegida.estado, true, elegida.origen) : guardados.some((g) => g.estado === "sin_dato") ? MARCAS.no_lo_sabe : MARCAS.falta;
 
     let barras: BarraMes[] | null = null;
     if (v.mensual) {
@@ -185,9 +192,17 @@ export type ParteSegmento = { n: number; texto: string; tipo: "s1" | "s2" | "s3"
  * faltan (rayado). Lo de memoria y lo de un documento sin revisar van en el mismo tramo porque ninguno está comprobado;
  * el rótulo dice cuál de los dos es (o los dos), y la marca de cada fila los distingue.
  */
-export function partesMarcas(c: ConteoMarcas): ParteSegmento[] {
+export function partesMarcas(c: ConteoMarcas, deCaja = 0): ParteSegmento[] {
   const sinComprobar = c.de_memoria + c.documento;
-  const texto = c.documento === 0 ? "de memoria" : c.de_memoria === 0 ? "de un documento, sin revisar" : "de memoria o de un documento";
+  // FINANZAS (19-10-2026): lo de su caja cuenta en «de memoria» (nadie lo comprobó con un documento), pero el rótulo
+  // lo nombra aparte: «7 de memoria» cuando seis salen de su caja diría algo que no es.
+  const memoria = c.de_memoria - deCaja;
+  const texto =
+    deCaja > 0
+      ? [memoria > 0 ? "de memoria" : null, "de su caja", c.documento > 0 ? "de un documento" : null]
+          .filter((x): x is string => x != null)
+          .reduce((acc, x, i, todos) => (i === 0 ? x : `${acc}${i === todos.length - 1 ? " o " : ", "}${x}`), "")
+      : c.documento === 0 ? "de memoria" : c.de_memoria === 0 ? "de un documento, sin revisar" : "de memoria o de un documento";
   return [
     { n: c.comprobado, texto: c.comprobado === 1 ? "comprobado" : "comprobados", tipo: "s1" },
     { n: sinComprobar, texto, tipo: "s2" },
@@ -268,6 +283,8 @@ export type VentaArriba = {
   /** Contra el mes inmediatamente anterior, si tiene venta. null si no hay con qué comparar. */
   cambioPct: number | null;
   mesAnterior: string | null;
+  /** La suman los movimientos de su caja en Finanzas (origen 'caja'). */
+  deCaja: boolean;
 };
 
 /** La meta mensual de la ficha de la empresa: «55000», 55000 o «55,000». Nada, cero o texto que no es cifra → null. */
@@ -292,6 +309,7 @@ export function ventaArriba(metricas: Metrica[], meta: number | null): VentaArri
     pctMeta: meta != null && meta > 0 ? Math.round((100 * v.valor) / meta) : null,
     cambioPct: antes && antes.valor > 0 ? Math.round((100 * (v.valor - antes.valor)) / antes.valor) : null,
     mesAnterior: antes ? periodoEnPalabras(antes.periodo).replace(/ de \d{4}$/, "") : null,
+    deCaja: v.deCaja === true,
   };
 }
 
@@ -549,7 +567,7 @@ export function queNoCuadra(pares: ParDeclaradoExtraido[]): ParQueNoCuadra[] {
         clave: p.clave,
         nombre: p.nombre,
         periodo: nombreDePeriodo(p.periodo),
-        quien: rotuloDeDeclarado(p.declarante),
+        quien: p.declarado.origen === "caja" ? ROTULO_DE_CAJA : rotuloDeDeclarado(p.declarante),
         declarado: d.clase === "rango" ? `entre ${cifra(d.desde)} y ${cifra(d.hasta)}` : cifra(d.valor),
         documento: cifra(p.veredicto.extraido.valor),
         fuente: p.veredicto.extraido.fuente,

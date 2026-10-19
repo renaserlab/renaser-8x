@@ -48,6 +48,8 @@ const TRAZOS = {
   equipo: <><circle cx="9" cy="7.5" r="3.5" /><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.3a3.5 3.5 0 0 1 0 6.4M18 14.2a6.5 6.5 0 0 1 3.5 5.8" /></>,
   campana: <path d="M6 9a6 6 0 1 1 12 0c0 4.5 1.5 6.5 2.5 7.5h-17C4.5 15.5 6 13.5 6 9ZM10 19.5a2 2 0 0 0 4 0" />,
   pulso: <path d="M4 19V5M4 19h16M8 15l3-4 3 2 5-6" />,
+  // Finanzas (19-10-2026): la caja.
+  finanzas: <path d="M4 7.5h16v11a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5zM4 7.5 6.5 4h11L20 7.5M15.5 13.5h2" />,
 } as const;
 
 export type NombreIcono = keyof typeof TRAZOS;

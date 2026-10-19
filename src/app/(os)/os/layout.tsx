@@ -1,4 +1,5 @@
 import { contextoOS } from "@/lib/os/acceso";
+import { veFinanzas, finanzasDisponible } from "@/lib/fin/acceso";
 import { gruposOS, CONSULTORIA, PERFIL_OS, AVISOS_OS } from "@/lib/os/menu";
 import { avisosSinLeer } from "@/lib/os/datos";
 import { iniciales } from "@/lib/os/calculos";
@@ -14,6 +15,8 @@ export const dynamic = "force-dynamic";
 export default async function LayoutOS({ children }: { children: React.ReactNode }) {
   const c = await contextoOS();
   const sinLeer = await avisosSinLeer(c).catch(() => 0);
+  // «Mi negocio» solo para quien ve Finanzas y solo si la base ya la tiene (src/lib/fin/acceso.ts).
+  const conFinanzas = veFinanzas(c) && (await finanzasDisponible());
   const quien = c.persona
     ? { href: PERFIL_OS, nombre: c.persona.nombre, sub: "Mi perfil", iniciales: iniciales(c.persona.nombre) }
     : undefined;
@@ -21,7 +24,7 @@ export default async function LayoutOS({ children }: { children: React.ReactNode
     <div className="marco-app">
       <NavCliente
         enlaces={c.consultoria ? CONSULTORIA : []}
-        grupos={gruposOS(c)}
+        grupos={gruposOS({ gestion: c.gestion, finanzas: conFinanzas })}
         empresa={c.empresa}
         avisos={sinLeer ? { [AVISOS_OS[0]]: sinLeer } : undefined}
         perfil={quien}

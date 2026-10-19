@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { derivados, ROTULO_CIFRA_PROVISIONAL, type Metrica } from "@/lib/metricas";
+import { derivados, esDeCaja, ROTULO_CIFRA_PROVISIONAL, type Metrica } from "@/lib/metricas";
 import { explicarCalculo, type Calculo } from "@/lib/finanzas";
 import { diaEnZona, mesCerradoAnterior } from "@/lib/medicion";
 import { listarLineas, configDeEmpresa } from "@/lib/producto";
@@ -100,7 +100,8 @@ async function leerMetricas(companyId: string): Promise<MetricaGuardada[]> {
 const comoMetricas = (filas: MetricaGuardada[]): Metrica[] =>
   filas.map((f) => {
     const n = f.valor === null || f.valor === undefined || (typeof f.valor === "string" && !f.valor.trim()) ? null : Number(f.valor);
-    return { clave: f.clave, periodo: f.periodo ?? "", valor: n != null && Number.isFinite(n) ? n : null, estado: f.estado ?? null };
+    // `origen` viaja para rotular lo que sale de la caja de Finanzas («de su caja»): la cuenta no cambia.
+    return { clave: f.clave, periodo: f.periodo ?? "", valor: n != null && Number.isFinite(n) ? n : null, estado: f.estado ?? null, origen: f.origen ?? null };
   });
 
 /** «Cómo se calculó»: la cuenta en palabras, para rehacerla a mano. Plegado, con objetivo táctil de 44 px. */
@@ -211,6 +212,8 @@ export default async function Numeros({ params, searchParams }: { params: Promis
   const dorada = metricas ? doradaDe(metricas) : null;
   const referencia = referenciaDeLinea(d, dorada, config);
   const conValor = puntos.filter((p) => p.valor != null).length;
+  // Meses que suma su caja de Finanzas: se dicen en el subtítulo, sin cambiar la cuenta.
+  const hayCaja = metricas?.some((m) => m.clave === "venta_mes" && esDeCaja(m)) ?? false;
 
   // ── Rentabilidad y fugas: las mismas entradas que arma /producto
   const fichaNegocio = ficha.ok ? ficha.valor : { ...FICHA_VACIA };
@@ -260,7 +263,9 @@ export default async function Numeros({ params, searchParams }: { params: Promis
                 ? "Mes a mes · la raya punteada es lo que cubre los gastos"
                 : referencia?.de === "dorada"
                   ? "Mes a mes · la raya punteada es su mejor época"
-                  : "Mes a mes, de lo que contó la empresa y de sus documentos"}
+                  : hayCaja
+                    ? "Mes a mes, de su caja (Finanzas), de lo que contó la empresa y de sus documentos"
+                    : "Mes a mes, de lo que contó la empresa y de sus documentos"}
             </p>
           </div>
         </div>
@@ -280,6 +285,7 @@ export default async function Numeros({ params, searchParams }: { params: Promis
                 </p>
               )}
               {venta.provisional && <Provisional />}
+              {venta.deCaja && <p><span className="fin-de-caja">De su caja (Finanzas)</span></p>}
             </div>
             {conValor >= 2 ? (
               <GraficoLinea
