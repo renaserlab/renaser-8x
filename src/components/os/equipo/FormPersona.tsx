@@ -69,7 +69,7 @@ export function FormPersona({ inicial, puedeDueno, alGuardar }: { inicial?: Dato
         <input className="campo" maxLength={120} {...campo("area")} />
       </label>
       <label>
-        <span className="t-etiqueta">Rol en RENASER OS</span>
+        <span className="t-etiqueta">Rol en el equipo</span>
         <select className="campo" {...campo("rol")} disabled={inicial?.rol === "dueno" && !puedeDueno}>
           {roles.map(([k, n]) => (
             <option key={k} value={k}>{n}</option>
@@ -99,7 +99,7 @@ export function ActivarPersona({ id, nombre, activo }: { id: string; nombre: str
         className={activo ? "boton-enlace boton-enlace--peligro" : "boton-enlace"}
         disabled={enviando}
         onClick={() => {
-          if (activo && !window.confirm(`¿Desactivar a ${nombre}? Dejará de entrar a RENASER OS; su historia se queda.`)) return;
+          if (activo && !window.confirm(`¿Desactivar a ${nombre}? Dejará de entrar a 8X; su historia se queda.`)) return;
           void enviar(`/api/os/personas/${id}`, "PATCH", { activo: !activo });
         }}
       >

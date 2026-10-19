@@ -169,7 +169,7 @@ export async function contextoGestionOS(): Promise<ContextoOS> {
 export async function exigirOS(perfil: Perfil, opts: { gestion?: boolean; talento?: boolean; persona?: boolean } = {}): Promise<ContextoOS> {
   if (!perfil) throw new NoAutenticado();
   const c = await resolverOS(perfil);
-  if (!c) throw new AccesoDenegado("No tienes RENASER OS en esta empresa.", "pertenencia");
+  if (!c) throw new AccesoDenegado("No eres parte del equipo de esta empresa en 8X.", "pertenencia");
   if (opts.gestion && !c.gestion) throw new AccesoDenegado("Esto lo hace la gestión de la empresa.", "rol", c.companyId);
   if (opts.talento && !c.talento) throw new AccesoDenegado("Esto lo hace RR.HH., el gerente o el dueño.", "rol", c.companyId);
   // Lo que es de una persona (su tarea, su cronómetro, su apertura) exige una ficha: la consultora mira, no trabaja.

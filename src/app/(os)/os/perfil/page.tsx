@@ -22,7 +22,7 @@ export default async function PerfilPag() {
     return (
       <>
       <h1 className="t-titulo mb-4">Mi perfil</h1>
-      <Vacio texto="Estás mirando RENASER OS como consultora: no tienes ficha en el equipo de esta empresa. Las fichas de todos están en «Equipo y talento»." accion="Ver Equipo y talento" href="/os/talento" />
+      <Vacio texto="Estás mirando el equipo de esta empresa como consultora: no tienes ficha en el equipo de esta empresa. Las fichas de todos están en «Equipo y talento»." accion="Ver Equipo y talento" href="/os/talento" />
     </>
     );
   }

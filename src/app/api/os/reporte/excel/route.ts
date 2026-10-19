@@ -19,7 +19,7 @@ export const GET = protegido({ entidad: "os_reporte" }, async (perfil, req) => {
   const r = await leerReporte(c.companyId, c.zona, lunes, hoy);
 
   const wb = new ExcelJS.Workbook();
-  wb.creator = "8X · RENASER OS";
+  wb.creator = "8X · Equipos";
   const hoja = wb.addWorksheet("Semana");
   hoja.addRow([`${c.empresa} · reporte de la semana del ${lunes}`]).font = { bold: true, size: 13 };
   hoja.addRow([]);

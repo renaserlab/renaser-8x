@@ -15,7 +15,7 @@ type EmpresaMini = { id: string; nombre: string };
  * Grupos, en este orden:
  *   1. los destinos de todos los días, con ícono (`principales`): lo único que se ve en el riel;
  *   2. «Empresas recientes», una por fila;
- *   3. «RENASER OS» (19-10-2026): el pulso de los equipos de todas las empresas y sus avisos;
+ *   3. «Equipos» (RENASER OS, 19-10-2026): el pulso de los equipos de todas las empresas y sus avisos;
  *   4. «Sistema»: aprendizaje, torre de control y salud;
  *   5. al pie, quién entró y «Salir».
  * Esta barra ES el menú completo: tests/recorrido-conectado.test.ts vigila que toda pantalla de la consultora
@@ -87,7 +87,7 @@ export function NavConsultor({ empresas, usuario, torre }: { empresas: EmpresaMi
           );
         })}
         <div className="grupo-lateral">
-          <p className="titulo-menu rotulo">RENASER OS</p>
+          <p className="titulo-menu rotulo">Equipos</p>
           {item("/pulso", "Pulso de empresas", "pulso", true)}
           {item("/pulso/avisos", "Avisos de clientes", "campana")}
         </div>

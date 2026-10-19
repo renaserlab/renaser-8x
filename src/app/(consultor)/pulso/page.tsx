@@ -35,7 +35,7 @@ export default async function PulsoDeEmpresas({ searchParams }: { searchParams: 
     <>
       <Encabezado
         titulo="Pulso de empresas"
-        sub={`RENASER OS en ${r.conOS} de ${r.empresas} ${r.empresas === 1 ? "empresa" : "empresas"} · cómo están trabajando hoy sus equipos`}
+        sub={`Equipos en marcha en ${r.conOS} de ${r.empresas} ${r.empresas === 1 ? "empresa" : "empresas"} · cómo están trabajando hoy sus equipos`}
         acciones={
           <Link href="/pulso/avisos" className="boton boton--secundario">
             Avisos de clientes
@@ -44,7 +44,7 @@ export default async function PulsoDeEmpresas({ searchParams }: { searchParams: 
       />
 
       <Franja columnas={4}>
-        <Lectura divisor={false} valor={`${r.conOS} de ${r.empresas}`} etiqueta="empresas con RENASER OS" />
+        <Lectura divisor={false} valor={`${r.conOS} de ${r.empresas}`} etiqueta="empresas con su equipo en 8X" />
         <Lectura valor={`${r.abrieron} de ${r.conCuenta}`} etiqueta="personas abrieron el día" color={r.conCuenta && r.abrieron < r.conCuenta ? "var(--caducado)" : undefined} />
         <Lectura valor={String(r.bloqueos)} etiqueta="bloqueos abiertos" color={r.bloqueos ? "var(--contradicho)" : "var(--grafito)"} />
         <Lectura valor={String(r.avisosSinLeer)} etiqueta="avisos de gestión sin leer" color={r.avisosSinLeer ? "var(--marca)" : "var(--grafito)"} />

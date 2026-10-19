@@ -16,7 +16,7 @@ export const NOMBRE_ESTADO_PULSO: Record<EstadoPulso, string> = {
   critico: "Crítico",
   atento: "Atento",
   bien: "Bien",
-  sin_os: "Sin RENASER OS",
+  sin_os: "Sin equipo",
 };
 
 export type Punto = { texto: string; tono: "rojo" | "ambar" | "azul" | "verde" };
@@ -133,7 +133,7 @@ export function armarPulso(l: Lectura): Pulso {
     // Los puntos concretos de «Requiere tu atención», del más grave al más leve.
     const puntos: Punto[] = [];
     if (estado === "sin_os") {
-      puntos.push({ texto: "Todavía no tiene a nadie en su equipo de RENASER OS. Se activa cargando a las personas en «Equipo y talento».", tono: "azul" });
+      puntos.push({ texto: "Todavía no tiene a nadie en su equipo. Se activa cargando a las personas en «Equipo y talento».", tono: "azul" });
     } else {
       const faltan = base.conCuenta - abrieron;
       if (base.horaDeAbrir && faltan > 0) puntos.push({ texto: `${plural(faltan, "persona no abrió", "personas no abrieron")} el día (abrieron ${abrieron} de ${base.conCuenta}).`, tono: faltan * 2 > base.conCuenta ? "rojo" : "ambar" });

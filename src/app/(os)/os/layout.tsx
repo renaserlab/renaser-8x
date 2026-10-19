@@ -29,7 +29,7 @@ export default async function LayoutOS({ children }: { children: React.ReactNode
       <div className="columna-app">
         {c.vistaConsultor && (
           <div className="aviso-vista no-imprimir">
-            <span>Estás viendo RENASER OS de {c.empresa} como lo ve su equipo</span>
+            <span>Estás viendo el equipo de {c.empresa} como lo ven ellos</span>
             <a href="/pulso">Volver al pulso de empresas</a>
           </div>
         )}
