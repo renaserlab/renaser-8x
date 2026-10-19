@@ -1,0 +1,207 @@
+/* RENASER OS (19-10-2026) · os-equipo. Clases con prefijo os-; colores y medidas, siempre de tokens.css.
+   «Mi equipo»: equipo en vivo, talento, proyectos y objetivo, reporte semanal y avisos. Son tableros: la hoja se apaga
+   (.hoja:has(> .tablero)) y cada bloque es una tarjeta blanca sobre el lienzo perla, como en el prototipo aprobado. */
+
+.os-tablero { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+
+.os-cabeza { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; }
+.os-cabeza__textos { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.os-cabeza__textos .t-titulo { margin: 0; }
+.os-cabeza__textos p { margin: 0; }
+.os-cabeza__acciones { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+.os-tarjeta {
+  background: var(--blanco); border-radius: var(--radio-tarjeta); box-shadow: var(--sombra);
+  padding: 22px; min-width: 0; display: flex; flex-direction: column; gap: 14px;
+}
+.os-tarjeta > h2, .os-tarjeta > h3 { margin: 0; }
+.os-tarjeta--noche { background: var(--noche); color: var(--luna-tenue); box-shadow: none; }
+.os-tarjeta--noche h2, .os-tarjeta--noche h3 { color: var(--luna); }
+.os-tarjeta--noche .t-rotulo { color: var(--acero-medio); }
+
+/* Dos columnas que se apilan en el celular: lo principal y el costado. */
+.os-dos { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+.os-dos > :first-child { flex: 2 1 560px; min-width: 0; }
+.os-dos > :last-child { flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+
+/* Indicadores de arriba. */
+.os-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; }
+.os-kpi {
+  background: var(--blanco); border-radius: 18px; box-shadow: var(--sombra); padding: 18px;
+  display: flex; flex-direction: column; gap: 6px; min-width: 0;
+}
+.os-kpi__rotulo { font-size: 13px; font-weight: 600; color: var(--grafito); }
+.os-kpi__cifra {
+  font-family: var(--font-display); font-variation-settings: "opsz" var(--opsz-cifra);
+  font-size: 34px; font-weight: 500; line-height: 1; font-variant-numeric: lining-nums proportional-nums; color: var(--tinta);
+}
+.os-kpi__cifra small { font-size: 20px; color: var(--grafito); }
+.os-kpi__sub { font-size: 13px; color: var(--grafito); }
+.os-kpi--noche { background: var(--noche); box-shadow: none; }
+.os-kpi--noche .os-kpi__rotulo, .os-kpi--noche .os-kpi__sub { color: var(--luna-tenue); }
+.os-kpi--noche .os-kpi__cifra { color: var(--luna); }
+.os-cifra--bien { color: var(--confirmado); }
+.os-cifra--mal { color: var(--contradicho); }
+.os-cifra--atento { color: var(--caducado); }
+
+/* El pulso «en vivo». */
+.os-envivo {
+  display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px;
+  background: var(--confirmado-velo); color: #1f5340; font-size: 14px; font-weight: 700;
+}
+.os-envivo::before {
+  content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--confirmado);
+  box-shadow: 0 0 0 4px rgba(43, 107, 82, 0.18);
+}
+
+/* Chips de estado (personas y proyectos). Colores con contraste ≥ 4.5:1 sobre su velo. */
+.os-chip {
+  display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; white-space: nowrap;
+  font-size: 12.5px; font-weight: 700; line-height: 1; background: var(--perla-honda); color: var(--grafito); justify-self: start;
+}
+.os-chip--activo, .os-chip--en_camino, .os-chip--bien { background: var(--confirmado-velo); color: var(--confirmado); }
+.os-chip--bloqueado, .os-chip--atrasado, .os-chip--critico { background: var(--contradicho-velo); color: var(--contradicho); }
+.os-chip--sin_senal, .os-chip--en_riesgo, .os-chip--atento { background: var(--caducado-velo); color: var(--caducado); }
+.os-chip--en_pausa, .os-chip--listo { background: var(--acero-velo); color: var(--acero-fuerte); }
+.os-chip--no_abrio, .os-chip--sin_empezar, .os-chip--cerrado { background: var(--perla-honda); color: var(--grafito); }
+
+/* Filtros en píldora y pestañas segmentadas. */
+.os-filtros { display: flex; flex-wrap: wrap; gap: 8px; }
+.os-pildora {
+  min-height: 40px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--perla); color: var(--tinta-suave);
+  font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center;
+}
+.os-pildora[aria-pressed="true"], .os-pildora[aria-current="page"] { background: var(--tinta); color: var(--blanco); font-weight: 700; }
+.os-pestanas { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 14px; background: var(--perla-honda); align-self: flex-start; max-width: 100%; }
+.os-pestana {
+  min-height: 40px; padding: 0 16px; border-radius: 10px; color: var(--grafito); font-size: 14px; font-weight: 600;
+  text-decoration: none; display: inline-flex; align-items: center; white-space: nowrap;
+}
+.os-pestana[aria-current="page"] { background: var(--blanco); color: var(--tinta); font-weight: 700; box-shadow: var(--sombra-pulgar); }
+
+/* Persona con su avatar. */
+.os-persona { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.os-persona__textos { display: flex; flex-direction: column; min-width: 0; }
+.os-persona__nombre { font-size: 14.5px; font-weight: 700; color: var(--tinta); }
+.os-persona__sub { font-size: 12.5px; color: var(--grafito); }
+.os-avatar {
+  width: 34px; height: 34px; flex: none; border-radius: 50%; background: var(--acero-velo); color: var(--acero-fuerte);
+  display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800;
+}
+
+/* Barras de avance. */
+/* Ancho completo por defecto; dentro de una fila (.flex) ocupa lo que sobra, sin crecer a lo alto en una columna. */
+.os-barra { display: flex; width: 100%; height: 8px; border-radius: 4px; background: var(--perla-honda); overflow: hidden; flex: none; }
+.flex > .os-barra { flex: 1 1 auto; width: auto; min-width: 60px; }
+.os-barra > span { height: 100%; background: var(--acero); border-radius: 4px; }
+.os-barra--gruesa { height: 10px; border-radius: 5px; }
+.os-barra--noche { background: var(--noche-alta); }
+.os-barra--noche > span { background: var(--acero-medio); }
+
+/* Las tablas anchas se deslizan dentro de su caja. */
+.os-tabla-caja { overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; margin: 0 -6px; padding: 0 6px; }
+.os-tabla-caja > .tabla { min-width: 620px; }
+.os-tabla-caja .tabla td { padding: 12px; }
+
+/* Tarjetas de alerta dentro del costado. */
+.os-alerta { display: flex; flex-direction: column; gap: 4px; padding: 14px; border-radius: 14px; background: var(--caducado-velo); color: #5f3613; }
+.os-alerta--roja { background: var(--contradicho-velo); color: #6f251d; }
+.os-alerta strong { font-size: 14.5px; }
+.os-alerta span { font-size: 13.5px; line-height: 1.45; }
+
+/* Ánimo del equipo: cinco barras. */
+.os-animo { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; align-items: end; height: 110px; }
+.os-animo__col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px; height: 100%; }
+.os-animo__barra { width: 100%; max-width: 36px; border-radius: 6px 6px 2px 2px; background: var(--acero); min-height: 4px; }
+.os-animo__barra[data-vacia] { background: var(--perla-honda); }
+.os-animo__n { font-size: 12.5px; font-weight: 700; color: var(--grafito); }
+
+/* Formularios cortos dentro de tarjetas. */
+.os-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; align-items: end; }
+.os-form label { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.os-form__acciones { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; grid-column: 1 / -1; }
+.os-error { margin: 0; font-size: 13.5px; color: var(--contradicho); }
+.os-ok { margin: 0; font-size: 13.5px; color: var(--confirmado); }
+
+/* Proyectos. */
+.os-proyectos { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 18px; }
+.os-proyecto { background: var(--blanco); border-radius: var(--radio-tarjeta); box-shadow: var(--sombra); padding: 22px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.os-proyecto__cabeza { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.os-proyecto__cabeza h3 { margin: 0; font-size: 17px; font-weight: 700; line-height: 1.3; }
+.os-proyecto__datos { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13.5px; color: var(--grafito); }
+
+/* Objetivo de la semana (tarjeta noche). */
+.os-objetivo { flex-direction: row; flex-wrap: wrap; gap: 24px 40px; align-items: center; padding: 28px 30px; }
+.os-objetivo .boton { align-self: flex-start; }
+.os-objetivo__texto { flex: 2 1 360px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.os-objetivo__texto h2 {
+  margin: 0; font-family: var(--font-display); font-variation-settings: "opsz" var(--opsz-titulo); font-weight: 500; font-size: 32px; line-height: 1.15;
+}
+.os-objetivo__cifra { flex: 1 1 240px; display: flex; flex-direction: column; gap: 10px; }
+.os-objetivo .campo { background: var(--noche-alta); color: var(--luna); border-color: var(--noche-linea); }
+
+/* Reporte: matriz persona × día. */
+.os-matriz { display: flex; flex-direction: column; gap: 6px; min-width: 760px; }
+.os-matriz__fila { display: grid; grid-template-columns: 180px repeat(5, minmax(0, 1fr)) 96px; gap: 6px; align-items: stretch; }
+.os-matriz__cabeza { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--grafito); text-align: center; padding: 0 2px; }
+.os-matriz__cabeza:first-child { text-align: left; }
+.os-matriz__cabeza:last-child, .os-matriz__total { text-align: right; justify-content: flex-end; }
+.os-matriz__celda {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 56px; border-radius: 12px;
+  background: var(--perla); font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.os-matriz__celda[data-sin-apertura] { background: var(--blanco); color: var(--grafito); font-weight: 600; font-size: 13.5px; box-shadow: inset 0 0 0 1px var(--linea); }
+.os-matriz__total { display: flex; align-items: center; font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.os-marcas { display: flex; gap: 4px; align-items: center; }
+.os-marca { width: 8px; height: 8px; border-radius: 50%; background: var(--linea-fuerte); }
+.os-marca--abrio { background: var(--acero-fuerte); }
+.os-marca--cerro { border-radius: 2px; background: var(--confirmado); }
+.os-marca--sin-cierre { border-radius: 2px; background: none; box-shadow: inset 0 0 0 1.5px var(--caducado); }
+.os-leyenda { display: flex; flex-wrap: wrap; gap: 16px; font-size: 12.5px; color: var(--grafito); }
+.os-leyenda span { display: inline-flex; align-items: center; gap: 6px; }
+
+/* Líneas con raya a la izquierda (lo que se trabó, lo dicho en los cierres, el historial). */
+.os-linea { font-size: 14px; line-height: 1.45; padding-left: 12px; box-shadow: inset 2px 0 0 var(--acero-medio); }
+.os-linea--roja { box-shadow: inset 2px 0 0 var(--contradicho); }
+.os-linea small { display: block; color: var(--grafito); font-size: 13px; }
+
+/* Avisos. */
+.os-aviso { display: flex; gap: 16px; padding: 18px 20px; border-radius: 18px; background: var(--blanco); box-shadow: var(--sombra); min-width: 0; }
+.os-aviso[data-nuevo] { box-shadow: var(--sombra), inset 3px 0 0 var(--acero); }
+.os-aviso__icono { width: 42px; height: 42px; flex: none; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--acero-velo); color: var(--acero-fuerte); }
+.os-aviso__icono svg { width: 20px; height: 20px; }
+.os-aviso__icono--inactividad { background: var(--caducado-velo); color: var(--caducado); }
+.os-aviso__icono--bloqueos { background: var(--contradicho-velo); color: var(--contradicho); }
+.os-aviso__icono--plan { background: var(--confirmado-velo); color: var(--confirmado); }
+.os-aviso__icono--cierre_semanal { background: var(--acero-velo); color: var(--acero-fuerte); }
+.os-aviso__cuerpo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.os-aviso__titulo { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
+.os-aviso__titulo strong { font-size: 15.5px; line-height: 1.4; }
+.os-aviso__titulo time { font-size: 13px; color: var(--grafito); white-space: nowrap; }
+.os-aviso__pie { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.os-origen { font-size: 12.5px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: var(--acero-velo); color: var(--acero-fuerte); }
+
+/* Interruptor de las reglas. */
+.os-regla { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--linea); }
+.os-regla:last-child { border-bottom: 0; }
+.os-regla__textos { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.os-regla__textos strong { font-size: 14.5px; }
+.os-regla__textos span { font-size: 13px; color: var(--grafito); line-height: 1.4; }
+.os-interruptor {
+  width: 52px; height: 30px; flex: none; border: 0; border-radius: 15px; padding: 3px; cursor: pointer; display: flex;
+  background: var(--linea-fuerte); justify-content: flex-start; transition: background-color var(--dur-color) ease;
+}
+.os-interruptor::after { content: ""; width: 24px; height: 24px; border-radius: 50%; background: var(--blanco); box-shadow: 0 1px 3px rgba(15, 26, 46, 0.3); }
+.os-interruptor[aria-checked="true"] { background: var(--confirmado); justify-content: flex-end; }
+.os-interruptor:disabled { opacity: 0.5; cursor: default; }
+
+/* Detalle desplegable dentro de una fila o una tarjeta. */
+.os-plegable > summary { cursor: pointer; font-size: 14px; font-weight: 600; color: var(--acero-fuerte); list-style: none; min-height: 32px; display: inline-flex; align-items: center; }
+.os-plegable > summary::-webkit-details-marker { display: none; }
+.os-plegable[open] > summary { margin-bottom: 10px; }
+
+@media (max-width: 760px) {
+  .os-objetivo { padding: 22px; }
+  .os-objetivo__texto h2 { font-size: 26px; }
+  .os-kpi__cifra { font-size: 30px; }
+}

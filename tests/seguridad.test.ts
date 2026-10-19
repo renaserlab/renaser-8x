@@ -141,9 +141,22 @@ describe("gobierno · lo que la auditoría del 29-08-2026 exigió", () => {
       const porJson = /leerValidado|leerJSON/.test(src) && /company_id\??:/.test(src);
       const porFormulario = /form(?:Data)?\.get\(\s*["']company_id["']\s*\)/.test(src);
       if (!porJson && !porFormulario) return false;
-      return !/exigirAcceso|exigirPertenencia|consultor: true|empresaDelCliente/.test(src);
+      // RENASER OS (19-10-2026): `exigirOS` saca la empresa de la sesión (src/lib/os/acceso.ts), igual que empresaDelCliente.
+      return !/exigirAcceso|exigirPertenencia|consultor: true|empresaDelCliente|exigirOS/.test(src);
     });
     expect(huecos, `posible acceso indirecto: ${huecos.join(", ")}`).toEqual([]);
+  });
+
+  it("RENASER OS: ninguna ruta de /api/os toma la empresa del navegador; el company_id que escribe es siempre el de la sesión", () => {
+    const os = rutas.filter((f) => f.includes(`${path.sep}os${path.sep}`));
+    expect(os.length, "se encontraron las rutas de /api/os").toBeGreaterThan(10);
+    for (const f of os) {
+      const src = readFileSync(f, "utf8");
+      const rel = path.relative(raiz, f);
+      expect(src, `${rel} no pasa por exigirOS`).toMatch(/exigirOS\(/);
+      for (const m of src.matchAll(/company_id\??:\s*([^,}\n]+)/g)) expect(m[1]!.trim(), rel).toBe("c.companyId");
+      expect(src, `${rel} lee company_id de un formulario`).not.toMatch(/form(?:Data)?\.get\(\s*["']company_id["']\s*\)/);
+    }
   });
 
   it("la prueba anterior ve de verdad el company_id por formulario (si sources/route.ts dejara de comprobar, caería)", () => {

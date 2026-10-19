@@ -1,0 +1,166 @@
+/* RENASER OS (19-10-2026) · os-dia (sin oro: es solo del logo, el marco y la acción de hoy; tests/visual.test.ts): «Mi día». Clases con prefijo os-d- (las de «Mi equipo» y la consultora tienen sus
+   propias hojas y nombres: un nombre compartido entre hojas se pisaba según el orden de carga). Colores y medidas, de tokens.css. */
+
+/* ───────── Marco de dos columnas: el trabajo a la izquierda, lo de al lado a la derecha; en celular, una debajo ───────── */
+.os-d-rejilla { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+.os-d-rejilla__principal { flex: 2 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+.os-d-rejilla__lado { flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+.os-d-bloque { padding: 22px; display: flex; flex-direction: column; gap: 14px; }
+.os-d-bloque--noche {
+  background: var(--noche); color: var(--luna-tenue); border-radius: var(--radio-tarjeta); padding: 22px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.os-d-bloque--noche h2, .os-d-bloque--noche strong { color: var(--luna); }
+.os-d-rotulo-oro { font-size: 11.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--acero-medio); }
+.os-d-cabeza { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+.os-d-cabeza__texto { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.os-d-fila { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.os-d-tenue { color: var(--grafito); }
+.os-d-campos { display: grid; gap: 14px; }
+@media (min-width: 640px) { .os-d-campos--dos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.os-d-campo { display: flex; flex-direction: column; gap: 8px; }
+.os-d-campo > h2, .os-d-campo > h3 { margin: 0; }
+
+/* ───────── Pastillas de estado ───────── */
+.os-d-chip {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 24px; padding: 2px 10px; border-radius: 999px; white-space: nowrap;
+  font-size: 12.5px; font-weight: 700; line-height: 1.2; background: var(--perla-honda); color: var(--grafito);
+}
+.os-d-chip--acero { background: var(--acero-velo); color: var(--acero-fuerte); }
+.os-d-chip--alto { background: var(--contradicho-velo); color: var(--contradicho); }
+.os-d-chip--espera { background: var(--caducado-velo); color: var(--caducado); }
+.os-d-chip--ok { background: var(--confirmado-velo); color: var(--confirmado); }
+.os-d-chip--contorno { background: var(--papel); color: var(--acero-fuerte); box-shadow: inset 0 0 0 1px var(--acero-medio); }
+.os-d-prioridad { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 600; color: var(--tinta-suave); }
+.os-d-prioridad::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--acero); }
+.os-d-prioridad--alta::before { background: var(--contradicho); }
+.os-d-prioridad--baja::before { background: var(--luna-rotulo); }
+
+/* ───────── Apertura ───────── */
+.os-d-animo { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.os-d-animo button {
+  min-height: 84px; border: 0; border-radius: var(--radio-fila); cursor: pointer; font: inherit;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  background: var(--perla); color: var(--tinta-suave); box-shadow: inset 0 0 0 1px var(--linea);
+  transition: transform var(--dur-presion) var(--ease-out), background-color var(--dur-color) ease;
+}
+.os-d-animo button:active { transform: scale(0.97); }
+.os-d-animo button[aria-checked="true"] { background: var(--noche); color: var(--luna); box-shadow: inset 0 0 0 2px var(--acero-medio); }
+.os-d-animo__n { font-size: 26px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.os-d-animo__t { font-size: 12.5px; font-weight: 600; }
+@media (max-width: 520px) { .os-d-animo button { min-height: 68px; } .os-d-animo__t { font-size: 11px; } }
+
+.os-d-casillas { display: flex; flex-direction: column; border-radius: var(--radio-fila); box-shadow: inset 0 0 0 1px var(--linea); overflow: hidden; }
+.os-d-casilla { display: flex; align-items: center; gap: 14px; min-height: 56px; padding: 8px 16px; cursor: pointer; }
+.os-d-casilla + .os-d-casilla { border-top: 1px solid var(--linea); }
+.os-d-casilla input { width: 20px; height: 20px; flex: none; }
+.os-d-casilla__texto { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
+.os-d-casilla__titulo { flex: 1 1 200px; min-width: 0; font-size: 15px; font-weight: 600; }
+
+.os-d-semana { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; text-align: center; }
+.os-d-semana__dia { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 0; border-radius: var(--radio); background: var(--perla); }
+.os-d-semana__dia span:first-child { font-size: 12px; font-weight: 700; color: var(--grafito); }
+.os-d-marca { width: 12px; height: 12px; border-radius: 50%; background: var(--linea-fuerte); }
+.os-d-marca--abrio { background: var(--acero-fuerte); }
+.os-d-marca--cerro { border-radius: 3px; background: var(--confirmado); }
+.os-d-marca--sin-cierre { border-radius: 3px; background: none; box-shadow: inset 0 0 0 1.5px var(--caducado); }
+.os-d-leyenda { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12.5px; color: var(--grafito); }
+.os-d-leyenda span { display: inline-flex; align-items: center; gap: 6px; }
+
+.os-d-confirmado {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 16px 20px; border-radius: var(--radio-fila);
+  background: var(--confirmado-velo); color: #1f5340;
+}
+.os-d-confirmado p { margin: 0; flex: 1 1 240px; font-weight: 600; }
+
+/* ───────── Mi trabajo ───────── */
+.os-d-foco {
+  background: var(--noche); color: var(--luna-tenue); border-radius: var(--radio-tarjeta); padding: 20px 24px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 16px 28px; margin-bottom: 24px;
+}
+.os-d-foco__texto { flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.os-d-foco__estado { display: inline-flex; align-items: center; gap: 8px; }
+.os-d-foco__estado::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--acero-medio); }
+.os-d-foco[data-pausa="si"] .os-d-foco__estado::before { background: var(--luna-rotulo); }
+.os-d-foco__tarea { font-size: 18px; font-weight: 700; color: var(--luna); }
+.os-d-foco__reloj { font-size: 42px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; color: var(--luna); }
+.os-d-foco__botones { display: flex; flex-wrap: wrap; gap: 10px; }
+.os-d-foco .boton--secundario { background: var(--noche-alta); color: var(--luna); border-color: var(--noche-linea); }
+.os-d-foco .boton--luna { background: var(--luna); border-color: var(--luna); color: var(--noche); }
+.os-d-foco__nota { display: flex; gap: 8px; flex: 1 1 100%; flex-wrap: wrap; }
+.os-d-foco__nota .campo { flex: 1 1 240px; background: var(--noche-alta); color: var(--luna); border-color: var(--noche-linea); }
+
+.os-d-filtros { display: flex; flex-wrap: wrap; gap: 8px; }
+.os-d-filtros button {
+  min-height: 40px; padding: 0 16px; border: 0; border-radius: 999px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+  background: var(--perla); color: var(--tinta-suave);
+}
+.os-d-filtros button[aria-selected="true"] { background: var(--tinta); color: var(--blanco); font-weight: 700; }
+
+.os-d-tareas { display: flex; flex-direction: column; margin-top: 12px; }
+.os-d-tarea {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 14px; align-items: center; width: 100%;
+  min-height: 64px; padding: 10px 12px; border: 0; border-radius: var(--radio-fila); background: none; font: inherit; text-align: left; cursor: pointer;
+  box-shadow: inset 0 -1px 0 var(--linea); color: var(--tinta);
+}
+.os-d-tarea[aria-pressed="true"] { background: var(--acero-velo); box-shadow: inset 0 0 0 1px var(--acero-claro); }
+@media (hover: hover) and (pointer: fine) { .os-d-tarea:not([aria-pressed="true"]):hover { background: #faf9f6; } }
+.os-d-tarea__titulo { font-size: 15px; font-weight: 600; }
+.os-d-tarea__sub { font-size: 12.5px; color: var(--grafito); }
+.os-d-tarea__lado { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px 12px; }
+.os-d-tarea__fecha { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+/* En celular el estado, la prioridad y la fecha bajan debajo del título: el título necesita el ancho. */
+@media (max-width: 560px) {
+  .os-d-tarea { grid-template-columns: minmax(0, 1fr); }
+  .os-d-tarea__lado { justify-content: flex-start; }
+}
+.os-d-tarea__fecha[data-tarde="si"] { color: var(--contradicho); }
+.os-d-tarea[data-hecha="si"] .os-d-tarea__titulo { color: var(--grafito); text-decoration: line-through; text-decoration-color: var(--linea-fuerte); }
+
+.os-d-detalle { position: sticky; top: 16px; }
+.os-d-detalle h2 { margin: 0; font-size: 20px; font-weight: 700; line-height: 1.3; }
+.os-d-bloqueo { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border-radius: var(--radio-fila); background: var(--contradicho-velo); color: #6f251d; }
+.os-d-historial { display: flex; flex-direction: column; gap: 8px; }
+.os-d-historial__item { display: flex; flex-direction: column; gap: 2px; padding-left: 12px; box-shadow: inset 2px 0 0 var(--acero-medio); font-size: 14px; }
+.os-d-tramo { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; padding: 10px 12px; border-radius: var(--radio); background: var(--perla); font-size: 13.5px; }
+.os-d-tramo__nota { grid-column: 1 / -1; color: var(--grafito); font-size: 13px; }
+.os-d-formulario { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: var(--radio-fila); background: var(--perla); }
+
+/* ───────── Entregables ───────── */
+.os-d-entregable { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 14px 0; border-top: 1px solid var(--linea); }
+.os-d-entregable:last-child { border-bottom: 1px solid var(--linea); }
+.os-d-entregable__texto { flex: 1 1 240px; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+
+/* ───────── Podios ───────── */
+.os-d-podio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: end; }
+.os-d-podio__puesto { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; min-width: 0; }
+.os-d-podio__escalon {
+  width: 100%; border-radius: var(--radio-fila) var(--radio-fila) 6px 6px; background: var(--noche); color: var(--luna);
+  display: flex; align-items: flex-start; justify-content: center; padding-top: 12px;
+  font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums;
+}
+.os-d-podio__puesto[data-lugar="1"] .os-d-podio__escalon { height: 132px; }
+.os-d-podio__puesto[data-lugar="2"] .os-d-podio__escalon { height: 100px; background: var(--noche-alta); }
+.os-d-podio__puesto[data-lugar="3"] .os-d-podio__escalon { height: 76px; background: var(--noche-alta); }
+.os-d-podio__nombre { font-size: 15px; font-weight: 700; overflow-wrap: anywhere; }
+.os-d-avatar {
+  width: 44px; height: 44px; border-radius: 50%; background: var(--acero-velo); color: var(--acero-fuerte);
+  display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex: none;
+}
+
+/* ───────── Perfil y 360 ───────── */
+.os-d-cifras { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.os-d-cifra { padding: 16px; border-radius: var(--radio-fila); background: var(--perla); display: flex; flex-direction: column; gap: 6px; }
+/* Cifras en fila: Manrope tabular, como manda tokens.css (la Didone es para una cifra suelta; en fila, su 1 se lee como una I). */
+.os-d-cifra__valor { font-size: 28px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.os-d-dimension { display: flex; flex-direction: column; gap: 8px; padding: 12px 0; border-top: 1px solid var(--linea); }
+.os-d-dimension fieldset { border: 0; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.os-d-dimension legend { padding: 0; margin-bottom: 6px; font-weight: 700; font-size: 14.5px; }
+.os-d-dimension label { position: relative; }
+.os-d-dimension input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.os-d-dimension label span {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; border-radius: 12px;
+  background: var(--perla); box-shadow: inset 0 0 0 1px var(--linea); font-weight: 700; cursor: pointer;
+}
+.os-d-dimension input:checked + span { background: var(--tinta); color: var(--blanco); box-shadow: none; }
+.os-d-dimension input:focus-visible + span { outline: 2px solid var(--acero-fuerte); outline-offset: 2px; }

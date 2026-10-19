@@ -9,6 +9,9 @@ import { Logo8X } from "@/components/base/Logo8X";
 import { seccionesAbiertas, pantallasOcultas, pantallasSinPedido } from "@/lib/solicitudes";
 import { negocioDeEmpresa } from "@/lib/ruta-datos";
 import { ElegirEmpresa } from "./portal/elegir-empresa/ElegirEmpresa";
+import { tieneFichaOS } from "@/lib/os/acceso";
+import { gruposOS, PERFIL_OS } from "@/lib/os/menu";
+import { iniciales } from "@/lib/os/calculos";
 
 export default async function LayoutCliente({ children }: { children: React.ReactNode }) {
   const u = await requerirCliente();
@@ -24,6 +27,9 @@ export default async function LayoutCliente({ children }: { children: React.Reac
     const r = await resolverEmpresaActiva(u.id);
     companyId = r.companyId;
     variasEmpresas = r.empresas.length > 1;
+    // RENASER OS (19-10-2026): el personal no tiene membresía, tiene ficha en el equipo. Su lugar es /os, no el portal
+    // de la consultoría (que le pediría crear una empresa).
+    if (r.estado === "sin_empresa" && (await tieneFichaOS(u.id))) redirect("/os");
     if (r.estado === "ambigua") {
       // VARIAS EMPRESAS Y NINGUNA ELEGIDA: se pregunta aquí mismo, antes de pintar cualquier página.
       // No se redirige a /portal/elegir-empresa porque esa página vive dentro de este mismo layout y
@@ -62,6 +68,25 @@ export default async function LayoutCliente({ children }: { children: React.Reac
       ])
     : [null, null, null];
   const abiertas = abiertasAhora ? abiertasAhora.length : null;
+  // RENASER OS en la misma barra: quien tiene el portal (dueño, líder o la consultora mirando) es gestión en su equipo,
+  // salvo una membresía de participante. Su nombre va al pie, con «Mi perfil».
+  // Solo si la base ya tiene RENASER OS: el código puede llegar a producción antes que supabase/migracion-renaser-os.sql
+  // (el SQL se pega aparte). Hasta entonces la barra queda exactamente como antes, sin destinos que no abren.
+  // Una lectura de una fila y no un `head`: con `head`, supabase-js convierte el 404 de «la tabla no existe» en «sin
+  // contenido» y no da error (comprobado el 19-10-2026).
+  const { error: sinOS } = companyId ? await supabaseAdmin().from("os_personas").select("id").limit(1) : { error: null };
+  const conOS = !!companyId && !sinOS;
+  const { data: ficha } = conOS && !vistaConsultor
+    ? await supabaseAdmin().from("os_personas").select("nombre,rol").eq("company_id", companyId).eq("user_id", u.id).maybeSingle()
+    : { data: null };
+  const { data: membresia } = companyId && !vistaConsultor
+    ? await supabaseAdmin().from("memberships").select("nivel").eq("company_id", companyId).eq("user_id", u.id).maybeSingle()
+    : { data: null };
+  const gestionOS = vistaConsultor || (ficha ? ficha.rol !== "persona" : membresia?.nivel !== "participante");
+  const nombreOS = ficha?.nombre ?? u.nombre ?? u.email ?? "";
+  const quien = companyId && !vistaConsultor
+    ? { href: PERFIL_OS, nombre: nombreOS, sub: "Mi perfil", iniciales: iniciales(nombreOS) }
+    : undefined;
   // Y «Preguntas para tu plan» solo con preguntas enviadas: sin su pedido abierto sería una página vacía (pantallasSinPedido).
   const ocultar = [...pantallasOcultas(abiertasAhora, negocio?.guardado ?? null), ...pantallasSinPedido(abiertasAhora)];
   // CINCO DESTINOS (pedido de Kelin, 16-10-2026: «hace rato estaba simple y fácil: diagnóstico, qué hay en números,
@@ -80,7 +105,15 @@ export default async function LayoutCliente({ children }: { children: React.Reac
   ];
   return (
     <div className="marco-app">
-      {companyId && <NavCliente enlaces={enlaces as [string, string][]} empresa={empresa?.nombre} avisos={abiertas ? { "/portal": abiertas } : undefined} />}
+      {companyId && (
+        <NavCliente
+          enlaces={enlaces as [string, string][]}
+          empresa={empresa?.nombre}
+          avisos={abiertas ? { "/portal": abiertas } : undefined}
+          grupos={conOS ? gruposOS({ gestion: gestionOS }) : undefined}
+          perfil={conOS ? quien : undefined}
+        />
+      )}
       <div className="columna-app">
         {!companyId && (
           <header className="cabecera-app sin-pildora no-imprimir">

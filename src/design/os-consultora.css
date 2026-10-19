@@ -1,0 +1,65 @@
+/* RENASER OS (19-10-2026) · os-consultora. Clases con prefijo os-; colores y medidas, siempre de tokens.css. */
+
+/* El pulso: la tabla de empresas y, a su derecha (abajo en celular), lo que requiere atención de la elegida. */
+.os-pulso { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+.os-pulso__tabla { flex: 2 1 600px; min-width: 0; }
+.os-pulso__atencion {
+  flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 14px; padding: 24px;
+  border-radius: var(--radio-tarjeta); background: var(--papel); box-shadow: var(--sombra);
+}
+.os-pulso__nombre { margin: 0; font-size: 20px; font-weight: 700; line-height: 1.3; color: var(--tinta); }
+
+.os-pulso__filas { width: 100%; min-width: 680px; border-collapse: separate; border-spacing: 0; background: var(--papel); border-radius: var(--radio-tarjeta); box-shadow: var(--sombra); overflow: hidden; }
+.os-pulso__filas th, .os-pulso__filas td { padding: 12px 14px; text-align: left; vertical-align: middle; border-top: 1px solid var(--linea); }
+.os-pulso__filas thead th {
+  border-top: 0; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--grafito);
+}
+.os-pulso__filas tbody tr { position: relative; }
+.os-pulso__filas tbody tr[data-elegida] { background: var(--acero-velo); }
+@media (hover: hover) and (pointer: fine) { .os-pulso__filas tbody tr:not([data-elegida]):hover { background: var(--perla); } }
+.os-pulso__empresa { display: flex; flex-direction: column; gap: 2px; font-weight: inherit; }
+.os-pulso__ir { color: var(--tinta); text-decoration: none; }
+.os-pulso__ir::after { content: ""; position: absolute; inset: 0; }
+.os-pulso__ir:focus-visible { outline: none; }
+.os-pulso__ir:focus-visible::after { outline: 2px solid var(--acero-fuerte); outline-offset: -2px; border-radius: 4px; }
+
+.os-num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.os-tenue { color: var(--grafito); }
+[data-tono="rojo"].os-num { color: var(--contradicho); }
+[data-tono="ambar"].os-num { color: var(--caducado); }
+[data-tono="verde"].os-num { color: var(--confirmado); }
+
+/* El estado de una empresa: chip con su velo. Sin RENASER OS va en gris, no en rojo: no es un problema, es una decisión. */
+.os-estado {
+  display: inline-flex; align-self: flex-start; padding: 4px 10px; border-radius: 999px; white-space: nowrap;
+  font-size: 12.5px; font-weight: 700; background: var(--perla-honda); color: var(--grafito);
+}
+.os-estado[data-estado="critico"] { background: var(--contradicho-velo); color: var(--contradicho); }
+.os-estado[data-estado="atento"] { background: var(--caducado-velo); color: var(--caducado); }
+.os-estado[data-estado="bien"] { background: var(--confirmado-velo); color: var(--confirmado); }
+
+.os-pulso__puntos { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.os-pulso__puntos li { padding-left: 12px; font-size: 14.5px; line-height: 1.45; color: var(--tinta-suave); box-shadow: inset 2px 0 0 var(--acero-medio); }
+.os-pulso__puntos li[data-tono="rojo"] { box-shadow: inset 2px 0 0 var(--contradicho); }
+.os-pulso__puntos li[data-tono="ambar"] { box-shadow: inset 2px 0 0 var(--caducado); }
+.os-pulso__puntos li[data-tono="verde"] { box-shadow: inset 2px 0 0 var(--confirmado); }
+
+/* Avisos de clientes: una tarjeta por aviso, con la empresa arriba. */
+.os-avisos-clientes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.os-aviso-cliente {
+  display: flex; flex-direction: column; gap: 6px; padding: 16px 20px; border-radius: var(--radio-fila);
+  background: var(--papel); box-shadow: var(--sombra);
+}
+/* El oro es solo del logo, el marco y la acción de hoy (tests/visual.test.ts): lo nuevo se marca en acero. */
+.os-aviso-cliente[data-nuevo] { box-shadow: var(--sombra), inset 3px 0 0 var(--acero); }
+.os-aviso-cliente__cabeza { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
+.os-aviso-cliente__titulo { margin: 0; font-size: 15.5px; font-weight: 700; line-height: 1.4; color: var(--tinta); }
+.os-aviso-cliente__pie { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.os-chip-regla { font-size: 12.5px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: var(--acero-velo); color: var(--acero-fuerte); }
+
+.os-filtro-empresas { display: flex; flex-wrap: wrap; gap: 8px; }
+.os-filtro-empresas a {
+  display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 999px; text-decoration: none;
+  font-size: 14px; font-weight: 600; background: var(--perla-honda); color: var(--tinta-suave);
+}
+.os-filtro-empresas a[aria-current="page"] { background: var(--tinta); color: var(--blanco); font-weight: 700; }

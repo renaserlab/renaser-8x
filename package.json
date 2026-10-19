@@ -19,6 +19,7 @@
     "prueba:medicion": "node --env-file=.env.test --import=tsx scripts/prueba-medicion.mts",
     "prueba:indicadores": "node --env-file=.env.test --import=tsx scripts/prueba-indicadores.mts",
     "prueba:borrado": "node --env-file=.env.test --import=tsx scripts/prueba-borrado.mts",
+    "sembrar:os-demo": "node --env-file=.env.local --import=tsx scripts/os/sembrar-demo.mts",
     "verificar": "npm run typecheck && npm run lint && npm run test && npm run build"
   },
   "dependencies": {

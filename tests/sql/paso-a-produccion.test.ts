@@ -8,7 +8,7 @@
  * de una empresa en marcha (acciones, una línea base y un corte congelados, sesiones, procesos, indicadores, una línea
  * de producto con su decisión, un pedido de la consultora y un documento entregado).
  *
- * Qué se comprueba: que lo pendiente es solo migracion-estrategia.sql; que entra completo; que no cambia ni borra un
+ * Qué se comprueba: que lo pendiente es migracion-estrategia.sql y migracion-renaser-os.sql; que entra completo; que no cambia ni borra un
  * solo dato; que lo nuevo (las tres tablas, las dos funciones solo para el servidor, los dos checks con su valor
  * nuevo) pasa a admitirse; que se puede ejecutar dos veces; que los permisos que ya se cerraron siguen cerrados; y que
  * si la base real difiere de lo esperado (un check viejo con otro nombre, más estrecho) NO queda nada a medias.
@@ -104,12 +104,14 @@ const SECCIONES_DE_ANTES = ["productos", "costos", "historia", "moneda", "credit
 const TIPOS_DE_ANTES = ["informe_realidad", "diagnostico_4p", "mapa_as_is", "mapa_to_be", "manual_procesos", "plan_90", "mapa_automatizacion"];
 
 describe("Postgres embebido (PGlite), no Supabase: el archivo de producción", () => {
-  it("las 13 del 15-10 y la del 16-10 ya cuentan como aplicadas: lo único pendiente es migracion-estrategia.sql", () => {
+  it("las 13 del 15-10 y la del 16-10 ya cuentan como aplicadas: lo pendiente es la estrategia y RENASER OS, en ese orden", () => {
     for (const a of [...DEL_15_10, ...DEL_16_10]) expect(YA_EN_PRODUCCION, a).toContain(a);
     const pendientes = migracionesPendientes();
-    expect(pendientes).toEqual(["migracion-estrategia.sql"]);
+    expect(pendientes).toEqual(["migracion-estrategia.sql", "migracion-renaser-os.sql"]);
     const sql = armarSql();
     expect(sql).toContain("· migracion-estrategia.sql");
+    expect(sql).toContain("· migracion-renaser-os.sql");
+    expect(sql.indexOf("· migracion-renaser-os.sql")).toBeLessThan(sql.indexOf("\ncommit;"));
     for (const a of [...DEL_15_10, ...DEL_16_10]) expect(sql, a).not.toContain(`· ${a}`);
     // Una sola transacción: un begin al principio y un commit al final.
     expect(sql.match(/^begin;$/gm)).toHaveLength(1);
@@ -133,14 +135,17 @@ describe("Postgres embebido (PGlite), no Supabase: el archivo de producción", (
     expect(sql.indexOf("COMPROBACIÓN FINAL")).toBeLessThan(sql.indexOf("\ncommit;"));
   });
 
-  it("la fila final cuenta las tres tablas nuevas, cuántas tienen RLS y las dos funciones que solo ejecuta el servidor", () => {
-    expect(TABLAS_NUEVAS).toEqual(["estrategias", "estrategia_ediciones", "estrategia_preguntas"]);
-    expect(FUNCIONES_SOLO_SERVIDOR).toEqual(["estrategia_lente_lista", "aprobar_estrategia"]);
+  it("la fila final cuenta las tablas nuevas (3 de la estrategia y 16 de RENASER OS), cuántas tienen RLS y las funciones que solo ejecuta el servidor", () => {
+    expect(TABLAS_NUEVAS.slice(0, 3)).toEqual(["estrategias", "estrategia_ediciones", "estrategia_preguntas"]);
+    expect(TABLAS_NUEVAS).toHaveLength(19);
+    expect(TABLAS_NUEVAS.slice(3).every((t) => t.startsWith("os_"))).toBe(true);
+    expect(FUNCIONES_SOLO_SERVIDOR.slice(0, 2)).toEqual(["estrategia_lente_lista", "aprobar_estrategia"]);
+    expect(FUNCIONES_SOLO_SERVIDOR).toHaveLength(9);
     const sql = armarSql();
     expect(sql).toContain("'MIGRACIONES APLICADAS'");
-    expect(sql).toContain("tablas_nuevas_de_3");
-    expect(sql).toContain("tablas_con_rls_de_3");
-    expect(sql).toContain("funciones_solo_servidor_de_2");
+    expect(sql).toContain("tablas_nuevas_de_19");
+    expect(sql).toContain("tablas_con_rls_de_19");
+    expect(sql).toContain("funciones_solo_servidor_de_9");
   });
 
   it("FUNCIONES_SOLO_SERVIDOR es exactamente cada función nueva de lo pendiente (las de disparador no cuentan), y cada una lleva su revoke", () => {

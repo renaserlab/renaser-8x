@@ -6,6 +6,9 @@
 @import "../design/estrategia.css";
 @import "../design/portal.css";
 @import "../design/marco.css";
+@import "../design/os-dia.css";
+@import "../design/os-equipo.css";
+@import "../design/os-consultora.css";
 
 @theme inline {
   --color-papel: var(--papel);

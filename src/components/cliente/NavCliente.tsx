@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { Icono, type NombreIcono } from "@/components/base/Icono";
 import { Lateral } from "@/components/navegacion/Lateral";
 import { Logo8X } from "@/components/base/Logo8X";
+import type { GrupoMenu } from "@/lib/os/menu";
 
 /**
  * Navegación del portal AL COSTADO (pedido de Kelin, 16-10-2026: «navegación al costado, que se vea la barra
@@ -68,10 +69,29 @@ export function destinoDe(ruta: string): string | null {
 /** El ícono de cada destino sale de PRINCIPALES: la lista del layout y esta dicen lo mismo. */
 const ICONO_DE = new Map(PRINCIPALES.map(([href, , icono]) => [href, icono]));
 
-export function NavCliente({ enlaces, empresa, avisos }: { enlaces: [string, string][]; empresa?: string; avisos?: Record<string, number> }) {
+/**
+ * RENASER OS (19-10-2026): con `grupos`, la barra pinta «Inicio», después los grupos de RENASER OS («Mi día» y, para la
+ * gestión, «Mi equipo») y los otros cuatro destinos bajo «Consultoría 8X». El personal no tiene consultoría: llega sin
+ * `enlaces` y solo ve sus grupos. Sin `grupos`, la barra es exactamente la de siempre. `perfil` pone «Mi perfil» al pie.
+ */
+export function NavCliente({
+  enlaces,
+  empresa,
+  avisos,
+  grupos,
+  perfil,
+}: {
+  enlaces: [string, string][];
+  empresa?: string;
+  avisos?: Record<string, number>;
+  grupos?: GrupoMenu[];
+  perfil?: { href: string; nombre: string; sub: string; iniciales: string };
+}) {
   const ruta = usePathname();
   // Un solo criterio para marcar el destino activo: el destino al que pertenece la pantalla abierta.
   const destino = destinoDe(ruta);
+  const conOS = !!grupos?.length;
+  const [inicio, ...consultoria] = conOS ? enlaces : [];
   const salir = (
     <form action="/api/auth/salir" method="post">
       <button className="boton-redondo" aria-label="Salir" title="Salir">
@@ -79,6 +99,23 @@ export function NavCliente({ enlaces, empresa, avisos }: { enlaces: [string, str
       </button>
     </form>
   );
+
+  // Un destino de la barra, con el contador de lo pendiente cuando lo hay (pedidos de la consultora o avisos sin leer).
+  const enlace = (href: string, nombre: string, icono: NombreIcono, activo: boolean) => {
+    const n = avisos?.[href] ?? 0;
+    const pendientes = n > 0 ? (href.startsWith("/os/") ? `${n} sin leer` : `${n} ${n === 1 ? "pedido" : "pedidos"} de tu consultora`) : null;
+    return (
+      <Link key={href} href={href} aria-current={activo ? "page" : undefined} aria-label={pendientes ? `${nombre}, ${pendientes}` : nombre} title={pendientes ? `${nombre} · ${pendientes}` : nombre}>
+        <Icono nombre={icono} />
+        <span className="rotulo">{nombre}</span>
+        {pendientes && (
+          <span className="contador" role="img" aria-label={pendientes}>
+            {n}
+          </span>
+        )}
+      </Link>
+    );
+  };
 
   return (
     <Lateral
@@ -91,16 +128,47 @@ export function NavCliente({ enlaces, empresa, avisos }: { enlaces: [string, str
       }
       enMovil={salir}
       pie={
-        <form action="/api/auth/salir" method="post" className="lateral__salir">
-          <button title="Salir">
-            <Icono nombre="salir" />
-            <span className="rotulo">Salir</span>
-          </button>
-        </form>
+        perfil ? (
+          <>
+            <Link href={perfil.href} className="lateral__perfil" aria-current={ruta === perfil.href ? "page" : undefined} title="Mi perfil">
+              <span className="avatar-app" aria-hidden="true">{perfil.iniciales}</span>
+              <span className="lateral__quien rotulo">
+                {perfil.nombre}
+                <small>{perfil.sub}</small>
+              </span>
+            </Link>
+            <form action="/api/auth/salir" method="post">
+              <button className="boton-redondo" aria-label="Salir" title="Salir">
+                <Icono nombre="salir" />
+              </button>
+            </form>
+          </>
+        ) : (
+          <form action="/api/auth/salir" method="post" className="lateral__salir">
+            <button title="Salir">
+              <Icono nombre="salir" />
+              <span className="rotulo">Salir</span>
+            </button>
+          </form>
+        )
       }
     >
       <nav className="menu-lateral" aria-label="Secciones">
-        {enlaces.map(([href, nombre]) => {
+        {conOS && inicio && enlace(inicio[0], inicio[1], ICONO_DE.get(inicio[0]) ?? "inicio", destino === inicio[0])}
+        {conOS &&
+          grupos!.map((g) => (
+            <div className="grupo-lateral" key={g.titulo}>
+              <p className="titulo-menu rotulo">{g.titulo}</p>
+              {g.items.map(([href, nombre, icono]) => enlace(href, nombre, icono, ruta === href || ruta.startsWith(`${href}/`)))}
+            </div>
+          ))}
+        {conOS && consultoria.length > 0 && (
+          <div className="grupo-lateral">
+            <p className="titulo-menu rotulo">Consultoría 8X</p>
+            {consultoria.map(([href, nombre]) => enlace(href, nombre, ICONO_DE.get(href) ?? "inicio", destino === href))}
+          </div>
+        )}
+        {!conOS && enlaces.map(([href, nombre]) => {
           const a = destino === href;
           // Lo que la consultora pidió y sigue abierto se cuenta junto al destino donde se llena.
           const n = avisos?.[href] ?? 0;

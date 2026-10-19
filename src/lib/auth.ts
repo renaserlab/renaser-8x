@@ -147,4 +147,7 @@ export async function aceptarInvitaciones(userId: string, email: string | null) 
     await sb.from("memberships").upsert({ user_id: userId, company_id: i.company_id, nivel: i.nivel });
     await sb.from("invitations").update({ aceptada_at: new Date().toISOString() }).eq("id", i.id);
   }
+  // RENASER OS (19-10-2026): las fichas del equipo que el dueño creó con este correo quedan enlazadas a la cuenta. No es
+  // una membresía: el personal entra a /os, no al portal de la consultoría (src/lib/os/acceso.ts).
+  await sb.from("os_personas").update({ user_id: userId }).eq("email", email.toLowerCase()).is("user_id", null);
 }

@@ -39,6 +39,15 @@ const TRAZOS = {
   // La estrategia (17-10-2026): el lápiz de corregir un texto y la marca de una etapa lista.
   lapiz: <path d="M4.5 19.5h4l10-10a2.1 2.1 0 0 0-4-4l-10 10zM13.5 6.5l4 4" />,
   hecho: <path d="m5 12.5 4.2 4.2L19 7" />,
+  // RENASER OS (19-10-2026): el sol que asoma de la apertura, la lista de tareas, el podio, el radar del equipo en vivo,
+  // el equipo, la campana de los avisos y el pulso de las empresas de la consultora.
+  apertura: <path d="M4 18h16M7 18a5 5 0 0 1 10 0M12 5v3M5.6 9.6l1.6 1.6M18.4 9.6l-1.6 1.6M3 14.5h1.5M19.5 14.5H21" />,
+  tareas: <path d="M10 6.5h10M10 12h10M10 17.5h10M3.5 6.5l1.3 1.3 2.2-2.6M3.5 12l1.3 1.3 2.2-2.6M3.5 17.5l1.3 1.3 2.2-2.6" />,
+  podio: <path d="M9 20V8h6v12M3 20v-7h6M15 20v-5h6M2.5 20h19" />,
+  envivo: <><circle cx="12" cy="12" r="1.2" /><path d="M12 3a9 9 0 1 0 9 9M12 7.5A4.5 4.5 0 1 0 16.5 12M12 12l6-6" /></>,
+  equipo: <><circle cx="9" cy="7.5" r="3.5" /><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.3a3.5 3.5 0 0 1 0 6.4M18 14.2a6.5 6.5 0 0 1 3.5 5.8" /></>,
+  campana: <path d="M6 9a6 6 0 1 1 12 0c0 4.5 1.5 6.5 2.5 7.5h-17C4.5 15.5 6 13.5 6 9ZM10 19.5a2 2 0 0 0 4 0" />,
+  pulso: <path d="M4 19V5M4 19h16M8 15l3-4 3 2 5-6" />,
 } as const;
 
 export type NombreIcono = keyof typeof TRAZOS;

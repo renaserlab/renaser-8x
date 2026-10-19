@@ -51,7 +51,13 @@ export const CHECKS_AMPLIADOS: readonly (readonly [string, string, string])[] = 
 ];
 
 /** Las tablas que crea lo pendiente: la última fila del archivo dice cuáles quedaron, cuántas y con RLS. */
-export const TABLAS_NUEVAS: readonly string[] = ["estrategias", "estrategia_ediciones", "estrategia_preguntas"];
+export const TABLAS_NUEVAS: readonly string[] = [
+  "estrategias", "estrategia_ediciones", "estrategia_preguntas",
+  // RENASER OS (19-10-2026): las 16 tablas os_* de migracion-renaser-os.sql.
+  "os_personas", "os_proyectos", "os_tareas", "os_bloqueos", "os_reprogramaciones", "os_registros_tiempo", "os_aperturas",
+  "os_cierres", "os_cierres_semanales", "os_entregables", "os_objetivos", "os_legajos", "os_acompanamientos",
+  "os_evaluaciones", "os_avisos", "os_reglas",
+];
 
 /**
  * Las columnas que lo pendiente añade a tablas que ya existían (`tabla.columna`): la última fila dice cuáles quedaron
@@ -65,7 +71,12 @@ export const COLUMNAS_NUEVAS: readonly string[] = [];
  * Las funciones que crea lo pendiente y que solo debe poder ejecutar el servidor (service_role): la fila final dice
  * cuántas quedaron así. Una que el navegador pudiera ejecutar saltaría las reglas de la aplicación.
  */
-export const FUNCIONES_SOLO_SERVIDOR: readonly string[] = ["estrategia_lente_lista", "aprobar_estrategia"];
+export const FUNCIONES_SOLO_SERVIDOR: readonly string[] = [
+  "estrategia_lente_lista", "aprobar_estrategia",
+  // RENASER OS: las cinco reglas que agenda pg_cron y sus dos ayudantes.
+  "os_regla_activa", "os_marcar_corrida", "os_regla_inactividad", "os_regla_bloqueos", "os_regla_plan_manana",
+  "os_regla_cierre_semanal", "os_regla_diagnostico",
+];
 
 /** Lo que dice la cabecera del archivo: la verdad de lo que hoy está pendiente, no la de una tanda anterior. */
 export const QUE_HACE: readonly string[] = [
@@ -77,6 +88,11 @@ export const QUE_HACE: readonly string[] = [
   "consultora solo las lee; el dueño, nada): todo pasa por la aplicación. Aprobar compara la hora de la fila (bloqueo optimista).",
   "NO borra ni cambia ningún dato existente. El código que hoy está en producción sigue funcionando igual con esto aplicado.",
   "Se puede ejecutar dos veces sin daño. Para deshacerlo sin perder filas: supabase/revertir/migracion-estrategia.sql.",
+  "Y RENASER OS: añade 16 tablas os_* con RLS y sin permisos para el navegador (el equipo de cada empresa, sus tareas con",
+  "cronómetro, la apertura y el cierre del día y de la semana, entregables, proyectos, objetivo semanal, legajos,",
+  "acompañamiento, evaluaciones 360 y avisos), el bucket privado os-entregables y 7 funciones que solo ejecuta el",
+  "servidor (las cinco reglas de avisos y dos ayudantes). Agenda las cinco reglas en pg_cron y activa la extensión si",
+  "no lo estaba. Para deshacerlo sin perder filas: supabase/revertir/migracion-renaser-os.sql.",
 ];
 
 export function migracionesPendientes(): string[] {

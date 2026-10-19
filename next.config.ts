@@ -23,7 +23,8 @@ const csp = [
   `img-src 'self' data: blob: ${supabase}`,
   `media-src 'self' blob: ${supabase}`,
   "font-src 'self' data:",
-  `connect-src 'self' ${supabase} wss://${supabase.replace("https://", "")}`,
+  // https → wss en la nube; http → ws en el Supabase local (Docker).
+  `connect-src 'self' ${supabase} ${supabase.replace(/^http/, "ws")}`,
   "upgrade-insecure-requests",
 ].join("; ");
 

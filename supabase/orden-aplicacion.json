@@ -236,6 +236,14 @@
         "migracion-entrar-hoy.sql"
       ],
       "por_que": "16-10. La estrategia que 8X genera sola: estrategias, estrategia_ediciones, estrategia_preguntas, funciones de etapa y de aprobación; amplía solicitudes_cliente.seccion y deliverables.tipo."
+    },
+    {
+      "archivo": "migracion-renaser-os.sql",
+      "depende_de": [
+        "schema.sql",
+        "migracion-entrada-y-direccion.sql"
+      ],
+      "por_que": "19-10. RENASER OS dentro de 8X: 16 tablas os_* (equipo, tareas, cronómetro, rituales, talento, proyectos, avisos), el bucket os-entregables, las cinco reglas que generan avisos y su agenda en pg_cron (solo si la extensión existe). Usa companies.zona_horaria."
     }
   ],
   "notas": [

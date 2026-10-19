@@ -15,8 +15,9 @@ type EmpresaMini = { id: string; nombre: string };
  * Grupos, en este orden:
  *   1. los destinos de todos los días, con ícono (`principales`): lo único que se ve en el riel;
  *   2. «Empresas recientes», una por fila;
- *   3. «Sistema»: aprendizaje, torre de control y salud;
- *   4. al pie, quién entró y «Salir».
+ *   3. «RENASER OS» (19-10-2026): el pulso de los equipos de todas las empresas y sus avisos;
+ *   4. «Sistema»: aprendizaje, torre de control y salud;
+ *   5. al pie, quién entró y «Salir».
  * Esta barra ES el menú completo: tests/recorrido-conectado.test.ts vigila que toda pantalla de la consultora
  * esté enlazada aquí. La Cartera va entre los principales: es la pantalla de Dirección y no puede depender de
  * teclear la dirección.
@@ -25,8 +26,9 @@ export function NavConsultor({ empresas, usuario, torre }: { empresas: EmpresaMi
   const ruta = usePathname();
   const dentro = (href: string) => ruta === href || ruta.startsWith(`${href}/`);
 
-  const item = (href: string, nombre: string, icono?: NombreIcono) => {
-    const activo = dentro(href);
+  // `exacto`: el destino se marca solo en su propia página, no en las de abajo (el pulso no se enciende en sus avisos).
+  const item = (href: string, nombre: string, icono?: NombreIcono, exacto = false) => {
+    const activo = exacto ? ruta === href : dentro(href);
     return (
       <Link key={href} href={href} aria-current={activo ? "page" : undefined} title={nombre}>
         {icono ? <Icono nombre={icono} /> : <span className="punto" aria-hidden="true" />}
@@ -84,6 +86,11 @@ export function NavConsultor({ empresas, usuario, torre }: { empresas: EmpresaMi
             </Link>
           );
         })}
+        <div className="grupo-lateral">
+          <p className="titulo-menu rotulo">RENASER OS</p>
+          {item("/pulso", "Pulso de empresas", "pulso", true)}
+          {item("/pulso/avisos", "Avisos de clientes", "campana")}
+        </div>
         {empresas.length > 0 && (
           <div className="grupo-lateral" data-grupo="secundario">
             <p className="titulo-menu">Empresas recientes</p>

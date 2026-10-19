@@ -37,6 +37,7 @@ import { describe, it, expect } from "vitest";
 import { existsSync, readdirSync, readFileSync } from "fs";
 import path from "path";
 import { VISTAS, EXPEDIENTE, PANTALLAS_MUDADAS } from "@/lib/vistas-empresa";
+import { MI_DIA, MI_EQUIPO, AVISOS_OS, PERFIL_OS, CONSULTORIA, RUTAS_MENU_OS, gruposOS } from "@/lib/os/menu";
 
 const SRC = path.resolve(__dirname, "../src");
 const leer = (rel: string) => readFileSync(path.join(SRC, rel), "utf8").replace(/\r\n/g, "\n");
@@ -336,6 +337,8 @@ const layoutConsultor = leer("app/(consultor)/layout.tsx");
 
 /** Las pantallas generales de la consultora: el primer tramo de cada ruta con page.tsx (/torre/mapa cuenta como /torre). */
 const SECCIONES_CONSULTORA = [...new Set(rutasConPagina(path.join(SRC, "app/(consultor)")).map((r) => `/${r.split("/")[1]}`))].sort();
+/** Y cada ruta entera con page.tsx: un enlace a /pulso/avisos se juzga por /pulso/avisos, no por /pulso. */
+const RUTAS_CONSULTORA = rutasConPagina(path.join(SRC, "app/(consultor)")).filter(Boolean).sort();
 
 /**
  * El grupo principal de la barra lateral (antes, «la barra inferior del celular»): ruta, nombre e ícono de cada
@@ -370,7 +373,7 @@ describe("barra lateral de la consultora: las pantallas generales, y la Cartera 
   });
 
   it("ningún enlace de las barras apunta a una pantalla que no existe", () => {
-    for (const { href } of [...PRINCIPALES_C, ...LATERAL]) expect(SECCIONES_CONSULTORA, `NavConsultor enlaza ${href}, que no tiene page.tsx`).toContain(href);
+    for (const { href } of [...PRINCIPALES_C, ...LATERAL]) expect(RUTAS_CONSULTORA, `NavConsultor enlaza ${href}, que no tiene page.tsx`).toContain(href);
   });
 
   it("lo nuevo de esta tanda: «Cartera» está en la barra lateral, en su grupo principal", () => {
@@ -394,5 +397,69 @@ describe("barra lateral de la consultora: las pantallas generales, y la Cartera 
 
   it("en un celular la torre está a un toque: va en la franja de arriba, además de en la barra lateral", () => {
     expect(layoutConsultor).toMatch(/lg:hidden[\s\S]*href="\/torre"/);
+  });
+});
+
+// ————————————————————————————————————————————— RENASER OS —————————————————————————————————————————————
+//
+// RENASER OS (19-10-2026, prototipo aprobado) añade dos grupos a la barra de la empresa —«Mi día» y, para la gestión,
+// «Mi equipo»— y el grupo «RENASER OS» a la de la consultora. La regla de siempre vale igual: toda pantalla de /os está
+// en el menú (src/lib/os/menu.ts, que ES el menú) y ningún enlace apunta a algo que no existe. Los cinco destinos de
+// la consultoría no se tocan.
+
+const RUTAS_OS = rutasConPagina(path.join(SRC, "app/(os)/os")).map((r) => `/os${r}`);
+const layoutOS = leer("app/(os)/os/layout.tsx");
+
+describe("RENASER OS: toda pantalla de /os está en el menú, y el menú no cambia los cinco destinos", () => {
+  it("se encontraron pantallas (si esto falla, la prueba no mira nada)", () => {
+    expect(RUTAS_OS).toContain("/os");
+    expect(RUTAS_MENU_OS.length).toBeGreaterThan(8);
+  });
+
+  it.each(RUTAS_OS.filter((r) => r !== "/os"))("%s se alcanza desde el menú de RENASER OS", (ruta) => {
+    // La portada /os solo redirige (a la apertura, a Mi trabajo o al equipo); una ruta dinámica se abre desde su madre.
+    expect(RUTAS_MENU_OS, `${ruta} tiene page.tsx y no está en src/lib/os/menu.ts`).toContain(madreDe(ruta));
+  });
+
+  it("ningún enlace del menú de RENASER OS apunta a una pantalla que no existe, y ninguno se repite", () => {
+    for (const ruta of RUTAS_MENU_OS) expect(RUTAS_OS, `el menú enlaza ${ruta}, que no tiene page.tsx`).toContain(ruta);
+    expect(new Set(RUTAS_MENU_OS).size, "una pantalla repetida en el menú de RENASER OS").toBe(RUTAS_MENU_OS.length);
+  });
+
+  it("cada destino del menú lleva su ícono dibujado (nunca un hueco)", () => {
+    const iconos = leer("components/base/Icono.tsx");
+    for (const [href, nombre, icono] of [...MI_DIA, ...MI_EQUIPO]) expect(iconos, `«${nombre}» (${href}) pide el ícono «${icono}»`).toMatch(new RegExp(`\\b${icono}: <`));
+  });
+
+  it("«Mi equipo» es solo de la gestión; el personal ve sus avisos dentro de «Mi día»; el perfil va al pie, no en un grupo", () => {
+    expect(gruposOS({ gestion: true }).map((g) => g.titulo)).toEqual(["Mi día", "Mi equipo"]);
+    expect(gruposOS({ gestion: false }).map((g) => g.titulo)).toEqual(["Mi día"]);
+    expect(gruposOS({ gestion: false })[0]!.items).toContainEqual(AVISOS_OS);
+    expect(gruposOS({ gestion: true })[0]!.items).not.toContainEqual(AVISOS_OS);
+    for (const g of [...gruposOS({ gestion: true }), ...gruposOS({ gestion: false })]) expect(g.items.map(([h]) => h)).not.toContain(PERFIL_OS);
+    expect(RUTAS_MENU_OS).toContain(PERFIL_OS);
+  });
+
+  it("los destinos de la consultoría que repite el menú de /os son los cinco de siempre, en el mismo orden", () => {
+    expect(CONSULTORIA).toEqual(CINCO);
+  });
+
+  it("el layout del portal y el de /os pasan los grupos a NavCliente; sin grupos, la barra es la de siempre", () => {
+    // En el portal, solo si la base ya tiene RENASER OS (`conOS`): el código puede llegar antes que la migración.
+    expect(layoutCliente).toMatch(/<NavCliente[\s\S]*?grupos=\{conOS \? gruposOS\(/);
+    expect(layoutCliente).toMatch(/const conOS = !!companyId && !sinOS;/);
+    expect(layoutOS).toMatch(/<NavCliente[\s\S]*?grupos=\{gruposOS\(c\)\}/);
+    expect(layoutOS.match(/<NavCliente\b/g) ?? []).toHaveLength(1);
+    // El personal no recibe los destinos de la consultoría: solo quien la tiene.
+    expect(layoutOS).toMatch(/enlaces=\{c\.consultoria \? CONSULTORIA : \[\]\}/);
+    expect(navCliente).toMatch(/grupos\?: GrupoMenu\[\]/);
+  });
+
+  it("la barra de la consultora enlaza el pulso de empresas y los avisos de clientes, y las dos pantallas existen", () => {
+    expect(LATERAL).toContainEqual({ href: "/pulso", nombre: "Pulso de empresas" });
+    expect(LATERAL).toContainEqual({ href: "/pulso/avisos", nombre: "Avisos de clientes" });
+    expect(RUTAS_CONSULTORA).toEqual(expect.arrayContaining(["/pulso", "/pulso/avisos"]));
+    // El pulso no se enciende cuando se está en sus avisos.
+    expect(navConsultor).toMatch(/item\("\/pulso", "Pulso de empresas", "pulso", true\)/);
   });
 });
