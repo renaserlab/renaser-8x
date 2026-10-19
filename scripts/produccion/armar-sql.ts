@@ -43,14 +43,17 @@ export const YA_EN_PRODUCCION: readonly string[] = [
   // Aplicada en producción el 19-10-2026 (CLI de Supabase, una sola transacción, después de un ensayo que se deshizo
   // a propósito). Comprobado: 16 tablas con RLS y sin permisos para el navegador, 7 funciones, pg_cron con sus 5 trabajos.
   "migracion-renaser-os.sql",
+  // Aplicada en producción el 19-10-2026, igual que RENASER OS: ensayo que se deshizo a propósito y después en una sola
+  // transacción. Comprobado: 8 tablas con RLS y sin permisos para el navegador, 12 funciones solo del servidor, el check
+  // de company_metricas.origen con 'caja', el disparador «la caja manda» y las 124 cifras de antes sin cambios.
+  "migracion-finanzas.sql",
 ];
 
 /**
- * LO QUE DESCRIBE LA PRÓXIMA TANDA: FINANZAS (19-10-2026), una sola migración, supabase/migracion-finanzas.sql. La
- * ensaya tests/sql/paso-a-produccion.test.ts. La tanda anterior (estrategia y RENASER OS), con su ensayo completo, está
- * en el historial del repositorio, commit 4fdb45b. Cuando Finanzas esté en producción, su archivo pasa a
- * YA_EN_PRODUCCION, estas listas vuelven a quedar vacías y armarSql vuelve a decir NADA_PENDIENTE (la prueba ensaya
- * también ese caso, con un orden simulado).
+ * LO QUE DESCRIBE LA PRÓXIMA TANDA. Hoy no hay nada pendiente, así que todas estas listas están vacías. Cuando nazca
+ * una migración nueva, se llenan con lo suyo y tests/sql/paso-a-produccion.test.ts vuelve a ensayarla. Las tandas
+ * anteriores, con su ensayo completo, están en el historial del repositorio: estrategia y RENASER OS en el commit
+ * 4fdb45b, Finanzas en el b6b55a7.
  *
  * - CHECKS_AMPLIADOS: tabla, un valor que ya admitía y uno nuevo que debe admitir; el archivo comprueba al final que
  *   de verdad los admita (con la lista vacía ese bloque no se escribe: un `values` vacío es un error de sintaxis).
@@ -60,39 +63,11 @@ export const YA_EN_PRODUCCION: readonly string[] = [
  *   las reglas de la aplicación). Las de los disparadores no van: no se llaman, las dispara la base.
  * - QUE_HACE: la cabecera del archivo, con la verdad de lo que está pendiente hoy y no la de una tanda anterior.
  */
-export const CHECKS_AMPLIADOS: readonly (readonly [string, string, string])[] = [
-  // «Tus números» admite lo que sale de la caja: company_metricas.origen ya admitía 'calculado' y ahora también 'caja'.
-  ["company_metricas", "calculado", "caja"],
-];
-export const TABLAS_NUEVAS: readonly string[] = [
-  "fin_categorias", "fin_saldos_iniciales", "fin_movimientos", "fin_cierres", "fin_cobros", "fin_cobro_pagos",
-  "fin_pagos_recurrentes", "fin_pagos_hechos",
-];
-/** Ninguna: Finanzas no añade columnas a tablas que ya existían (amplía un check). */
+export const CHECKS_AMPLIADOS: readonly (readonly [string, string, string])[] = [];
+export const TABLAS_NUEVAS: readonly string[] = [];
 export const COLUMNAS_NUEVAS: readonly string[] = [];
-export const FUNCIONES_SOLO_SERVIDOR: readonly string[] = [
-  // Ayudantes: el día de la empresa, sus categorías de arranque y la sincronización con «Tus números».
-  "fin_hoy", "fin_asegurar_categorias", "fin_escribir_metrica", "fin_retirar_metricas", "fin_sincronizar_mes",
-  "fin_sincronizar_actual",
-  // Lo que se hace en una sola operación: pagar (y anular) un cobro o un pago recurrente, cerrar y reabrir un mes.
-  "fin_registrar_pago_cobro", "fin_anular_pago_cobro", "fin_pagar_recurrente", "fin_anular_pago_hecho", "fin_cerrar_mes",
-  "fin_reabrir_mes",
-];
-export const QUE_HACE: readonly string[] = [
-  "QUÉ HACE: añade Finanzas (la caja de cada empresa) en 8 tablas con RLS y sin permisos para el navegador: fin_categorias",
-  "(cada una dice a qué número va: venta, costo variable, gasto fijo o ninguno), fin_saldos_iniciales, fin_movimientos",
-  "(en soles o dólares), fin_cierres (el cierre de cada mes, con su tipo de cambio), fin_cobros y fin_cobro_pagos (lo que",
-  "le deben), fin_pagos_recurrentes y fin_pagos_hechos (lo que paga cada mes). 12 funciones que solo ejecuta el servidor",
-  "(pagar un cobro o un pago recurrente, anular un pago, cerrar o reabrir un mes, cada uno en una sola operación).",
-  "LA CAJA ALIMENTA A «TUS NÚMEROS»: amplía el check company_metricas.origen con 'caja', y unos disparadores escriben en",
-  "company_metricas, en cuanto algo cambia, las cifras del mes (venta_mes, costo_variable_mes, gasto_fijo_mes,",
-  "ganancia_mes) y las de hoy (caja_hoy, deuda_clientes, deuda_propia). Otro disparador en company_metricas",
-  "(company_metricas_la_caja_manda) hace que la caja mande: lo que quiera pisar una cifra de la caja no la cambia (lo",
-  "de un documento queda al lado, en cifra_desplazada). No cambia ningún dato existente: las tablas nacen vacías y",
-  "company_metricas solo se escribe cuando una empresa registra algo en Finanzas.",
-  "PARA DESHACERLO: supabase/revertir/migracion-finanzas.sql (quita los disparadores y las funciones, y aparta las tablas",
-  "con el sufijo _retirada, sin borrar nada).",
-];
+export const FUNCIONES_SOLO_SERVIDOR: readonly string[] = [];
+export const QUE_HACE: readonly string[] = [];
 
 /** Lo que se dice cuando no hay nada que pasar a producción: mejor eso que un archivo vacío que alguien pegue. */
 export const NADA_PENDIENTE = "No hay migraciones pendientes: producción ya tiene todo lo de supabase/orden-aplicacion.json.";
