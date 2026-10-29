@@ -7,9 +7,12 @@ import { numerosQueFaltan } from "@/lib/siguiente-accion";
 import { TIPO_TRABAJO_TEXTO } from "@/lib/ruta";
 import { fechaDia } from "@/lib/medicion";
 import { leer } from "@/components/negocio/datos";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+import { ErrorDeLinea } from "@/lib/producto";
 import { TableroDiagnostico } from "@/components/diagnostico/TableroDiagnostico";
 import { PedirAlCliente } from "@/components/diagnostico/PedirAlCliente";
 import { FichaDeTrabajo } from "@/components/consultor/FichaDeTrabajo";
+import { ProximaSesion } from "@/components/consultor/ProximaSesion";
 import { ActivarParaCliente } from "@/components/consultor/ActivarParaCliente";
 
 export const dynamic = "force-dynamic";
@@ -38,12 +41,34 @@ const NOTA_INCONGRUENCIAS = NOTA_PEDIDO.incongruencias!;
  */
 export default async function Diagnostico({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [h, trabajo] = await Promise.all([leerHechosDiagnostico(id, { para: "consultora" }), leer("el trabajo de la empresa", () => leerTrabajoEmpresa(id))]);
+  const [h, trabajo, sesion] = await Promise.all([
+    leerHechosDiagnostico(id, { para: "consultora" }),
+    leer("el trabajo de la empresa", () => leerTrabajoEmpresa(id)),
+    // Los dos campos que la consultora escribe a mano. Si la migración de las correcciones todavía
+    // no está aplicada, la lectura falla y el panel lo dice en vez de mostrarse vacío.
+    leer("la próxima sesión", async () => {
+      const { data, error } = await supabaseAdmin().from("companies").select("proxima_sesion,enlace_reunion").eq("id", id).single();
+      // Se lanza con el tipo que `leer` sabe clasificar: así, mientras la migración no esté
+      // aplicada, el panel dice que falta la migración en vez de «no se pudo leer», que es un
+      // mensaje que manda a buscar el problema donde no está.
+      if (error) throw new ErrorDeLinea(error.message, error.code ?? null);
+      return data as { proxima_sesion: string | null; enlace_reunion: string | null };
+    }),
+  ]);
   const t = armarDiagnostico(h, "consultora");
   const base = `/empresa/${id}`;
   const zona = t.config.zona_horaria;
   const pedidoCorroborar = t.loQueFalta.find((f) => f.clave === "incongruencias")?.pedido ?? null;
   const fichaAbierta = trabajo.ok && (!trabajo.valor.tipo_trabajo || !trabajo.valor.ruta_inicio);
+  // Cuántos pedidos tiene abiertos el dueño ahora mismo, y si nunca se le pidió nada. Si no se pudo leer
+  // (null) no se abre sola: abrir un panel que no sabe lo que ya está pedido invita a pedirlo dos veces.
+  const activas = h.solicitudes?.filter((s) => s.estado === "activa").length ?? 0;
+  const entregadas = h.solicitudes?.filter((s) => s.estado === "completada").length ?? 0;
+  const sinPedirNada = h.solicitudes != null && h.solicitudes.length === 0;
+  // Nada abierto es nada abierto, se le haya pedido antes o no: en los dos casos el panel se abre solo, porque en
+  // los dos hay algo que hacer —pedirle lo primero, o leer lo que ya entregó—. Decir «todavía no le has pedido
+  // nada» cuando entregó cinco pedidos es mentirle a la única pantalla que avisa de que hay cosas por leer.
+  const nadaAbierto = h.solicitudes != null && activas === 0;
 
   const accionFalta = (f: ItemFalta) =>
     f.seccion ? (
@@ -71,6 +96,31 @@ export default async function Diagnostico({ params }: { params: Promise<{ id: st
         ) : null
       }
     >
+      <section className="tarjeta a-lo-ancho" aria-label="Próxima sesión">
+        <details id="sesion" open={sesion.ok && !sesion.valor.proxima_sesion ? undefined : true} style={{ scrollMarginTop: 90 }}>
+          <summary className="t-seccion" style={{ cursor: "pointer", minHeight: 44, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            Próxima sesión
+            {sesion.ok && sesion.valor.proxima_sesion ? (
+              <span className="t-dato" style={{ color: "var(--grafito)", fontFamily: "var(--font-ui)" }}>
+                {fechaDia(sesion.valor.proxima_sesion)}
+              </span>
+            ) : sesion.ok ? (
+              <span className="estado espera">sin fecha</span>
+            ) : null}
+          </summary>
+          <div style={{ marginTop: 12 }}>
+            {sesion.ok ? (
+              <ProximaSesion companyId={id} proximaSesion={sesion.valor.proxima_sesion} enlaceReunion={sesion.valor.enlace_reunion} />
+            ) : (
+              <p className="t-dato" style={{ color: "var(--caducado)" }}>
+                {sesion.falta
+                  ? "Falta aplicar supabase/migracion-correcciones-auditoria.sql: sin ella no hay dónde anotar la próxima sesión ni su enlace."
+                  : "No se pudo leer la próxima sesión de esta empresa: vuelve a cargar la página."}
+              </p>
+            )}
+          </div>
+        </details>
+      </section>
       <section className="tarjeta a-lo-ancho" aria-label="Ficha de trabajo">
         <details id="ficha" open={fichaAbierta || undefined} style={{ scrollMarginTop: 90 }}>
           <summary className="t-seccion" style={{ cursor: "pointer", minHeight: 44, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
@@ -94,13 +144,30 @@ export default async function Diagnostico({ params }: { params: Promise<{ id: st
           </div>
         </details>
       </section>
-      <section className="tarjeta a-lo-ancho" aria-label="Todo lo que se le puede pedir">
-        <details>
-          <summary className="t-seccion" style={{ cursor: "pointer", minHeight: 44, display: "flex", alignItems: "center" }}>
-            Todo lo que se le puede pedir
+      {/* LA LLAVE CON LA QUE EL DUEÑO LLENA SUS PROPIOS DATOS. Estaba aquí desde el 16-10 y no se usó nunca en
+          ninguna de las cinco empresas: vivía en un plegado sin nombre propio, al pie de la pantalla, sin decir
+          cuántos pedidos hay ni para qué sirve. Ahora el título dice en qué estado está y, cuando no se le ha
+          pedido NADA todavía, se abre sola: ese es justo el día en que hace falta verla. */}
+      <section className="tarjeta a-lo-ancho" aria-label="Lo que le pides al dueño">
+        <details id="pedir" open={nadaAbierto || undefined} style={{ scrollMarginTop: 90 }}>
+          <summary className="t-seccion" style={{ cursor: "pointer", minHeight: 44, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            Lo que le pides al dueño
+            {h.solicitudes == null ? (
+              <span className="estado espera">no se pudo leer</span>
+            ) : activas ? (
+              <span className="estado ok">{activas === 1 ? "1 pedido abierto" : `${activas} pedidos abiertos`}</span>
+            ) : sinPedirNada ? (
+              <span className="estado espera">todavía no le has pedido nada</span>
+            ) : entregadas ? (
+              <span className="estado ok">{entregadas === 1 ? "1 entregado, nada abierto" : `${entregadas} entregados, nada abierto`}</span>
+            ) : (
+              <span className="estado espera">nada abierto</span>
+            )}
           </summary>
           <p className="t-dato" style={{ color: "var(--grafito)", margin: "4px 0 12px" }}>
-            Marca lo que el dueño tiene que llenar, confirmar o subir. Lo ve en su Inicio y en «Lo que te pidió tu consultora».
+            Así es como el dueño llena sus propios datos: marca lo que tiene que llenar, confirmar o subir y se le
+            abre esa pantalla en su portal. Sin esto, sus pantallas de productos, gastos, historia, moneda, crédito
+            e inventario están cerradas y no puede escribir en ellas.
           </p>
           <ActivarParaCliente
             companyId={id}

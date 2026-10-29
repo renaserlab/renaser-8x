@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { BRECHAS, ESTANDARES, ESTRUCTURA, INDICADORES_RUBRO, NORMATIVA, PROCESOS } from "@/lib/metodo";
 
 export const Pilar = z.enum(["personas", "procesos", "producto", "marketing", "transversal"]);
 export const TipoClaim = z.enum(["vision", "proposito", "meta", "proceso", "rol", "kpi", "precio", "politica", "cliente", "producto", "canal", "otro"]);
@@ -351,8 +352,14 @@ export const SalidaModeloAltoRendimiento = z.object({
       meta: z.string().min(2).max(200),
       origen: z.enum(["practica_de_industria", "norma_verificar_asesoria"]).catch("practica_de_industria"),
     }))
-    .min(3).max(10),
-  estructura_tipo: z.array(z.object({ puesto: z.string().min(3).max(80), mision: z.string().min(10).max(300) })).min(3).max(12),
+    .min(ESTANDARES.minimo).max(ESTANDARES.tope),
+  estructura_tipo: z
+    .array(z.object({ puesto: z.string().min(3).max(80), mision: z.string().min(10).max(300) }))
+    .min(ESTRUCTURA.minimo).max(ESTRUCTURA.tope),
+  // La cantidad de procesos del rubro es EXPECTATIVA, no tope (ver src/lib/metodo.ts): lo normal
+  // son 10 a 15, pero un negocio con varias sedes y líneas puede necesitar más y se le permite,
+  // a cambio de explicar por qué en por_que_mas_de_lo_esperado. El tope absoluto solo frena una
+  // lista desbocada, no acota el método.
   procesos_imprescindibles: z
     .array(z.object({
       nombre: z.string().min(3).max(100),
@@ -360,10 +367,156 @@ export const SalidaModeloAltoRendimiento = z.object({
       detalle_minimo: z.string().min(10).max(400),
       la_empresa_lo_tiene: z.enum(["si", "parcial", "no", "sin_dato"]).catch("sin_dato"),
     }))
-    .min(5).max(20),
+    .min(PROCESOS.captura.minimo).max(PROCESOS.sistematizacion.tope_tecnico),
+  por_que_mas_de_lo_esperado: z.string().min(15).max(500).nullable().optional(),
   numeros_de_clase_mundial: z
     .array(z.object({ nombre: z.string().min(3).max(120), como_se_mide: z.string().min(10).max(300), meta_referencia: z.string().min(2).max(200) }))
-    .min(3).max(10),
-  normativa: z.array(z.object({ obligacion: z.string().min(5).max(300), detalle: z.string().min(10).max(400) })).max(8),
-  las_tres_brechas_mayores: z.array(z.string().min(15).max(400)).min(1).max(3),
-});
+    .min(INDICADORES_RUBRO.minimo).max(INDICADORES_RUBRO.tope),
+  normativa: z.array(z.object({ obligacion: z.string().min(5).max(300), detalle: z.string().min(10).max(400) })).max(NORMATIVA.tope),
+  las_tres_brechas_mayores: z.array(z.string().min(15).max(400)).min(BRECHAS.minimo).max(BRECHAS.tope),
+})
+  // Pasarse de lo esperado se permite; pasarse EN SILENCIO no. Esta es la mitad que convierte una
+  // expectativa en algo distinto de un tope.
+  .superRefine((v, ctx) => {
+    const n = v.procesos_imprescindibles.length;
+    if (n > PROCESOS.sistematizacion.esperado_max && !v.por_que_mas_de_lo_esperado) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["por_que_mas_de_lo_esperado"],
+        message: `Devolviste ${n} procesos y lo normal son ${PROCESOS.sistematizacion.esperado_min} a ${PROCESOS.sistematizacion.esperado_max}. Pasarse se permite, pero hay que explicar qué tiene este negocio que lo obliga.`,
+      });
+    }
+  });
+
+/**
+ * LA SELECCIÓN DE PROCESOS. El paso que faltaba entre la vara del rubro y el dibujo de un proceso.
+ *
+ * El modelo del rubro dice qué procesos exige el sector (10-15 normalmente). El arquitecto dibuja
+ * UNO cuando alguien lo cuenta. En medio no había nada que decidiera CUÁLES. Eso obligaba al
+ * consultor a elegir de memoria, y a la empresa que no tiene nada escrito le caía una lista de
+ * quince procesos encima.
+ *
+ * Devuelve dos listas que NO son la misma cosa, y confundirlas es el error que esto evita:
+ *   · para_contar: hasta 8 (tope). Lo que le pedimos que nos cuente cuando no tiene nada claro.
+ *   · mueven_las_ruedas: 1 a 3 (tope). Donde intervenimos de verdad.
+ * Darren dice tres; Kelin dice hasta ocho. No se contradicen: son estos dos campos.
+ */
+export const SalidaSeleccionProcesos = z
+  .object({
+    para_contar: z
+      .array(
+        z.object({
+          nombre: z.string().min(3).max(100),
+          por_que_este: z.string().min(15).max(400),
+          que_preguntarle: z.string().min(15).max(500),
+          ya_lo_tiene_levantado: z.boolean().catch(false),
+        })
+      )
+      .max(PROCESOS.captura.tope),
+    mueven_las_ruedas: z
+      .array(
+        z.object({
+          nombre: z.string().min(3).max(100),
+          por_que_mueve_todo: z.string().min(20).max(500),
+          que_desbloquea: z.string().min(15).max(400),
+          apoyado_en: z.string().min(10).max(400),
+        })
+      )
+      .min(PROCESOS.intervencion.minimo)
+      .max(PROCESOS.intervencion.tope),
+    lo_que_no_se_pide: z.array(z.string().min(5).max(200)).default([]),
+    nota_para_la_consultora: z.string().min(20).max(900),
+  })
+  .superRefine((v, ctx) => {
+    // Las claves de intervención tienen que salir de lo que se va a conocer o de lo ya levantado.
+    // Intervenir un proceso que nadie va a contar es intervenir a ciegas.
+    const conocidos = new Set(v.para_contar.map((p) => p.nombre.toLowerCase().trim()));
+    for (const [i, m] of v.mueven_las_ruedas.entries()) {
+      const n = m.nombre.toLowerCase().trim();
+      const calza = conocidos.has(n) || [...conocidos].some((c) => c.includes(n) || n.includes(c));
+      if (!calza && !/ya levantado|ya lo tiene|ya existe/i.test(m.apoyado_en)) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["mueven_las_ruedas", i, "nombre"],
+          message: `«${m.nombre}» es clave de intervención y no está en para_contar ni se dice que ya esté levantado. Una clave que nadie va a contar se interviene a ciegas: o entra en para_contar, o en apoyado_en se dice que ya está levantado.`,
+        });
+      }
+    }
+  });
+
+/**
+ * LA REVISIÓN DE UN DOCUMENTO CONTRA SU VARA.
+ *
+ * Lo que el cliente entrega es materia prima, no producto terminado: entra, se mide contra la vara
+ * de su tipo, y sale una propuesta de mejora. Esta es la salida de esa medición.
+ *
+ * POR QUÉ UN VEREDICTO POR CADA EXIGENCIA Y NO UN TEXTO LIBRE. Un informe en prosa deja que el
+ * modelo hable de lo que le llamó la atención y calle lo demás. Obligando a un veredicto por
+ * exigencia, la revisión es exhaustiva por construcción: si la vara tiene 16 exigencias, vienen
+ * 16 respuestas o el esquema la rechaza.
+ *
+ * Y NO REESCRIBE NADA. Devuelve qué conservar y qué mejorar. Sustituir un documento vigente es una
+ * decisión de quien tiene autoridad, nunca del agente que lo revisó.
+ */
+export const SalidaRevisionDocumental = z.object({
+  tipo_detectado: z.string().min(3).max(120),
+  es_el_tipo_esperado: z.boolean(),
+  veredicto: z.enum(["cumple", "entregable_con_observaciones", "no_entregable"]),
+  verdictos: z
+    .array(
+      z.object({
+        numero: z.number().int().min(1),
+        cumple: z.enum(["si", "no", "no_aplica"]),
+        // Qué se encontró —o no— en el documento. Es lo que hace auditable el veredicto: sin la
+        // cita, «no cumple» es una opinión del modelo.
+        evidencia: z.string().min(15).max(700),
+        que_falta: z.string().max(600).nullable().optional(),
+      })
+    )
+    .min(1)
+    .max(20),
+  que_se_conserva: z.array(z.string().min(15).max(400)).min(1),
+  contradicciones_con_lo_vigente: z
+    .array(
+      z.object({
+        dice_el_documento: z.string().min(10).max(400),
+        dice_lo_vigente: z.string().min(10).max(400),
+        cual_manda: z.string().min(10).max(300),
+      })
+    )
+    .default([]),
+  relleno_encontrado: z.array(z.string().min(10).max(400)).default([]),
+  mejoras_propuestas: z
+    .array(
+      z.object({
+        que: z.string().min(15).max(500),
+        por_que: z.string().min(15).max(500),
+        cuesta: z.enum(["minutos", "horas", "dias"]),
+      })
+    )
+    .min(1)
+    .max(12),
+  para_asesor_legal: z.array(z.string().min(15).max(500)).default([]),
+  no_se_pudo_comprobar: z.array(z.string().min(10).max(400)).default([]),
+})
+  // Un documento que no cumple alguna exigencia OBLIGATORIA no puede salir «cumple». El veredicto
+  // se deduce de los hechos, no lo elige el modelo.
+  .superRefine((v, ctx) => {
+    const incumple = v.verdictos.some((x) => x.cumple === "no");
+    if (incumple && v.veredicto === "cumple") {
+      ctx.addIssue({
+        code: "custom",
+        path: ["veredicto"],
+        message: "Hay exigencias que el documento no cumple: el veredicto no puede ser «cumple». El veredicto sale de los veredictos, no al revés.",
+      });
+    }
+    for (const x of v.verdictos) {
+      if (x.cumple === "no" && !x.que_falta) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["verdictos"],
+          message: `La exigencia ${x.numero} no se cumple y no se dice qué falta. Un «no cumple» sin qué falta no sirve para mejorar nada.`,
+        });
+      }
+    }
+  });

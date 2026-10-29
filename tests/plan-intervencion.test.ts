@@ -32,7 +32,7 @@ import { readFileSync, readdirSync } from "fs";
 import path from "path";
 
 type Fila = Record<string, unknown>;
-type Operacion = "select" | "update" | "insert";
+type Operacion = "select" | "update" | "insert" | "delete";
 const base = vi.hoisted(() => ({
   tablas: {} as Record<string, Fila[]>,
   escrituras: [] as { tabla: string; op: Operacion; datos: Fila }[],
@@ -62,6 +62,12 @@ vi.mock("@/lib/supabase/admin", () => {
         return { data: objetivo, error: null, count: null };
       }
       if (modo === "insert") return { data: insertada ? [insertada] : [], error: null, count: null };
+      if (modo === "delete") {
+        const objetivo = filas();
+        base.tablas[tabla] = (base.tablas[tabla] ?? []).filter((f) => !objetivo.includes(f));
+        base.escrituras.push({ tabla, op: "delete", datos: { _ids: objetivo.map((f) => f.id) } });
+        return { data: objetivo, error: null, count: null };
+      }
       const d = filas();
       return { data: soloConteo ? null : d, error: null, count: d.length };
     };
@@ -74,6 +80,9 @@ vi.mock("@/lib/supabase/admin", () => {
       not: (k: string, _op: string, v: unknown) => { filtros.push((f) => f[k] != null && f[k] !== v); return q; },
       gt: (k: string, v: unknown) => { filtros.push((f) => String(f[k]) > String(v)); return q; },
       update: (datos: Fila) => { modo = "update"; cuerpo = datos; return q; },
+      // Borrar solo se usa para retirar lo que acaba de nacer y no debió nacer (una acción cuyo historial
+      // no entró). Nada del plan se borra en la aplicación: se rechaza o se pospone.
+      delete: () => { modo = "delete"; return q; },
       insert: (datos: Fila) => {
         modo = "insert";
         const fallo = base.fallar[tabla];
@@ -115,6 +124,7 @@ import { AccesoDenegado, perfilApi, type Perfil } from "@/lib/auth";
 import { registrar } from "@/lib/auditoria";
 import { PATCH as verificarConEvidencia } from "@/app/api/companies/[id]/evidencia/route";
 import { POST as pedirTransicion } from "@/app/api/actions/[id]/transicion/route";
+import { POST as escribirAccion } from "@/app/api/companies/[id]/plan/accion/route";
 import { POST as registrarCorte } from "@/app/api/companies/[id]/close/route";
 
 const EMP = "0000000a-0000-4000-8000-00000000000a";
@@ -927,6 +937,8 @@ describe("la capa que toca la base, con dobles de supabaseAdmin: la regla corta 
   const LB_V2 = "b2000000-0000-4000-8000-000000000002";
   const LB_V1 = "b1000000-0000-4000-8000-000000000001";
   const PART = "p1000000-0000-4000-8000-000000000001";
+  /** Un participante con UUID válido: la ruta nueva valida la forma antes de preguntarle a la base. */
+  const PART_UUID = "c1000000-0000-4000-8000-00000000000c";
   const idDe = (n: number) => `a${n}000000-0000-4000-8000-00000000000${n}`;
   const fila = (n: number, estado: string, extra: Partial<AccionPlan> = {}) => completa(estado, { id: idDe(n), accion: `Frente ${n}`, linea_base_id: null, ...extra });
   const guardada = (n: number) => base.tablas.actions.find((x) => x.id === idDe(n)) as Fila;
@@ -939,7 +951,10 @@ describe("la capa que toca la base, con dobles de supabaseAdmin: la regla corta 
         { id: LB_V2, company_id: EMP, tipo: "linea_base", version: 2, vigente: true, fecha: "2026-10-01" },
         { id: LB_V1, company_id: EMP, tipo: "linea_base", version: 1, vigente: false, fecha: "2026-09-01" },
       ],
-      participants: [{ id: PART, company_id: EMP, nombre: "Carlos Quispe", puesto: "Jefe de taller", rol: "lider" }],
+      participants: [
+        { id: PART, company_id: EMP, nombre: "Carlos Quispe", puesto: "Jefe de taller", rol: "lider" },
+        { id: PART_UUID, company_id: EMP, nombre: "Rosa Ayala", puesto: "Almacén", rol: "participante" },
+      ],
       actions: [], accion_historial: [], evidencias: [], indicador_valores: [], indicadores: [],
     };
     base.escrituras = [];
@@ -1440,6 +1455,94 @@ describe("la capa que toca la base, con dobles de supabaseAdmin: la regla corta 
       expect((await corte({ ventas: { enero: 1 } })).cuerpo.error).toMatch(/Llegaron con otra forma y no se guardó nada.$/);
       expect(base.tablas.checkpoints).toEqual([]);
       expect(base.escrituras).toEqual([]);
+    });
+  });
+
+
+  describe("POST /api/companies/[id]/plan/accion · escribir una acción a mano (28-10-2026)", () => {
+    // POR QUÉ EXISTE ESTA RUTA. La única puerta por la que nacía una fila de `actions` era el planificador de
+    // IA. Sin crédito, sin hallazgos aprobados, o con un frente que la consultora decidió en la reunión y no
+    // sale de ningún hallazgo, la pantalla del plan era una tabla vacía con un botón que llama al modelo. Un
+    // plan que solo puede escribir una máquina no es el plan de la consultora.
+    type Ctx = { params: Promise<{ id: string }> };
+    const escribir = async (perfil: Perfil | null, cuerpo: Fila, empresa = EMP) => {
+      vi.mocked(perfilApi).mockResolvedValue(perfil);
+      const req = new Request(`http://8x.test/api/companies/${empresa}/plan/accion`, { method: "POST", body: JSON.stringify(cuerpo), headers: { "content-type": "application/json" } });
+      const res = await escribirAccion(req, { params: Promise.resolve({ id: empresa }) } as Ctx);
+      return { status: res.status, cuerpo: (await res.json()) as Fila };
+    };
+
+    beforeEach(() => {
+      vi.mocked(perfilApi).mockReset();
+      vi.mocked(registrar).mockClear();
+      base.tablas.actions = [];
+      base.tablas.accion_historial = [];
+    });
+
+    it("nace PROPUESTA, con su fila de historial de quién la propuso, y dice qué le falta para aprobarse", async () => {
+      const r = await escribir(PERFIL_C, { accion: "Llamar a los diez clientes que más deben y acordar un calendario" });
+      expect(r.status, JSON.stringify(r.cuerpo)).toBe(201);
+      const guardada = base.tablas.actions![0]!;
+      expect(guardada).toMatchObject({ company_id: EMP, estado: "propuesto", fase: "implementacion", accion: "Llamar a los diez clientes que más deben y acordar un calendario" });
+      // Una decisión deja rastro; un apunte no. Esto es una decisión.
+      expect(base.tablas.accion_historial).toHaveLength(1);
+      expect(base.tablas.accion_historial![0]).toMatchObject({ action_id: guardada.id, accion: "proponer", actor_id: PERFIL_C.id, actor_rol: "consultor" });
+      // Y la respuesta trae la lista de lo que le falta: no se aprueba sola.
+      expect(r.cuerpo.falta as string[]).toEqual(expect.arrayContaining([expect.stringMatching(/objetivo empresarial/)]));
+      expect(registrar).toHaveBeenCalledWith(expect.objectContaining({ companyId: EMP, accion: "crear", entidad: "accion" }));
+    });
+
+    it("con los seis mínimos llenos sale sin nada pendiente: escribirla entera y aprobarla es un mismo trámite", async () => {
+      const r = await escribir(PERFIL_C, {
+        accion: "Separar la palta por madurez al recibirla",
+        objetivo_empresarial: "Dejar de perder mercadería en el almacén",
+        resultado_esperado: "De cada 10 cajas, 1 o 2 menos se pierden",
+        responsable_participant_id: PART_UUID,
+        fecha_inicio: "2026-11-02",
+        vence_at: "2026-11-15",
+        criterio_aceptacion: "Las cajas llegan separadas tres días seguidos",
+        // Con indicador formal o con el motivo de no tenerlo: la regla admite las dos (queLeFalta).
+        kpi: "Cajas devueltas en la puerta (todavía sin indicador formal)",
+      });
+      expect(r.status, JSON.stringify(r.cuerpo)).toBe(201);
+      expect(r.cuerpo.falta).toEqual([]);
+    });
+
+    it("sin texto no hay acción: una fila que no dice qué se hace no es una acción", async () => {
+      expect((await escribir(PERFIL_C, { accion: "   " })).status).toBe(400);
+      expect(base.tablas.actions).toEqual([]);
+    });
+
+    it("la fecha de vencimiento no puede ser anterior a la de inicio, y no se escribe nada", async () => {
+      const r = await escribir(PERFIL_C, { accion: "Cualquier cosa", fecha_inicio: "2026-11-10", vence_at: "2026-11-02" });
+      expect(r.status).toBe(400);
+      expect(String(r.cuerpo.error)).toContain("anterior a la de inicio");
+      expect(base.tablas.actions).toEqual([]);
+    });
+
+    it("lo que apunta a una persona o a un indicador tiene que ser de ESTA empresa, y se comprueba ANTES de insertar", async () => {
+      const r = await escribir(PERFIL_C, { accion: "Cualquier cosa", responsable_participant_id: "b0000000-0000-4000-8000-00000000000b" });
+      expect(r.status).toBe(400);
+      expect(String(r.cuerpo.error)).toContain("no está registrada en el equipo");
+      // Ni un instante con una referencia de otra empresa.
+      expect(base.tablas.actions).toEqual([]);
+      expect(base.tablas.accion_historial).toEqual([]);
+    });
+
+    it("el dueño no escribe el plan: el plan es de la consultora", async () => {
+      const r = await escribir(PERFIL_D, { accion: "Me apruebo una acción" });
+      expect(r.status).toBe(403);
+      expect(base.tablas.actions).toEqual([]);
+    });
+
+    it("si el historial no entra, la acción NO se queda: acaba de nacer y nadie la ha tocado", async () => {
+      base.fallar.accion_historial = { op: "insert", mensaje: "la relación users no existe" };
+      const r = await escribir(PERFIL_C, { accion: "Una acción sin rastro de quién la propuso" });
+      expect(r.status).toBe(500);
+      expect(String(r.cuerpo.error)).toContain("historial no se pudo guardar");
+      // Y la fila se retiró: lo que importa es que no quede una acción huérfana de quién la propuso.
+      expect(base.tablas.actions).toEqual([]);
+      expect(base.escrituras.filter((e) => e.op === "delete")).toHaveLength(1);
     });
   });
 

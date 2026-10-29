@@ -23,7 +23,13 @@ export const POST = protegido<Ctx>({ cupo: "ia" }, async (perfil, req, ctx) => {
   const sb = supabaseAdmin();
   const { data: s, error } = await sb
     .from("sources")
-    .insert({ company_id: id, tipo: "documento", nombre: `${def.nombre} (construido contigo)`, fecha_origen: new Date().toISOString().slice(0, 10), contenido: texto, origen: "cliente", estado: "subido" })
+    // ORIGEN «consultor», NO «cliente». Decía «cliente» y era un error con consecuencia: el documento
+    // que 8X acababa de escribir volvía a entrar como materia prima aportada por la empresa, y
+    // quedaba firmado como si lo hubiera entregado la dueña. Dos cosas se rompían con eso: el
+    // expediente dejaba de distinguir lo que la empresa ya tenía de lo que nosotros produjimos —que
+    // es la frontera que gobierna qué se mide y qué se mejora—, y ante el cliente desaparecía la
+    // prueba de nuestro trabajo. La columna ya admite «consultor» y hay filas con ese valor.
+    .insert({ company_id: id, tipo: "documento", nombre: `${def.nombre} (construido contigo)`, fecha_origen: new Date().toISOString().slice(0, 10), contenido: texto, origen: "consultor", estado: "subido" })
     .select("id")
     .single();
   if (error) return fallo(error.message, 500);

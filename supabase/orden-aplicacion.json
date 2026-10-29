@@ -238,6 +238,52 @@
       "por_que": "16-10. La estrategia que 8X genera sola: estrategias, estrategia_ediciones, estrategia_preguntas, funciones de etapa y de aprobación; amplía solicitudes_cliente.seccion y deliverables.tipo."
     },
     {
+      "archivo": "migracion-seleccion-procesos.sql",
+      "depende_de": [
+        "schema.sql"
+      ],
+      "por_que": "18-10. Por donde se empieza: hasta 8 procesos para pedir que los cuenten y 1 a 3 claves de intervencion. Nace en estado propuesta; la consultora aprueba antes de que el cliente la vea (regla de Kelin), con firma y fecha exigidas por restriccion."
+    },
+    {
+      "archivo": "migracion-expediente-documental.sql",
+      "depende_de": [
+        "schema.sql"
+      ],
+      "por_que": "18-10. El expediente documental: lo que cada empresa YA tiene, con aprobacion y vigencia como columnas distintas, mas las revisiones contra la vara maestra. Cierra el hueco de que 8X produjera y no recibiera."
+    },
+    {
+      "archivo": "migracion-correcciones-auditoria.sql",
+      "depende_de": [
+        "schema.sql",
+        "migracion-deriva-esquema.sql",
+        "migracion-expediente-documental.sql"
+      ],
+      "por_que": "18-10. Cuatro huecos de la auditoria: contrato_entregables (cada empresa se rige por SU contrato, no por el de un cliente cableado en el codigo); expediente_documental.activo_clave (el puente entre los dos expedientes, para que el estado del activo se derive y no se contradiga); estado, cubierto_por y estado_desde en org_puestos (cuando alguien renuncia el puesto sigue existiendo); proxima_sesion y enlace_reunion en companies (dos campos a mano, no un contador de sesiones)."
+    },
+    {
+      "archivo": "migracion-insumo.sql",
+      "que_hace": "Agrega el estado «insumo» al expediente documental: material que la empresa aportó y que no es un entregable —una transcripción, unos apuntes, un listado informal—. No se mide contra ninguna vara, no cubre ningún activo y se lee antes de escribir el documento que sí corresponde. Reemplaza el check de estados enteros, porque un check no se amplía.",
+      "depende_de": [
+        "migracion-expediente-documental.sql"
+      ]
+    },
+    {
+      "archivo": "migracion-estado-metrica.sql",
+      "que_hace": "Reemplaza el check de company_metricas.estado para que admita los cinco valores de EstadoMetrica. La base de produccion tenia un candado que ningun SQL del repositorio declaraba, admitia tres valores y el codigo escribe cinco: cada numero que el lector sacaba de un documento era rechazado, el trabajo moria y la fuente quedaba en «leyendo» para siempre. No toca un solo dato: los 124 numeros guardados usan tres de los cinco valores.",
+      "depende_de": [
+        "migracion-evidencia-dimensiones.sql"
+      ]
+    },
+    {
+      "archivo": "migracion-estrategia-al-plan.sql",
+      "depende_de": [
+        "schema.sql",
+        "migracion-evidencia-indicadores.sql",
+        "migracion-estrategia.sql"
+      ],
+      "por_que": "28-10. Dos columnas en `actions` y dos en `indicadores` para saber de qué estrategia nació cada una, con su índice único: `actions` y la clave foránea a `estrategias` las crean schema.sql y migracion-estrategia.sql; `indicadores`, migracion-evidencia-indicadores.sql."
+    },
+    {
       "archivo": "migracion-renaser-os.sql",
       "depende_de": [
         "schema.sql",

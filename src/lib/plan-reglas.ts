@@ -628,7 +628,7 @@ export type Participante = { id: string; nombre: string; puesto?: string | null;
  * «Carlos (jefe de taller)» → el participante Carlos. Coincide por nombre completo, por nombre contenido o
  * por puesto. Si coincide con más de una persona no se adivina: queda vacío y `queLeFalta` lo pide.
  */
-export function resolverResponsable(texto: string | null | undefined, participantes: Participante[]): Participante | null {
+export function resolverResponsable(texto: string | null | undefined, participantes: readonly Participante[]): Participante | null {
   const t = normalizar(texto);
   if (!t) return null;
   const palabras = new Set(t.split(" "));

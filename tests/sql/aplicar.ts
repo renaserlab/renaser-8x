@@ -154,6 +154,34 @@ export function leerOrden(carpeta: string = CARPETA_SUPABASE): EntradaOrden[] {
   });
 }
 
+/**
+ * EL ORDEN SIN ESTAS MIGRACIONES, Y SIN LAS QUE DEPENDEN DE ELLAS.
+ *
+ * Varias pruebas quitan una migracion a proposito para comprobar que la siguiente se detiene y dice cual hay que
+ * aplicar primero. Hasta hoy cada una llevaba su propia lista de exclusiones escrita a mano, y el dia que nacio una
+ * migracion que dependia de la quitada, la prueba se cayo por una razon que no tenia nada que ver con lo que
+ * comprueba: al entrar migracion-estrategia-al-plan.sql al orden, la prueba de la estrategia dejo de poder levantar
+ * su base, y la de producto y la del contraste iban detras.
+ *
+ * `depende_de` ya esta escrito en supabase/orden-aplicacion.json. Esto lo lee en vez de repetirlo, y lo sigue hacia
+ * arriba: quitar una quita tambien a sus dependientes, y a los dependientes de esos. Una lista a mano se
+ * desincroniza el dia que alguien agrega una migracion; esta no.
+ */
+export function ordenSin(nombres: readonly string[], orden: EntradaOrden[] = leerOrden()): EntradaOrden[] {
+  const fuera = new Set<string>(nombres);
+  for (let cambio = true; cambio; ) {
+    cambio = false;
+    for (const e of orden) {
+      if (fuera.has(e.archivo)) continue;
+      if ((e.depende_de ?? []).some((d) => fuera.has(d))) {
+        fuera.add(e.archivo);
+        cambio = true;
+      }
+    }
+  }
+  return orden.filter((e) => !fuera.has(e.archivo));
+}
+
 /** Todos los .sql de la carpeta, para comprobar que ninguno quede fuera del orden. */
 export function archivosSqlDe(carpeta: string = CARPETA_SUPABASE): string[] {
   return readdirSync(carpeta)

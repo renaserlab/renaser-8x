@@ -13,9 +13,19 @@ vi.mock("@/lib/supabase/admin", () => {
   type F = Record<string, unknown>;
   const consulta = (tabla: string) => {
     const filtros: ((f: F) => boolean)[] = [];
-    const filas = () => (memoria.tablas[tabla] ?? []).filter((f) => filtros.every((p) => p(f)));
+    // `range` no estaba, y el doble no fallaba diciéndolo: la lectura de líneas de producto llama a
+    // `.range()` para paginar, se encontraba con undefined y la página entera se caía por dentro
+    // con «range is not a function». La prueba no lo veía como error sino como lentitud, y pasaba
+    // o no según la carga de la máquina. Un doble al que le falta un método tiene que parecerse al
+    // de verdad, no quedarse callado: el corte es inclusivo en los dos extremos, como en Supabase.
+    let rango: [number, number] | null = null;
+    const filas = () => {
+      const f = (memoria.tablas[tabla] ?? []).filter((x) => filtros.every((p) => p(x)));
+      return rango ? f.slice(rango[0], rango[1] + 1) : f;
+    };
     const q = {
       select: () => q, order: () => q, limit: () => q,
+      range: (desde: number, hasta: number) => { rango = [desde, hasta]; return q; },
       eq: (k: string, v: unknown) => { filtros.push((f) => f[k] === v); return q; },
       neq: (k: string, v: unknown) => { filtros.push((f) => f[k] !== v); return q; },
       in: (k: string, vs: unknown[]) => { filtros.push((f) => vs.includes(f[k])); return q; },

@@ -53,6 +53,18 @@ export interface CompleteResult<T> {
    * decisión depende de él; una salida cortada por tamaño ya llega como AIValidationError con `[finishReason=MAX_TOKENS]`.
    */
   fin?: string;
+  /**
+   * CONTESTÓ EL RESPALDO, NO EL PRINCIPAL. Solo viene cuando el proveedor principal estaba SIN CRÉDITO y la llamada la
+   * atendió el de respaldo (`AI_PROVIDER_RESPALDO`, en ./index.ts). Nada se arregla en silencio: que un trabajo se haya
+   * hecho con otro modelo es un hecho que la consultora tiene que poder ver. `modelo` ya dice CUÁL contestó; esto dice
+   * que no fue el de siempre y POR QUÉ.
+   */
+  respaldo?: {
+    /** El proveedor que contestó, tal como se configuró: «anthropic» o «gemini». */
+    proveedor: string;
+    /** El «sin crédito» del principal, con sus palabras (p. ej. «Gemini 402: … credits are depleted»). */
+    porque: string;
+  };
 }
 
 export type Segmento = { desde: number; hasta: number; texto: string };

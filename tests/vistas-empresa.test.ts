@@ -70,6 +70,7 @@ const activos = (html: string) => [...html.matchAll(/<a\b[^>]*aria-current="page
 const MAPA: [string, ClaveVista, string][] = [
   ["", "diagnostico", "Resumen"],
   ["/direccion", "diagnostico", "Dirección empresarial"],
+  ["/documentos", "expediente", "Documentos"],
   ["/fuentes", "expediente", "Fuentes"],
   ["/afirmaciones", "expediente", "Afirmaciones"],
   ["/realidad", "numeros", "Matriz de realidad"],
@@ -116,7 +117,7 @@ describe("el mapa: 20 pestañas → 5 vistas + Expediente", () => {
       estructura: ["/procesos", "/organigrama"],
       estrategia: ["/estrategia", "/debe-ser"],
       avance: ["/avance", "/plan", "/revision", "/excelencia", "/entrega"],
-      expediente: ["/expediente", "/fuentes", "/afirmaciones", "/entrevista", "/dia", "/configuracion"],
+      expediente: ["/expediente", "/documentos", "/fuentes", "/afirmaciones", "/entrevista", "/dia", "/configuracion"],
     });
   });
 
@@ -503,7 +504,7 @@ describe("Expediente: lo que se levantó de la empresa y su administración", ()
     expect(h).toContain("Perú");
     expect(h).toContain("Cumplimiento legal (Perú) · 6 trabajadores");
     expect(h).toContain("184k / 2000k");
-    for (const sub of ["/fuentes", "/afirmaciones", "/entrevista", "/dia", "/configuracion"]) expect(h).toContain(`href="/empresa/${EMP}${sub}"`);
+    for (const sub of ["/documentos", "/fuentes", "/afirmaciones", "/entrevista", "/dia", "/configuracion"]) expect(h).toContain(`href="/empresa/${EMP}${sub}"`);
     expect(h).not.toMatch(EMOJI);
   });
 

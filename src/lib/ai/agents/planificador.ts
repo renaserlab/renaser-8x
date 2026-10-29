@@ -2,6 +2,7 @@ import { ai } from "..";
 import { SalidaPlanificador, SalidaRedactor, SalidaAdmision } from "@/lib/schemas";
 import { basePlan } from "@/lib/rules/base-renaser";
 import { GUARDIA, comoDato } from "@/lib/rules/patrones";
+import { FRENTES_SIMULTANEOS } from "@/lib/metodo";
 
 export const PROMPT_PLANIFICADOR = `${GUARDIA}
 
@@ -14,7 +15,7 @@ Devuelve el plan de implementacion de 45 dias (7 semanas, la ultima corta) en JS
              responsable, kpi, evidencia, impacto, finding_id }] }
 
 REGLAS:
-- Maximo 3 frentes abiertos en cualquier semana.
+- Maximo ${FRENTES_SIMULTANEOS.tope} frentes abiertos en cualquier semana.
 - Las dos primeras semanas solo llevan restricciones criticas:
   lo que desbloquea todo lo demas.
 - Todo frente tiene semana de cierre definida (1 a 7).

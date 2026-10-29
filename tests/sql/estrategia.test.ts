@@ -28,7 +28,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import path from "path";
 import { readFileSync } from "fs";
 import type { PGlite } from "@electric-sql/pglite";
-import { aplicarArchivo, aplicarTodo, baseConEsquema, consultarComo, crearBase, dividirSentencias, leerOrden, CARPETA_SUPABASE, type Rol } from "./aplicar";
+import { aplicarArchivo, aplicarTodo, baseConEsquema, consultarComo, crearBase, dividirSentencias, leerOrden, ordenSin, CARPETA_SUPABASE, type Rol } from "./aplicar";
 
 const U_A = "00000000-0000-4000-8000-0000000000a1"; // dueña de A
 const U_B = "00000000-0000-4000-8000-0000000000b1"; // dueño de B
@@ -406,7 +406,7 @@ describe("Postgres embebido (PGlite), no Supabase: migracion-estrategia.sql sin 
   beforeAll(async () => {
     // Todo el esquema menos la del 16-10 que crea solicitudes_cliente (y esta misma).
     pg = await crearBase();
-    await aplicarTodo(pg, { orden: leerOrden().filter((e) => e.archivo !== "migracion-entrar-hoy.sql" && e.archivo !== "migracion-estrategia.sql") });
+    await aplicarTodo(pg, { orden: ordenSin(["migracion-entrar-hoy.sql", "migracion-estrategia.sql"]) });
   }, 240_000);
 
   afterAll(async () => {

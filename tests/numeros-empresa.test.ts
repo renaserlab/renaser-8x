@@ -17,6 +17,8 @@
  * La empresa es FICTICIA (regla del 70a3701).
  */
 import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
+import { readFileSync } from "fs";
+import path from "path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { crearBaseFalsa, type BaseFalsa, type Fila } from "./fixtures/base-falsa";
 
@@ -452,5 +454,47 @@ describe("consultora · /empresa/[id]/numeros", () => {
     expect(h).toMatch(/<details><summary[^>]*>.*Historia del negocio/);
     // Sin ficha guardada nadie dijo si aplica: rayado, no «no aplica».
     expect(h).not.toContain(">no aplica<");
+  });
+});
+
+/**
+ * EL VOCABULARIO DEL CÓDIGO CONTRA EL CANDADO DE LA BASE.
+ *
+ * Esta prueba nace de un fallo que costó diez días y cuatro documentos. La base de producción tenía
+ * un check sobre `company_metricas.estado` que ningún SQL del repositorio declaraba, y que admitía
+ * tres valores donde el código escribe cinco. El lector de documentos escribe «extraido»: cada número
+ * que sacaba de un documento era rechazado, el trabajo moría entero y la fuente quedaba en «leyendo»
+ * para siempre. Y el mensaje de error acusaba a otra migración, que sí estaba aplicada.
+ *
+ * Son dos listas de las mismas palabras en dos archivos distintos, y nada las ataba. Es el mismo
+ * fallo que ya había aparecido el 20-10 con el estado del expediente documental: cuando se repite una
+ * forma de romperse, la guarda deja de ser para un caso y pasa a ser para la clase.
+ */
+describe("los valores que el código escribe son los que la base admite", () => {
+  const CHECK = readFileSync(path.join(__dirname, "..", "supabase", "migracion-estado-metrica.sql"), "utf8");
+
+  it("cada estado de EstadoMetrica está en el check, y cada uno del check está en EstadoMetrica", () => {
+    // Los cinco del código, escritos a mano: leerlos del mismo sitio que la migración haría que un
+    // valor olvidado desapareciera de las dos listas a la vez y la prueba siguiera verde.
+    const enElCodigo = ["contado", "verificado", "extraido", "descartado", "sin_dato"].sort();
+    const lista = CHECK.match(/check \(estado in \(([^)]+)\)\)/);
+    expect(lista, "no se pudo leer la lista de estados del check").not.toBeNull();
+    const enLaBase = [...lista![1].matchAll(/'([a-z_]+)'/g)].map((m) => m[1]).sort();
+    expect(enLaBase, "la base admite estados que el código no escribe, o al revés").toEqual(enElCodigo);
+  });
+
+  it("y «extraido» está entre ellos: es el que escribe el lector de documentos en cada número", () => {
+    expect(CHECK).toMatch(/'extraido'/);
+  });
+
+  it("el check se reemplaza entero, porque un check no se amplía", () => {
+    expect(CHECK).toMatch(/drop constraint if exists company_metricas_estado_check/);
+  });
+
+  it("el error del extractor ya no acusa a una migración concreta: la pista sale del mensaje de Postgres", () => {
+    const EXTRAER = readFileSync(path.join(__dirname, "..", "src", "lib", "jobs", "handlers", "extraer.ts"), "utf8");
+    // La pista fija mandó a buscar diez días al lugar equivocado, y con autoridad.
+    expect(EXTRAER, "volvió la pista fija que acusaba a una migración inocente").not.toMatch(/PISTA_MIGRACION/);
+    expect(EXTRAER).toMatch(/violates check constraint/);
   });
 });

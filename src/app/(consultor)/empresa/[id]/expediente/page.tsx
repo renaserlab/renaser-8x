@@ -38,10 +38,11 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
   const base = `/empresa/${id}`;
   const sb = supabaseAdmin();
 
-  const [empresaLeida, statsLeidas, fuentesLeidas, personasLeidas, sesionesLeidas, seguimiento, usados] = await Promise.all([
+  const [empresaLeida, statsLeidas, fuentesLeidas, documentosLeidos, personasLeidas, sesionesLeidas, seguimiento, usados] = await Promise.all([
     sb.from("companies").select("*").eq("id", id).maybeSingle(),
     sb.from("company_stats").select("*").eq("company_id", id).maybeSingle(),
     sb.from("sources").select("estado").eq("company_id", id),
+    sb.from("expediente_documental").select("estado,clave_vara").eq("company_id", id),
     sb.from("participants").select("id,nombre,puesto,rol,token_expira_at,token_revocado_at,token_canjeado_at").eq("company_id", id).order("created_at"),
     sb.from("interview_sessions").select("id,tipo,estado,participant_id").eq("company_id", id),
     leerSeguimiento(id).catch(() => null),
@@ -58,6 +59,9 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
   const fuentesTotal = estados ? estados.length : n(stats?.fuentes);
   const leidas = estados?.filter((e) => e === "leido").length ?? 0;
   const conError = estados?.filter((e) => e === "error").length ?? 0;
+  const docs = documentosLeidos.error ? null : ((documentosLeidos.data ?? []) as { estado: string | null; clave_vara: string | null }[]);
+  const docsVigentes = docs?.filter((d) => d.estado === "vigente").length ?? 0;
+  const docsSinVara = docs?.filter((d) => !d.clave_vara && d.estado !== "insumo").length ?? 0;
   const enLectura = (estados?.length ?? 0) - leidas - conError;
 
   const sesiones = (sesionesLeidas.data ?? []) as { id: string; tipo: string; estado: string; participant_id: string | null }[];
@@ -89,6 +93,29 @@ export default async function Expediente({ params }: { params: Promise<{ id: str
           <p className="sin-dato" style={{ marginTop: 10 }}>Todavía no hay afirmaciones</p>
         ) : (
           <p className="sub" style={{ marginTop: 6 }}>Lo que se levantó de la empresa: sus fuentes, lo que se dijo de ella y quién lo dijo.</p>
+        )}
+      </section>
+
+      {/* DOCUMENTOS. Son los manuales, procedimientos y contratos que la empresa YA tenía, que es
+          otra cosa que las fuentes: una fuente es lo que aportó para que la leamos, un documento es
+          lo que rige —o debería regir— su forma de trabajar. Hasta el 22-10-2026 vivían en la base
+          sin ninguna pantalla de la consultora que los mostrara. */}
+      <section className="tarjeta bloque" aria-labelledby="t-documentos">
+        <div className="cabeza">
+          <div><h2 id="t-documentos">Documentos</h2><p className="sub">Sus manuales, procedimientos y contratos, con la vara que los mide</p></div>
+          <Link className="ir" href={`${base}/documentos`} aria-label="Ir a Documentos" title="Ir a Documentos"><Icono nombre="diagonal" /></Link>
+        </div>
+        {docs === null ? (
+          <p className="sin-dato">Documentos: no se pudieron leer</p>
+        ) : docs.length === 0 ? (
+          <p className="sin-dato">Documentos: todavía ninguno</p>
+        ) : (
+          <>
+            <p className="principal"><span className="grande">{docs.length}</span> {docs.length === 1 ? "documento" : "documentos"}</p>
+            {/* Lo vigente es lo único que el dueño ve en su portal, y lo que no tiene vara no se
+                puede medir. Son los dos números que deciden qué hacer a continuación. */}
+            <p className="nota">{docsVigentes} {docsVigentes === 1 ? "vigente" : "vigentes"} · {docsSinVara} sin vara</p>
+          </>
         )}
       </section>
 

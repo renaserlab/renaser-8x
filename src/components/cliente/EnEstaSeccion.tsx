@@ -19,8 +19,12 @@ const NOMBRES: [string, string][] = [
   ["/portal/entrada", "Cuéntanos tu negocio"],
   ["/portal/conversacion", "Conversación"],
   ["/portal/pedidos", "Lo que te pidió tu consultora"],
-  ["/portal/activos", "Tus documentos"],
-  ["/portal/documentos", "Archivos aportados"],
+  // Los dos nombres estaban cruzados y por eso la dueña no encontraba lo suyo (18-10-2026): buscaba
+  // «Tus documentos» y llegaba a la pantalla de SUBIR, mientras su documentación vigente vivía bajo
+  // «Archivos aportados», que suena a archivador de material en bruto. Ahora cada nombre dice lo que
+  // hay detrás: información es lo que ella nos va entregando; documentos son los que RIGEN.
+  ["/portal/activos", "Tu información"],
+  ["/portal/documentos", "Tus documentos"],
   // Tu diagnóstico
   ["/portal/hoy", "Todo lo que encontramos"],
   ["/portal/validar", "Confirmar información"],

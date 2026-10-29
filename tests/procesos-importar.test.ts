@@ -33,7 +33,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import ExcelJS from "exceljs";
 import type { PGlite } from "@electric-sql/pglite";
-import { crearBase, aplicarTodo, leerOrden, dividirSentencias, CARPETA_SUPABASE } from "./sql/aplicar";
+import { crearBase, aplicarTodo, ordenSin, dividirSentencias, CARPETA_SUPABASE } from "./sql/aplicar";
 
 type Fila = Record<string, unknown>;
 type ErrorBase = { code: string; message: string };
@@ -576,7 +576,7 @@ describe("POSTGRES EMBEBIDO (PGlite, no Supabase) · el esquema del repositorio 
       // El esquema del repositorio SIN la migración pedida, exista ya el archivo o no: así el «antes» se puede
       // reproducir siempre, también el día que la migración esté registrada en orden-aplicacion.json.
       pg = await crearBase();
-      await aplicarTodo(pg, { orden: leerOrden().filter((e) => e.archivo !== NOMBRE_MIGRACION) });
+      await aplicarTodo(pg, { orden: ordenSin([NOMBRE_MIGRACION]) });
       await pg.query("insert into companies (id, nombre) values ($1, 'Modas Lucero (ficticia)')", [EMP]);
     } catch (e) {
       fallo = e;

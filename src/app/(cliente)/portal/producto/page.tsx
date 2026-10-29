@@ -5,6 +5,7 @@ import { listarLineas, evaluar, resumenParaDueno, configDeEmpresa, esTablaAusent
 import { resumenMensualParaDueno, usaTablaNueva, FICHA_VACIA } from "@/lib/rentabilidad";
 import { leerFichaNegocio, leerTrabajoEmpresa } from "@/lib/negocio-datos";
 import type { ConfigEmpresa } from "@/lib/formato";
+import { TEXTO_SECCION_CERRADA } from "@/lib/secciones";
 import { pedidosDelDueno, seccionDe, puedeLlenar, leer, valorO } from "@/components/negocio/datos";
 import { TablaProductos } from "@/components/negocio/TablaProductos";
 import { ElegirModelo } from "@/components/negocio/ElegirModelo";
@@ -180,9 +181,15 @@ export default async function LoQueVendes() {
           {activa.nota && <p className="t-cuerpo">Tu consultora te dice: «{activa.nota}»</p>}
         </div>
       ) : (
-        <p className="t-cuerpo medida mb-6" style={{ color: "var(--grafito)" }}>
-          Lo que te deja cada cosa al mes: lo que cobras menos lo que te cuesta, por lo que vendes. Todavía no descuenta el alquiler, los sueldos ni los demás gastos del mes.
-        </p>
+        <div className="medida mb-6 flex flex-col gap-2">
+          <p className="t-cuerpo" style={{ color: "var(--grafito)" }}>
+            Lo que te deja cada cosa al mes: lo que cobras menos lo que te cuesta, por lo que vendes. Todavía no descuenta el alquiler, los sueldos ni los demás gastos del mes.
+          </p>
+          {/* POR QUÉ NO PUEDE ESCRIBIR. Sin esta frase la pantalla salía en solo lectura y nada decía por qué: el
+              dueño leía sus márgenes, no encontraba dónde corregir un precio y no tenía a quién preguntar. El
+              texto es el mismo que ya se usa al corregir un dato (CorregirDato), para que diga siempre lo mismo. */}
+          <p className="nota">{TEXTO_SECCION_CERRADA}</p>
+        </div>
       )}
 
       {eligiendoModelo ? (

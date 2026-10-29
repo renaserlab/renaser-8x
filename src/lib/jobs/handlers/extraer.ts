@@ -173,7 +173,34 @@ export async function guardarMetricas(sb: ReturnType<typeof supabaseAdmin>, comp
   }
 }
 
-const PISTA_MIGRACION = "¿falta aplicar supabase/migracion-evidencia-dimensiones.sql? Va ANTES que este código";
+/**
+ * LA PISTA SE SACA DEL ERROR, NO SE ADIVINA.
+ *
+ * Antes había una sola pista fija —«¿falta aplicar migracion-evidencia-dimensiones.sql?»— y costó diez
+ * días: el 18-10 murieron cuatro extracciones, el mensaje acusó a esa migración, esa migración SÍ
+ * estaba aplicada, y nadie siguió buscando. El culpable era otro: un check sobre `estado` que la base
+ * de producción tenía y que ningún SQL del repositorio declaraba.
+ *
+ * Un error que acusa al inocente cuesta más que uno que no dice nada, porque manda a buscar al lugar
+ * equivocado y con autoridad. Así que ahora la pista se lee del propio mensaje de Postgres: él sabe
+ * qué restricción se quejó y dice su nombre.
+ */
+function pistaDe(mensaje: string): string {
+  const violado = mensaje.match(/violates check constraint "([^"]+)"/i)?.[1];
+  if (violado) {
+    return `la base rechazó el valor por la restricción «${violado}». Búscala por ese nombre: si no está en supabase/, es un candado que vive solo en producción y hay que escribirle su migración`;
+  }
+  // Las tres formas en que Postgres y PostgREST dicen lo mismo. La primera —«column "x" does not
+  // exist»— es la más común y era justamente la que no se reconocía.
+  const columna =
+    mensaje.match(/column "([^"]+)" does not exist/i)?.[1] ??
+    mensaje.match(/column "([^"]+)" of relation/i)?.[1] ??
+    mensaje.match(/could not find the '([^']+)' column/i)?.[1];
+  if (columna) {
+    return `falta una columna, «${columna}»: revisa qué migración de supabase/ la crea y si está aplicada`;
+  }
+  return "revisa en supabase/orden-aplicacion.json qué migración falta por aplicar";
+}
 
 /**
  * Las escrituras que usan columnas nuevas (origen, fidelidad_*, revision) no pueden fallar en silencio: si
@@ -181,7 +208,7 @@ const PISTA_MIGRACION = "¿falta aplicar supabase/migracion-evidencia-dimensione
  * en vez de dejar la fuente «leyendo» para siempre o perder un número sin que nadie lo note.
  */
 function sinSilencio(error: { message: string } | null, que: string): void {
-  if (error) throw new Error(`${que} (${PISTA_MIGRACION}): ${error.message}`);
+  if (error) throw new Error(`${que} — ${pistaDe(error.message)}: ${error.message}`);
 }
 
 /**

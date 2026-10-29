@@ -265,6 +265,14 @@ export const API = {
   solo_se_aprueba_lista: "Solo se aprueba una estrategia lista.",
   pagina_del_dueno: (problemas: string) => `La página que vería tu cliente no se puede aprobar así: ${problemas}. Corrígela y vuelve a aprobar.`,
   copia_no_guardada: (motivo: string) => `La estrategia quedó aprobada y tu cliente ya la ve, pero no se pudo guardar su copia en la biblioteca: ${motivo}.`,
+  // Los tres avisos de bajar la estrategia al plan. En los tres la estrategia YA está aprobada: se dice qué parte
+  // no quedó escrita y qué hacer, nunca «falló al aprobar», porque aprobó.
+  plan_no_bajado: (motivo: string) =>
+    `La estrategia quedó aprobada y tu cliente ya la ve, pero sus acciones no bajaron al plan: ${motivo}. Puedes escribirlas a mano en el plan, o volver a bajarlas aprobando la siguiente versión.`,
+  plan_sin_historial: (motivo: string) =>
+    `Las acciones bajaron al plan, pero no se pudo anotar en el historial de quién vinieron: ${motivo}. Cada acción dice en su nota de qué estrategia salió.`,
+  numeros_no_bajados: (motivo: string) =>
+    `Las acciones bajaron al plan, pero los números de «medir desde el día 1» no se pudieron crear: ${motivo}. Puedes crearlos a mano en Indicadores.`,
   espera_la_que_se_genera: "Espera a que termine la que se está generando: después se actualizan los números.",
   sin_numeros: "Esta versión todavía no tiene números que actualizar.",
   sin_cambios: "Nada cambió en la empresa desde esta versión: los números serían los mismos.",
@@ -350,6 +358,20 @@ export const PANTALLA = {
   aprobar_si: "Sí, aprobarla",
   aprobando: "Aprobando…",
   confirmar_aprobacion: "Confirmar la aprobación",
+  // QUÉ PASÓ AL APROBAR, DICHO EN LA PANTALLA (29-10-2026). Aprobar escribe el plan, y hasta hoy la pantalla no
+  // decía cuánto bajó: se aprobaba, la tarjeta cambiaba de título y nada más. Quien iba al plan y lo veía corto
+  // no tenía forma de saber si la estrategia no traía acciones o si la bajada había fallado.
+  aprobada_ya: "Aprobada. Tu cliente ya la ve.",
+  bajo_al_plan: (acciones: number, indicadores: number, ya: number) => {
+    const partes: string[] = [];
+    if (acciones) partes.push(acciones === 1 ? "una acción" : `${acciones} acciones`);
+    if (indicadores) partes.push(indicadores === 1 ? "un número para medir" : `${indicadores} números para medir`);
+    if (partes.length) return `Bajaron al plan ${partes.join(" y ")}${ya ? `; ${ya === 1 ? "otra pieza ya estaba" : `otras ${ya} piezas ya estaban`}` : ""}.`;
+    if (ya) return ya === 1 ? "Su única pieza ya estaba en el plan: no se duplicó." : `Sus ${ya} piezas ya estaban en el plan: no se duplicó nada.`;
+    return "Esta versión no traía victorias, jugadas ni números que bajar al plan.";
+  },
+  ver_el_plan: "Ver el plan",
+  actualizar_pantalla: "Actualizar esta pantalla",
   poniendo_en_marcha: "Poniéndola en marcha…",
   actualizar: "Actualizar números",
   actualizando: "Rehaciendo las cuentas…",

@@ -22,7 +22,8 @@ import { PRESUPUESTO_TOKENS } from "../estrategia/esquemas";
 export type ClaveAgente =
   | "admision" | "arquitecto" | "auditor" | "constructor" | "contrastador" | "diagnosticador" | "director"
   | "entrevistador" | "equipo_rojo" | "extractor" | "investigador" | "lente_dinero" | "lente_terreno"
-  | "medidor" | "minero" | "organizador" | "planificador" | "redactor" | "rediseno" | "sistematizador" | "sop";
+  | "medidor" | "minero" | "organizador" | "planificador" | "redactor" | "rediseno" | "revisor" | "selector"
+  | "sistematizador" | "sop";
 
 /** Quién responde por el agente, según la sección 1 del manual. */
 export type Responsable = "Producto" | "Tecnología" | "Validación" | "Dirección";
@@ -240,6 +241,41 @@ export const CONTRATOS: Record<ClaveAgente, Contrato> = {
     aprobador: "dueño",
     presupuesto_tokens: 1600, tiempo_max_ms: 90_000, reintentos: 2,
     exito: "Indicadores propuestos con cómo se miden y dónde se ven.",
+    parada: PARADA_COMUN, recuperacion: SEGURO_DE_REPETIR, responsable: "Producto", medido: false,
+  },
+  revisor: {
+    clave: "revisor", version: "1.0",
+    proposito: "Medir un documento que la empresa ya tenia contra la vara de su tipo: que se conserva, que falla, que contradice lo vigente y que conviene mejorar. Lo que el cliente entrega es materia prima, no producto terminado.",
+    disparador: "El consultor sube un documento de la empresa, o pide revisar uno que ya esta en el expediente.",
+    fuentes: ["el documento", "la vara maestra de su tipo", "la documentacion vigente de la empresa", "las decisiones de gerencia", "los puestos y procesos"],
+    entrada: "El documento y su vara, como dato.", salida: "SalidaRevisionDocumental",
+    acciones_prohibidas: [
+      "Reescribir o sustituir el documento: solo propone",
+      "Declarar que cumple cuando alguna exigencia obligatoria no se cumple",
+      "Inventar obligaciones legales, plazos, montos o articulos",
+      "Dar por bueno un documento que contradice lo que la empresa ya aprobo",
+      "Rehacer desde cero lo que ya sirve",
+    ],
+    aprobador: "consultor",
+    presupuesto_tokens: 6000, tiempo_max_ms: 180_000, reintentos: 2,
+    exito: "Un veredicto por cada exigencia de la vara, con su evidencia, mas lo que se conserva y las mejoras propuestas en orden de lo que mas duele.",
+    parada: PARADA_COMUN, recuperacion: SEGURO_DE_REPETIR, responsable: "Producto", medido: false,
+  },
+  selector: {
+    clave: "selector", version: "1.0",
+    proposito: "Elegir por donde se empieza: hasta ocho procesos que le pedimos contar a la empresa, y de uno a tres donde intervenir de verdad. Es el paso que faltaba entre la vara del rubro y el dibujo de un proceso.",
+    disparador: "El consultor pide la seleccion, con el modelo del rubro ya hecho.",
+    fuentes: ["modelo de alto rendimiento del rubro", "hallazgos del diagnostico", "procesos ya levantados", "ficha de la empresa"],
+    entrada: "El modelo del rubro, el diagnostico y los procesos actuales, como dato.", salida: "SalidaSeleccionProcesos",
+    acciones_prohibidas: [
+      "Inventar procesos que no esten en el modelo del rubro ni en lo que la empresa mostro",
+      "Llenar el tope de ocho porque caben, en vez de elegir",
+      "Poner una clave de intervencion que nadie va a contar",
+      "Entregarle la seleccion al cliente sin que la consultora la apruebe",
+    ],
+    aprobador: "consultor",
+    presupuesto_tokens: 3000, tiempo_max_ms: 120_000, reintentos: 2,
+    exito: "Seleccion guardada en estado propuesta, con el porque de cada pieza y lo que se deja fuera, esperando la aprobacion de la consultora.",
     parada: PARADA_COMUN, recuperacion: SEGURO_DE_REPETIR, responsable: "Producto", medido: false,
   },
   investigador: {

@@ -103,6 +103,9 @@ export function NavConsultor({ empresas, usuario, torre }: { empresas: EmpresaMi
           {item("/casos", "Aprendizaje del sistema", "aprendizaje")}
           {item("/torre", "Torre de control", "torre")}
           {item("/salud", "Salud del sistema", "salud")}
+          {/* Quién cambió qué en todas las empresas. La pantalla comprueba la autoridad y explica a
+              quién le toca, así que aquí se ve siempre: esconderla haría que nadie supiera que existe. */}
+          {item("/actividad", "Modificaciones")}
         </div>
       </nav>
     </Lateral>

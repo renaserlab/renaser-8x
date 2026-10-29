@@ -11,7 +11,7 @@ import { AccesoDenegado, type Perfil } from "./auth";
  * entonces rige lo que cada rol podía hacer hasta hoy: así la consultora no pierde nada el día que la
  * migración se aplique, y nada cambia para los dueños hasta que alguien decida restringir.
  */
-export const ACCIONES_AUTORIDAD = ["aprobar_plan", "aprobar_hallazgo", "cerrar_medicion", "administrar"] as const;
+export const ACCIONES_AUTORIDAD = ["aprobar_plan", "aprobar_hallazgo", "cerrar_medicion", "administrar", "ver_todo"] as const;
 export type AccionAutoridad = (typeof ACCIONES_AUTORIDAD)[number];
 
 /** Valor explícito para «esta persona no aprueba nada»: distinto de la lista vacía, que es «no configurado». */
@@ -23,7 +23,20 @@ export const QUE_SIGNIFICA: Record<AccionAutoridad, string> = {
   aprobar_hallazgo: "aprobar, corregir o rechazar un hallazgo",
   cerrar_medicion: "congelar una medición o cerrar un corte",
   administrar: "gestionar personas y accesos",
+  ver_todo: "ver todas las empresas y el registro de modificaciones de la casa",
 };
+
+/**
+ * ADMINISTRADOR DE 8X. Es `ver_todo`, y es lo que distingue a quien lleva la casa de quien lleva una
+ * cartera: ve todas las empresas, estén asignadas a quien estén, y ve el registro de quién cambió qué.
+ *
+ * Por qué existe (18-10-2026): 8X pasa a tener más de una consultora. Cada una trabaja su cartera —su
+ * entorno— y eso es lo que ve al entrar; pero quien administra la casa tiene que poder ver cualquier
+ * empresa y, sobre todo, enterarse de una modificación sin que nadie se la cuente.
+ */
+export function esAdministradorDe8X(perfil: Pick<Perfil, "rol" | "autoridad">): boolean {
+  return tieneAutoridad(perfil, "ver_todo");
+}
 
 /**
  * LO QUE CADA ROL PUEDE HACER HOY sin que nadie se lo haya dado. Es la compatibilidad: la consultora
@@ -31,6 +44,9 @@ export const QUE_SIGNIFICA: Record<AccionAutoridad, string> = {
  * de su empresa (deliverables/aprobar) y congela sus mediciones (medicion). Ninguna ruta permitía más.
  */
 const POR_DEFECTO: Record<Perfil["rol"], readonly AccionAutoridad[]> = {
+  // `ver_todo` entra en el valor por defecto a propósito: hasta hoy TODA consultora veía todas las
+  // empresas, y quitárselo con una migración dejaría a alguien sin su trabajo de un día para otro. La
+  // separación por cartera se enciende dándole a cada quien su lista explícita, no quitándosela a todos.
   consultor: ACCIONES_AUTORIDAD,
   cliente: ["aprobar_plan", "cerrar_medicion"],
 };

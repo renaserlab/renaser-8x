@@ -1,5 +1,6 @@
 import { ai } from "..";
 import { SalidaModeloAltoRendimiento } from "@/lib/schemas";
+import { BRECHAS, ESTANDARES, ESTRUCTURA, INDICADORES_RUBRO, NORMATIVA, PROCESOS, expectativa, rango } from "@/lib/metodo";
 import { GUARDIA } from "@/lib/rules/patrones";
 
 /**
@@ -19,21 +20,28 @@ la vara contra la que se diseña todo.
 Devuelve JSON con:
 - el_rubro_en_su_mejor_version: cómo se ve este negocio operado con excelencia, en 3-6 frases
   concretas (qué distingue al mejor del promedio en ESTE rubro, no frases de motivación).
-- estandares_de_servicio: 3-10 estándares del rubro en su mejor versión, cada uno con su meta
-  concreta y su origen: practica_de_industria (lo que hacen los mejores) o
+- estandares_de_servicio: ${rango(ESTANDARES)} estándares del rubro en su mejor versión, cada uno
+  con su meta concreta y su origen: practica_de_industria (lo que hacen los mejores) o
   norma_verificar_asesoria (obligación regulatoria — SIN cifras exactas: esas las valida asesoría).
-- estructura_tipo: los puestos que este rubro exige a este tamaño (3-12), cada uno con su misión.
-  Proporcional: la estructura del tamaño de ESTA empresa bien operada, no la de una corporación.
-- procesos_imprescindibles: los procesos que el rubro exige tener escritos y dominados (5-20),
+- estructura_tipo: los puestos que este rubro exige a este tamaño (${rango(ESTRUCTURA)}), cada uno
+  con su misión. Proporcional: la estructura del tamaño de ESTA empresa bien operada, no la de una
+  corporación.
+- procesos_imprescindibles: los procesos que el rubro exige tener escritos y dominados
+  (${expectativa(PROCESOS.sistematizacion)}),
   cada uno con: por_que (qué protege o produce), detalle_minimo (qué debe contener sí o sí para
   ser estándar: tiempos, guiones, montos, controles — lo que aplique) y la_empresa_lo_tiene:
   si | parcial | no | sin_dato — según lo que la ficha diga de ESTA empresa.
-- numeros_de_clase_mundial: 3-10 indicadores con los que el rubro se mide en su mejor versión,
-  con cómo se mide y la meta de referencia (di si la meta es rango típico de industria).
-- normativa: las obligaciones regulatorias del rubro en Perú (máximo 8), cada una descrita SIN
-  inventar umbrales numéricos: el detalle siempre cierra con qué verificar con asesoría.
+- por_que_mas_de_lo_esperado: solo si devolviste más de ${PROCESOS.sistematizacion.esperado_max}
+  procesos. Qué tiene este negocio —sedes, líneas, regulación, turnos— que obliga a pasarse de lo
+  normal. Si no te pasaste, omítelo.
+- numeros_de_clase_mundial: ${rango(INDICADORES_RUBRO)} indicadores con los que el rubro se mide en
+  su mejor versión, con cómo se mide y la meta de referencia (di si la meta es rango típico de
+  industria).
+- normativa: las obligaciones regulatorias del rubro en Perú (máximo ${NORMATIVA.tope}), cada una
+  descrita SIN inventar umbrales numéricos: el detalle siempre cierra con qué verificar con asesoría.
 - las_tres_brechas_mayores: comparando este modelo con lo que la ficha dice de ESTA empresa,
-  las 1-3 brechas más graves, dichas sin anestesia.
+  las ${rango(BRECHAS)} brechas más graves, dichas sin anestesia. Son las que hay, no un cupo que
+  llenar: si la empresa tiene una sola brecha grave de verdad, devuelve una.
 
 REGLAS QUE NO SE ROMPEN:
 - Este modelo es REFERENCIA DE INDUSTRIA: nunca lo presentes como hecho de la empresa. Lo único

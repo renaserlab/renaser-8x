@@ -117,6 +117,18 @@ export const NODOS: NodoSistema[] = [
   // La estrategia (spec-estrategia-8x.md §5.3): la consultora la pide (las dos lentes) y reintenta una etapa que falló
   // (cualquiera de las tres; la prueba también cuando nadie la puso en marcha).
   {
+    tipo: "seleccionar_procesos", nombre: "Por dónde se empieza", fase: "diseno", agentes: ["selector"],
+    disparadores: ["/companies/[id]/seleccion"], encola: [],
+    hace: "Elige de la vara del rubro: hasta 8 procesos para pedir que los cuenten y 1 a 3 claves donde intervenir. Nace propuesta; la consultora aprueba antes de que el cliente la vea.",
+  },
+  {
+    tipo: "revisar_documento", nombre: "Revisar un documento", fase: "evidencia", agentes: ["revisor"],
+    disparadores: ["/companies/[id]/expediente"], encola: [],
+    hace: "Mide un documento que la empresa ya tenía contra la vara de su tipo: qué conservar, qué falla, qué contradice lo vigente y qué mejorar. No lo reescribe.",
+  },
+  // La estrategia (spec-estrategia-8x.md §5.3): la consultora la pide (las dos lentes) y reintenta una etapa que falló
+  // (cualquiera de las tres; la prueba también cuando nadie la puso en marcha).
+  {
     tipo: "estrategia_lente", nombre: "Los dos caminos de la estrategia", fase: "diseno", agentes: ["lente_dinero", "lente_terreno"],
     disparadores: ["/companies/[id]/estrategia", "/companies/[id]/estrategia/[eid]/reintentar"], encola: ["estrategia_rojo"],
     hace: "Dos miradas que no se ven —el dinero y la operación— proponen un camino cada una con los hechos congelados de la empresa.",

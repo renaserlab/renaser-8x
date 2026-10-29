@@ -3,6 +3,7 @@ import { Encabezado, Vacio } from "@/components/base/Vacio";
 import { BotonJob } from "@/components/consultor/BotonJob";
 import { CerrarCaso } from "@/components/consultor/CerrarCaso";
 import { PlanConsultor } from "@/components/plan/PlanConsultor";
+import { EscribirAccion } from "@/components/plan/EscribirAccion";
 import { CortesPlan, type Corte } from "@/components/plan/CortesPlan";
 import { cargarPlan } from "@/lib/plan-intervencion";
 import { VACIO } from "@/lib/textos";
@@ -39,6 +40,9 @@ export default async function PlanPag({ params }: { params: Promise<{ id: string
           </>
         }
       />
+      {/* El plan es de la consultora: tiene que poder escribirlo ella, no solo pedírselo al modelo. Va aquí
+          arriba, visible con la tabla vacía y con la tabla llena, porque un frente se abre cualquier día. */}
+      <EscribirAccion companyId={id} participantes={plan.participantes} indicadores={plan.indicadores} />
       {!hay ? <Vacio texto={VACIO.plan} accion="Ir al diagnóstico" href={`/empresa/${id}/diagnostico`} /> : <PlanConsultor companyId={id} plan={plan} />}
       <CortesPlan companyId={id} cortes={(cortes ?? []) as Corte[]} puedeRegistrar />
     </>

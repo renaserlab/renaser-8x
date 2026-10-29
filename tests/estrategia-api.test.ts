@@ -30,6 +30,7 @@ import {
   entradasFrutas, entradasDental, HOY, LENTE_DINERO_BUENA, LENTE_TERRENO_BUENA, RESPUESTAS_FRUTAS, ROJO_BUENO, ROJO_CON_CIFRAS,
 } from "./fixtures/estrategia-falsa";
 import type { EntradasPaquete, RespuestaEntrada } from "@/lib/estrategia/paquete";
+import type { Estrategia } from "@/lib/estrategia/armar";
 import type { SalidaEquipoRojo } from "@/lib/estrategia/esquemas";
 
 const estado = vi.hoisted(() => ({ base: null as unknown }));
@@ -481,6 +482,59 @@ describe("POST /estrategia/[eid]/aprobar", () => {
     // Aprobada, ya no se corrige: el texto de §7.3.
     expect(await llamar(VER, "PATCH", { id: FRUTAS, eid }, { texto: { puntero: "/lectura/0", texto: "Otra lectura" } })).toMatchObject({ status: 409, body: { error: API.ya_la_ve_el_cliente } });
     expect(await llamar(APROBAR, "POST", { id: FRUTAS, eid }, {})).toMatchObject({ status: 409, body: { error: API.ya_la_ve_el_cliente } });
+  });
+
+  it("APROBAR BAJA EL PLAN: las victorias y las jugadas quedan como acciones propuestas, y los números a medir como indicadores activos", async () => {
+    const { eid } = await generar();
+    como(CONSULTORA);
+    await llamar(VER, "PATCH", { id: FRUTAS, eid }, { elegir: { camino: "a" } });
+    // Antes de aprobar el plan está vacío: es el punto de partida que esta prueba defiende. Hasta el
+    // 28-10-2026 seguía vacío DESPUÉS de aprobar, y la dueña veía dos planes sin relación.
+    expect(filas("actions")).toHaveLength(0);
+    const r = await llamar(APROBAR, "POST", { id: FRUTAS, eid }, {});
+    expect(r.status, JSON.stringify(r.body)).toBe(200);
+    expect(r.body.aviso).toBeNull();
+
+    const vigente = filas("estrategias")[0]!.vigente as Estrategia;
+    const esperadas = vigente.victorias_14_dias.length + vigente.caminos.a.jugadas.length;
+    expect(r.body.plan).toEqual({ acciones: esperadas, indicadores: vigente.medir_desde_el_dia_1.length, ya_estaban: 0 });
+
+    const acciones = filas("actions");
+    expect(acciones).toHaveLength(esperadas);
+    for (const a of acciones) {
+      expect(a).toMatchObject({ company_id: FRUTAS, estrategia_id: eid, estado: "propuesto", fase: "implementacion" });
+      expect(String(a.accion)).not.toHaveLength(0);
+      expect(String(a.nota)).toContain("estrategia aprobada");
+    }
+    // Cada una dice de qué pieza salió, y ninguna repite referencia.
+    const refs = acciones.map((a) => a.estrategia_ref);
+    expect(new Set(refs).size).toBe(refs.length);
+    expect(refs).toContain("v.1");
+
+    const numeros = filas("indicadores");
+    expect(numeros).toHaveLength(vigente.medir_desde_el_dia_1.length);
+    for (const i of numeros) expect(i).toMatchObject({ company_id: FRUTAS, estrategia_id: eid, estado: "activo", origen: "accion" });
+
+    // Y cada acción nace con su fila de historial: quién la propuso y de dónde vino.
+    const historial = filas("accion_historial");
+    expect(historial).toHaveLength(esperadas);
+    for (const h of historial) expect(h).toMatchObject({ accion: "proponer", actor_id: CONSULTORA.id, actor_rol: "consultor" });
+  });
+
+  it("si el plan no se puede escribir, la aprobación vale igual y se dice: la estrategia ya está aprobada y el dueño ya la ve", async () => {
+    const { eid } = await generar();
+    como(CONSULTORA);
+    await llamar(VER, "PATCH", { id: FRUTAS, eid }, { elegir: { camino: "a" } });
+    base.fallos.actions = { code: "42703", message: 'column "estrategia_ref" does not exist' };
+    const r = await llamar(APROBAR, "POST", { id: FRUTAS, eid }, {});
+    expect(r.status).toBe(200);
+    expect(filas("estrategias")[0]!.estado).toBe("aprobada");
+    expect(filas("actions")).toHaveLength(0);
+    // El aviso dice qué migración falta y qué puede hacer la consultora mientras tanto, no «falló al aprobar».
+    expect(String(r.body.aviso)).toContain("migracion-estrategia-al-plan.sql");
+    expect(String(r.body.aviso)).toContain("escribirlas a mano");
+    // La copia en la biblioteca sí se guardó: lo que falló es solo el plan.
+    expect(filas("deliverables")).toHaveLength(1);
   });
 
   it("si la copia de la biblioteca no se guarda, la aprobación vale y se dice", async () => {

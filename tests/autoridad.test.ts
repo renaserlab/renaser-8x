@@ -141,13 +141,23 @@ describe("las rutas de aprobación exigen la autoridad (estático)", () => {
 
 describe("la migración y el código hablan el mismo vocabulario", () => {
   const sql = readFileSync(path.join(process.cwd(), "supabase/migracion-autoridad.sql"), "utf8");
+  // El vocabulario crece: `ver_todo` se añadió el 18-10-2026 ampliando el check en la migración de
+  // las correcciones, porque la de autoridad ya estaba aplicada en producción y no se reescribe. El
+  // check vigente es el de la ÚLTIMA migración que lo toca, así que se miran las dos juntas.
+  const sqlVigente = sql + readFileSync(path.join(process.cwd(), "supabase/migracion-correcciones-auditoria.sql"), "utf8");
   it("es aditiva e idempotente: add column if not exists, constraint guardada por pg_constraint, nada de drop", () => {
     expect(sql).toMatch(/alter table users add column if not exists autoridad text\[\]/);
     expect(sql).toMatch(/if not exists \(select 1 from pg_constraint/);
     expect(sql).not.toMatch(/drop (table|column)/i);
   });
   it("el check admite exactamente las acciones del código más «ninguna»", () => {
-    for (const a of [...ACCIONES_AUTORIDAD, SIN_AUTORIDAD]) expect(sql, a).toContain(`'${a}'`);
+    for (const a of [...ACCIONES_AUTORIDAD, SIN_AUTORIDAD]) expect(sqlVigente, a).toContain(`'${a}'`);
+    // Y el check vigente no deja entrar nada que el código no conozca: se leen los valores del
+    // último `check (autoridad <@ array[...])` y se comparan contra el vocabulario, en los dos sentidos.
+    const ultimo = [...sqlVigente.matchAll(/check \(autoridad <@ array\[([^\]]+)\]/g)].at(-1);
+    expect(ultimo, "hay un check de autoridad en las migraciones").toBeDefined();
+    const admitidos = [...ultimo![1]!.matchAll(/'([a-z_]+)'/g)].map((m) => m[1]!);
+    expect([...admitidos].sort()).toEqual([...ACCIONES_AUTORIDAD, SIN_AUTORIDAD].sort());
   });
   it("el perfil NO pide la columna al leer el usuario (si no existe, todos caerían a cliente)", () => {
     const auth = readFileSync(path.join(process.cwd(), "src/lib/auth.ts"), "utf8");

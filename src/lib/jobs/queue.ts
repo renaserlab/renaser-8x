@@ -28,6 +28,8 @@ export type TipoJob =
   | "proponer_indicadores"
   | "estudio_organigrama"
   | "modelo_alto_rendimiento"
+  | "seleccionar_procesos"
+  | "revisar_documento"
   | "generar_proceso"
   | "generar_tobe"
   | "generar_sop"

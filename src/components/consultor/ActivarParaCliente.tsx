@@ -90,7 +90,15 @@ export function ActivarParaCliente({ companyId, solicitudes, contexto, zona, noD
 
   return (
     <div className="flex flex-col gap-5">
-      {solicitudes == null && <p className="t-dato" style={{ color: "var(--caducado)" }}>No se pudo leer lo que ya está pedido: vuelve a cargar antes de activar.</p>}
+      {/* Las dos causas, porque mandan a sitios distintos: o la tabla no está en esta base (migración sin
+          aplicar) o la lectura falló. «Vuelve a cargar» a secas mandaba a buscar el problema donde no está. */}
+      {solicitudes == null && (
+        <p className="t-dato" style={{ color: "var(--caducado)" }}>
+          No se pudo leer lo que ya está pedido, así que activar algo ahora podría pedirlo dos veces. Vuelve a cargar
+          la página; si sigue igual, falta aplicar <code>supabase/migracion-entrar-hoy.sql</code>, que es la que crea
+          la tabla de los pedidos.
+        </p>
+      )}
       {GRUPOS_SECCION.map((g) => (
         <fieldset key={g.clave} style={{ border: 0, padding: 0, margin: 0 }}>
           <legend className="t-etiqueta mb-2">{g.nombre}</legend>

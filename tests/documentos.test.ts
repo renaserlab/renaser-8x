@@ -950,9 +950,25 @@ describe("Un número leído de un documento nace extraído, nunca verificado; y 
     expect(por("deuda_clientes")).toMatchObject({ valor: null, estado: "sin_dato", origen: "extraido" });
     expect(m.filter((x) => x.source_id === "S" && x.estado === "verificado")).toHaveLength(0);
   });
-  it("si la base rechaza la columna (migración sin aplicar), el trabajo falla con la causa y nombra la migración", async () => {
+  // La pista del error se saca del mensaje de Postgres y ya no se adivina. Antes era fija y decía
+  // siempre «¿falta aplicar migracion-evidencia-dimensiones.sql?»: el 18-10 murieron cuatro
+  // extracciones, esa migración SÍ estaba aplicada, el culpable era un check sobre `estado` que la
+  // base de producción tenía y el repositorio no declaraba, y nadie lo persiguió durante diez días.
+  // Un error que acusa al inocente manda a buscar al lugar equivocado, y con autoridad.
+  it("si falta una columna, el error lo dice y manda a buscar la migración que la crea", async () => {
     const base = crearBaseFalsa({}, { company_metricas: 'column "origen" does not exist' });
-    await expect(guardarMetricas(base as never, "E", [{ clave: "venta_mes", periodo: "2026-09", valor: 1, estado: "contado" }], { source_id: "S", origen: "extraido" })).rejects.toThrow(/migracion-evidencia-dimensiones\.sql.*origen/);
+    await expect(guardarMetricas(base as never, "E", [{ clave: "venta_mes", periodo: "2026-09", valor: 1, estado: "contado" }], { source_id: "S", origen: "extraido" })).rejects.toThrow(/falta una columna[\s\S]*origen/);
+  });
+
+  it("si lo que se queja es un candado, el error lo nombra: es el dato que faltaba para encontrarlo", async () => {
+    const base = crearBaseFalsa({}, { company_metricas: 'new row for relation "company_metricas" violates check constraint "company_metricas_estado_check"' });
+    await expect(
+      guardarMetricas(base as never, "E", [{ clave: "venta_mes", periodo: "2026-09", valor: 1, estado: "contado" }], { source_id: "S", origen: "extraido" }),
+    ).rejects.toThrow(/company_metricas_estado_check/);
+    // Y dice qué hacer con ese nombre, que es lo que nadie supo durante diez días.
+    await expect(
+      guardarMetricas(base as never, "E", [{ clave: "venta_mes", periodo: "2026-09", valor: 1, estado: "contado" }], { source_id: "S", origen: "extraido" }),
+    ).rejects.toThrow(/solo en producción/);
   });
   it("una entrevista sigue como hasta hoy: contado y origen declarado", async () => {
     const base = crearBaseFalsa();
@@ -1342,7 +1358,7 @@ describe("POST /api/sources/[id]/consolidar: el consultor decide fila por fila y
       expect(JSON.stringify(base.tablas)).toBe(antes); // ni la fuente ni una sola fila cambiaron
       expect(base.registro.escrituras).toBe(0);
       // El mensaje es para el consultor: dice qué hacer y no lleva nombres de columnas, de estados ni de tablas.
-      expect(r.body.error).not.toMatch(/revision|estado|leyendo|leido|jobs|payload/);
+      expect(r.body.error).not.toMatch(/revision\b|estado|leyendo|leido|jobs|payload/);
       expect(r.body.error).toMatch(/vuelve a extraerla/);
     };
     // 1. Primera lectura en marcha: la fuente todavía no espera revisión y su estado es «leyendo» (o recién subida).

@@ -2,7 +2,7 @@
  * LA BASE EN MEMORIA QUE HACE DE `supabaseAdmin()` EN LAS PRUEBAS DE RUTAS (16-10-2026).
  *
  * Copia ampliada de `crearBaseFalsa` de tests/producto.test.ts (que no se toca): encadenable y «thenable» como el
- * cliente real; filtra por .eq/.neq/.in/.is/.gte/.lte/.gt/.lt; respeta la lista de columnas del .select() (así se ve
+ * cliente real; filtra por .eq/.neq/.in/.is/.not(col,"is",v)/.gte/.lte/.gt/.lt; respeta la lista de columnas del .select() (así se ve
  * qué se le pidió a la base); cuenta con { count: "exact", head: true }; inserta, actualiza, hace upsert por la clave
  * de conflicto y borra. Hace cumplir las claves únicas que importan a estas pruebas: (company_id, codigo) de
  * lineas_producto, una solicitud ACTIVA por (company_id, seccion), (company_id, clave) de ruta_marcas y company_id de
@@ -68,6 +68,9 @@ export function crearBaseFalsa(inicial: Record<string, Fila[]> = {}, fallos: Rec
           case "neq": return x !== v;
           case "in": return (v as unknown[]).includes(x);
           case "is": return v === null ? x == null : x === v;
+          // `.not("col", "is", null)` del cliente real: la negación de un `is`. Solo esa forma, que es la
+          // única que se usa; cualquier otro operador negado se dejaría pasar en silencio y eso mentiría.
+          case "not_is": return v === null ? x != null : x !== v;
           case "gte": return String(x ?? "") >= String(v);
           case "lte": return String(x ?? "") <= String(v);
           case "gt": return String(x ?? "") > String(v);
@@ -170,6 +173,11 @@ export function crearBaseFalsa(inicial: Record<string, Fila[]> = {}, fallos: Rec
       neq: (k: string, v: unknown) => (filtros.push(["neq", k, v]), q),
       in: (k: string, v: unknown[]) => (filtros.push(["in", k, v]), q),
       is: (k: string, v: unknown) => (filtros.push(["is", k, v]), q),
+      not: (k: string, operador: string, v: unknown) => {
+        if (operador !== "is") throw new Error(`La base falsa solo sabe negar «is», y le pidieron «not ${operador}». Añádelo si hace falta: dejarlo pasar devolvería filas que la base real no devuelve.`);
+        filtros.push(["not_is", k, v]);
+        return q;
+      },
       gte: (k: string, v: unknown) => (filtros.push(["gte", k, v]), q),
       lte: (k: string, v: unknown) => (filtros.push(["lte", k, v]), q),
       gt: (k: string, v: unknown) => (filtros.push(["gt", k, v]), q),

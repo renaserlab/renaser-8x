@@ -109,6 +109,11 @@ export const EXPEDIENTE: Vista = {
   icono: "carpeta",
   sub: [
     ["/expediente", "Resumen"],
+    // Los documentos de la empresa: sus manuales, procedimientos y contratos, con la vara contra la
+    // que se miden. Vivían en la base desde el 18-10-2026 y NINGUNA pantalla de la consultora los
+    // leía: la única que lo hacía era el portal del dueño, y solo los vigentes. Veinticuatro
+    // documentos cargados y veintidós invisibles para quien tiene que trabajarlos.
+    ["/documentos", "Documentos"],
     ["/fuentes", "Fuentes"],
     ["/afirmaciones", "Afirmaciones"],
     ["/entrevista", "Entrevista"],

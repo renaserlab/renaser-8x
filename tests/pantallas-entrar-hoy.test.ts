@@ -97,6 +97,8 @@ function base(extra: Record<string, Fila[]> = {}): BaseFalsa {
   return b;
 }
 const comoDuena = () => (estado.portal = { companyId: EMP, queFalta: "", u: DUENA });
+/** La pantalla de la consultora no pasa por el contexto del portal: la sesión la pone su layout, no la página. */
+const comoConsultora = () => (estado.portal = null);
 
 const html = async (pagina: () => Promise<React.ReactElement> | React.ReactElement) => renderToStaticMarkup(await pagina());
 
@@ -216,6 +218,9 @@ describe("dueño · /portal/producto «Lo que vendes»", () => {
     expect(h).toContain("Lo que más te deja al mes");
     expect(h).toContain("Jean Clásico: S/ 5,400 al mes");
     expect(h).toContain("Se lo hiciste saber a tu consultora el 17 de octubre.");
+    // 28-10 · Y DICE POR QUÉ NO PUEDE ESCRIBIR. Antes salía en solo lectura y nada lo explicaba: el dueño
+    // leía sus márgenes, no encontraba dónde corregir un precio y no tenía a quién preguntar.
+    expect(h).toContain(TEXTO_SECCION_CERRADA);
     expect(h).not.toMatch(/<button|<input|<textarea|<select/);
     expect(h).not.toMatch(PROHIBIDAS);
   });
@@ -389,6 +394,35 @@ const linea = (id: string, nombre: string, precio: number, costo: number | null,
   unidades_mes_desde: null, unidades_mes_hasta: null, participacion_de_10: null, estados: { precio: "contado", costo: "estimado", unidades: "estimado" },
 });
 
+describe("consultora · /empresa/[id]/plan · 28-10: el plan se puede escribir a mano", () => {
+  it("con la tabla vacía ofrece escribir una acción y nombra las TRES puertas por las que entra una, no solo la IA", async () => {
+    base({ actions: [] });
+    comoConsultora();
+    const { default: PlanPag } = await import("@/app/(consultor)/empresa/[id]/plan/page");
+    const h = renderToStaticMarkup(await PlanPag({ params: Promise.resolve({ id: EMP }) }));
+    // La puerta que faltaba: hasta hoy una acción solo podía nacer del planificador de IA.
+    expect(h).toContain("Escribir una acción");
+    expect(h).toContain("Generar propuesta");
+    // Y el vacío ya no es una pared: dice las tres maneras de que entre una acción.
+    expect(h).toContain("aprobar una estrategia baja sus victorias");
+    expect(h).toContain("las escribes tú aquí mismo");
+  });
+
+  it("el formulario pide los SEIS mínimos, con las personas del equipo y los indicadores de la empresa para elegir", async () => {
+    const { EscribirAccion } = await import("@/components/plan/EscribirAccion");
+    const h = renderToStaticMarkup(
+      createElement(EscribirAccion, {
+        companyId: EMP,
+        participantes: [{ id: "c1000000-0000-4000-8000-00000000000c", nombre: "Rosa Ayala", puesto: "Almacén" }],
+        indicadores: [{ id: "d1000000-0000-4000-8000-00000000000d", nombre: "Cajas devueltas", unidad: "numero" }],
+      })
+    );
+    // Cerrado es un botón; el formulario se abre al pulsarlo (eso no se ejecuta aquí).
+    expect(h).toContain("Escribir una acción");
+    expect(h).not.toContain("Qué se hace");
+  });
+});
+
 describe("consultora · tablero de rentabilidad, ruta y activación", () => {
   it("el tablero pinta los cuatro cuadrantes con los umbrales de la empresa, y lo que no tiene datos va rayado", async () => {
     // Umbral de margen = 7.150 / 220 = 32,5 por unidad; de volumen = 220 / 4 = 55 al mes.
@@ -440,6 +474,43 @@ describe("consultora · tablero de rentabilidad, ruta y activación", () => {
     expect(h).toContain("Guardar el veredicto");
     // Sin avance (migración pendiente) o sin tipo de trabajo: una frase, no una ruta vacía.
     expect(renderToStaticMarkup(createElement(MarcarCompuerta, { companyId: EMP, avance: null }))).toContain("La ruta todavía no está habilitada en esta base.");
+  });
+
+  it("28-10 · LA LLAVE SE VE SIN DESPLEGAR NADA: el título dice en qué estado está, y con nada pedido el panel se abre solo", async () => {
+    // POR QUÉ. Esta llave estaba aquí desde el 16-10 y no se usó NUNCA en ninguna empresa: vivía en un
+    // plegado al pie de la pantalla, titulado «Todo lo que se le puede pedir», sin decir cuántos pedidos hay
+    // ni para qué sirve. Sin ella, las seis pantallas de datos del dueño están cerradas con llave.
+    base({ solicitudes_cliente: [] });
+    comoConsultora();
+    const { default: Diagnostico } = await import("@/app/(consultor)/empresa/[id]/page");
+    const sinNada = renderToStaticMarkup(await Diagnostico({ params: Promise.resolve({ id: EMP }) }));
+    expect(sinNada).toContain("Lo que le pides al dueño");
+    expect(sinNada).toContain("todavía no le has pedido nada");
+    // Abierta: `<details open>` con nada pedido. Ese es justo el día en que hace falta verla.
+    expect(sinNada).toMatch(/<details[^>]*id="pedir"[^>]*open/);
+    // Y dice para qué sirve, con las seis pantallas que abre nombradas.
+    expect(sinNada).toContain("así es como el dueño llena sus propios datos".replace("así", "Así"));
+    expect(sinNada).toContain("están cerradas y no puede escribir en ellas");
+
+    base({ solicitudes_cliente: [sol("productos", "activa"), sol("costos", "activa")] });
+    comoConsultora();
+    const conDos = renderToStaticMarkup(await Diagnostico({ params: Promise.resolve({ id: EMP }) }));
+    expect(conDos).toContain("2 pedidos abiertos");
+    // Con pedidos abiertos ya no se abre sola: la consultora pasó de ese paso.
+    expect(conDos).not.toMatch(/<details[^>]*id="pedir"[^>]*open/);
+  });
+
+  it("29-10 · con todo entregado el título NO dice «todavía no le has pedido nada»: dice cuántos entregó, y se abre", async () => {
+    // POR QUÉ. El chip solo distinguía «hay abiertos» de «no hay abiertos», y llamaba a lo segundo «todavía no le
+    // has pedido nada». El día que la dueña termina sus pedidos —que es el día en que hay cosas nuevas que leer—
+    // la pantalla le decía a la consultora que nunca le había pedido nada, y encima el panel se quedaba cerrado.
+    base({ solicitudes_cliente: [sol("productos", "completada"), sol("costos", "completada")] });
+    comoConsultora();
+    const { default: Diagnostico } = await import("@/app/(consultor)/empresa/[id]/page");
+    const entregado = renderToStaticMarkup(await Diagnostico({ params: Promise.resolve({ id: EMP }) }));
+    expect(entregado).toContain("2 entregados, nada abierto");
+    expect(entregado).not.toContain("todavía no le has pedido nada");
+    expect(entregado).toMatch(/<details[^>]*id="pedir"[^>]*open/);
   });
 
   it("«Activar para el cliente» lista las 11 secciones en tres grupos, con su estado", async () => {

@@ -112,6 +112,63 @@ export async function leerAccion(actionId: string): Promise<AccionPlan | null> {
 }
 
 /**
+ * ESCRIBIR UNA ACCIÓN A MANO. Hasta hoy la única puerta por la que nacía una fila de `actions` era el
+ * planificador: si el modelo fallaba, si no había hallazgos aprobados, o si la consultora quería abrir un frente
+ * que no salió de un hallazgo, no había por dónde. Un plan que solo puede escribir una máquina no es un plan de
+ * la consultora.
+ *
+ * Nace PROPUESTA, como todas: aprobarla sigue siendo un acto aparte con sus reglas (los seis mínimos, la
+ * autoridad y el límite de frentes). Y nace con su fila de historial —quién la propuso— porque eso es lo que
+ * distingue una decisión de un apunte. Si el historial no entra, la acción se borra: una acción sin rastro de
+ * quién la propuso no se deja a medias, y aquí sí se puede deshacer porque acaba de nacer y nadie la ha tocado.
+ */
+export async function crearAccion(
+  companyId: string,
+  perfil: Perfil,
+  campos: Record<string, unknown>,
+  motivo?: string | null
+): Promise<{ accion: AccionPlan; historialId: string }> {
+  const permitidos = Object.fromEntries(
+    Object.entries(campos).filter(([k, v]) => v !== undefined && (CAMPOS_EDITABLES as readonly string[]).includes(k))
+  );
+  const texto = String(permitidos.accion ?? "").trim();
+  if (!texto) throw new ReglaDelPlan("Una acción necesita decir qué se hace.");
+  if (typeof permitidos.fecha_inicio === "string" && typeof permitidos.vence_at === "string" && permitidos.vence_at < permitidos.fecha_inicio) {
+    throw new ReglaDelPlan("La fecha de vencimiento no puede ser anterior a la de inicio.");
+  }
+  // Lo que apunta a una persona, un indicador, una línea base u otra acción tiene que ser de ESTA empresa, y se
+  // comprueba ANTES de insertar: una fila con una referencia de otra empresa no debería existir ni un instante.
+  await comprobarReferencias(companyId, null, permitidos);
+
+  const sb = supabaseAdmin();
+  const { data, error } = await sb
+    .from("actions")
+    .insert({ ...permitidos, accion: texto, company_id: companyId, estado: "propuesto", fase: permitidos.fase ?? "implementacion", updated_at: new Date().toISOString() })
+    .select("*")
+    .single();
+  if (error || !data) throw new Error(`No se pudo crear la acción: ${error?.message ?? "la base no devolvió la fila"}`);
+  const accion = filaComoAccion(data as Record<string, unknown>, companyId);
+
+  const { data: h, error: errorHistorial } = await sb
+    .from("accion_historial")
+    .insert({
+      action_id: accion.id,
+      accion: "proponer",
+      despues: { estado: "propuesto", ...permitidos, accion: texto },
+      motivo: (motivo ?? "").trim() || null,
+      actor_id: perfil.id,
+      actor_rol: perfil.rol,
+    })
+    .select("id")
+    .single();
+  if (errorHistorial || !h) {
+    await sb.from("actions").delete().eq("id", accion.id);
+    throw new Error(`La acción no se creó porque su historial no se pudo guardar: ${errorHistorial?.message ?? "la base no devolvió la fila"}`);
+  }
+  return { accion, historialId: h.id as string };
+}
+
+/**
  * Escribe el cambio y su historial. Primero la acción, después el historial; si el historial no entra, la
  * acción vuelve a como estaba y se lanza: un cambio sin rastro no se deja a medias.
  */
@@ -242,7 +299,7 @@ export async function modificarAccion(a: AccionPlan, perfil: Perfil, cambios: Re
 }
 
 /** Lo que se enlaza tiene que ser de la MISMA empresa: una ficha no puede apuntar a la persona, el indicador o la medición de otra. */
-async function comprobarReferencias(companyId: string, actionId: string, cambios: Record<string, unknown>): Promise<void> {
+async function comprobarReferencias(companyId: string, actionId: string | null, cambios: Record<string, unknown>): Promise<void> {
   const sb = supabaseAdmin();
   const uuid = /^[0-9a-f-]{36}$/i;
   if (typeof cambios.responsable_participant_id === "string") {
@@ -260,7 +317,8 @@ async function comprobarReferencias(companyId: string, actionId: string, cambios
   }
   if (Array.isArray(cambios.depende_de) && cambios.depende_de.length) {
     const ids = cambios.depende_de as string[];
-    if (ids.includes(actionId)) throw new ReglaDelPlan("Una acción no puede depender de sí misma.");
+    // Con `actionId` en nulo la acción todavía no existe (se está creando), así que no puede estar en la lista.
+    if (actionId && ids.includes(actionId)) throw new ReglaDelPlan("Una acción no puede depender de sí misma.");
     const { data } = await sb.from("actions").select("id").eq("company_id", companyId).in("id", ids);
     if ((data ?? []).length !== ids.length) throw new ReglaDelPlan("Alguna de las acciones de las que depende no es de esta empresa.");
   }

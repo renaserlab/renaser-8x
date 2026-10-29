@@ -2,7 +2,13 @@ import Anthropic from "@anthropic-ai/sdk";
 import { AIProviderDownError, AIProviderPausedError, AIRateLimitError, AIValidationError, type AIProvider, type CompleteParams, type CompleteResult, type Transcripcion } from "./provider";
 import { aplicarContrato } from "@/lib/agentes/contratos";
 
-const MODEL = process.env.AI_MODEL ?? "claude-sonnet-5";
+/**
+ * El modelo por defecto de ESTE proveedor. `AI_MODEL` es del proveedor PRINCIPAL: cuando este corre
+ * como respaldo, quien lo construye le pasa su modelo —de `AI_MODEL_ANTHROPIC`— porque leer
+ * `AI_MODEL` aquí le pediría a Anthropic el nombre de un modelo de Gemini, y eso no es un «sin
+ * crédito»: es un 404 que el worker cobra como fallo del trabajo y gasta los tres intentos.
+ */
+const MODELO_POR_DEFECTO = "claude-sonnet-5";
 const TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS ?? 120_000);
 
 function extraerJSON(texto: string): string {
@@ -13,8 +19,13 @@ function extraerJSON(texto: string): string {
 
 export class AnthropicProvider implements AIProvider {
   private client: Anthropic;
-  constructor() {
+  /** Con qué modelo va a llamar. Público a propósito: quien lo construye tiene que poder comprobar
+   * que al respaldo no se le coló el modelo del principal, y la torre tiene que poder decirlo. */
+  readonly modelo: string;
+  /** `modelo`: el que le pasa quien lo construye. Sin él, el de `AI_MODEL` si es el principal, o el suyo. */
+  constructor(modelo?: string) {
     if (!process.env.ANTHROPIC_API_KEY) throw new Error("Falta ANTHROPIC_API_KEY");
+    this.modelo = modelo?.trim() || process.env.AI_MODEL?.trim() || MODELO_POR_DEFECTO;
     this.client = new Anthropic({ timeout: TIMEOUT_MS, maxRetries: 0 });
   }
 
@@ -36,7 +47,7 @@ export class AnthropicProvider implements AIProvider {
       let res: Anthropic.Message;
       try {
         res = await this.client.messages.create({
-          model: MODEL,
+          model: this.modelo,
           max_tokens: p.maxTokens ?? 8000,
           system: p.system + "\n\nResponde ÚNICAMENTE con JSON válido, sin texto antes ni después.",
           messages: [{ role: "user", content }],
@@ -58,7 +69,7 @@ export class AnthropicProvider implements AIProvider {
       try {
         const parsed = JSON.parse(extraerJSON(raw));
         const r = p.schema.safeParse(parsed);
-        if (r.success) return { data: r.data, tokens_entrada: entrada, tokens_salida: salida, modelo: MODEL, latencia_ms: Date.now() - t0, intentos: intento + 1, fin: res.stop_reason ?? undefined };
+        if (r.success) return { data: r.data, tokens_entrada: entrada, tokens_salida: salida, modelo: this.modelo, latencia_ms: Date.now() - t0, intentos: intento + 1, fin: res.stop_reason ?? undefined };
       } catch {
         /* JSON inválido: reintentar una vez */
       }

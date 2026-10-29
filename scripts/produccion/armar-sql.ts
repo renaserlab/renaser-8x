@@ -21,7 +21,7 @@ const RAIZ = path.resolve(__dirname, "../..");
  * Lo que producción ya tiene: el esquema base, las 15 migraciones anteriores a la rama del 13-10, la que solo
  * documenta, las 13 de la rama del 13-10 (aplicadas en producción el 15-10-2026), la del 16-10 que deja entrar
  * al cliente (aplicada el 16-10-2026; el archivo que se pegó es clientes/8x-ejecucion/produccion-2026-10-16.sql,
- * fuera del repositorio), la de la estrategia y la de RENASER OS.
+ * fuera del repositorio), las cuatro del 18-10, RENASER OS y Finanzas del 19-10, y las tres del 28-10.
  */
 export const YA_EN_PRODUCCION: readonly string[] = [
   "schema.sql", "migracion-gobierno.sql", "migracion-circuito.sql", "migracion-mediciones.sql",
@@ -37,23 +37,40 @@ export const YA_EN_PRODUCCION: readonly string[] = [
   "migracion-vistas-cliente-solo-lectura.sql",
   // Aplicada en producción el 16-10-2026.
   "migracion-entrar-hoy.sql",
-  // Ya estaba en producción el 19-10-2026, aunque este registro la seguía dando por pendiente. Se comprobó en la base:
-  // las 3 tablas con RLS, las 2 funciones solo para el servidor, los 2 checks ampliados y el disparador de ediciones.
-  "migracion-estrategia.sql",
-  // Aplicada en producción el 19-10-2026 (CLI de Supabase, una sola transacción, después de un ensayo que se deshizo
-  // a propósito). Comprobado: 16 tablas con RLS y sin permisos para el navegador, 7 funciones, pg_cron con sus 5 trabajos.
-  "migracion-renaser-os.sql",
-  // Aplicada en producción el 19-10-2026, igual que RENASER OS: ensayo que se deshizo a propósito y después en una sola
-  // transacción. Comprobado: 8 tablas con RLS y sin permisos para el navegador, 12 funciones solo del servidor, el check
-  // de company_metricas.origen con 'caja', el disparador «la caja manda» y las 124 cifras de antes sin cambios.
-  "migracion-finanzas.sql",
+  // Aplicadas en producción el 18-10-2026 por la consultora, pegadas en el editor SQL. Comprobado
+  // contra la base: las tres tablas existen (estrategias, seleccion_procesos, expediente_documental).
+  "migracion-estrategia.sql", "migracion-seleccion-procesos.sql", "migracion-expediente-documental.sql",
+  // Aplicada en producción el 18-10-2026, también pegada en el editor SQL, y esta lista no se
+  // actualizó ese día: quedó contándose como pendiente durante dos días. Comprobado contra la base
+  // el 20-10-2026, las cuatro cosas que crea están: la tabla `contrato_entregables`, la columna
+  // `expediente_documental.activo_clave`, las tres columnas de estado de `org_puestos` y
+  // `companies.proxima_sesion` con su enlace.
+  //
+  // La lección es del tipo que se repite: una lista que se mantiene a mano se desincroniza el día
+  // que alguien aplica algo con prisa. Mientras siga a mano, se comprueba contra la base antes de
+  // creerle.
+  "migracion-correcciones-auditoria.sql",
+  // Aplicadas en producción el 19-10-2026 con el CLI de Supabase, cada una en una sola transacción y
+  // después de un ensayo que se deshizo a propósito. Comprobado: RENASER OS dejó 16 tablas con RLS y
+  // sin permisos para el navegador, 7 funciones y pg_cron con sus 5 trabajos; Finanzas, 8 tablas con
+  // RLS, 12 funciones solo del servidor, el check de company_metricas.origen admitiendo 'caja', el
+  // disparador «la caja manda» y las 124 cifras de antes sin cambios.
+  "migracion-renaser-os.sql", "migracion-finanzas.sql",
+  // Aplicadas en producción el 28-10-2026, las tres en un solo archivo pegado en el editor SQL: todo
+  // o nada. La última fila del archivo lo dijo, y se volvió a comprobar a mano contra la base: el
+  // check del expediente admite «insumo»; el de company_metricas.estado lista los cinco valores que
+  // el código escribe (contado, verificado, extraido, descartado, sin_dato), y no los tres de antes,
+  // que era el candado que ningún SQL de este repositorio declaraba; y están las cuatro columnas de
+  // procedencia de la estrategia con sus dos índices únicos.
+  "migracion-insumo.sql", "migracion-estado-metrica.sql", "migracion-estrategia-al-plan.sql",
 ];
 
 /**
- * LO QUE DESCRIBE LA PRÓXIMA TANDA. Hoy no hay nada pendiente, así que todas estas listas están vacías. Cuando nazca
- * una migración nueva, se llenan con lo suyo y tests/sql/paso-a-produccion.test.ts vuelve a ensayarla. Las tandas
- * anteriores, con su ensayo completo, están en el historial del repositorio: estrategia y RENASER OS en el commit
- * 4fdb45b, Finanzas en el b6b55a7.
+ * LO QUE DESCRIBE LA PRÓXIMA TANDA. Hoy no hay nada pendiente —producción tiene las 40 migraciones de
+ * supabase/orden-aplicacion.json—, así que todas estas listas están vacías. Cuando nazca una migración nueva, se
+ * llenan con lo suyo y tests/sql/paso-a-produccion.test.ts vuelve a ensayarla. Los ensayos completos de las tandas
+ * anteriores están en el historial del repositorio: la estrategia y RENASER OS en el commit 4fdb45b, Finanzas en el
+ * b6b55a7, y las tres del 28-10 en el commit que pasó esto a producción. Se escribe la nueva a partir de esos.
  *
  * - CHECKS_AMPLIADOS: tabla, un valor que ya admitía y uno nuevo que debe admitir; el archivo comprueba al final que
  *   de verdad los admita (con la lista vacía ese bloque no se escribe: un `values` vacío es un error de sintaxis).
@@ -159,13 +176,19 @@ export function armarSql(nuevas: readonly string[] = migracionesPendientes()): s
   }
   // La fila final cuenta solo lo que lo pendiente trae: una lista vacía no se escribe (`in ()` o `values` vacíos
   // son errores de sintaxis y llegarían después del commit, cuando ya no se puede deshacer nada).
-  const campos: string[] = [
-    "'MIGRACIONES APLICADAS' as resultado",
-    "now() as cuando",
-    `(select count(*) from information_schema.tables where table_schema = 'public' and table_name in (${tablas})) as tablas_nuevas_de_${TABLAS_NUEVAS.length}`,
-    `(select string_agg(table_name, ', ' order by table_name) from information_schema.tables where table_schema = 'public' and table_name in (${tablas})) as tablas_nuevas`,
-    `(select count(*) from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'public' and c.relkind = 'r' and c.relrowsecurity and c.relname in (${tablas})) as tablas_con_rls_de_${TABLAS_NUEVAS.length}`,
-  ];
+  const campos: string[] = ["'MIGRACIONES APLICADAS' as resultado", "now() as cuando"];
+  // El bloque de las tablas estaba escrito siempre, aunque la tanda no creara ninguna: con la lista
+  // vacía salía `table_name in ()`, que es un error de sintaxis, y llegaba DESPUÉS del commit —
+  // cuando ya no se puede deshacer nada—. El de las columnas sí estaba guardado desde el principio;
+  // este no, y nadie lo vio porque hasta hoy toda tanda había creado al menos una tabla. Es el
+  // mismo cuidado que ya tenía el bloque de los checks: una lista vacía no escribe nada.
+  if (TABLAS_NUEVAS.length) {
+    campos.push(
+      `(select count(*) from information_schema.tables where table_schema = 'public' and table_name in (${tablas})) as tablas_nuevas_de_${TABLAS_NUEVAS.length}`,
+      `(select string_agg(table_name, ', ' order by table_name) from information_schema.tables where table_schema = 'public' and table_name in (${tablas})) as tablas_nuevas`,
+      `(select count(*) from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'public' and c.relkind = 'r' and c.relrowsecurity and c.relname in (${tablas})) as tablas_con_rls_de_${TABLAS_NUEVAS.length}`
+    );
+  }
   if (COLUMNAS_NUEVAS.length) {
     campos.push(
       `(select count(*) from information_schema.columns where table_schema = 'public' and (table_name, column_name) in (values ${columnas})) as columnas_nuevas_de_${COLUMNAS_NUEVAS.length}`,
@@ -180,11 +203,19 @@ export function armarSql(nuevas: readonly string[] = migracionesPendientes()): s
         ` and not has_function_privilege('anon', p.oid, 'execute')) as funciones_solo_servidor_de_${FUNCIONES_SOLO_SERVIDOR.length}`
     );
   }
-  const comprobacion =
-    "-- Comprobación: qué tablas nuevas quedaron (por nombre y cuántas) y cuántas tienen RLS" +
-    (COLUMNAS_NUEVAS.length ? "; qué columnas nuevas quedaron (por nombre y cuántas)" : "") +
-    (FUNCIONES_SOLO_SERVIDOR.length ? "; cuántas funciones nuevas ejecuta solo el servidor" : "") +
-    ".";
+  // El comentario de la fila final promete solo lo que la fila de verdad trae. La frase de las tablas
+  // se escribía SIEMPRE, igual que el bloque que las contaba: con la lista vacía, el archivo anunciaba
+  // «qué tablas nuevas quedaron y cuántas tienen RLS» y después no decía ni una palabra de tablas.
+  // No rompe nada —es un comentario—, pero es una línea que miente en el archivo que alguien está a
+  // punto de pegar en producción, y aquí lo que el archivo dice es lo único que su lector tiene.
+  const promesas = [
+    TABLAS_NUEVAS.length ? "qué tablas nuevas quedaron (por nombre y cuántas) y cuántas tienen RLS" : "",
+    COLUMNAS_NUEVAS.length ? "qué columnas nuevas quedaron (por nombre y cuántas)" : "",
+    FUNCIONES_SOLO_SERVIDOR.length ? "cuántas funciones nuevas ejecuta solo el servidor" : "",
+  ].filter(Boolean);
+  const comprobacion = promesas.length
+    ? `-- Comprobación: ${promesas.join("; ")}.`
+    : "-- Comprobación: que el archivo llegó hasta el final. Esta tanda no crea tablas, columnas ni funciones que contar.";
   partes.push(["", "", "commit;", "", comprobacion, `select ${campos.join(",\n       ")};`, ""].join("\n"));
   return partes.join("");
 }

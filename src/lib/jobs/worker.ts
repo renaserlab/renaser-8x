@@ -13,6 +13,8 @@ import { handleConstruirActivo, handleSistematizarActivo } from "./handlers/acti
 import { handleProponerIndicadores } from "./handlers/indicadores";
 import { handleEstudioOrganigrama } from "./handlers/organigrama";
 import { handleModeloAltoRendimiento } from "./handlers/modelo";
+import { handleSeleccionProcesos } from "./handlers/seleccion";
+import { handleRevisarDocumento } from "./handlers/revisar";
 import { handleFichaDireccion } from "./handlers/ficha-direccion";
 import { handleEstrategiaLente, handleEstrategiaRojo } from "./handlers/estrategia";
 import { esperaRateLimit, estadoTrasFallo, cambioTrasPausa, cambioTrasDevolver, hayQueDevolver, esperaCircuito, CIRCUITO_CREDITO, TIPOS_LARGOS, MARGEN_TRABAJO_LARGO_MS } from "./reglas";
@@ -40,6 +42,8 @@ export const HANDLERS: Record<string, (job: Job) => Promise<unknown>> = {
   proponer_indicadores: handleProponerIndicadores,
   estudio_organigrama: handleEstudioOrganigrama,
   modelo_alto_rendimiento: handleModeloAltoRendimiento,
+  seleccionar_procesos: handleSeleccionProcesos,
+  revisar_documento: handleRevisarDocumento,
   ficha_direccion: handleFichaDireccion,
   estrategia_lente: handleEstrategiaLente,
   estrategia_rojo: handleEstrategiaRojo,

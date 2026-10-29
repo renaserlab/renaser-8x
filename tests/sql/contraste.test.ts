@@ -26,7 +26,7 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import type { PGlite } from "@electric-sql/pglite";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { baseConEsquema, crearBase, aplicarTodo, leerOrden } from "./aplicar";
+import { baseConEsquema, crearBase, aplicarTodo, ordenSin } from "./aplicar";
 import { guardarMetricas } from "@/lib/jobs/handlers/extraer";
 import { emparejarDeclaradoExtraido, contrasteNumerico, ladosDisponibles, cifrasSoloAlLado, type MetricaGuardada } from "@/lib/rules/contradiccion-numerica";
 import { guardarValor, rastroDeValor } from "@/app/api/companies/[id]/kpis/_registro";
@@ -449,7 +449,7 @@ describe("Postgres embebido (PGlite), no Supabase: una base a la que todavía no
     try {
       vieja = await crearBase();
       // Todo el esquema del repo MENOS la migración de la columna: así está una base que aún no la recibió.
-      await aplicarTodo(vieja, { orden: leerOrden().filter((e) => e.archivo !== "migracion-cifra-desplazada.sql") });
+      await aplicarTodo(vieja, { orden: ordenSin(["migracion-cifra-desplazada.sql"]) });
       await vieja.query("insert into companies (id, nombre) values ($1, 'Empresa en la base sin migrar (sintética)')", [EMP_SIN]);
     } catch (e) {
       falloVieja = e;

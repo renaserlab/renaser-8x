@@ -11,6 +11,9 @@
 /* ───────── EL LOGO (src/components/base/Logo8X.tsx) ───────── */
 .logo8x { display: inline-flex; flex-direction: column; align-items: center; gap: 16px; line-height: 0; flex: none; }
 .logo8x svg { display: block; }
+/* La marca es texto: la misma didone de los títulos. El peso y la talla óptica los pone el componente, porque
+   cambian con el tamaño; aquí solo vive la familia. */
+.logo8x__letras { font-family: var(--font-display); }
 .logo8x--tinta { color: var(--tinta); }
 .logo8x__lema {
   font: 500 11px/1 var(--font-ui); letter-spacing: 0.32em; padding-left: 0.32em; text-transform: uppercase;
@@ -187,9 +190,11 @@
   .barra-movil__marca { flex: 1; min-width: 0; display: flex; }
   .barra-movil .marca-app { padding: 6px 4px; max-width: 100%; gap: 10px; color: var(--tinta); }
   .barra-movil .marca-app__empresa { font-size: 13.5px; font-weight: 600; color: var(--tinta); }
+  /* En el celular la marca va chica: la sostiene la talla óptica de la letra, no un borde encima del dibujo.
+     Y la franja es clara, así que aquí la marca es tinta aunque el componente la pida en luz: el degradado de la
+     cinta sobre perla no se vería. El relleno del CSS gana al del atributo, que es justo para lo que sirve. */
   .barra-movil .logo8x svg { height: 22px; width: auto; }
-  .barra-movil .logo8x__trazo { stroke: var(--tinta); stroke-width: 4.8; }
-  .barra-movil .logo8x__halo { display: none; }
+  .barra-movil .logo8x__letras { fill: var(--tinta); }
   .barra-movil__derecha { margin-left: auto; display: flex; align-items: center; gap: 4px; }
 
   /* El cajón: la misma barra noche entra desde la izquierda con transform; cerrado no se ve ni recibe el foco. */
@@ -545,6 +550,9 @@ html:has(.portada) { background-color: var(--noche-profunda); }
   color: var(--luna);
 }
 .portada > .logo8x { animation: logo-entra 280ms var(--ease-out) both; }
+/* La luz que antes era un destello pintado dentro del dibujo ahora es lo que es: luz detrás de la letra. Apenas se
+   ve, y es la que separa la marca del fondo noche sin ensuciar los pelos de la didone. */
+.portada > .logo8x svg { filter: drop-shadow(0 0 34px rgba(226, 196, 138, 0.2)); }
 @keyframes logo-entra { from { opacity: 0; transform: translateY(4px); } }
 .portada__hoja {
   width: min(420px, 100%); background: var(--perla); color: var(--tinta);

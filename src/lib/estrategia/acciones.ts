@@ -30,6 +30,7 @@ import { ErrorDeEstrategia, leerEtapasPorId, leerVersionPorId, trabajosDeVersion
 import { aceptarQuitado, editarSupuesto, editarTexto, porResolver, restaurarTexto, revisarVersion, type ResultadoEdicion, type Revision } from "./edicion";
 import { contenidoEntregable, PaginaDelDuenoInvalida, vistaParaDueno, type ParaDueno } from "./para-dueno";
 import { convieneRegenerar, diferencias, type Diferencias } from "./diferencias";
+import { bajarAlPlan, loQueFalta, type YaBajado } from "./al-plan";
 import { pedidosDesdeFaltantes } from "./pedidos";
 import { proponerPreguntas } from "./preguntas";
 import { API, ETAPA, MOTOR } from "./textos";
@@ -234,12 +235,141 @@ export async function descartarVersion(x: { companyId: string; id: string }): Pr
 
 // ─── Aprobar ─────────────────────────────────────────────────────────────────────────────────────
 
-export type ResultadoAprobar = { estado: "aprobada"; para_dueno: ParaDueno; entregable_id: string | null; aviso: string | null };
+export type ResultadoAprobar = {
+  estado: "aprobada";
+  para_dueno: ParaDueno;
+  entregable_id: string | null;
+  /** Cuántas acciones y cuántos números bajaron al plan, y cuántos ya estaban de una aprobación anterior. */
+  plan: { acciones: number; indicadores: number; ya_estaban: number };
+  aviso: string | null;
+};
+
+/**
+ * LA ESTRATEGIA APROBADA BAJA AL PLAN. Las victorias de los primeros 14 días y las jugadas del camino elegido se
+ * escriben como acciones propuestas, y los números de «medir desde el día 1» como indicadores activos. Cada fila
+ * dice de qué estrategia y de qué pieza suya salió, así que aprobar dos veces no duplica nada: lo que ya bajó se
+ * queda como está, con las correcciones que la consultora le haya hecho encima. El reparto de campos y por qué
+ * nacen propuestas está en al-plan.ts.
+ *
+ * NO HACE FALLAR LA APROBACIÓN. La estrategia ya está aprobada en la base y el dueño ya la ve: si el plan no se
+ * puede escribir, se dice en el aviso y se vuelve a intentar al aprobar la actualización. Lo contrario sería
+ * dejar una estrategia sin aprobar por una tabla que no es la suya.
+ */
+/**
+ * LA CADENA DE VERSIONES DE ESTA ESTRATEGIA: ella, de la que salió y las que salieron de ella, siguiendo
+ * `basada_en` en los dos sentidos. Es lo que permite reconocer que «la victoria 1» de la versión 2 es la misma
+ * pieza que «la victoria 1» de la versión 1 y no bajarla dos veces. Se recorre entero porque una cadena puede
+ * tener ramas (dos actualizaciones de la misma versión), y si no se puede leer queda ella sola: entonces manda
+ * la segunda red, que es el texto.
+ */
+function cadenaDeVersiones(filas: readonly { id: string; basada_en: string | null }[], id: string): string[] {
+  const hijos = new Map<string, string[]>();
+  const padre = new Map<string, string>();
+  for (const f of filas) {
+    if (!f.basada_en) continue;
+    padre.set(f.id, f.basada_en);
+    hijos.set(f.basada_en, [...(hijos.get(f.basada_en) ?? []), f.id]);
+  }
+  const vistos = new Set<string>([id]);
+  const porVer = [id];
+  while (porVer.length) {
+    const actual = porVer.pop() as string;
+    for (const vecino of [padre.get(actual), ...(hijos.get(actual) ?? [])]) {
+      if (vecino && !vistos.has(vecino)) {
+        vistos.add(vecino);
+        porVer.push(vecino);
+      }
+    }
+  }
+  return [...vistos];
+}
+
+async function bajarEstrategiaAlPlan(x: {
+  v: VersionEstrategia;
+  camino: LetraCamino;
+  porId: string;
+  companyId: string;
+}): Promise<{ acciones: number; indicadores: number; ya_estaban: number; aviso: string | null }> {
+  const vacio = { acciones: 0, indicadores: 0, ya_estaban: 0 };
+  const sb = supabaseAdmin();
+  const e = x.v.vigente;
+  if (!e) return { ...vacio, aviso: null };
+  try {
+    const [{ data: yaAcciones, error: e1 }, { data: yaClaves, error: e2 }, { data: versiones }] = await Promise.all([
+      sb.from("actions").select("estrategia_id,estrategia_ref,accion").eq("company_id", x.companyId).not("estrategia_id", "is", null),
+      sb.from("indicadores").select("clave").eq("company_id", x.companyId),
+      sb.from("estrategias").select("id,basada_en").eq("company_id", x.companyId),
+    ]);
+    // Si las columnas todavía no existen en esta base, se dice qué migración falta en vez de un mensaje de Postgres.
+    if (e1 || e2) return { ...vacio, aviso: API.plan_no_bajado(`falta aplicar supabase/migracion-estrategia-al-plan.sql: ${mensajeDe(e1 ?? e2!)}`) };
+
+    const todo = bajarAlPlan({
+      estrategia: e,
+      camino: x.camino,
+      version: x.v.version,
+      refs: refsDeEstrategia(e, x.v.paquete, x.v.calculos),
+      personas: x.v.paquete.personas,
+      hoy: e.hoy,
+    });
+    const falta = loQueFalta(
+      todo,
+      {
+        acciones: (yaAcciones ?? []) as YaBajado["acciones"],
+        claves: ((yaClaves ?? []) as { clave: string }[]).map((i) => i.clave),
+      },
+      cadenaDeVersiones((versiones ?? []) as { id: string; basada_en: string | null }[], x.v.id)
+    );
+    if (!falta.acciones.length && !falta.indicadores.length) return { ...vacio, ya_estaban: falta.ya_estaban, aviso: null };
+
+    const ahora = ahoraIso();
+    const base = { company_id: x.companyId, estrategia_id: x.v.id };
+    const { data: creadas, error: errorAcciones } = falta.acciones.length
+      ? await sb.from("actions").insert(falta.acciones.map((a) => ({ ...a, ...base, updated_at: ahora }))).select("id,accion")
+      : { data: [], error: null };
+    if (errorAcciones) return { ...vacio, ya_estaban: falta.ya_estaban, aviso: API.plan_no_bajado(mensajeDe(errorAcciones)) };
+
+    // Cada acción nace con su fila de historial: quién la propuso y por qué. Si el historial no entra, la acción
+    // NO se deshace (al contrario que un cambio de estado): su procedencia está en la propia fila, en
+    // `estrategia_id` y en la nota, y borrarla dejaría el plan vacío otra vez por un rastro que ya está escrito.
+    let avisoHistorial: string | null = null;
+    if ((creadas ?? []).length) {
+      const { error } = await sb.from("accion_historial").insert(
+        (creadas as { id: string }[]).map((a) => ({
+          action_id: a.id,
+          accion: "proponer",
+          despues: { estado: "propuesto", estrategia_id: x.v.id },
+          motivo: `Bajó de la estrategia aprobada, versión ${x.v.version}, camino ${x.camino.toUpperCase()}.`,
+          actor_id: x.porId,
+          actor_rol: "consultor",
+        }))
+      );
+      if (error) avisoHistorial = API.plan_sin_historial(mensajeDe(error));
+    }
+
+    let avisoNumeros: string | null = null;
+    if (falta.indicadores.length) {
+      const { error } = await sb.from("indicadores").insert(
+        falta.indicadores.map((i) => ({ ...i, ...base, creado_por: x.porId }))
+      );
+      if (error) avisoNumeros = API.numeros_no_bajados(mensajeDe(error));
+    }
+
+    return {
+      acciones: (creadas ?? []).length,
+      indicadores: avisoNumeros ? 0 : falta.indicadores.length,
+      ya_estaban: falta.ya_estaban,
+      aviso: [avisoHistorial, avisoNumeros].filter(Boolean).join(" ") || null,
+    };
+  } catch (err) {
+    return { ...vacio, aviso: API.plan_no_bajado(err instanceof Error ? err.message : String(err)) };
+  }
+}
 
 /**
  * Aprueba una versión: con el camino elegido y sin nada por resolver (§6.3), congela la página del dueño con las
- * cifras ya escritas, deja la anterior aprobada como «reemplazada» y guarda la copia en la biblioteca (deliverables,
- * tipo plan_estrategico), que es SOLO la página del dueño: nunca lo vigente ni los cálculos.
+ * cifras ya escritas, deja la anterior aprobada como «reemplazada», BAJA SUS ACCIONES Y SUS NÚMEROS AL PLAN y
+ * guarda la copia en la biblioteca (deliverables, tipo plan_estrategico), que es SOLO la página del dueño: nunca
+ * lo vigente ni los cálculos.
  */
 export async function aprobarVersion(x: { companyId: string; id: string; porId: string; motivo: string | null }): Promise<Resultado<ResultadoAprobar>> {
   const sb = supabaseAdmin();
@@ -282,18 +412,31 @@ export async function aprobarVersion(x: { companyId: string; id: string; porId: 
     return /Solo se aprueba|Falta elegir/.test(error.message ?? "") ? no(409, "no_se_aprueba", error.message) : no(500, "aprobar", mensajeDe(error));
   }
 
+  // El plan. Si no se baja, la aprobación vale igual y se dice: la estrategia ya está aprobada y el dueño ya la ve.
+  const plan = await bajarEstrategiaAlPlan({ v, camino: v.camino_elegido, porId: x.porId, companyId: x.companyId });
+
   // La copia en la biblioteca, con su control documental de siempre. Si no se guarda, la aprobación vale igual y se dice.
   let entregable_id: string | null = null;
-  let aviso: string | null = null;
+  // Los avisos se SUMAN, no se pisan: el del plan y el de la copia son dos cosas que pueden fallar aparte, y
+  // antes el segundo borraba al primero.
+  const avisos: string[] = plan.aviso ? [plan.aviso] : [];
   const { data: prev, error: errorPrev } = await sb.from("deliverables").select("version").eq("company_id", x.companyId).eq("tipo", "plan_estrategico").order("version", { ascending: false }).limit(1);
-  if (errorPrev) aviso = API.copia_no_guardada(mensajeDe(errorPrev));
+  if (errorPrev) avisos.push(API.copia_no_guardada(mensajeDe(errorPrev)));
   else {
     const siguiente = Math.max(0, ...((prev ?? []) as { version: number | null }[]).map((d) => Number(d.version ?? 0))) + 1;
     const { data: copia, error: errorCopia } = await sb.from("deliverables").insert({ company_id: x.companyId, tipo: "plan_estrategico", contenido: contenidoEntregable(v.id, v.version, para_dueno), version: siguiente }).select("id").single();
-    if (errorCopia) aviso = API.copia_no_guardada(mensajeDe(errorCopia));
+    if (errorCopia) avisos.push(API.copia_no_guardada(mensajeDe(errorCopia)));
     else entregable_id = String((copia as { id: string }).id);
   }
-  return { ok: true, estado: "aprobada", para_dueno, entregable_id, aviso };
+  const aviso = avisos.join(" ") || null;
+  return {
+    ok: true,
+    estado: "aprobada",
+    para_dueno,
+    entregable_id,
+    plan: { acciones: plan.acciones, indicadores: plan.indicadores, ya_estaban: plan.ya_estaban },
+    aviso,
+  };
 }
 
 // ─── Actualizar números (sin IA) ─────────────────────────────────────────────────────────────────

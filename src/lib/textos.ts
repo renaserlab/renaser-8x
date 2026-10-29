@@ -126,7 +126,10 @@ export const VACIO = {
   // El cliente no tiene el botón de dibujar a mano —es solo del consultor—: prometerle algo que no
   // puede hacer es una confusión gratuita en la pantalla donde más perdido está.
   procesosCliente: "Todavía no hay ninguno. Cuéntanos cómo funciona algo de tu negocio —hablando es más fácil— y nosotros lo dibujamos.",
-  plan: "El plan se genera cuando los hallazgos estén aprobados.",
+  // Las TRES puertas por las que nace una acción, no una. Antes decía solo la primera, y con los hallazgos sin
+  // aprobar la pantalla era una pared: ni se podía generar, ni se podía escribir, ni se decía que aprobar una
+  // estrategia las baja sola.
+  plan: "Todavía no hay ninguna acción. Entran de tres maneras: aprobar una estrategia baja sus victorias y sus jugadas, el planificador propone a partir de los hallazgos aprobados, o las escribes tú aquí mismo.",
   bandeja: "Nada requiere atención hoy.",
   resultados: "Tu consultor está revisando los resultados. Te avisamos cuando estén listos.",
 };

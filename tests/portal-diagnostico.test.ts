@@ -194,7 +194,7 @@ describe("la barra del dueño: cinco destinos, cada uno con su ícono", () => {
     expect(num).not.toContain("Todo lo que encontramos");
     estado.ruta = "/portal";
     const inicio = renderToStaticMarkup(createElement(EnEstaSeccion, {}));
-    for (const t of ["Cuéntanos tu negocio", "Lo que te pidió tu consultora", "Tus documentos", "Archivos aportados"]) expect(inicio).toContain(`>${t}<`);
+    for (const t of ["Cuéntanos tu negocio", "Lo que te pidió tu consultora", "Tu información", "Tus documentos"]) expect(inicio).toContain(`>${t}<`);
   });
 });
 

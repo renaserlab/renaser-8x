@@ -295,6 +295,11 @@ npm run worker           # worker local opcional (producción se drena sola en V
 
 1. **Supabase.** Proyecto con `supabase/schema.sql` (idempotente). DDL posterior vía Management API con `SUPABASE_ACCESS_TOKEN`.
 2. **Variables.** `.env.local`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `GEMINI_API_KEY`, `AI_MODEL` (y opcional `AI_MODEL_RESPALDO`), `WORKER_DRAIN_SECRET`, `CRON_SECRET`.
+   Opcional pero recomendado: `AI_PROVIDER_RESPALDO` con el otro proveedor y su `AI_MODEL_ANTHROPIC` o
+   `AI_MODEL_GEMINI`. Sin respaldo, un «402 · sin crédito» detiene a los 16 agentes; con él, el otro
+   proveedor contesta y queda dicho que la contestó él. `AI_MODEL` es del principal: el respaldo necesita
+   su propia variable, porque pedirle a un proveedor el modelo del otro da un 404 que se cobra como fallo
+   del trabajo.
 3. **Primer consultor.** Regístrate y ejecuta `update users set rol='consultor' where email='tu@correo';` (todo registro nuevo nace cliente).
 4. **Compuerta antes de cualquier demo:** `npm run qa` en verde.
 

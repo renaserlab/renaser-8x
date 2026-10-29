@@ -214,7 +214,10 @@ describe("portal del cliente: cinco destinos, y toda pantalla a dos toques", () 
     expect(GRUPO.get("/portal/hoy")).toBe("/portal/diagnostico");
     expect(NOMBRES.get("/portal/hoy")).toBe("Todo lo que encontramos");
     expect(GRUPO.get("/portal/activos")).toBe("/portal");
-    expect(NOMBRES.get("/portal/activos")).toBe("Tus documentos");
+    expect(NOMBRES.get("/portal/activos")).toBe("Tu información");
+    // «Tus documentos» tiene que llevar a la documentación VIGENTE, no a la pantalla de subir: ese
+    // cruce es lo que hacía que la dueña dijera «no lo veo en el sistema» (18-10-2026).
+    expect(NOMBRES.get("/portal/documentos")).toBe("Tus documentos");
     const bajoDiagnostico = [...NOMBRES.keys()].filter((r) => GRUPO.get(r) === "/portal/diagnostico");
     expect(bajoDiagnostico).toEqual(["/portal/hoy", "/portal/validar", "/portal/direccion", "/portal/informe"]);
   });

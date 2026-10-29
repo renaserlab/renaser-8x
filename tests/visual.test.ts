@@ -86,9 +86,17 @@ describe("lo que este producto no debe parecer", () => {
     expect(t).toMatch(/font-size: 17px/);
   });
   it("la letra de títulos no entra a los componentes: se pide solo por clase, desde src/design", () => {
+    /**
+     * Lo que se persigue es PEDIR la letra, no nombrarla. La comprobación buscaba la palabra «Bodoni» en todo el
+     * archivo, comentarios incluidos, y así el único componente que ES la letra —el logo, que compone «8X» con los
+     * trazos de la misma didone de los títulos— no podía explicar en su cabecera por qué. Un comentario no pide
+     * nada: lo que pide es el token, la familia o el import de la fuente, y es eso lo que se mira. Sigue prohibido
+     * exactamente lo mismo que antes, y de paso queda prohibido el import directo de next/font, que no estaba.
+     */
+    const PIDE_LA_LETRA = /--font-display|Bodoni_Moda\s*\(|font-?[fF]amily[^;,}]*(?:bodoni|font-display)/i;
     for (const f of ui) {
       if (diseno(f) || es(f, "app/layout.tsx")) continue;
-      expect(f.s, `${f.p} pide la letra de títulos por su cuenta: va por clase, en src/design`).not.toMatch(/--font-display|Bodoni/);
+      expect(f.s, `${f.p} pide la letra de títulos por su cuenta: va por clase, en src/design`).not.toMatch(PIDE_LA_LETRA);
     }
   });
   it("el oro es luz, no relleno: solo en el logo, el marco y la flecha de la acción de hoy", () => {
@@ -120,11 +128,29 @@ describe("lo que este producto no debe parecer", () => {
     expect(t).toMatch(/prefers-reduced-motion/);
   });
   it("todos los inputs/selects/textareas tienen etiqueta real o aria-label", () => {
+    /**
+     * SE MIRA SI EL CONTROL ESTÁ DENTRO DE SU <label>, NO SI LA ETIQUETA CAE CERCA.
+     *
+     * Antes se buscaba la apertura de <label> en los 200 caracteres anteriores al control. Eso aprueba y reprueba
+     * por la razón equivocada: un campo bien envuelto se reprobaba solo porque su texto era largo —el que dice
+     * «cómo se va a medir, o por qué no se mide» pasa de 200 con las dos redacciones— y, al revés, un control
+     * suelto pasaba por quedar cerca de una etiqueta que ya se había cerrado. Lo que de verdad asocia una etiqueta
+     * con su control en HTML es envolverlo o nombrarlo: se cuenta si hay un <label> abierto en ese punto, y si no,
+     * se acepta la asociación explícita (htmlFor con su id) o un aria-label.
+     */
     for (const f of ui) {
       const controles = f.s.match(/<(input|select|textarea)(?:[^>]|=>)*?(?:\/>|(?<!=)>)/g) ?? [];
       for (const c of controles) {
         if (/type="(file|checkbox)"/.test(c)) continue;
-        const conLabel = /aria-label=|id="archivo"/.test(c) || /<label[^>]*>[^<]*(?:<span[^>]*>[^<]*<\/span>)?\s*$/.test(f.s.slice(Math.max(0, f.s.indexOf(c) - 200), f.s.indexOf(c)));
+        const antes = f.s.slice(0, f.s.indexOf(c));
+        const abiertos = (antes.match(/<label[\s>]/g) ?? []).length - (antes.match(/<\/label>/g) ?? []).length;
+        const porId = (() => {
+          const id = /[\s]id=(?:"([^"]+)"|\{([^}]+)\})/.exec(c);
+          if (!id) return false;
+          const cual = (id[1] ?? id[2])!.trim();
+          return f.s.includes(`htmlFor="${cual}"`) || f.s.includes(`htmlFor={${cual}}`);
+        })();
+        const conLabel = /aria-label=|id="archivo"/.test(c) || abiertos > 0 || porId;
         expect(conLabel, `${f.p}: control sin etiqueta → ${c.slice(0, 80)}`).toBe(true);
       }
     }

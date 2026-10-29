@@ -29,7 +29,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import ExcelJS from "exceljs";
 import type { PGlite } from "@electric-sql/pglite";
 import declaraciones from "./fixtures/pilotos/declaraciones.json";
-import { crearBase, aplicarTodo, leerOrden, dividirSentencias, consultarComo, CARPETA_SUPABASE, type Rol } from "./sql/aplicar";
+import { crearBase, aplicarTodo, ordenSin, dividirSentencias, consultarComo, CARPETA_SUPABASE, type Rol } from "./sql/aplicar";
 
 type Fila = Record<string, unknown>;
 
@@ -1138,7 +1138,7 @@ describe("POSTGRES EMBEBIDO (PGlite, no Supabase) · las filas que escribe la im
       // Ni lo que se apoya en ella (migracion-estrategia.sql amplía un check de su tabla solicitudes_cliente): sin la del
       // 16-10 no aplica, y esta prueba no la necesita.
       await aplicarTodo(pg, {
-        orden: leerOrden().filter((e) => e.archivo !== NOMBRE_MIGRACION && e.archivo !== MIGRACION_16_10 && !(e.depende_de ?? []).includes(MIGRACION_16_10)),
+        orden: ordenSin([NOMBRE_MIGRACION, MIGRACION_16_10]),
       });
       await pg.query(
         "insert into auth.users (id, email, raw_user_meta_data) values ($1, 'duena-a@prueba.local', $2::jsonb), ($3, 'dueno-b@prueba.local', $4::jsonb), ($5, 'consultora@prueba.local', $6::jsonb)",

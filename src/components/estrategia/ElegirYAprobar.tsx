@@ -48,19 +48,44 @@ export function ElegirCamino({ companyId, eid, letra, nombre, principal }: { com
   );
 }
 
+/** Lo que devuelve aprobar: el aviso de lo que no se pudo hacer, y cuánto bajó al plan. */
+type Aprobado = { aviso: string | null; plan?: { acciones: number; indicadores: number; ya_estaban: number } | null };
+
 export function AprobarEstrategia({ companyId, eid }: { companyId: string; eid: string }) {
   const [confirmar, setConfirmar] = useState(false);
-  const [aviso, setAviso] = useState<string | null>(null);
+  const [hecho, setHecho] = useState<Aprobado | null>(null);
   const { trabajando, error, correr, router } = useAccion();
   const aprobar = () =>
     void correr(
-      () => pedir<{ aviso: string | null }>(`${ruta(companyId, eid)}/aprobar`, { method: "POST", json: {} }),
+      () => pedir<Aprobado>(`${ruta(companyId, eid)}/aprobar`, { method: "POST", json: {} }),
       (r) => {
-        setAviso(r.aviso ?? null);
+        setHecho(r);
         setConfirmar(false);
-        router.refresh();
       }
     );
+
+  /**
+   * APROBÓ: SE QUEDA LO QUE PASÓ, Y ELLA DECIDE CUÁNDO IRSE. Antes esto recargaba la pantalla en el mismo clic, y
+   * al recargar esta pieza desaparece —una versión aprobada ya no se aprueba—, así que el aviso se borraba solo
+   * medio segundo después de aparecer: si la bajada al plan fallaba, nadie llegaba a leer por qué. Ahora el botón
+   * se convierte en lo que pasó, con el camino al plan al lado.
+   */
+  if (hecho) {
+    const p = hecho.plan;
+    return (
+      <span className="accion-con-nota" role="status">
+        <strong className="t-dato">{PANTALLA.aprobada_ya}</strong>
+        {p && <small className="nota-accion">{PANTALLA.bajo_al_plan(p.acciones, p.indicadores, p.ya_estaban)}</small>}
+        {hecho.aviso && <small className="nota-accion">{hecho.aviso}</small>}
+        <span className="elegir-camino__botones">
+          <a className="boton boton--secundario" href={`/empresa/${companyId}/plan`}>{PANTALLA.ver_el_plan}</a>
+          <button type="button" className="boton boton--terciario" onClick={() => router.refresh()}>
+            {PANTALLA.actualizar_pantalla}
+          </button>
+        </span>
+      </span>
+    );
+  }
 
   if (!confirmar) {
     return (
@@ -68,7 +93,6 @@ export function AprobarEstrategia({ companyId, eid }: { companyId: string; eid: 
         <button type="button" className="boton aprobar" onClick={() => setConfirmar(true)}>
           {PANTALLA.aprobar}
         </button>
-        {aviso && <small className="nota-accion" role="status">{aviso}</small>}
       </span>
     );
   }

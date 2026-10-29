@@ -27,7 +27,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import type { PGlite } from "@electric-sql/pglite";
 import path from "path";
-import { aplicarArchivo, aplicarTodo, baseConEsquema, consultarComo, crearBase, leerOrden, CARPETA_SUPABASE } from "./aplicar";
+import { aplicarArchivo, aplicarTodo, baseConEsquema, consultarComo, crearBase, ordenSin, CARPETA_SUPABASE } from "./aplicar";
 import { faltanColumnasDeRevisada } from "@/lib/revision-semanal";
 
 const U_A = "00000000-0000-4000-8000-0000000000a1"; // dueña de A
@@ -240,7 +240,7 @@ describe("Postgres embebido (PGlite), no Supabase: una base que ya tenía revisi
     try {
       vieja = await crearBase();
       // Todo el esquema MENOS esta migración: así estaba la base el día antes.
-      await aplicarTodo(vieja, { orden: leerOrden().filter((e) => e.archivo !== MIGRACION) });
+      await aplicarTodo(vieja, { orden: ordenSin([MIGRACION]) });
       await vieja.query("insert into auth.users (id, email, raw_user_meta_data) values ($1, 'consultora@prueba.local', $2::jsonb)", [U_C, JSON.stringify({ nombre: "Consultora" })]);
       await vieja.query("update users set rol = 'consultor' where id = $1", [U_C]);
       await vieja.query("insert into companies (id, nombre) values ($1, 'Tienda de ropa (sintética)'), ($2, 'Estudio jurídico (sintético)')", [EMP_A, EMP_B]);

@@ -183,7 +183,7 @@ export function Organigrama({ companyId, puestos, estudio, estudioIA, estudioFec
               <button type="button" onClick={() => setEditando(null)} className="t-dato" style={{ background: "none", border: "none", cursor: "pointer", padding: "2px 4px", font: "inherit", color: "var(--grafito)" }}>Cerrar</button>
             </div>
             <div className="flex flex-col gap-4">
-              {campo("Nombre del puesto", "nombre", "p. ej. Encargado de Local — Paruro")}
+              {campo("Nombre del puesto", "nombre", "p. ej. Encargado de Local — Centro")}
               {campo("Quién lo ocupa hoy", "persona", "nombre y apellido — o vacío si es vacante")}
               <label className="flex flex-col gap-1">
                 <span className="t-etiqueta">Reporta a</span>
