@@ -3,8 +3,11 @@ import type { SemanaCliente as Datos } from "@/lib/revision-semanal";
 
 function Bloque({ titulo, frases, vacio, color }: { titulo: string; frases: string[]; vacio: string; color: string }) {
   return (
-    <section className="panel p-5" style={{ borderTop: `2.5px solid ${color}` }}>
-      <h2 className="t-seccion">{titulo}</h2>
+    <section className="panel p-5">
+      <h2 className="t-seccion flex items-center gap-2">
+        <span aria-hidden="true" className="punto-fila" style={{ background: color }} />
+        {titulo}
+      </h2>
       {frases.length === 0 ? (
         <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>{vacio}</p>
       ) : (
@@ -36,7 +39,7 @@ export function SemanaCliente({ datos }: { datos: Datos }) {
       <Bloque titulo="Qué se esperaba de ti y de tu equipo" frases={datos.esperado} vacio="Nada tenía fecha esta semana." color="var(--marca)" />
       <Bloque titulo="Qué se hizo" frases={datos.hecho} vacio="No quedó registrado nada esta semana. Si hiciste algo, márcalo en Tu plan o anota el valor en Tus indicadores." color="var(--confirmado)" />
       <Bloque titulo="Qué falta" frases={datos.falta} vacio="Nada pendiente de lo que tenía fecha esta semana." color="var(--caducado)" />
-      <p className="t-dato panel p-3" style={{ borderLeft: "3px solid var(--marca)", color: "var(--grafito)" }}>{datos.resultado}</p>
+      <p className="t-dato panel p-3" style={{ background: "var(--acero-velo)", color: "var(--grafito)" }}>{datos.resultado}</p>
       {datos.explicacion && (
         <section className="panel p-5">
           <h2 className="t-seccion">Lo que dice la consultora</h2>

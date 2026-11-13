@@ -27,7 +27,7 @@ export function VerFuente({ sourceId, fragmentId, cerrar }: { sourceId: string; 
   const idx = frag ? contenido.indexOf(frag) : -1;
 
   return (
-    <div role="dialog" aria-modal="true" aria-label="Fuente original" className="fixed inset-0 z-50 flex justify-end" style={{ background: "rgba(20,23,26,0.35)" }} onClick={cerrar}>
+    <div role="dialog" aria-modal="true" aria-label="Fuente original" className="fixed inset-0 z-50 flex justify-end" style={{ background: "color-mix(in srgb, var(--noche) 32%, transparent)" }} onClick={cerrar}>
       <aside className="h-full overflow-auto p-6 aparece" style={{ width: "min(640px, 100%)", background: "var(--papel)", borderLeft: "1px solid var(--linea)" }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between gap-4 mb-6">
           <div>
@@ -38,7 +38,7 @@ export function VerFuente({ sourceId, fragmentId, cerrar }: { sourceId: string; 
         </div>
         {error && <p style={{ color: "var(--contradicho)" }}>{error}</p>}
         {d?.fragmento && (
-          <div className="panel p-4 mb-6" style={{ borderLeft: "3px solid var(--marca)" }}>
+          <div className="panel p-4 mb-6">
             <p className="t-etiqueta mb-2">
               Fragmento{d.fragmento.pagina ? ` · página ${d.fragmento.pagina}` : ""}{d.fragmento.seccion ? ` · ${d.fragmento.seccion}` : ""}{d.fragmento.celda ? ` · ${d.fragmento.celda}` : ""}{d.fragmento.audio_desde != null ? ` · minuto ${Math.floor(d.fragmento.audio_desde / 60)}:${String(d.fragmento.audio_desde % 60).padStart(2, "0")}` : ""}
             </p>
@@ -55,7 +55,7 @@ export function VerFuente({ sourceId, fragmentId, cerrar }: { sourceId: string; 
             {idx >= 0 ? (
               <>
                 {contenido.slice(Math.max(0, idx - 600), idx)}
-                <mark style={{ background: "#fff3b0" }}>{frag}</mark>
+                <mark style={{ background: "var(--acero-velo)", color: "var(--tinta)" }}>{frag}</mark>
                 {contenido.slice(idx + frag.length, idx + frag.length + 1200)}
               </>
             ) : (

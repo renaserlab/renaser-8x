@@ -117,7 +117,7 @@ export function Organigrama({ companyId, puestos, estudio, estudioIA, estudioFec
                   {nivel.map((p) => {
                     const vacante = !p.persona?.trim();
                     return (
-                      <article key={p.id} className="panel p-4" style={{ width: 250, borderTop: `2.5px solid ${vacante ? "var(--caducado)" : "var(--marca)"}` }}>
+                      <article key={p.id} className="panel p-4" style={{ width: 250 }}>
                         {/* Editar y quitar van en el menú de la tarjeta (revisión del 16-10-2026): subrayados al pie de
                             cada puesto eran ruido, y «Quitar» a un toque de «Editar», un riesgo. */}
                         <div className="flex items-start justify-between gap-2">
@@ -127,7 +127,10 @@ export function Organigrama({ companyId, puestos, estudio, estudioIA, estudioFec
                             <button type="button" data-peligro="" onClick={() => setBorrando(p.id)}>Quitar el puesto</button>
                           </MenuAcciones>
                         </div>
-                        <p className="t-dato" style={{ color: vacante ? "var(--caducado)" : "var(--tinta)", fontWeight: 600 }}>{p.persona?.trim() || "Vacante"}</p>
+                        <p className="t-dato flex items-center gap-2" style={{ color: vacante ? "var(--caducado)" : "var(--tinta)", fontWeight: 600 }}>
+                          {vacante ? <span aria-hidden="true" className="punto-fila" style={{ background: "var(--caducado)" }} /> : null}
+                          {p.persona?.trim() || "Vacante"}
+                        </p>
                         {p.mision && <p className="t-dato mt-2" style={{ color: "var(--grafito)" }}>{p.mision}</p>}
                         {p.decide && <p className="t-dato mt-1" style={{ color: "var(--marca)" }}>Decide: {p.decide}</p>}
                         <p className="t-dato mt-1" style={{ color: "var(--grafito)", fontSize: 12 }}>

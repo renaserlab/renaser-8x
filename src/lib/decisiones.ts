@@ -15,6 +15,7 @@
  *     cuando se sabe, y hasta entonces se muestra como pendiente de observación, no como éxito.
  */
 import { supabaseAdmin } from "./supabase/admin";
+import { conConfianza } from "./decisiones-cola";
 
 export const ACCIONES = ["aprobar", "modificar", "objetar", "rechazar", "posponer", "pedir_evidencia"] as const;
 export type Accion = (typeof ACCIONES)[number];
@@ -58,6 +59,8 @@ export type Decision = {
   riesgos: string[];
   confianza: "alta" | "media" | "baja" | null;
   confianza_por_que: string | null;
+  /** true cuando la confianza no la declaro el agente y 8X la dedujo de la evidencia (decisiones-cola.ts). */
+  confianza_deducida?: boolean;
   que_pasa_si_se_aprueba: string | null;
   origen: "agente" | "consultora";
   agente: string | null;
@@ -103,7 +106,9 @@ export async function listarDecisiones(companyId?: string, estado?: EstadoDecisi
   if (estado) q = q.eq("estado", estado);
   const { data, error } = await q;
   if (error) throw new Error(`No se pudieron leer las decisiones: ${error.message}`);
-  return (data ?? []) as Decision[];
+  // La confianza se pone AL LEER: si el agente no la declaro, se deduce de la evidencia que la decision
+  // tiene en este momento. Asi `queLeFalta` deja de pedirla, que es correcto: ya no falta.
+  return (data ?? []).map((d) => conConfianza(d as Decision)) as Decision[];
 }
 
 export async function verDecision(id: string): Promise<{ decision: Decision; historial: Intervencion[]; falta: string[] } | null> {
@@ -111,7 +116,7 @@ export async function verDecision(id: string): Promise<{ decision: Decision; his
   const { data: d } = await sb.from("decisiones").select("*").eq("id", id).maybeSingle();
   if (!d) return null;
   const { data: h } = await sb.from("decision_historial").select("*").eq("decision_id", id).order("created_at");
-  const decision = d as Decision;
+  const decision = conConfianza(d as Decision) as Decision;
   return { decision, historial: (h ?? []) as Intervencion[], falta: queLeFalta(decision) };
 }
 

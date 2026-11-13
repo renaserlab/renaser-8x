@@ -55,7 +55,8 @@ function FilaEsperado({ x, companyId }: { x: Esperado; companyId: string }) {
   const m = marcaDe(x);
   const enlace = x.clase === "accion" ? `/empresa/${companyId}/plan#accion-${x.id}` : `/empresa/${companyId}/kpis#indicador-${x.id}`;
   return (
-    <li className="t-dato flex flex-wrap items-baseline gap-2" style={{ borderLeft: `2px solid ${m.color}`, paddingLeft: 10 }}>
+    <li className="t-dato flex flex-wrap items-baseline gap-2">
+      <span aria-hidden="true" className="punto-fila" style={{ background: m.color }} />
       <span style={{ color: m.color, minWidth: 110 }}>{m.texto}</span>
       <span>
         {x.tipo === "accion_empieza" ? "Empieza" : x.tipo === "accion_vence" ? "Vence" : "Anotar"} <Link href={enlace}>«{x.titulo}»</Link>
@@ -69,8 +70,9 @@ function FilaEsperado({ x, companyId }: { x: Esperado; companyId: string }) {
 
 function FilaDesvio({ d }: { d: Desvio }) {
   return (
-    <li className="panel p-3" style={{ borderLeft: `3px solid ${COLOR_DESVIO[d.tipo]}` }}>
+    <li className="panel p-3">
       <div className="flex flex-wrap items-baseline gap-2">
+        <span aria-hidden="true" className="punto-fila" style={{ background: COLOR_DESVIO[d.tipo] }} />
         <span className="t-etiqueta" style={{ color: COLOR_DESVIO[d.tipo] }}>{DESVIO_TEXTO[d.tipo]}</span>
         <Link href={d.enlace} className="t-dato" style={{ fontWeight: 600 }}>«{d.titulo}»</Link>
       </div>
@@ -88,7 +90,7 @@ function FilaDesvio({ d }: { d: Desvio }) {
  */
 function Propuesta({ etiqueta, usable, yaEnLaCaja, alUsar, children }: { etiqueta: string; usable: boolean; yaEnLaCaja: boolean; alUsar: () => void; children: React.ReactNode }) {
   return (
-    <div className="p-3 mb-3" style={{ background: "var(--suave)", borderLeft: "3px solid var(--grafito)" }}>
+    <div className="p-3 mb-3" style={{ background: "var(--suave)", borderRadius: "var(--radio-fila)" }}>
       <p className="t-etiqueta" style={{ color: "var(--grafito)" }}>{etiqueta}</p>
       <div className="t-dato mt-1" style={{ color: "var(--grafito)" }}>{children}</div>
       {usable && (
@@ -202,13 +204,13 @@ export function RevisionSemanal({ companyId, revision, revisadaPor, revisadaEl, 
       </nav>
 
       {revision.semana >= semanaEnCurso && (
-        <p className="t-dato panel p-3" style={{ borderLeft: "3px solid var(--caducado)", color: "var(--grafito)" }}>
+        <p className="t-dato panel p-3" style={{ background: "var(--caducado-velo)", color: "var(--caducado)", fontWeight: 600 }}>
           Esta semana todavía no terminó: lo que aún no vence no se juzga. La que toca revisar es la que terminó.
         </p>
       )}
 
       {/* Lo que la revisión puede decir del resultado: nunca sale de las tareas */}
-      <p className="t-dato panel p-3" style={{ borderLeft: "3px solid var(--marca)", color: "var(--grafito)" }}>
+      <p className="t-dato panel p-3" style={{ background: "var(--acero-velo)", color: "var(--grafito)" }}>
         <span className="t-etiqueta">RESULTADO EMPRESARIAL</span> {revision.resultado.texto}
       </p>
 

@@ -48,13 +48,16 @@ export function NodoInicio({ data, selected }: NodeProps<NodoRF>) {
   );
 }
 
-/** Rectángulo: alguien hace algo. El color del borde izquierdo es el ejecutor. */
+/** Rectángulo: alguien hace algo. El punto de color junto al nombre es el ejecutor (su nombre, en la leyenda). */
 export function NodoActividad({ data, selected }: NodeProps<NodoRF>) {
   const c = COLOR_EJ[data.ejecutor ?? "humano"] ?? COLOR_EJ.humano;
   return (
-    <div style={{ width: 220, minHeight: 80, background: "#fff", border: `1px solid ${selected ? "var(--marca)" : "var(--linea)"}`, borderLeft: `6px solid ${c}`, borderRadius: "var(--radio)", padding: "10px 12px", boxShadow: selected ? "0 0 0 2px var(--marca)" : undefined, ...estiloVeredicto(data.veredicto) }}>
+    <div style={{ width: 220, minHeight: 80, background: "var(--blanco)", border: `1px solid ${selected ? "var(--marca)" : "var(--linea)"}`, borderRadius: "var(--radio)", padding: "10px 12px", boxShadow: selected ? "0 0 0 2px var(--marca)" : undefined, ...estiloVeredicto(data.veredicto) }}>
       {manijas}
-      <div style={{ fontSize: 14, fontWeight: 500, lineHeight: 1.3 }}>{data.etiqueta}</div>
+      <div style={{ display: "flex", gap: 8, fontSize: 14, fontWeight: 500, lineHeight: 1.3 }}>
+        <span aria-hidden="true" className="punto-fila" style={{ background: c }} />
+        {data.etiqueta}
+      </div>
       {(data.responsable || data.tiempo) && (
         <div style={{ fontSize: 12, color: "var(--grafito)", marginTop: 4 }}>
           {data.responsable}{data.responsable && data.tiempo ? " · " : ""}{data.tiempo}
@@ -70,7 +73,7 @@ export function NodoDecision({ data, selected }: NodeProps<NodoRF>) {
   return (
     <div style={{ width: 160, height: 96, position: "relative", ...estiloVeredicto(data.veredicto) }}>
       <svg width="160" height="96" viewBox="0 0 160 96" style={{ position: "absolute", inset: 0 }} aria-hidden="true">
-        <polygon points="80,2 158,48 80,94 2,48" fill="#fff" stroke={selected ? "var(--marca)" : "var(--tinta)"} strokeWidth={selected ? 2.5 : 1.5} />
+        <polygon points="80,2 158,48 80,94 2,48" fill="var(--blanco)" stroke={selected ? "var(--marca)" : "var(--tinta)"} strokeWidth={selected ? 2.5 : 1.5} />
       </svg>
       <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", padding: "0 28px", textAlign: "center", fontSize: 13, fontWeight: 500, lineHeight: 1.25 }}>{data.etiqueta}</div>
       <Handle type="target" position={Position.Left} style={{ width: 10, height: 10, background: "var(--grafito)", border: "2px solid var(--papel)" }} />

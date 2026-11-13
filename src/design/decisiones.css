@@ -1,0 +1,123 @@
+/* ───────── LA COLA DE DECISIONES ─────────
+   Una decisión delante, grande, y las demás en una línea cada una. Antes era una tabla de veinte filas
+   iguales y nadie decidía nada: ver src/app/(consultor)/decisiones/page.tsx.
+
+   La hoja de hoy es la pieza más ancha de la app a propósito —es lo único que se mira al entrar— pero no
+   inventa vocabulario: usa la tarjeta, el radio y las sombras del sistema (tokens.css), la Didone solo en
+   la pregunta, y el oro no aparece, porque aquí todo es estado y el oro es marca. */
+
+/* LA HOJA SE APARTA CUANDO ESTA PANTALLA ES LA HOJA. El layout de la consultora envuelve todo en `.hoja`
+   —blanca, con su sombra— y la decisión de hoy también es una hoja blanca: una encima de otra se lee como
+   un papel descolorido y rompe la regla de una sola sombra por capa. Es el mismo trato que ya tienen los
+   tableros (`.hoja:has(> .tablero)` en tokens.css). */
+.hoja:has(> .decision-hoy) { background: none; box-shadow: none; padding: 0; border-radius: 0; }
+
+.decision-hoy {
+  background: var(--blanco);
+  border-radius: var(--radio-hoja);
+  box-shadow: var(--sombra);
+  padding: 30px 34px 26px;
+  margin-bottom: 32px;
+}
+@media (max-width: 760px) {
+  .decision-hoy { border-radius: 20px; padding: 22px 18px 20px; }
+}
+
+.decision-hoy__empresa {
+  font-size: 12.5px;
+  font-weight: 650;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--acero-fuerte);
+}
+/* La pregunta es lo único grande de la pantalla, y lleva la Didone de `.t-titulo` tal cual: aquí solo
+   se le pone el aire y la medida, que la cortan antes de que parezca un titular de periódico.
+   LA DIDONE APARECE UNA SOLA VEZ POR PANTALLA. La recomendación, que es la respuesta, va en la voz de
+   interfaz (`.t-seccion`): dos serifas casi del mismo tamaño no hacen jerarquía, hacen ruido. */
+.decision-hoy__titulo { text-wrap: balance; max-width: 24ch; margin: 8px 0 14px; }
+@media (max-width: 760px) {
+  .decision-hoy__titulo { max-width: none; }
+}
+
+/* Por qué ahora. Velo cálido, nunca relleno sólido: es contexto, no alarma. */
+.decision-hoy__ancla {
+  background: var(--caducado-velo);
+  border-radius: var(--radio-fila);
+  padding: 13px 16px;
+  font-size: 14.5px;
+  line-height: 1.45;
+  color: var(--tinta);
+  max-width: var(--medida);
+  margin-bottom: 22px;
+}
+
+.decision-hoy .t-rotulo { display: block; margin: 0 0 10px; }
+
+.caminos { display: flex; flex-direction: column; gap: 8px; margin: 0 0 22px; padding: 0; list-style: none; }
+.camino {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 13px 15px;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-fila);
+  font-size: 14.5px;
+  line-height: 1.4;
+}
+/* El camino recomendado se marca con el velo de acero y su borde, no con un filo de color al costado
+   (spec §3.3) ni con oro (§1.3). */
+.camino--elegido { border-color: var(--acero-fuerte); background: var(--acero-velo); }
+/* La letra del camino es una etiqueta, no una cifra: va en la voz de interfaz. */
+.camino__clave { font-size: 14.5px; font-weight: 650; line-height: 1.4; width: 16px; flex: none; color: var(--acero-fuerte); }
+.camino__sello { color: var(--acero-fuerte); font-weight: 600; }
+
+/* La recomendación toma `.t-seccion`; aquí solo su medida y su aire. */
+.decision-hoy__rec { max-width: var(--medida); margin-bottom: 8px; }
+.decision-hoy__porque { color: var(--grafito); font-size: 14.5px; line-height: 1.55; max-width: var(--medida); }
+
+.decision-hoy__pie { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 20px 0 0; }
+.decision-hoy__confianza { color: var(--grafito); }
+
+.decision-hoy__pregunta { background: var(--perla); border-radius: var(--radio-fila); padding: 14px 16px; margin-top: 18px; }
+.decision-hoy__pregunta ul { margin: 0; padding-left: 18px; }
+.decision-hoy__pregunta li { font-size: 14px; color: var(--grafito); line-height: 1.5; }
+
+.decision-hoy__acciones {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--linea);
+}
+.decision-hoy__por-que { color: var(--grafito); max-width: 48ch; }
+.decision-hoy__alcance { margin: 10px 0 0; font-size: 13px; }
+
+/* ── Las que siguen y las trabadas: una línea cada una, sin competir con la de arriba ── */
+.cola-resto { margin-bottom: 28px; }
+.cola-lista { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.cola-fila {
+  display: grid;
+  grid-template-columns: minmax(96px, 150px) 1fr auto;
+  gap: 16px;
+  align-items: baseline;
+  min-height: 44px;
+  padding: 11px 14px;
+  border-radius: var(--radio-fila);
+  text-decoration: none;
+  color: inherit;
+}
+@media (hover: hover) and (pointer: fine) {
+  .cola-fila:hover { background: var(--blanco); }
+}
+@media (max-width: 640px) {
+  .cola-fila { grid-template-columns: 1fr; gap: 2px; }
+}
+.cola-fila__empresa { font-size: 13px; color: var(--grafito); }
+.cola-fila__titulo { font-size: 14.5px; color: var(--tinta); }
+.cola-fila__cifra { color: var(--grafito); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cola-fila__motivo { color: var(--caducado); }
+.cola-fila--trabada .cola-fila__titulo { color: var(--grafito); }
+
+.cola-balance { margin-top: 24px; font-size: 13px; }

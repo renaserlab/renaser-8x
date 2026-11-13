@@ -41,9 +41,12 @@ export default async function Diagnostico({ params, searchParams }: { params: Pr
         {["personas", "procesos", "producto", "marketing"].map((p) => {
           const d = porPilar[p];
           return (
-            <div key={p} className="panel p-5 flex flex-col gap-3" style={{ borderTop: `3px solid ${d ? COLOR[d.estado] : "var(--linea)"}` }}>
+            <div key={p} className="panel p-5 flex flex-col gap-3">
               <Link href={`/empresa/${id}/diagnostico?pilar=${p}`} className="t-etiqueta">{PILAR[p]}</Link>
-              <div className="t-seccion" style={{ color: d ? COLOR[d.estado] : "var(--grafito)" }}>{d ? ESTADO_PILAR[d.estado] : "Sin diagnosticar"}</div>
+              <div className="t-seccion flex items-center gap-2" style={{ color: d ? COLOR[d.estado] : "var(--grafito)" }}>
+                {d ? <span aria-hidden="true" className="punto-fila" style={{ background: COLOR[d.estado] }} /> : null}
+                {d ? ESTADO_PILAR[d.estado] : "Sin diagnosticar"}
+              </div>
               <p className="t-dato" style={{ color: "var(--grafito)" }}>{PILAR_PREGUNTA[p]}</p>
               {abiertas[p] ? (
                 <p className="t-dato" style={{ color: "var(--contradicho)" }}>

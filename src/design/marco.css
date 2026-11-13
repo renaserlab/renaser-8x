@@ -13,7 +13,8 @@
 .logo8x svg { display: block; }
 /* La marca es texto: la misma didone de los títulos. El peso y la talla óptica los pone el componente, porque
    cambian con el tamaño; aquí solo vive la familia. */
-.logo8x__letras { font-family: var(--font-display); }
+/* El monograma es un contorno calcado, no una letra: no pide tipografia. Su color sale de .logo8x--tinta
+   (currentColor) o del degradado que el propio SVG lleva dentro cuando va sobre noche. */
 .logo8x--tinta { color: var(--tinta); }
 .logo8x__lema {
   font: 500 11px/1 var(--font-ui); letter-spacing: 0.32em; padding-left: 0.32em; text-transform: uppercase;
@@ -194,7 +195,9 @@
      Y la franja es clara, así que aquí la marca es tinta aunque el componente la pida en luz: el degradado de la
      cinta sobre perla no se vería. El relleno del CSS gana al del atributo, que es justo para lo que sirve. */
   .barra-movil .logo8x svg { height: 22px; width: auto; }
-  .barra-movil .logo8x__letras { fill: var(--tinta); }
+    /* La franja del celular es clara y ahi el logo va en su variante de luz, que sobre claro no se veria.
+     Se fuerzan las dos pinturas: el relleno y el filo que sostiene el pelo en tamaño chico. */
+  .barra-movil .logo8x__cinta { fill: var(--tinta); stroke: var(--tinta); }
   .barra-movil__derecha { margin-left: auto; display: flex; align-items: center; gap: 4px; }
 
   /* El cajón: la misma barra noche entra desde la izquierda con transform; cerrado no se ve ni recibe el foco. */

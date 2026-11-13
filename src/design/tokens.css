@@ -189,6 +189,16 @@ label > .t-etiqueta { color: var(--tinta); }
   }
 }
 
+/* LA MEDIDA DE LECTURA LA PIDE EL PÁRRAFO, NO EL CONTENEDOR (29-10-2026).
+   La hoja blanca crece con la ventana —hasta 1.038 px a 1366 y 1.200 más allá— y el texto se quedaba en 652,
+   así que un tercio de la tarjeta era blanco muerto a la derecha. La tentación es estrangular la hoja, pero
+   la hoja también lleva tablas y rejillas que SÍ necesitan ese ancho: lo que tiene medida es la prosa. 68ch
+   es la que ya fija --medida y la que pide la spec §2.2. Los párrafos que llevan cifras en su clase quedan
+   fuera: ésos no se leen de corrido, se miran. */
+:where(.hoja, .hoja-suelta, .empresa-contenido:not(:has(> .tablero))) > p:not([class*="num"]) {
+  max-width: var(--medida);
+}
+
 /* LA HOJA: toda pantalla de trabajo vive en una hoja blanca sobre el lienzo perla. Los tableros (tarjetas sueltas) la
    apagan solos: .hoja:has(> .tablero). */
 .hoja {
@@ -246,7 +256,25 @@ label > .t-etiqueta { color: var(--tinta); }
 }
 :where(.boton) > svg:not([width]) { width: 16px; height: 16px; flex: none; }
 .boton:active { transform: scale(0.97); }
-.boton:disabled, .boton[aria-disabled="true"] { opacity: 0.4; cursor: default; transform: none; }
+/* APAGADO: PIERDE EL RELLENO, NO LA LEGIBILIDAD (29-10-2026).
+   Antes era `opacity: .4` sobre un botón relleno de tinta. Bajar la opacidad de un relleno no le quita peso:
+   le quita contraste y le deja toda el área, así que el control MUERTO quedaba como la mancha más pesada de
+   la fila, en un gris (#9fa3ab) que no está en ninguna rampa de la paleta, y con el rótulo en 1,5:1 —ilegible—
+   cuando esta misma hoja promete 4,5:1 en todo texto. Ahora se vacía: sin relleno, con el filo y la letra de la
+   tinta de alrededor al 65 %. Da 5,2:1 sobre perla y 7,3:1 sobre noche, y pesa lo que debe pesar: casi nada.
+   Se escribe con la clase repetida (0,3,0) a propósito: el panel de noche de Equipos pinta `.os-d-foco .boton--luna`
+   y `.os-d-foco .boton--secundario` con 0,2,0 desde una hoja posterior, y si no, ganaban ellos y el botón apagado
+   se veía encendido. `color: inherit` es lo que hace que sirva en los dos fondos sin que esta hoja sepa dónde está. */
+.boton.boton:disabled,
+.boton.boton[aria-disabled="true"] {
+  background: transparent;
+  border-color: currentColor;
+  color: inherit;
+  opacity: 0.65;
+  box-shadow: none;
+  cursor: default;
+  transform: none;
+}
 .boton--secundario { background: var(--blanco); color: var(--tinta); border-color: var(--linea-fuerte); }
 .boton--terciario { background: transparent; color: var(--acero-fuerte); border-color: transparent; padding: 0 12px; }
 .boton--peligro { background: transparent; color: var(--contradicho); border-color: rgba(165, 55, 44, 0.35); }

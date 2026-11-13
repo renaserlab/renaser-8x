@@ -138,7 +138,7 @@ it("pinta las listas de la consultora en su marco", async () => {
   await hacer("bandeja", "/bandeja", async () => (await import("@/app/(consultor)/bandeja/page")).default());
   await hacer("empresas", "/empresas", async () => (await import("@/app/(consultor)/empresas/page")).default());
   await hacer("cartera", "/cartera", async () => (await import("@/app/(consultor)/cartera/page")).default({ searchParams: Promise.resolve({}) } as never));
-  await hacer("decisiones", "/decisiones", async () => (await import("@/app/(consultor)/decisiones/page")).default({ searchParams: Promise.resolve({}) } as never));
+  await hacer("decisiones", "/decisiones", async () => (await import("@/app/(consultor)/decisiones/page")).default());
   await hacer("salud", "/salud", async () => (await import("@/app/(consultor)/salud/page")).default());
   writeFileSync(path.join(SALIDA, "lc-errores.txt"), errores.join("\n\n") || "sin errores");
   if (errores.length) console.log(errores.join("\n\n"));

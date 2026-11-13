@@ -40,9 +40,12 @@ function TarjetaOpcion({ cual, op, recomendada, adoptada, ocupado, alAdoptar }: 
   alAdoptar: (cual: "a" | "b") => void;
 }) {
   return (
-      <article className="panel p-5" style={{ borderTop: `2.5px solid ${recomendada ? "var(--marca)" : "var(--linea)"}` }}>
+      <article className="panel p-5">
         <div className="flex items-baseline justify-between gap-3 flex-wrap">
-          <p className="t-etiqueta" style={{ color: recomendada ? "var(--marca)" : "var(--grafito)" }}>OPCIÓN {cual.toUpperCase()}{recomendada ? " · RECOMENDADA" : ""}</p>
+          <p className="t-etiqueta flex items-center gap-2" style={{ color: recomendada ? "var(--marca)" : "var(--grafito)" }}>
+            {recomendada ? <span aria-hidden="true" className="punto-fila" style={{ background: "var(--marca)" }} /> : null}
+            OPCIÓN {cual.toUpperCase()}{recomendada ? " · RECOMENDADA" : ""}
+          </p>
           <span className="t-dato" style={{ color: "var(--grafito)" }}>{op.puestos.length} puestos</span>
         </div>
         <h3 className="t-seccion mt-1" style={{ fontSize: 17 }}>{op.nombre}</h3>
@@ -158,8 +161,11 @@ export function EstudioOrganigrama({ companyId, estudio, fecha, versiones }: { c
 
           {/* LAS OBSERVACIONES DE LEVANTAMIENTO: el trabajo de la consultora, con la pregunta lista. */}
           {estudio.faltantes.length > 0 && (
-            <div className="panel p-5" style={{ borderTop: "2.5px solid var(--caducado)" }}>
-              <p className="t-etiqueta mb-3" style={{ color: "var(--caducado)" }}>INFORMACIÓN POR LEVANTAR — {estudio.faltantes.length} OBSERVACIÓN(ES) PARA TI</p>
+            <div className="panel p-5">
+              <p className="t-etiqueta mb-3 flex items-center gap-2" style={{ color: "var(--caducado)" }}>
+                <span aria-hidden="true" className="punto-fila" style={{ background: "var(--caducado)" }} />
+                INFORMACIÓN POR LEVANTAR — {estudio.faltantes.length} OBSERVACIÓN(ES) PARA TI
+              </p>
               <div className="flex flex-col gap-3">
                 {estudio.faltantes.map((f, i) => (
                   <div key={i} style={{ borderBottom: i < estudio.faltantes.length - 1 ? "1px solid var(--linea)" : "none", paddingBottom: 10 }}>
